@@ -312,18 +312,22 @@ function failPreparation(
   })
 }
 
+/** A `.fig` file named after its document, holding a copy of the bytes. */
+function figFile(bytes: Uint8Array, name: string): File {
+  const copy = new Uint8Array(bytes.byteLength)
+  copy.set(bytes)
+  return new File([copy.buffer], `${name}.fig`, { type: 'application/octet-stream' })
+}
+
 async function showStorageDocument(
   store: EditorStore,
   binding: StorageDocumentBinding,
   document: StorageDocument,
-  load: DocumentLoadSession
+  load: DocumentLoadSession,
+  given?: Uint8Array
 ): Promise<void> {
-  const bytes = await readStorageDocument(binding, document, load)
-  const fileBytes = new Uint8Array(bytes.byteLength)
-  fileBytes.set(bytes)
-  const file = new File([fileBytes.buffer], `${document.name}.fig`, {
-    type: 'application/octet-stream'
-  })
+  const bytes = given ?? (await readStorageDocument(binding, document, load))
+  const file = figFile(bytes, document.name)
   load.update({ phase: 'decoding', detail: document.name })
   const imported = await readFigForTab(file, load.signal)
   await showImportedGraph(
@@ -334,8 +338,26 @@ async function showStorageDocument(
   )
 }
 
-/** Shows what this device now holds for a tab's stored document, as after a conflict. */
-export async function reloadStorageDocumentInTab(store: EditorStore): Promise<void> {
+/**
+ * Reads a `.fig` file's bytes as a tab opens them, laid out and ready to show, for an editor of
+ * its own such as an earlier version's preview.
+ */
+export function readFigBytes(
+  bytes: Uint8Array,
+  name: string,
+  signal?: AbortSignal
+): Promise<SceneGraph> {
+  return readFigForTab(figFile(bytes, name), signal)
+}
+
+/**
+ * Shows what this device now holds for a tab's stored document, as after a conflict, or `bytes`
+ * just taken from its storage.
+ */
+export async function reloadStorageDocumentInTab(
+  store: EditorStore,
+  bytes?: Uint8Array
+): Promise<void> {
   const binding = store.getStorageBinding()
   if (!binding) return
   const name = store.state.documentName
@@ -345,7 +367,8 @@ export async function reloadStorageDocumentInTab(store: EditorStore): Promise<vo
       store,
       binding,
       { id: binding.documentId, name, updatedAt: new Date().toISOString() },
-      load
+      load,
+      bytes
     )
     load.complete()
   } catch (error) {

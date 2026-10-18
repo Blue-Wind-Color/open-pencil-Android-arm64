@@ -110,6 +110,8 @@ export function useAppMenu() {
     save: 'save',
     'save-as': 'saveAs',
     'save-to': 'saveTo',
+    'save-version': 'saveToVersionHistory',
+    'version-history': 'showVersionHistory',
     'export-selection': 'exportSelection',
     autosave: 'autosave',
     close: 'closeTab',

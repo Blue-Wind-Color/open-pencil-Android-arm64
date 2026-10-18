@@ -68,6 +68,8 @@ export type CloudServices = {
    * peer-to-peer and writes are not enforced by the server.
    */
   relayURL?: string
+  /** Ends a restored document's live rooms, on the relay this runtime runs, if any. */
+  onDocumentRestored?: (documentId: string) => void
 }
 
 type CloudEnvironment = CloudAPIEnvironment
@@ -201,7 +203,8 @@ export function createCloudApp(services: CloudServices) {
   })
   const versions = createDocumentVersionService(services.database, services.objects, {
     policy,
-    deploymentMode: services.config.deployment
+    deploymentMode: services.config.deployment,
+    onRestored: services.onDocumentRestored
   })
   const entitlements = createEntitlementService(
     services.database,

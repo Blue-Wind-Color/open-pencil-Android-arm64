@@ -61,13 +61,15 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
           )
         )
       : undefined
+  const restoredDocuments: string[] = []
   const app = createCloudApp({
     config,
     database: runtime.database,
     auth: createBetterAuthAdapter(config, runtime.database),
     objects: objects.store,
     policy,
-    resolveSession: async () => alice
+    resolveSession: async () => alice,
+    onDocumentRestored: (documentId) => restoredDocuments.push(documentId)
   })
   const request = (path: string, init: { method?: string; json?: unknown } = {}) =>
     app.request(`/api${path}`, {
@@ -146,6 +148,7 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
 
   return {
     runtime,
+    restoredDocuments,
     objects,
     policy,
     request,
@@ -260,6 +263,7 @@ describe('Cloud version history', () => {
         .where('id', '=', context.documentId)
         .executeTakeFirstOrThrow()
       expect(after.collaborationEpoch).toBe(before.collaborationEpoch + 1)
+      expect(context.restoredDocuments).toEqual([context.documentId])
 
       // The restored state is the same stored file, so it opens as the original and costs nothing.
       const [restoredDownload, originalDownload] = await Promise.all(

@@ -43,15 +43,23 @@ async function settle() {
   for (let index = 0; index < 5; index++) await Promise.resolve()
 }
 
-function room(options: { failTicket?: (attempt: number) => boolean } = {}) {
+function room(
+  options: {
+    failTicket?: (attempt: number) => boolean
+    /** The document moved to another room by this ticket request. */
+    movedAt?: number
+  } = {}
+) {
   const sockets: FakeSocket[] = []
   let tickets = 0
+  let restored = 0
   const errors: unknown[] = []
   const join = createCloudRelayJoin({
     url: 'wss://cloud.example.com/api/collaboration/relay',
     ticket: async () => {
       tickets += 1
       if (options.failTicket?.(tickets)) throw new Error('Ticket endpoint unavailable')
+      if (options.movedAt !== undefined && tickets >= options.movedAt) return null
       return { token: `ticket-${tickets}`, expiresAt: new Date(Date.now() + 300_000).toISOString() }
     },
     createSocket: () => {
@@ -60,14 +68,25 @@ function room(options: { failTicket?: (attempt: number) => boolean } = {}) {
       return asDouble<WebSocket>(socket)
     },
     reconnectDelayMs: () => 0,
-    onError: (_message, error) => errors.push(error)
+    onError: (_message, error) => errors.push(error),
+    onRestored: () => {
+      restored += 1
+    }
   })
   const transport = join('cloud:room:0')
   const joined: string[] = []
   const left: string[] = []
   transport.onPeerJoin((peerId) => joined.push(peerId))
   transport.onPeerLeave((peerId) => left.push(peerId))
-  return { transport, sockets, joined, left, errors, tickets: () => tickets }
+  return {
+    transport,
+    sockets,
+    joined,
+    left,
+    errors,
+    tickets: () => tickets,
+    restored: () => restored
+  }
 }
 
 describe('Cloud relay transport', () => {
@@ -151,6 +170,63 @@ describe('Cloud relay transport', () => {
       await settle()
       expect(sockets).toHaveLength(1)
       expect(errors).toEqual(['refused'])
+    }
+  })
+
+  test('moves on, without reconnecting, once the relay says the document was restored', async () => {
+    const { sockets, restored, errors } = room()
+    await settle()
+    sockets[0]?.open()
+    sockets[0]?.close(RELAY_CLOSE.restored, 'The document was restored')
+    await settle()
+    expect(restored()).toBe(1)
+    expect(sockets).toHaveLength(1)
+    expect(errors).toEqual([])
+  })
+
+  test('moves on when a fresh ticket is for the document’s new room', async () => {
+    const { sockets, restored } = room({ movedAt: 2 })
+    await settle()
+    sockets[0]?.open()
+    sockets[0]?.close(1006, 'Connection lost')
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0)
+    })
+    await settle()
+    expect(restored()).toBe(1)
+    expect(sockets).toHaveLength(1)
+  })
+
+  test('moves on once when the relay and a refreshed ticket both say so', async () => {
+    jest.useFakeTimers()
+    try {
+      const { sockets, restored } = room({ movedAt: 2 })
+      await settle()
+      sockets[0]?.open()
+      // The refresh is waiting on its ticket as the relay closes the room.
+      jest.advanceTimersByTime(240_000)
+      sockets[0]?.close(RELAY_CLOSE.restored, 'The document was restored')
+      await settle()
+      expect(restored()).toBe(1)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('closes its socket when a refreshed ticket is for the document’s new room', async () => {
+    jest.useFakeTimers()
+    try {
+      const { sockets, left, restored } = room({ movedAt: 2 })
+      await settle()
+      sockets[0]?.open()
+      sockets[0]?.receive({ type: 'welcome', peerId: 'me', peers: ['server', 'alice'] })
+      jest.advanceTimersByTime(240_000)
+      await settle()
+      expect(restored()).toBe(1)
+      expect(sockets[0]?.readyState).toBe(WebSocket.CLOSED)
+      expect(left).toEqual(['server', 'alice'])
+    } finally {
+      jest.useRealTimers()
     }
   })
 

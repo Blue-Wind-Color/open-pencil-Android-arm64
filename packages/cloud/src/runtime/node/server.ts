@@ -69,16 +69,6 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
         }
       )
     : undefined
-  const app = createCloudApp({
-    config,
-    database,
-    auth,
-    objects,
-    invitationOutbox,
-    transactionalEmail: email,
-    enrollment,
-    relayURL: config.relayURL ?? defaultRelayURL(config.publicURL)
-  })
   const relay = createCollaborationRelay({
     authSecret: config.authSecret,
     store: createCollaborationStateStore(database),
@@ -98,7 +88,26 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
         deploymentMode: config.deployment
       })
       return limit < 0 ? null : limit
+    },
+    async currentRoomEpoch(documentId) {
+      const document = await database
+        .selectFrom('document')
+        .select('collaborationEpoch')
+        .where('id', '=', documentId)
+        .executeTakeFirst()
+      return document?.collaborationEpoch ?? null
     }
+  })
+  const app = createCloudApp({
+    config,
+    database,
+    auth,
+    objects,
+    invitationOutbox,
+    transactionalEmail: email,
+    enrollment,
+    relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
+    onDocumentRestored: (documentId) => relay.startOver(documentId)
   })
   const emailWorker = emailTransport
     ? startTransactionalEmailWorker(email, {

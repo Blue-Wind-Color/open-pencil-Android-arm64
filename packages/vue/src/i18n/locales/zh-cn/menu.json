@@ -80,5 +80,7 @@
   "exportSelectionAsFig": "将所选内容导出为 .fig",
   "togglePreview": "预览",
   "browseFiles": "浏览文件…",
-  "saveTo": "保存到…"
+  "saveTo": "保存到…",
+  "showVersionHistory": "显示版本历史",
+  "saveToVersionHistory": "保存到版本历史…"
 }

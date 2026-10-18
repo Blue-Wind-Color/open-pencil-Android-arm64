@@ -5,6 +5,7 @@ import { onScopeDispose } from 'vue'
 import { editorCommandMetadata } from '@open-pencil/vue'
 import type { EditorCommandId } from '@open-pencil/vue'
 
+import { isCloudBinding, openVersionDialog } from '@/app/cloud/integration'
 import { useComments } from '@/app/comments/use'
 import {
   copySelectionProperties,
@@ -189,6 +190,13 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       id: 'save-as',
       keys: appMenuTinykeysShortcut('save-as') ?? '$mod+Shift+KeyS',
       run: ({ store }) => void store.saveFigFileAs()
+    },
+    {
+      id: 'save-version',
+      keys: appMenuTinykeysShortcut('save-version') ?? '$mod+Alt+KeyS',
+      run: ({ store }) => {
+        if (isCloudBinding(store.getStorageBinding())) openVersionDialog(store)
+      }
     },
     ...commandShortcuts('selection.ungroup', 'edit.redo'),
     {

@@ -80,5 +80,7 @@
   "exportSelectionAsFig": "選択範囲を .fig としてエクスポート",
   "togglePreview": "プレビュー",
   "browseFiles": "ファイルを表示…",
-  "saveTo": "保存先を選んで保存…"
+  "saveTo": "保存先を選んで保存…",
+  "showVersionHistory": "バージョン履歴を表示",
+  "saveToVersionHistory": "バージョン履歴に保存…"
 }

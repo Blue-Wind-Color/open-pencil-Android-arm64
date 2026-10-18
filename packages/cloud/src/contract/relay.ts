@@ -80,7 +80,9 @@ export const RELAY_CLOSE = {
   expired: 4403,
   roomFull: 4409,
   messageTooLarge: 4413,
-  protocol: 4400
+  protocol: 4400,
+  /** The document was restored to a version, so its room started over under a new ID. */
+  restored: 4410
 } as const
 
 const CLIENT_AUTH = 0

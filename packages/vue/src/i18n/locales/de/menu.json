@@ -80,5 +80,7 @@
   "exportSelectionAsFig": "Auswahl als .fig exportieren",
   "togglePreview": "Vorschau",
   "browseFiles": "Dateien durchsuchen…",
-  "saveTo": "Speichern in…"
+  "saveTo": "Speichern in…",
+  "showVersionHistory": "Versionsverlauf anzeigen",
+  "saveToVersionHistory": "Im Versionsverlauf speichern…"
 }

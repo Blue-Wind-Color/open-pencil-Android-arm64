@@ -21,8 +21,13 @@ export type CloudRelayTicket = { token: string; expiresAt: string }
 export type CloudRelayOptions = {
   /** The relay's WebSocket URL from the ticket. */
   url: string
-  /** Issues a fresh ticket for the room, on connecting and before the current one expires. */
-  ticket: (roomId: string) => Promise<CloudRelayTicket>
+  /**
+   * Issues a fresh ticket for the room, on connecting and before the current one expires, or
+   * null once the document has moved to another room.
+   */
+  ticket: (roomId: string) => Promise<CloudRelayTicket | null>
+  /** The document was restored to a version and its room started over; this one is done. */
+  onRestored?: () => void
   createSocket?: (url: string) => WebSocket
   /** How long to wait before reconnection attempt `attempt`, counting from zero. */
   reconnectDelayMs?: (attempt: number) => number
@@ -64,6 +69,8 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
   let socket: WebSocket | null = null
   let welcomed = false
   let left = false
+  /** Set once the relay or a ticket says the document was restored, which ends the room once. */
+  let ended = false
   let attempt = 0
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let ticketExpiresAt = 0
@@ -77,6 +84,10 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     try {
       const next = await options.ticket(roomId)
       if (left) return
+      if (!next) {
+        restored()
+        return
+      }
       send({ type: 'auth', token: next.token })
       scheduleRefresh(next)
     } catch (error) {
@@ -137,8 +148,22 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     attempt += 1
   }
 
+  /** The room this transport serves is over; whoever opened it moves to the new one. */
+  function restored() {
+    if (ended) return
+    ended = true
+    clearTimeout(refreshTimer)
+    clearTimeout(reconnectTimer)
+    // Nothing more goes to the old room, whoever moves on to the new one.
+    const current = socket
+    socket = null
+    current?.close(1000, 'The document was restored')
+    forgetPeers()
+    options.onRestored?.()
+  }
+
   async function connect() {
-    let ticket: CloudRelayTicket
+    let ticket: CloudRelayTicket | null
     try {
       ticket = await options.ticket(roomId)
     } catch (error) {
@@ -147,14 +172,19 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
       return
     }
     if (left) return
+    if (!ticket) {
+      restored()
+      return
+    }
+    const issued = ticket
     const next = createSocket(options.url)
     next.binaryType = 'arraybuffer'
     socket = next
     // A socket that was replaced or left behind by `leave()` no longer speaks for this room.
     next.addEventListener('open', () => {
       if (socket !== next) return
-      send({ type: 'auth', token: ticket.token })
-      scheduleRefresh(ticket)
+      send({ type: 'auth', token: issued.token })
+      scheduleRefresh(issued)
     })
     next.addEventListener('message', (event: MessageEvent<ArrayBuffer>) => {
       if (socket === next) handleFrame(event.data)
@@ -164,6 +194,10 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
       socket = null
       clearTimeout(refreshTimer)
       forgetPeers()
+      if (event.code === RELAY_CLOSE.restored) {
+        restored()
+        return
+      }
       if (FINAL_CLOSE_CODES.has(event.code)) {
         report('The collaboration relay refused this peer:', event.reason || event.code)
         return

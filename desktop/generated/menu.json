@@ -42,6 +42,17 @@
         "label": "Save To…"
       },
       {
+        "id": "save-version",
+        "label": "Save to Version History…",
+        "accelerator": "Alt+CmdOrCtrl+S",
+        "feature": "cloud-document"
+      },
+      {
+        "id": "version-history",
+        "label": "Show Version History",
+        "feature": "cloud-document"
+      },
+      {
         "type": "separator"
       },
       {

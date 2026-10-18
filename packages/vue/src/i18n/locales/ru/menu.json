@@ -80,5 +80,7 @@
   "exportSelectionAsFig": "Экспортировать выделение как .fig",
   "togglePreview": "Просмотр",
   "browseFiles": "Обзор файлов…",
-  "saveTo": "Сохранить в…"
+  "saveTo": "Сохранить в…",
+  "showVersionHistory": "Показать историю версий",
+  "saveToVersionHistory": "Сохранить в историю версий…"
 }

@@ -59,7 +59,7 @@ A Cloud document saves as you work, and the tab's dot shows edits that haven't r
 | **Saved on this device**  | You are offline. Your changes are kept here and upload once you are back online.                                             |
 | **Changed in two places** | Someone saved a newer version while you had changes the server didn't have.                                                   |
 | **Couldn't save**         | The server refused the upload. Your changes are safe on this device; **Try again**, or sign in again if your sign-in expired. |
-| **View only**             | You can look and follow others, but your changes never reach the document.                                                    |
+| **View only**             | You can look, select, copy, and follow others; the document can't be edited, so only Move and Hand are in the toolbar.       |
 
 ## When a Document Changed in Two Places
 
@@ -70,6 +70,17 @@ This happens when you edited a document offline, or before you joined a session,
 - **Replace it with your version** uploads yours over the newer one for everyone.
 
 **Decide later** keeps both versions until you come back to it.
+
+## Version History
+
+Choose **File → Show version history** to list a document's versions in the right sidebar, newest first, as Figma does. While the list is open the document is read-only.
+
+- **Current version** is the document as it is now. Named versions show their title, description, who saved them, and when; autosaves, which the server keeps as you work, are titled by their time. The filter shows everyone's versions or only yours, and hides or shows autosaves.
+- Select a version to look at it. It opens read-only where the document was, while the document itself stays as it is; select **Current version** or close the list to go back.
+- **File → Save to version history…** (⌥⌘S), or **+** in the list, names the document as it is now with a title and what changed.
+- A version's **⋯** menu edits or deletes its info, makes a new document from it with **Duplicate**, or brings it back with **Restore this version**. Restoring keeps the state it replaces in the history, closes the list, and moves everyone who has the document open on to the restored version.
+
+People who can only view see the history but can't change it.
 
 ## Share a Document
 

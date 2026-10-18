@@ -80,5 +80,7 @@
   "exportSelectionAsFig": "Eksportuj zaznaczenie jako .fig",
   "togglePreview": "Podgląd",
   "browseFiles": "Przeglądaj pliki…",
-  "saveTo": "Zapisz w…"
+  "saveTo": "Zapisz w…",
+  "showVersionHistory": "Pokaż historię wersji",
+  "saveToVersionHistory": "Zapisz w historii wersji…"
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useHead } from '@unhead/vue'
 import { useEventListener, whenever } from '@vueuse/core'
-import { onMounted, onUnmounted, provide, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useI18n } from '@open-pencil/vue'
@@ -14,6 +14,7 @@ import { exposeAutomationTestRequests } from '@/app/automation/bridge/test-hooks
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { startWebMCP } from '@/app/automation/webmcp/runtime'
 import { exposeCollaborationActions } from '@/app/browser-bridge'
+import { shownEditorStore, versionPreviewKey } from '@/app/cloud/integration'
 import { useJoinRoom } from '@/app/collab/join'
 import { bindDesktopRoomLinks } from '@/app/collab/room/links'
 import { syncRoomRoute } from '@/app/collab/route'
@@ -22,6 +23,7 @@ import { openDemoDocument } from '@/app/demo/document'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
 import { openPendingFiles } from '@/app/document/io/pending-open'
 import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io/web-link'
+import { setActiveEditorStore } from '@/app/editor/active-store'
 import { focusNodesByName } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { appRuntimeConfig } from '@/app/runtime/config'
@@ -42,6 +44,7 @@ import {
 import { isTauri } from '@/app/tauri/env'
 import { offerUsageStatsPrompt, startSharing } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
+import { CloudVersionDialog } from '@/components/cloud/integration'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
 import EditorWorkspace from '@/components/editor/EditorWorkspace.vue'
 import FileApiBanner from '@/components/FileApiBanner.vue'
@@ -52,6 +55,25 @@ import TabBar from '@/components/TabBar.vue'
 import { IS_BROWSER } from '@/constants'
 
 const route = useRoute()
+/**
+ * The active tab as it shows: a version of its document being previewed takes the document's
+ * place, in a workspace of its own, until the history goes back to the document.
+ */
+const shown = computed(() => {
+  const tab = activeTab.value
+  if (!tab) return null
+  return {
+    tab: { ...tab, store: shownEditorStore(tab.store) },
+    key: tab.id + versionPreviewKey(tab.store)
+  }
+})
+// Shortcuts, menus, and the clipboard act on what the tab shows.
+watch(
+  () => shown.value?.tab.store,
+  (store) => {
+    if (store) setActiveEditorStore(store)
+  }
+)
 const router = useRouter()
 const createdInitialTab = tabCount() === 0
 const shouldCreateHome =
@@ -251,10 +273,7 @@ onUnmounted(() => {
     <CommandPalette />
     <TabBar />
     <HomeWorkspace v-show="activeTab?.kind === 'home'" @new-document="createDocumentInCurrentTab" />
-    <EditorWorkspace
-      v-if="activeTab && activeTab.kind !== 'home'"
-      :key="activeTab.id"
-      :tab="activeTab"
-    />
+    <CloudVersionDialog />
+    <EditorWorkspace v-if="shown && shown.tab.kind !== 'home'" :key="shown.key" :tab="shown.tab" />
   </div>
 </template>

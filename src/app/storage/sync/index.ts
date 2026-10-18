@@ -7,6 +7,7 @@ export {
   resumeStorageSync
 } from './engine'
 export {
+  adoptStoredVersion,
   dropCanvasUploads,
   keepBothVersions,
   replaceStoredVersion,

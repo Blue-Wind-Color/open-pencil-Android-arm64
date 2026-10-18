@@ -2,16 +2,21 @@ import { shallowRef, watch } from 'vue'
 
 import { RELAY_SERVER_PEER, type CollaborationTicket } from '@open-pencil/cloud/contract'
 
-import { openDocumentRoom, roomForStore } from '@/app/collab/rooms'
+import { leaveRoom, openDocumentRoom, roomForStore } from '@/app/collab/rooms'
 import type { RoomSession } from '@/app/collab/session'
 import type { JoinCollabRoom } from '@/app/collab/transport'
 import { createCloudRelayJoin } from '@/app/collab/transport/cloud'
 import type { EditorStore } from '@/app/editor/session'
 import { createStorageAdapter } from '@/app/integrations/storage'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
-import { dropCanvasUploads, kickSyncEngine, replaceStoredVersion } from '@/app/storage/sync'
+import {
+  adoptStoredVersion,
+  dropCanvasUploads,
+  kickSyncEngine,
+  replaceStoredVersion
+} from '@/app/storage/sync'
 import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
-import { allTabs, getTabForStore, getTabsSnapshot } from '@/app/tabs'
+import { allTabs, getTabForStore, getTabsSnapshot, reloadStorageDocumentInTab } from '@/app/tabs'
 
 import { isCloudBinding } from '../documents/status'
 import { cloudConnections } from '../sessions/connection'
@@ -62,9 +67,15 @@ async function catchUpWithServer(store: EditorStore): Promise<void> {
 /**
  * Keeps this tab saving only while it is the room's saver. A tab that stops drops its queued
  * uploads, since the room holds those edits; the saver overwrites a revision it conflicts with,
- * since the room's document already has every edit in it.
+ * since the room's document already has every edit in it, unless that revision is a restore,
+ * which moves the room on instead.
  */
-function followSaver(store: EditorStore, session: RoomSession, canSave: boolean): () => void {
+function followSaver(
+  store: EditorStore,
+  session: RoomSession,
+  canSave: boolean,
+  roomIsCurrent: () => Promise<boolean>
+): () => void {
   let saving: boolean | null = null
   const documentId = () => store.getStorageBinding()?.documentId ?? null
 
@@ -80,6 +91,7 @@ function followSaver(store: EditorStore, session: RoomSession, canSave: boolean)
       await dropCanvasUploads(id)
       return
     }
+    if (!(await roomIsCurrent())) return
     await catchUpWithServer(store).catch(() => undefined)
     // Only a stored document saves without asking where; the room never adds a file prompt.
     if (store.getStorageBinding() && store.hasUnsavedChanges()) await store.saveFigFile()
@@ -88,7 +100,7 @@ function followSaver(store: EditorStore, session: RoomSession, canSave: boolean)
   async function settleConflict(id: string) {
     if (!saving) return
     const meta = await getLocalCanvasStore().getMeta(id)
-    if (meta?.syncStatus !== 'conflict') return
+    if (meta?.syncStatus !== 'conflict' || !(await roomIsCurrent())) return
     await replaceStoredVersion(id)
     await kickSyncEngine()
   }
@@ -125,6 +137,12 @@ export function openCloudDocumentRoom(
     permission: 'edit' | 'view'
     /** A guest from a link edits but has no account to save with. */
     guest?: boolean
+    /**
+     * Whether the document is still in this room; false once it was restored to a version, when
+     * the room is left for `onRestored` to move the tab on.
+     */
+    roomIsCurrent?: () => Promise<boolean>
+    onRestored?: () => void
   }
 ) {
   const canEdit = options.permission === 'edit'
@@ -139,7 +157,12 @@ export function openCloudDocumentRoom(
     stopSynced()
     if (canEdit && !session.roomHasDocument()) session.shareDocument()
   })
-  const stopSaver = followSaver(store, session, canSave)
+  // Unsure whether the document moved on, the saver waits rather than overwrite a restore.
+  const stopSaver = followSaver(store, session, canSave, async () => {
+    const current = options.roomIsCurrent ? await options.roomIsCurrent().catch(() => null) : true
+    if (current === false) options.onRestored?.()
+    return current === true
+  })
   return {
     session,
     stop() {
@@ -158,7 +181,8 @@ export function openCloudDocumentRoom(
 export function cloudRelayTransport(
   url: string,
   first: CollaborationTicket,
-  next: () => Promise<CollaborationTicket>
+  next: () => Promise<CollaborationTicket>,
+  onRestored?: () => void
 ): JoinCollabRoom {
   let unused: CollaborationTicket | null = first
   return createCloudRelayJoin({
@@ -166,16 +190,26 @@ export function cloudRelayTransport(
     async ticket() {
       const ticket = unused ?? (await next())
       unused = null
+      // A restore moves the document to a new room; this one has nothing left to join.
+      if (ticket.roomId !== first.roomId) return null
       return { token: ticket.token, expiresAt: ticket.expiresAt }
-    }
+    },
+    onRestored
   })
 }
 
+/** Each tab's live Cloud room, stopped when the tab closes or the room starts over. */
+const liveRooms = new Map<EditorStore, { stop(): void }>()
+
 /** Leaves the room's saving and status behind once its tab closes. */
 export function stopWithTab(store: EditorStore, room: { stop(): void }): void {
+  liveRooms.set(store, room)
   const stopLeaving = watch(allTabs, () => {
     if (roomForStore(store)) return
-    room.stop()
+    if (liveRooms.get(store) === room) {
+      liveRooms.delete(store)
+      room.stop()
+    }
     stopLeaving()
   })
 }
@@ -196,16 +230,41 @@ export async function startCloudRoom(store: EditorStore): Promise<void> {
     // The document may have moved, or its tab closed, while the ticket was on its way.
     const current = store.getStorageBinding() === binding && getTabForStore(store)
     if (first.provider !== 'relay' || !first.serverURL || !current) return
+    const nextTicket = () => target.client.getCollaborationTicket(binding.documentId)
+    const restart = () => void restartCloudRoom(store)
     const room = openCloudDocumentRoom(store, {
       roomId: first.roomId,
-      transport: cloudRelayTransport(first.serverURL, first, () =>
-        target.client.getCollaborationTicket(binding.documentId)
-      ),
-      permission: first.permission
+      transport: cloudRelayTransport(first.serverURL, first, nextTicket, restart),
+      permission: first.permission,
+      roomIsCurrent: async () => (await nextTicket()).roomId === first.roomId,
+      onRestored: restart
     })
     stopWithTab(store, room)
   } finally {
     starting.delete(store)
+  }
+}
+
+const restarting = new WeakSet<EditorStore>()
+
+/**
+ * Moves a tab to its document's new room after the document was restored to a version: the old
+ * room's edits are left behind, the tab shows the restored document, and it joins again.
+ */
+export async function restartCloudRoom(store: EditorStore): Promise<void> {
+  const binding = store.getStorageBinding()
+  if (!binding || restarting.has(store)) return
+  restarting.add(store)
+  try {
+    liveRooms.get(store)?.stop()
+    liveRooms.delete(store)
+    const session = roomForStore(store)
+    if (session) leaveRoom(session)
+    // The tab shows what it downloaded: another tab of the document may still write the local copy.
+    await reloadStorageDocumentInTab(store, await adoptStoredVersion(binding.documentId))
+    await startCloudRoom(store)
+  } finally {
+    restarting.delete(store)
   }
 }
 
