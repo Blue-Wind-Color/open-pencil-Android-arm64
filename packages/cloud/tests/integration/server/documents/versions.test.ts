@@ -270,11 +270,16 @@ describe('Cloud version history', () => {
         [restored.version.id, original.id].map(async (versionId) =>
           responseJSON(
             await context.request(`/documents/${context.documentId}/versions/${versionId}`),
-            v.object({ document: v.object({ download: v.object({ url: v.string() }) }) })
+            v.object({
+              document: v.object({ download: v.object({ url: v.string() }) }),
+              version: v.object({ id: v.string() })
+            })
           )
         )
       )
       expect(restoredDownload?.document.download.url).toBe(originalDownload?.document.download.url)
+      // Each comes with its version, so a link to one can show it without the history.
+      expect(originalDownload?.version.id).toBe(original.id)
       const usage = await context.runtime.database
         .selectFrom('workspaceStorageUsage')
         .select('committedBytes')

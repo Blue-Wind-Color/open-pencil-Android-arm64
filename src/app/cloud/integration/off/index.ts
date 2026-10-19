@@ -24,6 +24,10 @@ export function isCloudBinding(): boolean {
   return false
 }
 
+export function cloudDocumentAddress(): { path: string; query: Record<string, string> } | null {
+  return null
+}
+
 export function isVersionHistoryOpen(): boolean {
   return false
 }

@@ -17,7 +17,6 @@ import { exposeCollaborationActions } from '@/app/browser-bridge'
 import { shownEditorStore, versionPreviewKey } from '@/app/cloud/integration'
 import { useJoinRoom } from '@/app/collab/join'
 import { bindDesktopRoomLinks } from '@/app/collab/room/links'
-import { syncRoomRoute } from '@/app/collab/route'
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
 import { openDemoDocument } from '@/app/demo/document'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
@@ -41,6 +40,7 @@ import {
   tabCount,
   type Tab
 } from '@/app/tabs'
+import { syncTabAddress } from '@/app/tabs/address'
 import { isTauri } from '@/app/tauri/env'
 import { offerUsageStatsPrompt, startSharing } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
@@ -139,7 +139,7 @@ const collab = useCollab()
 provide(COLLAB_KEY, collab)
 exposeCollaborationActions(collab, joinRoomFromInput)
 exposeAutomationTestRequests()
-syncRoomRoute(router, route)
+syncTabAddress(router, route)
 
 useEventListener(
   document,

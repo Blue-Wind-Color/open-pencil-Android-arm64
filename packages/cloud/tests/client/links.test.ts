@@ -1,6 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { cloudDesktopLinkURL, cloudRedirectPath, cloudShareURL } from '#cloud/client'
+import {
+  cloudDesktopLinkURL,
+  cloudDocumentURL,
+  cloudRedirectPath,
+  cloudShareURL
+} from '#cloud/client'
 import type { CloudDiscovery } from '#cloud/contract'
 
 const discovery: CloudDiscovery = {
@@ -29,6 +34,23 @@ test('sharing rejects absent or non-web editor URLs', () => {
   expect(() =>
     cloudShareURL({ ...discovery, appURL: 'tauri://localhost' }, discovery.apiURL, 'id', 'secret')
   ).toThrow()
+})
+
+test('a document or version address names its server and carries no secret', () => {
+  const document = new URL(cloudDocumentURL(discovery, 'https://company.example', 'doc-id'))
+  expect(document.origin).toBe('https://editor.company.example')
+  expect(document.pathname).toBe('/cloud/documents/doc-id')
+  expect(document.searchParams.get('server')).toBe('https://company.example')
+  expect(document.searchParams.has('version')).toBe(false)
+  expect(document.hash).toBe('')
+
+  const version = new URL(
+    cloudDocumentURL(discovery, 'https://company.example', 'doc-id', 'version-id')
+  )
+  expect(version.searchParams.get('version')).toBe('version-id')
+
+  const anchored = { ...discovery, appURL: 'https://editor.company.example/#welcome' }
+  expect(new URL(cloudDocumentURL(anchored, 'https://company.example', 'doc-id')).hash).toBe('')
 })
 
 test('authentication continuation stays on the issuing origin', () => {

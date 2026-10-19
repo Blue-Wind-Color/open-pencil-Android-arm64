@@ -79,8 +79,13 @@ Choose **File → Show version history** to list a document's versions in the ri
 - Select a version to look at it. It opens read-only where the document was, while the document itself stays as it is; select **Current version** or close the list to go back.
 - **File → Save to version history…** (⌥⌘S), or **+** in the list, names the document as it is now with a title and what changed.
 - A version's **⋯** menu edits or deletes its info, makes a new document from it with **Duplicate**, or brings it back with **Restore this version**. Restoring keeps the state it replaces in the history, closes the list, and moves everyone who has the document open on to the restored version.
+- **Copy link** in the same menu copies a link that opens the document with that version shown.
 
-People who can only view see the history but can't change it.
+People who can only view see the history and can copy links, but can't change it.
+
+## Document Links
+
+In the web app, the address bar shows the Cloud document you're looking at, and the version you have open in the history, so you can reload or pass the address on. Opening it signs you in to the document's server if needed, then opens the document for anyone with access to it. A link to a server you have never used only names the server; connect to it in **Settings → Cloud** first.
 
 ## Share a Document
 

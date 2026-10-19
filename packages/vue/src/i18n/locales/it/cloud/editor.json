@@ -216,6 +216,8 @@
   "syncConflict": "Modificato anche altrove: scegli quale versione mantenere",
   "syncError": "Impossibile caricare le modifiche",
   "shareLinkFailed": "Questo link non apre un documento. Chiedine uno nuovo.",
+  "documentLinkFailed": "Impossibile aprire questo documento. Chiedi l’accesso al proprietario.",
+  "documentLinkUnknownServer": "Accedi prima a {host} per aprire questo link.",
   "connectServerHeading": "Collega il server del tuo team",
   "connectServerDescription": "Inserisci l’indirizzo che il tuo team usa per OpenPencil Cloud.",
   "checkingServer": "Verifica del server…",

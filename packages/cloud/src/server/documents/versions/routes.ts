@@ -71,13 +71,13 @@ export function createDocumentVersionRoutes(service: DocumentVersionService) {
     )
     .get('/documents/:documentId/versions/:versionId', (context) =>
       answer(context, async () =>
-        context.json({
-          document: await service.download(
+        context.json(
+          await service.download(
             context.get('actor').userId,
             context.req.param('documentId'),
             context.req.param('versionId')
           )
-        })
+        )
       )
     )
     .post('/documents/:documentId/versions/:versionId/restore', (context) =>

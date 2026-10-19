@@ -380,7 +380,7 @@ export async function reloadStorageDocumentInTab(
 export async function openStorageDocumentInNewTab(
   document: StorageDocument,
   location: StorageLocation = { providerId: activeStorageProviderID.value }
-): Promise<void> {
+): Promise<EditorStore> {
   const binding: StorageDocumentBinding = {
     ...storageLocationOf(location),
     documentId: document.id
@@ -389,7 +389,7 @@ export async function openStorageDocumentInNewTab(
   if (existing) {
     switchTab(existing.id)
     rememberRecentStorageDocument(binding, document.name)
-    return
+    return existing.store
   }
 
   const { store, created } = reusableTabStore()
@@ -427,6 +427,7 @@ export async function openStorageDocumentInNewTab(
   } finally {
     if (succeeded) load.complete()
   }
+  return store
 }
 
 export async function openFileInNewTab(

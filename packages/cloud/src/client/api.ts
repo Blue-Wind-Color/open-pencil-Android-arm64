@@ -11,6 +11,7 @@ import {
   documentInvitationSchema,
   documentShareSchema,
   documentSummarySchema,
+  documentVersionDownloadSchema,
   documentVersionResponseSchema,
   documentVersionsSchema,
   restoredDocumentSchema,
@@ -36,6 +37,7 @@ import {
   type DocumentShare,
   type DocumentSummary,
   type DocumentVersion,
+  type DocumentVersionDownload,
   type DocumentVersions,
   type DuplicateDocumentVersionInput,
   type SaveDocumentVersionInput,
@@ -493,15 +495,17 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       )
       return response.version
     },
-    async getDocumentVersion(documentId: string, versionId: string): Promise<DocumentDownload> {
-      const response = await parseResponse(
+    async getDocumentVersion(
+      documentId: string,
+      versionId: string
+    ): Promise<DocumentVersionDownload> {
+      return parseResponse(
         client.documents[':documentId'].versions[':versionId'].$get({
           param: { documentId, versionId }
         }),
-        downloadResponseSchema,
+        documentVersionDownloadSchema,
         options.onDiagnostic
       )
-      return response.document
     },
     async restoreDocumentVersion(documentId: string, versionId: string) {
       return parseResponse(

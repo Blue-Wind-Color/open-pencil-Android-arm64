@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { documentSummarySchema } from './documents'
+import { documentDownloadSchema, documentSummarySchema } from './documents'
 
 /** How long a version's name may be; the history list shows the start of longer ones. */
 export const DOCUMENT_VERSION_NAME_MAX_LENGTH = 100
@@ -65,6 +65,12 @@ export const duplicateDocumentVersionSchema = v.object({
 export type DuplicateDocumentVersionInput = v.InferOutput<typeof duplicateDocumentVersionSchema>
 
 export const documentVersionResponseSchema = v.object({ version: documentVersionSchema })
+/** A version with where to download it, so a link to it can show it without the history. */
+export const documentVersionDownloadSchema = v.object({
+  document: documentDownloadSchema,
+  version: documentVersionSchema
+})
+export type DocumentVersionDownload = v.InferOutput<typeof documentVersionDownloadSchema>
 export const restoredDocumentSchema = v.object({
   document: documentSummarySchema,
   version: documentVersionSchema

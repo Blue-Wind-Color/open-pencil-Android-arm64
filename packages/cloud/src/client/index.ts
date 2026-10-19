@@ -1,5 +1,12 @@
 export { cloudEditorReturnURL, cloudSignInURL } from './auth/navigation'
-export { cloudDesktopLinkURL, cloudRedirectPath, cloudShareURL, type CloudLinkKind } from './links'
+export {
+  cloudDesktopLinkURL,
+  cloudDocumentPath,
+  cloudDocumentURL,
+  cloudRedirectPath,
+  cloudShareURL,
+  type CloudLinkKind
+} from './links'
 export {
   CloudAPIError,
   createCloudAPIClient,

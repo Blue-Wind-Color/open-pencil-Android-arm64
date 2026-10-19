@@ -216,6 +216,8 @@
   "syncConflict": "También se ha editado en otro sitio: elige qué versión conservar",
   "syncError": "No se pudieron subir los cambios",
   "shareLinkFailed": "Este enlace no abre ningún documento. Pide uno nuevo.",
+  "documentLinkFailed": "No se pudo abrir este documento. Pide acceso a su propietario.",
+  "documentLinkUnknownServer": "Inicia sesión en {host} para abrir este enlace.",
   "connectServerHeading": "Conecta el servidor de tu equipo",
   "connectServerDescription": "Escribe la dirección que usa tu equipo para OpenPencil Cloud.",
   "checkingServer": "Comprobando el servidor…",

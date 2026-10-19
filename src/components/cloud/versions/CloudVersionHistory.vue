@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useClipboard } from '@vueuse/core'
 import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -16,6 +17,7 @@ import { computed, onMounted, useTemplateRef } from 'vue'
 import type { DocumentVersion } from '@open-pencil/cloud/contract'
 import { useCloudMessages, useI18n } from '@open-pencil/vue'
 
+import { canLinkToVersions, cloudVersionLinkURL } from '@/app/cloud/documents/link'
 import { duplicateVersion, editVersion, restoreVersion } from '@/app/cloud/versions/actions'
 import {
   closeVersionHistory,
@@ -118,6 +120,17 @@ const duplicate = (version: DocumentVersion) =>
 const deleteInfo = (version: DocumentVersion) =>
   run(() => editVersion(shown, version, { name: null, description: '' }))
 
+const { copy } = useClipboard({ legacy: true })
+// A server that advertises no editor has no address to link to.
+const linkable = computed(() => canLinkToVersions(shown))
+
+async function copyLink(version: DocumentVersion) {
+  const url = cloudVersionLinkURL(shown, version.id)
+  if (!url) return
+  await copy(url)
+  toast.info(t.value.shareLinkCopied)
+}
+
 function setScope(value: unknown) {
   list.onlyYours.value = value === 'yours'
 }
@@ -207,7 +220,7 @@ function setScope(value: unknown) {
         :last="index === list.versions.value.length - 1"
         @select="select(version)"
       >
-        <template v-if="list.canEdit.value" #actions>
+        <template v-if="list.canEdit.value || linkable" #actions>
           <DropdownMenuRoot :modal="false">
             <DropdownMenuTrigger as-child>
               <IconButton :label="t.versionOptions">
@@ -217,28 +230,37 @@ function setScope(value: unknown) {
             <DropdownMenuPortal>
               <DropdownMenuContent :class="menuCls.content" align="end" :side-offset="4">
                 <MenuScrollArea>
+                  <template v-if="list.canEdit.value">
+                    <DropdownMenuItem
+                      :class="menuCls.item"
+                      @select="openVersionDialog(shown, version)"
+                    >
+                      {{ version.name ? t.editVersionInfo : t.addToVersionHistory }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      v-if="!version.current"
+                      :class="menuCls.item"
+                      @select="restore(version)"
+                    >
+                      {{ t.restoreVersion }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem :class="menuCls.item" @select="duplicate(version)">
+                      {{ t.duplicateVersion }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      v-if="version.name"
+                      :class="menuCls.item"
+                      @select="deleteInfo(version)"
+                    >
+                      {{ t.deleteVersionInfo }}
+                    </DropdownMenuItem>
+                  </template>
                   <DropdownMenuItem
+                    v-if="linkable"
                     :class="menuCls.item"
-                    @select="openVersionDialog(shown, version)"
+                    @select="copyLink(version)"
                   >
-                    {{ version.name ? t.editVersionInfo : t.addToVersionHistory }}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    v-if="!version.current"
-                    :class="menuCls.item"
-                    @select="restore(version)"
-                  >
-                    {{ t.restoreVersion }}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem :class="menuCls.item" @select="duplicate(version)">
-                    {{ t.duplicateVersion }}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    v-if="version.name"
-                    :class="menuCls.item"
-                    @select="deleteInfo(version)"
-                  >
-                    {{ t.deleteVersionInfo }}
+                    {{ t.shareCopyLink }}
                   </DropdownMenuItem>
                 </MenuScrollArea>
               </DropdownMenuContent>

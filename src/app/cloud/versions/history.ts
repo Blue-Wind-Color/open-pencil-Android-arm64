@@ -134,7 +134,10 @@ export async function previewVersion(store: EditorStore, version: DocumentVersio
   const document = history.store
   let preview: EditorStore
   try {
-    const download = await target.client.getDocumentVersion(target.documentId, version.id)
+    const { document: download } = await target.client.getDocumentVersion(
+      target.documentId,
+      version.id
+    )
     const bytes = await downloadCloudRevision(download, storageFetch, { signal: load.signal })
     const name = document.state.documentName
     preview = createEditorStore(await readFigBytes(bytes, name, load.signal))

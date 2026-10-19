@@ -20,7 +20,9 @@ const router = createRouter({
     { path: '/share/:roomId', component: WorkspaceView },
     // Cloud invitations and links; the app takes their secret out of the address on start.
     { path: '/cloud/invitations/:invitationId', component: WorkspaceView },
-    { path: '/cloud/share/:shareId', component: WorkspaceView }
+    { path: '/cloud/share/:shareId', component: WorkspaceView },
+    // A Cloud document, or one of its versions, for whoever signs in with access to it.
+    { path: '/cloud/documents/:documentId', component: WorkspaceView }
   ]
 })
 
