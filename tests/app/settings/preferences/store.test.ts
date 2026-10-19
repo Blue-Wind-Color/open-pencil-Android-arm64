@@ -9,6 +9,14 @@ describe('parseAppPreferences', () => {
     }
   })
 
+  test('keeps a valid recent files limit and defaults missing or invalid limits to ten', () => {
+    expect(parseAppPreferences({}).files.recentLimit).toBe(10)
+    expect(parseAppPreferences({ files: { recentLimit: 25 } }).files.recentLimit).toBe(25)
+    for (const recentLimit of [undefined, null, '25', 0, -1, 2.5, 1001, Infinity, Number.NaN]) {
+      expect(parseAppPreferences({ files: { recentLimit } }).files.recentLimit).toBe(10)
+    }
+  })
+
   test('pings by default and treats an unreadable usage stats answer as never asked', () => {
     expect(DEFAULT_APP_PREFERENCES.sharing).toEqual({ dailyPing: true, usageStats: 'unset' })
     expect(

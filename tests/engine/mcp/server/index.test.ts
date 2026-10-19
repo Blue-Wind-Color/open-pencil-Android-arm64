@@ -187,6 +187,7 @@ describe('MCP server', () => {
     expect(byName.get('save_file')?.effect).toBe('write')
     expect(byName.get('open_file')?.effect).toBe('read')
     expect(byName.get('open_file')?.capabilities).toEqual(['filesystem:read', 'document:read'])
+    expect(byName.get('list_recent_files')?.capabilities).toEqual(['filesystem:read'])
     expect(byName.get('close_file')?.effect).toBe('write')
     expect(byName.get('update_node')?.effect).toBe('write')
     expect(byName.get('new_document')?.capabilities).toEqual(['document:write', 'filesystem:write'])
@@ -487,6 +488,26 @@ describe('MCP server with mcpRoot', () => {
     })
   })
 
+  test('list_recent_files keeps only recent files inside mcpRoot', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      const inside = join(TEST_MCP_ROOT, 'recent.fig')
+      const outside = join(TEST_MCP_ROOT, '..', 'outside.fig')
+      const updatedAt = '2026-01-01T00:00:00.000Z'
+      browser.results.set('list_recent_files', {
+        files: [
+          { path: inside, name: 'recent.fig', updated_at: updatedAt },
+          { path: outside, name: 'outside.fig', updated_at: updatedAt }
+        ]
+      })
+
+      const result = await client.callTool({ name: 'list_recent_files', arguments: {} })
+      expect(result.isError).not.toBe(true)
+      expect(parseResult(result)).toEqual({
+        files: [{ path: inside, name: 'recent.fig', updated_at: updatedAt }]
+      })
+    })
+  })
+
   test('registers close_file as destructive and forwards its unsaved choice and target', async () => {
     await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
       const { tools } = await client.listTools()
@@ -586,6 +607,7 @@ describe('MCP server with mcpRoot', () => {
       const { tools } = await client.listTools()
       const names = tools.map((t) => t.name)
       expect(names).not.toContain('open_file')
+      expect(names).not.toContain('list_recent_files')
       expect(names).not.toContain('new_document')
     })
   })

@@ -11,6 +11,7 @@ import {
   normalizeToolbarLayout,
   type ToolbarLayout
 } from '@/app/editor/toolbar/layout'
+import { DEFAULT_RECENT_FILES_LIMIT, recentFilesLimitSchema } from '@/app/recent-files/limit'
 import {
   accentPreferenceSchema,
   DEFAULT_ACCENT,
@@ -77,6 +78,7 @@ export interface AppPreferences {
     /** Whether the view follows our AI agents while they work. */
     followAgents: boolean
   }
+  files: { recentLimit: number }
   version: 1
   recovery: {
     enabled: boolean
@@ -104,6 +106,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     changePreviewSize: 'medium',
     followAgents: true
   },
+  files: { recentLimit: DEFAULT_RECENT_FILES_LIMIT },
   version: 1,
   recovery: { enabled: true },
   editing: {
@@ -151,6 +154,9 @@ const appPreferencesSchema = section({
       defaults.chat.changePreviewSize
     ),
     followAgents: v.fallback(v.boolean(), defaults.chat.followAgents)
+  }),
+  files: section({
+    recentLimit: v.fallback(recentFilesLimitSchema, defaults.files.recentLimit)
   }),
   version: v.fallback(v.literal(1), 1),
   recovery: section({ enabled: v.fallback(v.boolean(), defaults.recovery.enabled) }),

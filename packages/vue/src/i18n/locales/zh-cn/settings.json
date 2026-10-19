@@ -1,4 +1,9 @@
 {
+  "recentFiles": "最近的文件",
+  "recentFilesDescription": "选择在最近文件列表和“打开最近的文件”菜单中保留的文件数量。",
+  "recentFilesLimit": "最近文件数量",
+  "recentFilesLimitCustom": "自定义…",
+  "recentFilesLimitRange": "请输入 {min} 到 {max} 之间的整数。",
   "appearance": "外观",
   "snapToGeometry": "吸附到几何图形",
   "snapToGeometryDescription": "将拖动的矢量点与路径中的其他点对齐。",

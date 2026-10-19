@@ -25,6 +25,7 @@ import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { focusNodesByName } from '@/app/editor/selection/focus'
 import { notificationMessages } from '@/app/i18n/notifications'
+import { recentFilesAvailable } from '@/app/recent-files/preferences'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { useDocumentDrop } from '@/app/shell/document-drop'
 import { useKeyboard } from '@/app/shell/keyboard/use'
@@ -77,10 +78,7 @@ watch(
 const router = useRouter()
 const createdInitialTab = tabCount() === 0
 const shouldCreateHome =
-  route.path === '/' &&
-  !appRuntimeConfig.test &&
-  !route.meta.demo &&
-  (isTauri() || appRuntimeConfig.recentFiles)
+  route.path === '/' && !appRuntimeConfig.test && !route.meta.demo && recentFilesAvailable()
 const { collaboration } = useI18n()
 const joinRoomFromInput = useJoinRoom()
 

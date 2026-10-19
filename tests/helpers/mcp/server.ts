@@ -46,6 +46,8 @@ export interface MockBrowser {
   ws: WebSocket
   graph: SceneGraph
   requests: MockBrowserRequest[]
+  /** Results a test sets for app commands, sent instead of the mock's own. */
+  results: Map<string, unknown>
   close: () => void
 }
 
@@ -272,6 +274,7 @@ export function connectMockBrowser(
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(`ws://127.0.0.1:${port}`)
     const requests: MockBrowserRequest[] = []
+    const results = new Map<string, unknown>()
     const token = authToken ?? 'test-token-' + randomHex(8)
 
     let settled = false
@@ -292,7 +295,9 @@ export function connectMockBrowser(
 
         try {
           requests.push({ command: msg.command, args: msg.args })
-          const result = await handleMockCommand(graph, msg.command, msg.args)
+          const result = results.has(msg.command)
+            ? results.get(msg.command)
+            : await handleMockCommand(graph, msg.command, msg.args)
           ws.send(JSON.stringify({ type: 'response', id: msg.id, ok: true, result }))
         } catch (e) {
           ws.send(
@@ -313,7 +318,7 @@ export function connectMockBrowser(
         // the browser as connected, causing race conditions.
         void waitForBrowserRegistration(port).then(
           () => {
-            resolve({ ws, graph, requests, close: () => ws.close() })
+            resolve({ ws, graph, requests, results, close: () => ws.close() })
             return undefined
           },
           (err) => {

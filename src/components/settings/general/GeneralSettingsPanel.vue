@@ -4,6 +4,8 @@ import { computed } from 'vue'
 import { type Locale, useI18n } from '@open-pencil/vue'
 
 import { recoveryEnabled, setRecoveryEnabled } from '@/app/document/recovery/preferences'
+import { RECENT_FILES_LIMIT_MIN, RECENT_FILES_LIMIT_MAX } from '@/app/recent-files/limit'
+import { recentFilesAvailable, recentFilesLimit } from '@/app/recent-files/preferences'
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { animationPreference } from '@/app/shell/motion'
@@ -13,11 +15,19 @@ import AccentColorPicker from '@/components/settings/general/AccentColorPicker.v
 import CollaborationNameSection from '@/components/settings/general/CollaborationNameSection.vue'
 import RenderingSettingsSection from '@/components/settings/general/RenderingSettingsSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
+import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
+import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { availableLocales, locale, localeLabels, menu, recovery, setLocale, settings } = useI18n()
+
+const showRecentFiles = recentFilesAvailable()
+const recentFilesPresets = [10, 25, 50, 100]
+const recentFilesRangeMessage = computed(() =>
+  settings.value.recentFilesLimitRange({ min: RECENT_FILES_LIMIT_MIN, max: RECENT_FILES_LIMIT_MAX })
+)
 
 const { theme } = useAppTheme()
 const selectUI = { trigger: 'w-full sm:w-52' }
@@ -176,6 +186,27 @@ const snapToPixelGrid = computed({
       </SettingsGroup>
 
       <p class="text-[11px] text-muted">{{ settings.temporaryDisableSnappingHint }}</p>
+    </SettingsSection>
+
+    <SettingsSection v-if="showRecentFiles">
+      <template #title>{{ settings.recentFiles }}</template>
+      <template #description>{{ settings.recentFilesDescription }}</template>
+      <SettingsGroup>
+        <SettingsRow
+          :label="settings.recentFilesLimit"
+          class="max-sm:flex-col max-sm:items-stretch"
+        >
+          <PresetNumberField
+            v-model:number="recentFilesLimit"
+            :presets="recentFilesPresets"
+            :min="RECENT_FILES_LIMIT_MIN"
+            :max="RECENT_FILES_LIMIT_MAX"
+            :label="settings.recentFilesLimit"
+            :custom-label="settings.recentFilesLimitCustom"
+            :range-message="recentFilesRangeMessage"
+          />
+        </SettingsRow>
+      </SettingsGroup>
     </SettingsSection>
 
     <CredentialSettingsSection />

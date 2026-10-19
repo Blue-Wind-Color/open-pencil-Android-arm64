@@ -4,6 +4,7 @@ import { endAgentSession } from '@/app/automation/agents'
 import {
   handleActivateDocument,
   handleGetSettings,
+  handleListRecentFiles,
   handleRedo,
   handleUndo,
   handleUpdateSettings
@@ -77,6 +78,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
     if (command === 'list_documents') {
       return { ok: true, result: { documents: listAutomationDocuments(store) } }
     }
+    if (command === 'list_recent_files') return handleListRecentFiles()
     if (command === 'agent_session_closed') {
       const session = isUnknownRecord(args) ? args.session : undefined
       if (typeof session === 'string') endAgentSession(session)

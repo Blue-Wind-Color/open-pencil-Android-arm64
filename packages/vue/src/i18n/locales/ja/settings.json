@@ -1,4 +1,9 @@
 {
+  "recentFiles": "最近使ったファイル",
+  "recentFilesDescription": "最近使ったファイルの一覧とメニューに保持するファイル数を選択します。",
+  "recentFilesLimit": "最近使ったファイルの数",
+  "recentFilesLimitCustom": "カスタム…",
+  "recentFilesLimitRange": "{min} から {max} までの整数を入力してください。",
   "appearance": "外観",
   "snapToGeometry": "ジオメトリにスナップ",
   "snapToGeometryDescription": "ドラッグしたベクターポイントをパス内の他のポイントに揃えます。",

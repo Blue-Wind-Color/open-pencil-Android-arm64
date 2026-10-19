@@ -9,9 +9,9 @@ import {
   type StorageProviderID
 } from '@/app/integrations/storage'
 
+import { recentFilesLimit } from './preferences'
 import { clearRecentFileThumbnails } from './thumbnails'
 
-const MAX_RECENT_DOCUMENTS = 10
 const RECENT_DOCUMENTS_STORAGE_KEY = 'open-pencil:recent-documents'
 
 export interface RecentLocalDocument {
@@ -54,7 +54,7 @@ function storageDocumentId(binding: StorageDocumentBinding): string {
 }
 
 function normalizedRecentDocuments(): RecentDocument[] {
-  return recentDocuments.value.slice(0, MAX_RECENT_DOCUMENTS)
+  return recentDocuments.value.slice(0, recentFilesLimit.value)
 }
 
 export const recentFiles = computed<RecentDocument[]>(normalizedRecentDocuments)
@@ -69,7 +69,7 @@ function remember(document: RecentDocument): void {
   recentDocuments.value = [
     document,
     ...normalizedRecentDocuments().filter((recent) => recent.id !== document.id)
-  ].slice(0, MAX_RECENT_DOCUMENTS)
+  ].slice(0, recentFilesLimit.value)
 }
 
 export function rememberRecentFile(path: string): void {

@@ -67,6 +67,15 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
             enabled: true
           } satisfies ToolDescriptor,
           {
+            name: 'list_recent_files',
+            description:
+              'List recently opened design files inside the configured MCP root, newest first, with their paths, names, and when they were last opened. Reopen one with open_file.',
+            effect: 'read',
+            availability: 'filesystem',
+            capabilities: ['filesystem:read'],
+            enabled: true
+          } satisfies ToolDescriptor,
+          {
             name: 'new_document',
             description:
               'Create a new empty document with an optional save path inside the configured MCP root.',

@@ -1,4 +1,9 @@
 {
+  "recentFiles": "Zuletzt verwendete Dateien",
+  "recentFilesDescription": "Wähle, wie viele Dateien in der Liste und im Menü „Zuletzt verwendet“ gespeichert werden.",
+  "recentFilesLimit": "Anzahl zuletzt verwendeter Dateien",
+  "recentFilesLimitCustom": "Benutzerdefiniert…",
+  "recentFilesLimitRange": "Gib eine ganze Zahl zwischen {min} und {max} ein.",
   "appearance": "Darstellung",
   "snapToGeometry": "An Geometrie ausrichten",
   "snapToGeometryDescription": "Gezogene Vektorpunkte an anderen Punkten im Pfad ausrichten.",

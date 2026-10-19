@@ -1,4 +1,9 @@
 {
+  "recentFiles": "Недавние файлы",
+  "recentFilesDescription": "Выберите, сколько файлов хранить в списке недавних файлов и меню их открытия.",
+  "recentFilesLimit": "Количество недавних файлов",
+  "recentFilesLimitCustom": "Другое…",
+  "recentFilesLimitRange": "Введите целое число от {min} до {max}.",
   "appearance": "Внешний вид",
   "snapToGeometry": "Привязка к геометрии",
   "snapToGeometryDescription": "Выравнивать перетаскиваемые векторные точки по другим точкам контура.",

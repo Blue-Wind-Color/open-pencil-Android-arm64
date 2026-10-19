@@ -1,4 +1,9 @@
 {
+  "recentFiles": "Archivos recientes",
+  "recentFilesDescription": "Elige cuántos archivos conservar en la lista de recientes y en el menú Abrir recientes.",
+  "recentFilesLimit": "Número de archivos recientes",
+  "recentFilesLimitCustom": "Personalizado…",
+  "recentFilesLimitRange": "Introduce un número entero entre {min} y {max}.",
   "appearance": "Apariencia",
   "snapToGeometry": "Ajustar a la geometría",
   "snapToGeometryDescription": "Alinea los puntos vectoriales arrastrados con otros puntos del trazado.",

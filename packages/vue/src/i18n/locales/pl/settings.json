@@ -1,4 +1,9 @@
 {
+  "recentFiles": "Ostatnie pliki",
+  "recentFilesDescription": "Wybierz, ile plików zachować na liście ostatnich plików i w menu ich otwierania.",
+  "recentFilesLimit": "Liczba ostatnich plików",
+  "recentFilesLimitCustom": "Własna…",
+  "recentFilesLimitRange": "Wpisz liczbę całkowitą od {min} do {max}.",
   "appearance": "Wygląd",
   "snapToGeometry": "Przyciągaj do geometrii",
   "snapToGeometryDescription": "Wyrównuj przeciągane punkty wektorowe do innych punktów ścieżki.",

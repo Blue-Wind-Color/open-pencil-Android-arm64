@@ -1,4 +1,9 @@
 {
+  "recentFiles": "File recenti",
+  "recentFilesDescription": "Scegli quanti file conservare nell’elenco e nel menu dei file recenti.",
+  "recentFilesLimit": "Numero di file recenti",
+  "recentFilesLimitCustom": "Personalizzato…",
+  "recentFilesLimitRange": "Inserisci un numero intero da {min} a {max}.",
   "appearance": "Aspetto",
   "snapToGeometry": "Aggancia alla geometria",
   "snapToGeometryDescription": "Allinea i punti vettoriali trascinati agli altri punti del tracciato.",
