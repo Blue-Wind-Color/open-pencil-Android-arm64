@@ -80,6 +80,7 @@ function cloneIntoGraph(
       instances.add(id)
       graph.instanceIndex.set(copy.componentId, instances)
     }
+    if (copy.type === 'CONNECTOR') graph.connectorIds.add(id)
   }
 
   const rootClone = graph.getNode(source.rootId)

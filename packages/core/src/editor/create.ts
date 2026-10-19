@@ -35,7 +35,9 @@ import { createClipboardPropertiesActions } from './clipboard/paste/properties'
 import { createColorSpaceActions } from './color-space'
 import { createComponentSyncScheduler } from './component-sync'
 import { createComponentActions } from './components'
+import { createConnectorDrawActions, createConnectorEndpointActions } from './connectors/draw'
 import { createConnectorRouting } from './connectors/routing'
+import { createConnectorStyleActions } from './connectors/style'
 import { createDesignTokenActions } from './design-tokens'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
@@ -297,6 +299,13 @@ export function createEditor(options?: EditorOptions) {
   const stickies = createStickyActions(ctx)
   const statuses = createStatusActions(ctx)
   createConnectorRouting(ctx)
+  const connectorDrawing = createConnectorDrawActions(ctx)
+  const connectorEndpoints = createConnectorEndpointActions(
+    ctx,
+    nodes.beginNodePreview,
+    clipboard.deleteNodes
+  )
+  const connectorStyles = createConnectorStyleActions(ctx)
   const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)
   const preview = createPlayActions(ctx)
@@ -468,6 +477,9 @@ export function createEditor(options?: EditorOptions) {
     getShownStatus: statuses.getShownStatus,
     setStatus: statuses.setStatus,
     setStatusWorkflow: statuses.setStatusWorkflow,
+    ...connectorDrawing,
+    ...connectorEndpoints,
+    ...connectorStyles,
     ...shaders,
     ...shaderFrames,
 

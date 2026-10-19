@@ -224,6 +224,8 @@ export class SceneGraph {
   private derivedLayoutDepth = 0
   positionPreviewVersion = 0
   instanceIndex = new Map<string, Set<string>>()
+  /** Every connector in the graph, so routing need not scan every layer. */
+  connectorIds = new Set<string>()
 
   constructor(private readonly idGenerator: () => string = generateId) {
     const root = createDefaultNode(this.idGenerator, 'FRAME', {
@@ -527,6 +529,7 @@ export class SceneGraph {
   private registerNode(node: SceneNode, parentId: string | null): SceneNode {
     node.parentId = parentId
     this.nodes.set(node.id, node)
+    if (node.type === 'CONNECTOR') this.connectorIds.add(node.id)
     for (const observer of this.changeObservers) observer.created(node)
     if (node.type === 'INSTANCE' && node.componentId) {
       let set = this.instanceIndex.get(node.componentId)
@@ -867,6 +870,7 @@ export class SceneGraph {
     if (node.type === 'INSTANCE' && node.componentId) {
       this.instanceIndex.get(node.componentId)?.delete(id)
     }
+    this.connectorIds.delete(id)
     this.nodes.delete(id)
     this.emitter.emit('node:deleted', id, node.parentId)
   }

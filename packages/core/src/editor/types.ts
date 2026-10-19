@@ -24,6 +24,7 @@ import type {
   SelectionTheme
 } from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
+import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { PlayState } from '#core/editor/play/actions'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
@@ -43,6 +44,7 @@ export type Tool =
   | 'STAR'
   | 'TEXT'
   | 'STICKY'
+  | 'CONNECTOR'
   | 'PEN'
   | 'PENCIL'
   | 'HAND'
@@ -166,6 +168,8 @@ export interface EditorViewState {
     side?: 'top' | 'right' | 'bottom' | 'left'
   } | null
   shapeHandleHover: ShapeHandleHover | null
+  /** The layer a connector end being drawn or dragged would attach to, and by which magnet. */
+  connectorTarget: ConnectorTarget | null
   panX: number
   pageColor: Color
   panY: number

@@ -55,6 +55,7 @@ export function deserializeLibraryRevision(
   graph.documentColorSpace = revision.graph.documentColorSpace
   graph.instanceIndex = new Map()
   for (const node of graph.getAllNodes()) {
+    if (node.type === 'CONNECTOR') graph.connectorIds.add(node.id)
     if (!node.componentId) continue
     const instances = graph.instanceIndex.get(node.componentId) ?? new Set<string>()
     instances.add(node.id)

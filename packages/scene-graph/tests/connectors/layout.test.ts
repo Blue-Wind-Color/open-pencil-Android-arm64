@@ -6,6 +6,7 @@ import {
   buildConnectorSublayers,
   connectorRouteEnds,
   connectorSublayers,
+  createConnector,
   freeEndpoint,
   layoutConnector,
   SceneGraph,
@@ -120,4 +121,16 @@ describe('connector layout', () => {
         .sort()
     ).toEqual([nested.id, inside.id].sort())
   })
+})
+
+test('the graph keeps its connectors indexed as they come and go', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const connector = createConnector(graph, page, {
+    start: freeEndpoint(0, 0),
+    end: freeEndpoint(100, 0)
+  })
+  expect(graph.connectorIds.has(connector.id)).toBe(true)
+  graph.deleteNode(connector.id)
+  expect(graph.connectorIds.has(connector.id)).toBe(false)
 })

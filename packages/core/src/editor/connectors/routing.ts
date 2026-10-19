@@ -2,6 +2,7 @@ import { isEqual, pick } from 'es-toolkit'
 
 import {
   connectorRouteEnds,
+  connectorsAffectedBy,
   freeEndpoint,
   generatedFrameOwner,
   layoutConnector,
@@ -58,11 +59,6 @@ function carriedFreeEnds(graph: SceneGraph, connector: SceneNode): Partial<Scene
   return isEqual(changes, pick(connector, ['connectorStart', 'connectorEnd'])) ? null : changes
 }
 
-/** Whether `id` or a layer above it is one of `ids`. */
-function underAny(graph: SceneGraph, id: string, ids: ReadonlySet<string>): boolean {
-  return graph.closest(id, (node) => ids.has(node.id)) !== undefined
-}
-
 /**
  * Keeps connectors routed as the layers they attach to move, resize, or change, as FigJam does:
  * while a drag previews, and when an edit, undo, or redo lands. A route derives from the layers,
@@ -71,8 +67,6 @@ function underAny(graph: SceneGraph, id: string, ids: ReadonlySet<string>): bool
  * once the page it is on is shown.
  */
 export function createConnectorRouting(ctx: EditorContext) {
-  let indexed: SceneGraph | null = null
-  const connectorIds = new Set<string>()
   /** Layers changed since the last pass, and whether any change was more than a preview. */
   let pending: { ids: Set<string>; committed: boolean } | null = null
   let routing = false
@@ -84,17 +78,6 @@ export function createConnectorRouting(ctx: EditorContext) {
   const unrecorded = new Map<string, Pick<SceneNode, 'connectorStart' | 'connectorEnd'>>()
   /** Steps already seen at the top of the history, to tell a new step from undo and redo. */
   const seenSteps = new WeakSet<UndoEntry>()
-
-  function connectors(graph: SceneGraph): Set<string> {
-    if (indexed !== graph) {
-      indexed = graph
-      connectorIds.clear()
-      for (const node of graph.getAllNodes()) {
-        if (node.type === 'CONNECTOR') connectorIds.add(node.id)
-      }
-    }
-    return connectorIds
-  }
 
   function schedule(id: string, committed: boolean) {
     if (routing || ctx.graph.isApplyingImportedState) return
@@ -193,19 +176,7 @@ export function createConnectorRouting(ctx: EditorContext) {
     pending = null
     if (!batch) return
     const graph = ctx.graph
-    const ids = connectors(graph)
-    const affected: SceneNode[] = []
-    for (const id of ids) {
-      const connector = graph.getNode(id)
-      if (!connector) {
-        ids.delete(id)
-        continue
-      }
-      const watched = [id, connector.connectorStart?.nodeId, connector.connectorEnd?.nodeId]
-      if (watched.some((watchedId) => watchedId && underAny(graph, watchedId, batch.ids))) {
-        affected.push(connector)
-      }
-    }
+    const affected = connectorsAffectedBy(graph, batch.ids)
     if (affected.length === 0) return
     routing = true
     try {
@@ -241,9 +212,6 @@ export function createConnectorRouting(ctx: EditorContext) {
   ctx.onEditorEvent('page:changed', (pageId) => routeShownPage(ctx.graph, pageId))
   ctx.onEditorEvent('node:updated', (id, changes) => changed(id, changes, true))
   ctx.onEditorEvent('node:previewUpdated', (id, changes) => changed(id, changes, false))
-  ctx.onEditorEvent('node:created', (node) => {
-    if (node.type === 'CONNECTOR' && indexed === ctx.graph) connectorIds.add(node.id)
-  })
   ctx.onEditorEvent('node:reparented', (id) => schedule(id, true))
   // Moving a layer into another parent by reordering moves it as reparenting does.
   ctx.onEditorEvent('node:reordered', (id, parentId, _index, previousParentId) => {
