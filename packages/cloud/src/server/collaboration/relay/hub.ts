@@ -207,6 +207,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   ) {
     const readOnly = peer.authorization.permission === 'view'
     if (readOnly && !VIEWER_ACTIONS.has(namespace)) return
+    // Only the server says the history changed.
+    if (namespace === COLLAB_ACTIONS.versions) return
 
     let forwarded = payload
     if (namespace === COLLAB_ACTIONS.awareness) {
@@ -449,6 +451,20 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         }
         room.peers.clear()
         room.document.destroy()
+      }
+    },
+
+    /** Tells everyone in a document's rooms that its version history changed. */
+    announceVersions(documentId: string) {
+      const frame = encodeRelayServerFrame({
+        type: 'message',
+        namespace: COLLAB_ACTIONS.versions,
+        from: RELAY_SERVER_PEER,
+        payload: new Uint8Array()
+      })
+      for (const room of rooms.values()) {
+        if (room.identity.documentId !== documentId) continue
+        for (const peer of room.peers.values()) peer.socket.send(frame)
       }
     },
 

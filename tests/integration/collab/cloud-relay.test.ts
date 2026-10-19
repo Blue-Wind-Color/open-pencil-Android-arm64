@@ -10,6 +10,7 @@ import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { openCloudDocumentRoom } from '@/app/cloud/rooms/live'
+import { versionListRevision } from '@/app/cloud/versions/history'
 import { connectCollabRoom } from '@/app/collab/room/connection'
 import { createEditorStore } from '@/app/editor/session'
 
@@ -122,6 +123,31 @@ describe('collaboration through the Cloud relay', () => {
       user: { name: 'Grace', color: '#000' },
       cloud: { kind: 'guest', name: 'Grace', permission: 'view' }
     })
+  })
+})
+
+describe('Cloud document rooms, version history', () => {
+  test('a tab reloads its history when the server says it changed', async () => {
+    const relay = await startRelay()
+    const documentId = crypto.randomUUID()
+    const [grace] = await openedTwice()
+    const room = openCloudDocumentRoom(grace, {
+      roomId: `cloud:${documentId}:0`,
+      transport: relay.join(documentId, 'Grace', 'view', 'user'),
+      permission: 'view'
+    })
+    cleanups.push(() => {
+      room.stop()
+      room.session.dispose()
+    })
+    let joined = false
+    room.session.onSynced(() => {
+      joined = true
+    })
+    await until(() => joined)
+    const before = versionListRevision.value
+    relay.announceVersions(documentId)
+    await until(() => versionListRevision.value > before)
   })
 })
 

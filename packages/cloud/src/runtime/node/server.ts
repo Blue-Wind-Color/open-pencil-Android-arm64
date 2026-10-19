@@ -107,7 +107,8 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     transactionalEmail: email,
     enrollment,
     relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
-    onDocumentRestored: (documentId) => relay.startOver(documentId)
+    onDocumentRestored: (documentId) => relay.startOver(documentId),
+    onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId)
   })
   const emailWorker = emailTransport
     ? startTransactionalEmailWorker(email, {

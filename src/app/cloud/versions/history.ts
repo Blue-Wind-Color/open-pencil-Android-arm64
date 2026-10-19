@@ -33,7 +33,7 @@ const histories = shallowRef<ReadonlyMap<EditorStore, VersionHistory>>(new Map()
 export type VersionDialog = { store: EditorStore; version: DocumentVersion | null }
 export const versionDialog = shallowRef<VersionDialog | null>(null)
 
-/** Bumped when this window changes the history, so an open list loads it again. */
+/** Bumped when the history changes, here or anywhere the server says, so open lists load it again. */
 export const versionListRevision = shallowRef(0)
 /** Each tab's preview download in flight, keyed by its document. */
 const previewLoads = new Map<EditorStore, AbortController>()

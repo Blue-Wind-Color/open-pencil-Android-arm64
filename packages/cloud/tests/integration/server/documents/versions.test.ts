@@ -62,6 +62,8 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
         )
       : undefined
   const restoredDocuments: string[] = []
+  /** Each time the server told the document's rooms its history changed. */
+  const announcements: string[] = []
   const app = createCloudApp({
     config,
     database: runtime.database,
@@ -69,7 +71,8 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
     objects: objects.store,
     policy,
     resolveSession: async () => alice,
-    onDocumentRestored: (documentId) => restoredDocuments.push(documentId)
+    onDocumentRestored: (documentId) => restoredDocuments.push(documentId),
+    onDocumentVersionsChanged: (documentId) => announcements.push(documentId)
   })
   const request = (path: string, init: { method?: string; json?: unknown } = {}) =>
     app.request(`/api${path}`, {
@@ -149,6 +152,7 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
   return {
     runtime,
     restoredDocuments,
+    announcements,
     objects,
     policy,
     request,
@@ -171,10 +175,13 @@ describe('Cloud version history', () => {
       expect((await context.history()).versions.map((version) => version.revisionId)).toEqual([
         first
       ])
+      // Only saves that add a checkpoint change the history open lists show.
+      expect(context.announcements).toEqual([context.documentId])
 
       // Half an hour on, the next save keeps the state it replaces.
       await context.age(31 * 60_000)
       const latest = await context.save()
+      expect(context.announcements).toHaveLength(2)
       const { versions } = await context.history()
       expect(versions.map((version) => version.revisionId)).toEqual([ended, first])
       expect(versions.every((version) => version.kind === 'checkpoint')).toBe(true)
@@ -215,6 +222,8 @@ describe('Cloud version history', () => {
       )
       expect(cleared.version).toMatchObject({ kind: 'checkpoint', name: null, description: null })
       expect((await context.history()).versions).toHaveLength(2)
+      // The first save's checkpoint, the name, and taking it away.
+      expect(context.announcements).toHaveLength(3)
 
       const empty = await context.request(`/documents/${context.documentId}/versions`, {
         method: 'POST',

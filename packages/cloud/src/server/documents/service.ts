@@ -22,12 +22,12 @@ import {
 } from '#cloud/server/documents/repository'
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
 import type { CreateDocumentUploadResult } from '#cloud/server/documents/types'
-import { recordCheckpoint } from '#cloud/server/documents/versions/checkpoint'
+import { announceVersions, recordCheckpoint } from '#cloud/server/documents/versions/checkpoint'
 import type { ObjectStore } from '#cloud/server/objects'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import { createStorageQuotaService } from '#cloud/server/quota'
-import type { Kysely } from 'kysely'
+import type { Kysely, Transaction } from 'kysely'
 
 const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
 const UPLOAD_LIFETIME_MS = 15 * 60 * 1000
@@ -49,6 +49,20 @@ export class UploadInvalidError extends Error {
 export type DocumentServiceOptions = {
   policy?: CloudPolicy
   technicalMaximumUploadBytes?: number
+  /** Called once a save adds a checkpoint to the document's history. */
+  onVersionsChanged?: (documentId: string) => void
+}
+
+/** Whether the stored object is the file the upload declared, which the commit names again. */
+function matchesUpload(
+  stored: { checksum: string; byteSize: number; contentType: string },
+  upload: { checksum: string; byteSize: number | string | bigint; contentType: string }
+): boolean {
+  return (
+    stored.checksum === upload.checksum &&
+    stored.byteSize === Number(upload.byteSize) &&
+    stored.contentType === upload.contentType
+  )
 }
 
 export function createDocumentService(
@@ -58,6 +72,89 @@ export function createDocumentService(
 ) {
   const cleanup = createUploadCleanupService(database, objects)
   const quota = createStorageQuotaService(database)
+
+  /**
+   * Makes a committed upload the document's current revision, unless it already was, and records
+   * the checkpoint the save adds, if any. Whether the history gained one.
+   */
+  async function landRevision(
+    transaction: Transaction<CloudDatabase>,
+    {
+      userId,
+      uploadId,
+      upload,
+      stored,
+      revisionId,
+      storageObjectId
+    }: {
+      userId: string
+      uploadId: string
+      upload: { documentId: string; baseRevisionId: string | null; objectKey: string }
+      stored: { checksum: string; byteSize: number; contentType: string }
+      revisionId: string
+      storageObjectId: string
+    }
+  ): Promise<boolean> {
+    const lockedUpload = await transaction
+      .selectFrom('upload')
+      .select('status')
+      .where('id', '=', uploadId)
+      .forUpdate()
+      .executeTakeFirstOrThrow()
+    if (lockedUpload.status === 'committed') return false
+    if (lockedUpload.status !== 'finalizing') throw new UploadInvalidError()
+    const document = await transaction
+      .selectFrom('document')
+      .select(['currentRevisionId'])
+      .where('id', '=', upload.documentId)
+      .forUpdate()
+      .executeTakeFirstOrThrow()
+    if (document.currentRevisionId !== upload.baseRevisionId) {
+      throw new DocumentConflictError()
+    }
+    await transaction
+      .insertInto('storageObject')
+      .values({
+        id: storageObjectId,
+        objectKey: upload.objectKey,
+        checksum: stored.checksum,
+        byteSize: stored.byteSize,
+        contentType: stored.contentType
+      })
+      .execute()
+    await transaction
+      .insertInto('documentRevision')
+      .values({
+        id: revisionId,
+        documentId: upload.documentId,
+        parentRevisionId: upload.baseRevisionId,
+        storageObjectId,
+        createdBy: userId
+      })
+      .execute()
+    await transaction
+      .updateTable('document')
+      .set({
+        currentRevisionId: revisionId,
+        version: (expression) => expression('version', '+', 1)
+      })
+      .where('id', '=', upload.documentId)
+      .execute()
+    const checkpointed = await recordCheckpoint(transaction, {
+      documentId: upload.documentId,
+      previousRevisionId: document.currentRevisionId,
+      revisionId,
+      userId,
+      now: new Date()
+    })
+    await transaction
+      .updateTable('upload')
+      .set({ status: 'committed', finalizationStartedAt: null })
+      .where('id', '=', uploadId)
+      .execute()
+    await quota.commitInTransaction(transaction, uploadId)
+    return checkpointed
+  }
 
   async function createDownload(documentId: string): Promise<DocumentDownload> {
     const row = await getDocumentSummaryRow(database, documentId)
@@ -319,6 +416,7 @@ export function createDocumentService(
         .returning('id')
         .executeTakeFirst()
       if (!claimed) throw new UploadInvalidError()
+      let checkpointed = false
       try {
         if (input.multipart) {
           if (
@@ -334,78 +432,20 @@ export function createDocumentService(
           })
         }
         const stored = await objects.head(upload.objectKey)
-        if (
-          !stored ||
-          stored.checksum !== input.checksum ||
-          stored.checksum !== upload.checksum ||
-          stored.byteSize !== Number(upload.byteSize) ||
-          stored.contentType !== upload.contentType
-        ) {
-          throw new UploadInvalidError()
-        }
+        if (!stored || !matchesUpload(stored, upload)) throw new UploadInvalidError()
 
         const revisionId = crypto.randomUUID()
         const storageObjectId = crypto.randomUUID()
-        await database.transaction().execute(async (transaction) => {
-          const lockedUpload = await transaction
-            .selectFrom('upload')
-            .select('status')
-            .where('id', '=', uploadId)
-            .forUpdate()
-            .executeTakeFirstOrThrow()
-          if (lockedUpload.status === 'committed') return
-          if (lockedUpload.status !== 'finalizing') throw new UploadInvalidError()
-          const document = await transaction
-            .selectFrom('document')
-            .select(['currentRevisionId'])
-            .where('id', '=', upload.documentId)
-            .forUpdate()
-            .executeTakeFirstOrThrow()
-          if (document.currentRevisionId !== upload.baseRevisionId) {
-            throw new DocumentConflictError()
-          }
-          await transaction
-            .insertInto('storageObject')
-            .values({
-              id: storageObjectId,
-              objectKey: upload.objectKey,
-              checksum: stored.checksum,
-              byteSize: stored.byteSize,
-              contentType: stored.contentType
-            })
-            .execute()
-          await transaction
-            .insertInto('documentRevision')
-            .values({
-              id: revisionId,
-              documentId: upload.documentId,
-              parentRevisionId: upload.baseRevisionId,
-              storageObjectId,
-              createdBy: userId
-            })
-            .execute()
-          await transaction
-            .updateTable('document')
-            .set({
-              currentRevisionId: revisionId,
-              version: (expression) => expression('version', '+', 1)
-            })
-            .where('id', '=', upload.documentId)
-            .execute()
-          await recordCheckpoint(transaction, {
-            documentId: upload.documentId,
-            previousRevisionId: document.currentRevisionId,
-            revisionId,
+        checkpointed = await database.transaction().execute((transaction) =>
+          landRevision(transaction, {
             userId,
-            now: new Date()
+            uploadId,
+            upload,
+            stored,
+            revisionId,
+            storageObjectId
           })
-          await transaction
-            .updateTable('upload')
-            .set({ status: 'committed', finalizationStartedAt: null })
-            .where('id', '=', uploadId)
-            .execute()
-          await quota.commitInTransaction(transaction, uploadId)
-        })
+        )
       } catch (error) {
         await database
           .updateTable('upload')
@@ -415,6 +455,7 @@ export function createDocumentService(
           .execute()
         throw error
       }
+      if (checkpointed) announceVersions(options.onVersionsChanged, upload.documentId)
       const document = await findDocument(database, userId, upload.documentId)
       if (!document) throw new DocumentNotFoundError()
       return document

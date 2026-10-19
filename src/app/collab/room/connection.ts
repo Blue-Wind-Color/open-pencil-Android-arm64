@@ -6,7 +6,8 @@ import {
   COLLAB_ACTIONS,
   encodeSyncReply,
   decodeRoomUpdate,
-  MAX_COLLAB_MESSAGE_BYTES
+  MAX_COLLAB_MESSAGE_BYTES,
+  RELAY_SERVER_PEER
 } from '@open-pencil/cloud/contract'
 
 import { joinCollabRoom, type JoinCollabRoom } from '@/app/collab/transport'
@@ -35,6 +36,8 @@ export type CollabRoomConnection = {
   peerForClient: (clientId: number) => string | undefined
   /** Follow peers answering this tab's state with theirs; returns the unsubscribe. */
   onSynced: (handler: (peerId: string) => void) => () => void
+  /** Follow the server saying the document's version history changed; returns the unsubscribe. */
+  onVersionsChanged: (handler: () => void) => () => void
 }
 
 type AwarenessEntry = { clientId: number; removed: boolean }
@@ -93,9 +96,11 @@ export function connectCollabRoom({
   const [sendSyncStep1, getSyncStep1] = room.makeAction(COLLAB_ACTIONS.syncStep1)
   const [sendSyncReply, getSyncReply] = room.makeAction(COLLAB_ACTIONS.syncReply)
   const agentPreview = room.makeAction(COLLAB_ACTIONS.agentPreview)
+  const [, getVersions] = room.makeAction(COLLAB_ACTIONS.versions)
   // A transport keeps one leave handler, so the connection shares it with its users.
   const leaveHandlers = new Set<(peerId: string) => void>()
   const syncedHandlers = new Set<(peerId: string) => void>()
+  const versionsHandlers = new Set<() => void>()
 
   const awarenessClientsByPeer = new Map<string, Set<number>>()
 
@@ -112,6 +117,11 @@ export function connectCollabRoom({
     }
     awarenessClientsByPeer.set(peerId, clients)
     awarenessProtocol.applyAwarenessUpdate(awareness, data, 'remote')
+  })
+
+  getVersions((_data, peerId) => {
+    if (peerId !== RELAY_SERVER_PEER) return
+    for (const handler of versionsHandlers) handler()
   })
 
   getSyncStep1((stateVector, peerId) => {
@@ -167,6 +177,10 @@ export function connectCollabRoom({
     onSynced(handler) {
       syncedHandlers.add(handler)
       return () => syncedHandlers.delete(handler)
+    },
+    onVersionsChanged(handler) {
+      versionsHandlers.add(handler)
+      return () => versionsHandlers.delete(handler)
     },
     peerForClient(clientId) {
       for (const [peerId, clients] of awarenessClientsByPeer) {

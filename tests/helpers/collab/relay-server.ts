@@ -39,6 +39,8 @@ export async function startTestRelay() {
   return {
     url,
     states,
+    /** Tells a document's rooms its version history changed, as the server does. */
+    announceVersions: (documentId: string) => relay.announceVersions(documentId),
     /** Joins a document's room with the given permission, as a guest or a signed-in user. */
     join(
       documentId: string,

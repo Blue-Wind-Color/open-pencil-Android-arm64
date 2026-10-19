@@ -17,7 +17,7 @@ import type { CloudPolicyContext } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { Kysely, Transaction } from 'kysely'
 
-import { keepRevision } from './checkpoint'
+import { announceVersions, keepRevision } from './checkpoint'
 import { historyStart } from './history'
 
 const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
@@ -63,6 +63,8 @@ export function createDocumentVersionService(
     deploymentMode?: CloudPolicyContext['deploymentMode']
     /** Called once a restore lands, so the document's live room starts over. */
     onRestored?: (documentId: string) => void
+    /** Called once the history changes: a version named, renamed, or turned back into an autosave. */
+    onVersionsChanged?: (documentId: string) => void
   } = {}
 ) {
   const deploymentMode = options.deploymentMode ?? 'self-hosted'
@@ -197,6 +199,7 @@ export function createDocumentVersionService(
             .doUpdateSet({ kind: 'named', name: input.name, description })
         )
         .execute()
+      announceVersions(options.onVersionsChanged, documentId)
       const row = await versions()
         .where('documentVersion.revisionId', '=', revisionId)
         .executeTakeFirstOrThrow()
@@ -221,6 +224,7 @@ export function createDocumentVersionService(
         )
         .where('id', '=', versionId)
         .execute()
+      announceVersions(options.onVersionsChanged, documentId)
       return versionOf(await findVersion(documentId, versionId, start), document.currentRevisionId)
     },
 
