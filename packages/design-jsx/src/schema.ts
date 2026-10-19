@@ -15,6 +15,28 @@ export const DESIGN_JSX_PARAGRAPH_PROPERTY_NAMES = [
   'indent'
 ] as const
 
+/** Props only `<Connector>` takes. */
+export const DESIGN_JSX_CONNECTOR_PROPERTY_NAMES = [
+  'from',
+  'to',
+  'fromSide',
+  'toSide',
+  'line',
+  'startCap',
+  'endCap'
+] as const
+
+/** Layer props a connector takes too: its name and the stroke of its line. */
+export const DESIGN_JSX_CONNECTOR_LAYER_PROPERTY_NAMES = [
+  'name',
+  'key',
+  'visible',
+  'opacity',
+  'stroke',
+  'strokeWidth',
+  'dashPattern'
+] as const
+
 /** Props `<Span>` takes: `<Text>`'s character styles, under the same names, and a link. */
 export const DESIGN_JSX_SPAN_PROPERTY_NAMES = [
   'style',
@@ -51,6 +73,7 @@ export const DESIGN_JSX_TEXT_PARAGRAPH_PROPERTY_NAMES = [
 export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'name',
   'key',
+  'ref',
   'flex',
   'flow',
   'dir',
@@ -274,5 +297,6 @@ export const DESIGN_JSX_HELPERS: DesignJSXHelperDefinition[] = [
   'backgroundBlur',
   'foregroundBlur',
   'designVar',
-  'defineVars'
+  'defineVars',
+  'ref'
 ].map((name) => ({ name, description: `OpenPencil ${name} helper.` }))

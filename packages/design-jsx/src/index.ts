@@ -82,6 +82,7 @@ export {
 } from './paints'
 
 export { defineVars, designVar, isVariable, type DesignVariable, type VarDef } from './vars'
+export { isLayerRef, ref, type LayerRef } from './refs'
 
 export { createElement } from './mini-react'
 
@@ -108,7 +109,6 @@ export {
 export {
   transformDesignJSXExpression,
   transformDesignJSXProgram,
-  type DesignJSXChunk,
   type DesignJSXProgram
 } from './transform'
 
@@ -120,7 +120,8 @@ export {
   selectionToJSXWithLayers,
   type DesignJSXElement,
   type DesignJSXWithLayers,
-  type JSXAttributeSource
+  type JSXAttributeSource,
+  type JSXExportOptions
 } from './export'
 export { parseJSXAttributes } from './attributes'
 export { jsxNodeFields, type JSXNodeFields } from './fields'

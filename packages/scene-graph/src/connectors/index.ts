@@ -1,4 +1,4 @@
-export { createConnector, type ConnectorContent } from './create'
+export { CONNECTOR_NAME, createConnector, type ConnectorContent } from './create'
 export { hitsConnectorLine } from './hit'
 export { CONNECTOR_LABEL_PADDING, placeConnectorLabel, type ConnectorLabelLayout } from './label'
 export { attachedConnectors, connectorsAffectedBy, layoutConnector } from './layout'

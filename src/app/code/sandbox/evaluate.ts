@@ -98,7 +98,7 @@ export async function evaluateDesignJSX(
       }
       try {
         const roots = validateDesignJSXOutput(message.value, validationLimits)
-        finish({ ok: true, roots, lineOffsets: program.lineOffsets })
+        finish({ ok: true, roots, lineOffset: program.lineOffset })
       } catch (error) {
         finish({ ok: false, error: error instanceof Error ? error.message : String(error) })
       }

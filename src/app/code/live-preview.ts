@@ -90,7 +90,7 @@ export async function previewDesignJSX(
 
   let roots: TreeNode[]
   try {
-    roots = convertDesignJSXRoots(evaluated.roots, evaluated.lineOffsets)
+    roots = convertDesignJSXRoots(evaluated.roots, evaluated.lineOffset)
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }

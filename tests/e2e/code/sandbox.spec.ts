@@ -38,11 +38,11 @@ test('evaluates JSX into plain inert data', async ({ page }) => {
           w: 320,
           fill: { __openPencilHelper: 'solid', args: ['#fff'] }
         },
-        children: [{ type: 'text', props: {}, children: ['Hello'], source: ['expression', 1] }],
-        source: ['expression', 1]
+        children: [{ type: 'text', props: {}, children: ['Hello'], source: 1 }],
+        source: 1
       }
     ],
-    lineOffsets: { statements: 0, expression: 0 }
+    lineOffset: 0
   })
 })
 
@@ -58,10 +58,10 @@ const Card = ({ title, visible }) => (
     {[1, 2].map((item) => <Text>{item}</Text>)}
   </Frame>
 )
-<Card title="Hello" visible />`
+return <Card title="Hello" visible />`
   )
 
-  // Elements carry the chunk and line they were written on; the offsets map them to the source.
+  // Elements carry the line they were written on; the offset maps it to the source.
   expect(result).toEqual({
     ok: true,
     roots: [
@@ -69,14 +69,14 @@ const Card = ({ title, visible }) => (
         type: 'frame',
         props: { fill: '#fff' },
         children: [
-          { type: 'text', props: {}, children: ['Hello'], source: ['statements', 4] },
-          { type: 'text', props: {}, children: [1], source: ['statements', 5] },
-          { type: 'text', props: {}, children: [2], source: ['statements', 5] }
+          { type: 'text', props: {}, children: ['Hello'], source: 4 },
+          { type: 'text', props: {}, children: [1], source: 5 },
+          { type: 'text', props: {}, children: [2], source: 5 }
         ],
-        source: ['statements', 3]
+        source: 3
       }
     ],
-    lineOffsets: { statements: 0, expression: 7 }
+    lineOffset: 0
   })
 })
 
@@ -84,7 +84,7 @@ test('converts variable helpers without executing host capabilities', async ({ p
   const result = await evaluate(
     page,
     `const vars = defineVars({ primary: { name: 'Primary', value: '#ff0000' } })
-<Frame fill={vars.primary}><Text color={designVar('text', '#000')}>Hello</Text></Frame>`
+return <Frame fill={vars.primary}><Text color={designVar('text', '#000')}>Hello</Text></Frame>`
   )
   expect(result.ok).toBe(true)
   if (!result.ok) return
@@ -96,15 +96,38 @@ test('converts variable helpers without executing host capabilities', async ({ p
   })
 })
 
+test('numbers each ref() so a layer and the ends that refer to it share it', async ({ page }) => {
+  const result = await evaluate(
+    page,
+    `const left = ref()
+const right = ref()
+return <Frame>
+  <Frame name="Card" ref={left} />
+  <Frame name="Card" ref={right} />
+  <Connector from={left} to={right} />
+</Frame>`
+  )
+  expect(result.ok).toBe(true)
+  if (!result.ok) return
+  const ref = (number: number) => ({ __openPencilHelper: 'ref', args: [number] })
+  expect(result.roots[0]).toMatchObject({
+    children: [
+      { props: { ref: ref(1) } },
+      { props: { ref: ref(2) } },
+      { type: 'connector', props: { from: ref(1), to: ref(2) } }
+    ]
+  })
+})
+
 test('supports multiple roots through fragments', async ({ page }) => {
   const result = await evaluate(page, '<><Rectangle name="One" /><Ellipse name="Two" /></>')
   expect(result).toEqual({
     ok: true,
     roots: [
-      { type: 'rectangle', props: { name: 'One' }, children: [], source: ['expression', 1] },
-      { type: 'ellipse', props: { name: 'Two' }, children: [], source: ['expression', 1] }
+      { type: 'rectangle', props: { name: 'One' }, children: [], source: 1 },
+      { type: 'ellipse', props: { name: 'Two' }, children: [], source: 1 }
     ],
-    lineOffsets: { statements: 0, expression: 0 }
+    lineOffset: 0
   })
 })
 

@@ -1,5 +1,4 @@
 import { uniq } from 'es-toolkit/array'
-import { transform } from 'sucrase'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -11,6 +10,7 @@ import * as React from './mini-react'
 import { renderRoots, renderTree, componentPropNames, type RenderResult } from './renderer'
 import type { DesignJSXServices } from './services'
 import { TEXT_CONTENT_NAMES } from './text-content'
+import { transformDesignJSXExpression } from './transform'
 import { isTreeNode, resolveToTree, type TreeNode } from './tree'
 import type { RenderOptions as RenderJSXOptions } from './types'
 
@@ -65,15 +65,16 @@ function collectUnsupportedPropWarnings(
 }
 
 /**
- * Build a component function from a JSX string using sucrase.
- * Works in both Node/Bun and the browser (no native bindings).
+ * Build a component function from a JSX string: one JSX expression, sibling elements, or
+ * statements that end with `return` and the JSX. The statements run inside the component, so
+ * they may shadow an element or helper name. Works in both Node/Bun and the browser.
  */
 export function buildComponent(jsxString: string, warnings: string[] = []): React.ComponentType {
   const trimmed = stripHTMLComments(jsxString).trim()
 
   const aliases = `
     const __h = React.createElement
-    const __frag = ''
+    const __fragment = ''
     ${elementBindings()}
     const svg = 'svg'
     ${REKA_ALIASES}
@@ -89,6 +90,7 @@ export function buildComponent(jsxString: string, warnings: string[] = []): Reac
     const radialGradient = __helpers.radialGradient
     const angularGradient = __helpers.angularGradient
     const diamondGradient = __helpers.diamondGradient
+    const ref = __helpers.ref
     const __varSymbol = Symbol.for('open-pencil.variable')
     const designVar = (def, value) => typeof def === 'string'
       ? ({ [__varSymbol]: true, id: def, name: def, value })
@@ -97,45 +99,13 @@ export function buildComponent(jsxString: string, warnings: string[] = []): Reac
       Object.entries(vars).map(([key, def]) => [key, designVar(def)])
     )
   `
-  const opts = {
-    transforms: ['typescript', 'jsx'] as Array<'typescript' | 'jsx'>,
-    jsxPragma: '__h',
-    jsxFragmentPragma: '__frag',
-    production: true
-  }
 
-  let code: string
-  let siblings = false
-  try {
-    code = transform(`${aliases}\nreturn function __render() { return ${trimmed} }`, opts).code
-  } catch {
-    siblings = true
-    code = transform(`${aliases}\nreturn function __render() { return <>${trimmed}</> }`, opts).code
-  }
-
+  const body = transformDesignJSXExpression(trimmed)
   // eslint-disable-next-line typescript-eslint/no-implied-eval -- sucrase output must be evaluated at runtime
-  const component = new Function('React', '__helpers', code)(
+  return new Function('React', '__helpers', `${aliases}\nreturn function __render() {\n${body}\n}`)(
     React,
     designJSXHelpers(warnings)
   ) as React.ComponentType
-  if (!siblings) return component
-  // Siblings are wrapped in a fragment, where a statement such as `const` is only text, so a
-  // name it meant to declare is undefined where the JSX uses it. An undefined name can also
-  // be a plain mistake, so the hint says when it applies.
-  return (props) => {
-    try {
-      return component(props)
-    } catch (error) {
-      if (!(error instanceof ReferenceError)) throw error
-      throw new Error(
-        `${error.message}. If a statement before the JSX, such as \`const\`, declares it, ` +
-          'that statement does not run: a JSX string is one expression. Compute values inside ' +
-          'it instead, for example ' +
-          '`{(() => { const days = […]; return days.map((day) => <Text>{day}</Text>) })()}`.',
-        { cause: error }
-      )
-    }
-  }
 }
 
 /**

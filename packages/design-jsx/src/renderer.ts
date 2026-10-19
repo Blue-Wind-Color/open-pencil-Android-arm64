@@ -1,4 +1,5 @@
 import {
+  connectorSublayers,
   setInstanceOverride,
   type Color,
   type NodeType,
@@ -16,8 +17,10 @@ import {
   componentPropertyScope,
   inferComponentSetProperties
 } from './component-properties'
+import { CONNECTOR_ELEMENT, renderConnectorNode, resolveConnectorEnds } from './connectors'
 import { elementNodeType } from './elements'
 import { applySizeOverrides, propsToOverrides } from './props-overrides'
+import { LayerRefs } from './refs'
 import { prepareScalarBindings } from './scalar-bindings'
 import type { DesignJSXServices } from './services'
 import { isTextContent, TEXT_CONTENT_NAMES, textContentFields } from './text-content'
@@ -53,21 +56,30 @@ export async function renderRoots<Artwork>(
   const parentId = options.parentId ?? graph.getPages()[0].id
 
   const nodes: SceneNode[] = []
+  const connectors: Array<{ node: SceneNode; tree: TreeNode }> = []
+  const refs = new LayerRefs()
+  const onNode = (element: TreeNode, node: SceneNode) => {
+    if (element.type === CONNECTOR_ELEMENT) connectors.push({ node, tree: element })
+    else refs.mark(element.props.ref, node)
+    options.onNode?.(element, node)
+  }
   for (const root of roots) {
-    const node = await renderNode(services, graph, root, parentId, options.onNode)
+    const node = await renderNode(services, graph, root, parentId, onNode)
     if (options.x !== undefined) graph.updateNode(node.id, { x: options.x })
     if (options.y !== undefined) graph.updateNode(node.id, { y: options.y })
     nodes.push(node)
   }
 
   const rootIds = nodes.map((node) => node.id)
+  const warnings = [...refs.warnings, ...resolveConnectorEnds(graph, rootIds, connectors, refs)]
   if (!options.deferLayout) services.layout(graph, rootIds)
 
   return nodes.map((node) => ({
     id: node.id,
     name: node.name,
     type: node.type,
-    childIds: node.childIds
+    childIds: node.childIds,
+    ...(warnings.length > 0 && { warnings })
   }))
 }
 
@@ -177,6 +189,21 @@ function preparePropsForRender(
   }
 
   return { props, bindings }
+}
+
+/**
+ * A connector, its props resolved as any layer's are: a `designVar()` stroke colour or width
+ * styles and binds the line it draws, and the rest bind the connector itself.
+ */
+function renderConnectorElement(graph: SceneGraph, tree: TreeNode, parentId: string): SceneNode {
+  const { props, bindings } = preparePropsForRender(graph, tree.props, false, parentId)
+  const connector = renderConnectorNode(graph, { ...tree, props }, parentId)
+  const line = connectorSublayers(graph, connector)?.line
+  for (const [field, variableId] of Object.entries(bindings)) {
+    const onLine = field.startsWith('strokes/') || field === 'strokeWeight'
+    graph.bindVariable(onLine && line ? line.id : connector.id, field, variableId)
+  }
+  return connector
 }
 
 function applyBindings(graph: SceneGraph, nodeId: string, bindings: Record<string, string>): void {
@@ -487,6 +514,8 @@ function renderOwnElement<Artwork>(
       return renderArtworkNode(services, graph, tree, parentId)
     case 'instance':
       return renderInstanceNode(graph, tree, parentId)
+    case CONNECTOR_ELEMENT:
+      return Promise.resolve(renderConnectorElement(graph, tree, parentId))
     default:
       return null
   }

@@ -50,5 +50,5 @@ export type DesignJSXHelperDescriptor = {
 }
 
 export type DesignJSXSandboxResult =
-  | { ok: true; roots: unknown[]; lineOffsets: DesignJSXProgram['lineOffsets'] }
+  | { ok: true; roots: unknown[]; lineOffset: DesignJSXProgram['lineOffset'] }
   | { ok: false; error: string }

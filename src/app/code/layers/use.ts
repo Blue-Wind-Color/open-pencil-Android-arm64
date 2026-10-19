@@ -54,7 +54,10 @@ export function useCodeLayers(source: Readonly<Ref<CodeSource>>) {
   function snippet(
     nodeId: string
   ): { code: string; layerIds: ReadonlyArray<string | null> } | null {
-    const { code, layerIds } = selectionToJSXWithLayers([nodeId], store.graph)
+    // The snippet goes inside the panel's JSX, where a declaration cannot.
+    const { code, layerIds } = selectionToJSXWithLayers([nodeId], store.graph, {
+      declarations: false
+    })
     return code ? { code, layerIds } : null
   }
 

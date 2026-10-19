@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { isLayerRef } from '@open-pencil/design-jsx'
+
 import { convertDesignJSXRoots } from '@/app/code/sandbox/convert'
 import {
   DESIGN_JSX_MAX_ARRAY_LENGTH,
@@ -102,5 +104,18 @@ describe('Design JSX sandbox output', () => {
       )
       expect(() => convertDesignJSXRoots(roots)).toThrow('Unknown Design JSX helper')
     }
+  })
+
+  test('converts each numbered ref() to one handle across the elements of an evaluation', () => {
+    const marked = (number: number) => ({ __openPencilHelper: 'ref', args: [number] })
+    const [first, second, connector] = convertDesignJSXRoots([
+      frame({ ref: marked(1) }),
+      frame({ ref: marked(2) }),
+      { type: 'connector', props: { from: marked(1), to: marked(2) }, children: [] }
+    ])
+    expect(isLayerRef(first.props.ref)).toBe(true)
+    expect(connector.props.from).toBe(first.props.ref)
+    expect(connector.props.to).toBe(second.props.ref)
+    expect(first.props.ref).not.toBe(second.props.ref)
   })
 })

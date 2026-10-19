@@ -18,6 +18,9 @@ export interface ConnectorContent {
  * Makes a connector in `parentId` with its line and label, routed between its ends. Figma names
  * a new connector "Connector line".
  */
+/** The name FigJam gives a connector it draws. */
+export const CONNECTOR_NAME = 'Connector line'
+
 export function createConnector(
   graph: SceneGraph,
   parentId: string,
@@ -25,7 +28,7 @@ export function createConnector(
   props: Partial<SceneNode> = {}
 ): SceneNode {
   const connector = graph.createNode('CONNECTOR', parentId, {
-    name: 'Connector line',
+    name: CONNECTOR_NAME,
     fills: [],
     strokes: [],
     connectorStart: structuredClone(content.start),
