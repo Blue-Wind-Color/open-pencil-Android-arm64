@@ -408,54 +408,6 @@ export function drawRRectStrokeWithAlign(
   }
 }
 
-export function drawIndividualSideStrokes(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode,
-  align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
-): void {
-  const w = node.width
-  const h = node.height
-  const inside = align === 'INSIDE'
-  const outside = align === 'OUTSIDE'
-
-  const tw = node.borderTopWeight
-  if (tw > 0) {
-    let y = 0
-    if (inside) y = tw / 2
-    else if (outside) y = -tw / 2
-    r.strokePaint.setStrokeWidth(tw)
-    canvas.drawLine(0, y, w, y, r.strokePaint)
-  }
-
-  const rw = node.borderRightWeight
-  if (rw > 0) {
-    let x = w
-    if (inside) x = w - rw / 2
-    else if (outside) x = w + rw / 2
-    r.strokePaint.setStrokeWidth(rw)
-    canvas.drawLine(x, 0, x, h, r.strokePaint)
-  }
-
-  const bw = node.borderBottomWeight
-  if (bw > 0) {
-    let y = h
-    if (inside) y = h - bw / 2
-    else if (outside) y = h + bw / 2
-    r.strokePaint.setStrokeWidth(bw)
-    canvas.drawLine(0, y, w, y, r.strokePaint)
-  }
-
-  const lw = node.borderLeftWeight
-  if (lw > 0) {
-    let x = 0
-    if (inside) x = lw / 2
-    else if (outside) x = -lw / 2
-    r.strokePaint.setStrokeWidth(lw)
-    canvas.drawLine(x, 0, x, h, r.strokePaint)
-  }
-}
-
 export function strokeNodeShape(
   r: SkiaRenderer,
   canvas: Canvas,

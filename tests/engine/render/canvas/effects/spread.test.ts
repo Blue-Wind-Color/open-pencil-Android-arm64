@@ -1,17 +1,21 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-
 import { renderEffects } from '#core/canvas/shadows'
 
 import { asCanvas } from '../helpers'
-import { createMockCanvas, createMockRenderer, OPAQUE_FILL } from './helpers'
+import {
+  createMockCanvas,
+  createMockRenderer,
+  effectNode,
+  OPAQUE_FILL,
+  TEST_GRAPH
+} from './helpers'
 
 describe('Shadow spread support (Behavioral)', () => {
   test('drop shadow uses spread for shape expansion', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 100,
       height: 100,
@@ -27,10 +31,10 @@ describe('Shadow spread support (Behavioral)', () => {
         }
       ],
       strokeGeometry: []
-    }
+    })
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, asCanvas(canvas), node as SceneNode, rect, false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, rect, false, 'behind')
 
     expect(canvas.drawRect).toHaveBeenCalled()
     expect(r.ltrb).toHaveBeenCalledWith(-4, -4, 104, 104)
@@ -39,10 +43,11 @@ describe('Shadow spread support (Behavioral)', () => {
   test('drop shadow uses makeRRectWithSpread when node has radius', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 100,
       height: 100,
+      cornerRadius: 8,
       fills: [{ visible: true, type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1 }],
       effects: [
         {
@@ -55,10 +60,10 @@ describe('Shadow spread support (Behavioral)', () => {
         }
       ],
       strokeGeometry: []
-    }
+    })
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, asCanvas(canvas), node as SceneNode, rect, true, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, rect, true, 'behind')
 
     expect(r.makeRRectWithSpread).toHaveBeenCalledWith(node, 4)
     expect(canvas.drawRRect).toHaveBeenCalled()
@@ -67,7 +72,7 @@ describe('Shadow spread support (Behavioral)', () => {
   test('inner shadow uses spread for cutout contraction', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 100,
       height: 100,
@@ -83,10 +88,10 @@ describe('Shadow spread support (Behavioral)', () => {
           spread: 4
         }
       ]
-    }
+    })
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, asCanvas(canvas), node as SceneNode, rect, false, 'front')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, rect, false, 'inner')
 
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(9, 9, 101, 101)
     expect(canvas.drawPath).toHaveBeenCalled()

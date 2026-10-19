@@ -2,7 +2,8 @@ import { mock } from 'bun:test'
 
 import type { InputRect, Paint } from 'canvaskit-wasm'
 
-import type { Fill } from '@open-pencil/scene-graph'
+import { SceneGraph, type Fill, type SceneNode } from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderEffects } from '#core/canvas/shadows'
@@ -20,6 +21,14 @@ export function mockCalls(fn: unknown): unknown[][] {
   return calls
 }
 
+/** A graph for effect tests whose nodes have no children to look up. */
+export const TEST_GRAPH = new SceneGraph()
+
+/** A complete node of `props.type` for effect tests, with every field the renderer reads. */
+export function effectNode(props: Partial<SceneNode> & Pick<SceneNode, 'type'>): SceneNode {
+  return createDefaultNode(() => props.id ?? 'node', props.type, props)
+}
+
 /** A fill to cast from: Figma casts no shadow from a shape with no fill, stroke, or child. */
 export const OPAQUE_FILL: Fill = {
   type: 'SOLID',
@@ -31,6 +40,7 @@ export const OPAQUE_FILL: Fill = {
 export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaRenderer {
   class MockPath {
     delete = mock(() => undefined)
+    setFillType = mock(() => undefined)
     copy = mock(() => new MockPath())
     makeCombined = mock(() => new MockPath())
     makeStroked = mock(() => new MockPath())
@@ -41,7 +51,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
       Color4f: mock((r, g, b, a) => new Float32Array([r, g, b, a])),
       LTRBRect: mock((l, t, r, b) => new Float32Array([l, t, r, b])),
       RRectXY: mock(() => new Float32Array(12)),
-      ClipOp: { Intersect: 0 },
+      ClipOp: { Intersect: 0, Difference: 1 },
       Path: Object.assign(MockPath, {
         MakeFromOp: mock(() => new MockPath())
       }),
@@ -59,6 +69,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
         detachAndDelete = mock(() => new MockPath())
       },
       PathOp: { Difference: 0, Union: 1 },
+      FillType: { Winding: 0, EvenOdd: 1 },
       StrokeCap: { Butt: 0, Round: 1, Square: 2 },
       StrokeJoin: { Miter: 0, Round: 1, Bevel: 2 },
       Matrix: { translated: mock(() => new Float32Array(9)) },
@@ -74,6 +85,8 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
       WHITE: new Float32Array([1, 1, 1, 1]),
       TRANSPARENT: new Float32Array([0, 0, 0, 0]),
       Paint: class {
+        setBlendMode = mock(() => undefined)
+        setImageFilter = mock(() => undefined)
         setAntiAlias = mock(() => undefined)
         setColor = mock(() => undefined)
         setShader = mock(() => undefined)
@@ -151,6 +164,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
       return new this.ck.Path()
     }),
     renderText: mock(() => undefined),
+    paintShapeContent: mock(() => undefined),
     applyClippedBlur: mock(() => undefined),
     clipNodeShape: mock(() => undefined),
     applyFill: mock(() => true),

@@ -1,8 +1,8 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { ImageFilter, Path } from 'canvaskit-wasm'
+import type { ImageFilter } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 
 import { applyClippedBlur } from '#core/canvas/effects'
@@ -10,13 +10,20 @@ import { renderNode } from '#core/canvas/scene'
 import { renderEffects } from '#core/canvas/shadows'
 
 import { asCanvas, asDouble } from '../helpers'
-import { createMockCanvas, createMockRenderer, mockCalls, OPAQUE_FILL } from './helpers'
+import {
+  createMockCanvas,
+  createMockRenderer,
+  effectNode,
+  mockCalls,
+  OPAQUE_FILL,
+  TEST_GRAPH
+} from './helpers'
 
 describe('Renderer handles all effect types (Behavioral)', () => {
   test('handles DROP_SHADOW', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 100,
       height: 100,
@@ -33,27 +40,20 @@ describe('Renderer handles all effect types (Behavioral)', () => {
           spread: 0
         }
       ]
-    }
-    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
+    })
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
     expect(canvas.drawRect).toHaveBeenCalled()
   })
 
-  test('drop shadow follows stroke geometry and hides shadow behind unfilled nodes', () => {
-    const strokePath = asDouble<Path>({ kind: 'stroke' })
-    const fillPath = asDouble<Path>({ kind: 'fill' })
-    const r = createMockRenderer({
-      getFillGeometry: mock(() => [fillPath]),
-      getStrokeGeometry: mock(() => [strokePath])
-    })
+  test('a stroke without a fill casts a ring and clips its shape out of the shadow', () => {
+    const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 100,
       height: 100,
       fills: [],
-      strokes: [{ ...OPAQUE_FILL, weight: 1, align: 'CENTER' }],
-      childIds: [],
-      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: new Uint8Array([0]) }],
+      strokes: [{ ...OPAQUE_FILL, opacity: 0.5, weight: 4, align: 'CENTER' }],
       effects: [
         {
           type: 'DROP_SHADOW',
@@ -65,21 +65,24 @@ describe('Renderer handles all effect types (Behavioral)', () => {
           showShadowBehindNode: false
         }
       ]
-    }
+    })
 
-    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
 
-    expect(r.getStrokeGeometry).toHaveBeenCalledWith(node)
-    expect(r.getFillGeometry).toHaveBeenCalledWith(node)
-    expect(canvas.drawPath).toHaveBeenCalledWith(strokePath, r.auxFill)
-    expect(canvas.drawPath).toHaveBeenCalledWith(fillPath, r.auxFill)
-    expect(r.auxFill.setBlendMode).toHaveBeenCalledWith(r.ck.BlendMode.DstOut)
+    expect(r.ltrb).toHaveBeenCalledWith(-2, -2, 102, 102)
+    expect(r.ltrb).toHaveBeenCalledWith(2, 2, 98, 98)
+    const [ring] = mockCalls(canvas.drawPath).find(([, paint]) => paint === r.auxFill) ?? []
+    if (typeof ring !== 'object' || ring === null) throw new Error('expected the ring path')
+    expect(mockCalls(Reflect.get(ring, 'setFillType'))).toContainEqual([r.ck.FillType.EvenOdd])
+    expect(canvas.clipPath).toHaveBeenCalledWith(expect.anything(), r.ck.ClipOp.Difference, true)
+    expect(canvas.drawPath).toHaveBeenCalledWith(expect.anything(), r.auxFill)
+    expect(r.paintShapeContent).not.toHaveBeenCalled()
   })
 
   test('applies effect blend modes to rendered shadow paint', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 100,
       height: 100,
@@ -97,9 +100,9 @@ describe('Renderer handles all effect types (Behavioral)', () => {
           blendMode: 'SCREEN'
         }
       ]
-    }
+    })
 
-    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
 
     expect(r.auxFill.setBlendMode).toHaveBeenCalledWith(r.ck.BlendMode.Screen)
     expect(r.auxFill.setBlendMode).toHaveBeenLastCalledWith(r.ck.BlendMode.SrcOver)
@@ -108,7 +111,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
   test('handles INNER_SHADOW', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 100,
       height: 100,
@@ -124,14 +127,15 @@ describe('Renderer handles all effect types (Behavioral)', () => {
           spread: 0
         }
       ]
-    }
+    })
     renderEffects(
       r,
       asCanvas(canvas),
-      node as SceneNode,
+      node,
+      TEST_GRAPH,
       new Float32Array([0, 0, 100, 100]),
       false,
-      'front'
+      'inner'
     )
     expect(canvas.drawPath).toHaveBeenCalled()
   })
@@ -139,7 +143,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
   test('renders raw Figma noise effects as a bounded visual fallback', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 20,
       height: 20,
@@ -174,12 +178,13 @@ describe('Renderer handles all effect types (Behavioral)', () => {
           uniformScaleFactor: null
         }
       }
-    }
+    })
 
     renderEffects(
       r,
       asCanvas(canvas),
-      node as SceneNode,
+      node,
+      TEST_GRAPH,
       new Float32Array([0, 0, 20, 20]),
       false,
       'front'
@@ -192,7 +197,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
   test('bounds raw noise effect draw calls for large nodes', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 1000,
       height: 1000,
@@ -226,12 +231,13 @@ describe('Renderer handles all effect types (Behavioral)', () => {
           uniformScaleFactor: null
         }
       }
-    }
+    })
 
     renderEffects(
       r,
       asCanvas(canvas),
-      node as SceneNode,
+      node,
+      TEST_GRAPH,
       new Float32Array([0, 0, 1000, 1000]),
       false,
       'front'
@@ -243,7 +249,8 @@ describe('Renderer handles all effect types (Behavioral)', () => {
   test('handles BACKGROUND_BLUR', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
+      type: 'RECTANGLE',
       fills: [],
       childIds: [],
       effects: [
@@ -256,8 +263,8 @@ describe('Renderer handles all effect types (Behavioral)', () => {
           spread: 0
         }
       ]
-    }
-    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
+    })
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
     expect(r.applyClippedBlur).toHaveBeenCalled()
   })
 
@@ -269,16 +276,16 @@ describe('Renderer handles all effect types (Behavioral)', () => {
     })
     const canvas = createMockCanvas()
     const rect = new Float32Array([0, 0, 100, 100])
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       type: 'RECTANGLE',
       width: 100,
       height: 100,
       fills: [],
       childIds: [],
       effects: []
-    }
+    })
 
-    applyClippedBlur(r, asCanvas(canvas), node as SceneNode, rect, false, 5)
+    applyClippedBlur(r, asCanvas(canvas), node, rect, false, 5)
 
     expect(r.effectLayerPaint.setImageFilter).toHaveBeenCalledWith(null)
     expect(canvas.saveLayer).toHaveBeenCalledWith(
@@ -293,7 +300,8 @@ describe('Renderer handles all effect types (Behavioral)', () => {
   test('handles LAYER_BLUR in renderNode', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
+      type: 'RECTANGLE',
       id: 'n1',
       visible: true,
       x: 0,
@@ -314,9 +322,9 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       ],
       childIds: [],
       source: createDefaultSourceMetadata()
-    }
+    })
     const graph: Partial<SceneGraph> = {
-      getNode: mock(() => node as SceneNode)
+      getNode: mock(() => node)
     }
     renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
     // Figma draws a blur radius as a Gaussian of 0.43 × radius.
@@ -328,7 +336,8 @@ describe('Renderer handles all effect types (Behavioral)', () => {
   test('handles FOREGROUND_BLUR in renderNode', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
+      type: 'RECTANGLE',
       id: 'n1',
       visible: true,
       x: 0,
@@ -349,9 +358,9 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       ],
       childIds: [],
       source: createDefaultSourceMetadata()
-    }
+    })
     const graph: Partial<SceneGraph> = {
-      getNode: mock(() => node as SceneNode)
+      getNode: mock(() => node)
     }
     renderNode(r, asCanvas(canvas), graph as SceneGraph, 'n1', {})
     expect(r.getCachedBlur).toHaveBeenCalledWith(expect.closeTo(8.6))

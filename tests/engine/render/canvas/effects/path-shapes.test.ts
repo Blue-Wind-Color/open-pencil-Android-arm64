@@ -1,11 +1,16 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-
 import { renderEffects } from '#core/canvas/shadows'
 
 import { asCanvas } from '../helpers'
-import { createMockCanvas, createMockRenderer, mockCalls, OPAQUE_FILL } from './helpers'
+import {
+  createMockCanvas,
+  createMockRenderer,
+  effectNode,
+  mockCalls,
+  OPAQUE_FILL,
+  TEST_GRAPH
+} from './helpers'
 
 const requiredNodeFields = { childIds: [] as string[], strokeGeometry: [] }
 
@@ -13,7 +18,7 @@ describe('path shape shadows', () => {
   test('drop shadow for a star without imported geometry uses the star path', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       ...requiredNodeFields,
       type: 'STAR',
       width: 100,
@@ -29,9 +34,9 @@ describe('path shape shadows', () => {
           spread: 5
         }
       ]
-    }
+    })
 
-    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
 
     expect(r.makePolygonPath).toHaveBeenCalled()
     expect(canvas.drawPath).toHaveBeenCalled()
@@ -48,7 +53,7 @@ describe('path shape shadows', () => {
     r.ck.Path.MakeFromOp = mock(() => combinedPath)
     r.getFillGeometry = mock(() => [cachedPath])
 
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       ...requiredNodeFields,
       type: 'STAR',
       width: 100,
@@ -64,9 +69,9 @@ describe('path shape shadows', () => {
           spread: 10
         }
       ]
-    }
+    })
 
-    renderEffects(r, asCanvas(canvas), node as SceneNode, new Float32Array(4), false, 'behind')
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, new Float32Array(4), false, 'behind')
 
     const makeFromOp = r.ck.Path.MakeFromOp as ReturnType<typeof mock>
     expect(makeFromOp).toHaveBeenCalledWith(cachedPath, ringPath, r.ck.PathOp.Union)
@@ -78,7 +83,7 @@ describe('path shape shadows', () => {
   test('inner shadow for a polygon clips and cuts out with polygon paths', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
-    const node: Partial<SceneNode> = {
+    const node = effectNode({
       ...requiredNodeFields,
       type: 'POLYGON',
       width: 100,
@@ -94,15 +99,16 @@ describe('path shape shadows', () => {
           spread: 3
         }
       ]
-    }
+    })
 
     renderEffects(
       r,
       asCanvas(canvas),
-      node as SceneNode,
+      node,
+      TEST_GRAPH,
       new Float32Array([0, 0, 100, 100]),
       false,
-      'front'
+      'inner'
     )
 
     expect(mockCalls(r.makePolygonPath).length).toBeGreaterThanOrEqual(2)

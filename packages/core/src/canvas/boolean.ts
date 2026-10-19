@@ -319,11 +319,13 @@ export function groupFitOptions(r: SkiaRenderer | null, graph: SceneGraph): Grou
   return r ? { booleanBounds: booleanResultBounds(r, graph) } : {}
 }
 
-export function renderBooleanOperation(
+/** Draws the operation's fills and strokes, without its effects. */
+export function paintBooleanOperation(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  graph: SceneGraph
+  graph: SceneGraph,
+  between?: () => void
 ): void {
   const path = makeBooleanOperationPath(r, node, graph)
   if (!path) return
@@ -339,6 +341,7 @@ export function renderBooleanOperation(
         r.fillPaint.setShader(null)
       }
     }
+    between?.()
 
     for (const stroke of node.strokes) {
       if (!stroke.visible) continue
@@ -351,4 +354,19 @@ export function renderBooleanOperation(
   } finally {
     path.delete()
   }
+}
+
+/** Draws a boolean operation with its shadows: inner shadows sit over its fills, under strokes. */
+export function renderBooleanOperation(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph
+): void {
+  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
+  r.renderEffects(canvas, node, graph, rect, false, 'behind')
+  paintBooleanOperation(r, canvas, node, graph, () =>
+    r.renderEffects(canvas, node, graph, rect, false, 'inner')
+  )
+  r.renderEffects(canvas, node, graph, rect, false, 'front')
 }

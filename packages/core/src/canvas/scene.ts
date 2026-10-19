@@ -37,7 +37,8 @@ import {
   effectRasterScale,
   effectRasterScaleMatches
 } from './renderer/effect-raster-cache'
-import { paintCastsShadow } from './shadows'
+import { renderLayerShadows } from './shadows'
+import { isLayerContainer } from './shadows/silhouette'
 import { makeSmoothRRectPath, nodeHasRadius, nodeHasSmoothCorners } from './shapes'
 import {
   configureStrokePaint,
@@ -406,6 +407,7 @@ export function renderNode(
   }
 
   applyNodeTransforms(canvas, node, overlays)
+  renderLayerShadows(r, canvas, graph, node, 'behind')
   renderNodeContent(r, canvas, graph, node, overlays)
   drawLayoutGrids(r, canvas, node)
   renderChildren(
@@ -418,6 +420,7 @@ export function renderNode(
     absY,
     hasTransformedAncestor || hasNodeTransform(projectedNode(node, overlays.rotationPreview))
   )
+  renderLayerShadows(r, canvas, graph, node, 'front')
 
   if (layerBlur) {
     canvas.restore()
@@ -484,7 +487,7 @@ export function renderSection(
   forVisibleStrokes(r, node, graph, (stroke, color) => {
     configureStrokePaint(r, node, stroke, color)
 
-    if (node.independentStrokeWeights) r.drawIndividualSideStrokes(canvas, node, stroke.align)
+    if (node.independentStrokeWeights) r.drawIndividualSideStrokes(canvas, node, stroke)
     else r.drawRRectStrokeWithAlign(canvas, rrect, node, stroke)
   })
 }
@@ -516,8 +519,18 @@ export function renderComponentSet(
   })
 }
 
+/** The effects `renderShape` draws: a container's shadows are drawn around its children instead. */
+function shapeEffects(node: SceneNode): SceneNode['effects'] {
+  const ownShadows = !isLayerContainer(node)
+  return node.effects.filter(
+    (effect) =>
+      effect.visible &&
+      (ownShadows || (effect.type !== 'DROP_SHADOW' && effect.type !== 'INNER_SHADOW'))
+  )
+}
+
 function canRasterCacheEffects(node: SceneNode): boolean {
-  const visibleEffects = node.effects.filter((effect) => effect.visible)
+  const visibleEffects = shapeEffects(node)
   return (
     visibleEffects.length > 0 &&
     visibleEffects.every(
@@ -532,7 +545,7 @@ export function renderShape(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  const hasEffects = node.effects.some((effect) => effect.visible)
+  const hasEffects = shapeEffects(node).length > 0
   if (r.viewportImageRendering || !hasEffects) {
     r.renderShapeUncached(canvas, node, graph)
     return
@@ -595,8 +608,7 @@ export function renderShape(
         height,
         scale,
         pixels: image.width() * image.height(),
-        fontGeneration: r.fontGeneration,
-        dependencyIds: node.childIds.slice(0, 1)
+        fontGeneration: r.fontGeneration
       })
       try {
         canvas.drawImageRectOptions(
@@ -625,7 +637,6 @@ export function renderShape(
   if (cached) cached.delete()
   r.nodePictureCache.delete(node.id)
   r.nodePictureCacheGenerations.delete(node.id)
-  r.nodePictureCacheDependencies.delete(node.id)
 
   const bounds = r.ck.LTRBRect(-margin, -margin, node.width + margin, node.height + margin)
   const recorder = new r.ck.PictureRecorder()
@@ -635,21 +646,10 @@ export function renderShape(
     const picture = recorder.finishRecordingAsPicture()
     r.nodePictureCache.set(node.id, picture)
     r.nodePictureCacheGenerations.set(node.id, r.fontGeneration)
-    const shadowChild = getShadowShapeChild(node, graph)
-    r.nodePictureCacheDependencies.set(node.id, shadowChild ? [shadowChild.id] : [])
     canvas.drawPicture(picture)
   } finally {
     recorder.delete()
   }
-}
-
-function getShadowShapeChild(node: SceneNode, graph: SceneGraph): SceneNode | null {
-  if (node.fills.some(paintCastsShadow)) return null
-  if (node.strokes.some(paintCastsShadow)) return null
-  if (node.childIds.length === 0) return null
-  const child = graph.getNode(node.childIds[0])
-  if (!child?.visible) return null
-  return child
 }
 
 function drawVectorStrokeGeometry(
@@ -750,14 +750,11 @@ function drawRegularStroke(
   sc: Color
 ): void {
   configureStrokePaint(r, node, stroke, sc)
-  if (stroke.dashPattern && stroke.dashPattern.length > 0) {
-    r.strokePaint.setPathEffect(r.ck.PathEffect.MakeDash(stroke.dashPattern, 0))
-  } else {
-    r.strokePaint.setPathEffect(null)
-  }
+  const dash = normalizeDashPattern(stroke.dashPattern)
+  r.strokePaint.setPathEffect(dash.length > 0 ? r.ck.PathEffect.MakeDash(dash, 0) : null)
 
   if (node.independentStrokeWeights && r.isRectangularType(node.type)) {
-    r.drawIndividualSideStrokes(canvas, node, stroke.align)
+    r.drawIndividualSideStrokes(canvas, node, stroke)
   } else {
     r.drawStrokeWithAlign(canvas, node, rect, hasRadius, stroke.align)
   }
@@ -895,6 +892,7 @@ function paintNodeStrokes(
   })
 }
 
+/** Draws a shape with its own effects: Figma puts inner shadows over fills and under strokes. */
 export function renderShapeUncached(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -903,10 +901,23 @@ export function renderShapeUncached(
 ): void {
   const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
   const hasRadius = nodeHasRadius(node)
+  r.renderEffects(canvas, node, graph, rect, hasRadius, 'behind')
+  paintShapeContent(r, canvas, node, graph, () =>
+    r.renderEffects(canvas, node, graph, rect, hasRadius, 'inner')
+  )
+  r.renderEffects(canvas, node, graph, rect, hasRadius, 'front')
+}
 
-  const shadowChild = getShadowShapeChild(node, graph)
-  r.renderEffects(canvas, node, rect, hasRadius, 'behind', shadowChild)
-
+/** Draws a shape's fills and strokes without its effects; `afterFills` runs between the two. */
+export function paintShapeContent(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph,
+  afterFills?: () => void
+): void {
+  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
+  const hasRadius = nodeHasRadius(node)
   const sg = node.strokeGeometry.length > 0 ? r.getStrokeGeometry(node) : null
   const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
   const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
@@ -926,11 +937,11 @@ export function renderShapeUncached(
     drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, rect, hasRadius, fill))
   }
   if (node.type === 'TEXT') drawTextEmoji(r, canvas, node)
+  afterFills?.()
 
   if (!pathTextStrokeFirst && !reflowedPathText) {
     paintNodeStrokes(r, canvas, node, graph, rect, hasRadius, sg, vectorPaths, vectorStroke)
   }
-  r.renderEffects(canvas, node, rect, hasRadius, 'front', shadowChild)
 }
 
 function hasComplexTextFill(fill?: Fill): boolean {
