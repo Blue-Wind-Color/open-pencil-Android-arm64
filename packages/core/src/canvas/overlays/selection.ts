@@ -25,7 +25,7 @@ import {
   type RotationHandleLayout,
   type RotationPreview
 } from '#core/geometry'
-import { pathTextSelectionBand, pointAtArc } from '#core/text/path'
+import { pointAtArc, textPathStartArc } from '#core/text/path'
 
 import { inNodeSpace, outlineNode, withScreenStroke } from './outline'
 
@@ -109,8 +109,8 @@ function drawSingleSelection(
   const isPathText = node.textPathData !== null && node.textPathBox !== null
   const editing = overlays.editingTextId === id
   // While editing: normal text hands off to the flat text-edit overlay, but path
-  // text keeps its path overlay (curved band + path) — its flat text-edit overlay
-  // is suppressed (see drawTextEditOverlay) since it can't follow the path.
+  // text keeps its path and start point, as in Figma; the text-edit overlay
+  // outlines the lettering and draws the caret and selection along the path.
   if (editing && !isPathText) return
 
   r.selectionPaint.setColor(r.outlineColor(node, graph))
@@ -120,7 +120,7 @@ function drawSingleSelection(
   if (node.type === 'CONNECTOR') {
     drawConnectorSelection(r, canvas, graph, node, preview)
   } else if (isPathText) {
-    drawTextPathSelection(r, canvas, node, rotation, graph, preview)
+    drawTextPathSelection(r, canvas, node, rotation, graph, editing, preview)
     if (!editing) r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
   } else {
     r.drawNodeSelection(canvas, node, rotation, graph, preview)
@@ -201,7 +201,8 @@ function withNodeBounds(
  * follows, a faint dashed box + handles, a center crosshair, and a start marker
  * at `textPathStart`. Bounds come from the glyph-fitted path box (see
  * fitTextPathBoxToGlyphs), so the circle tracks the lettering rather than the
- * ~4%-off textPathBox. Display-only — reads retained data, mutates nothing.
+ * ~4%-off textPathBox. While its text is edited only the path and start marker
+ * stay, as in Figma. Display-only — reads retained data, mutates nothing.
  */
 function drawTextPathSelection(
   r: SkiaRenderer,
@@ -209,6 +210,7 @@ function drawTextPathSelection(
   node: SceneNode,
   rotation: number,
   graph: SceneGraph,
+  editing: boolean,
   preview?: RotationPreview | null
 ): void {
   const pathGeometry = selectionPath(node)
@@ -225,44 +227,33 @@ function drawTextPathSelection(
     rotation,
     graph,
     () => {
-      // Figma-style selection band: a filled ribbon that hugs the lettering along
-      // the path (replaces the flat, path-blind text-edit selection rects).
-      const bandPoly = pathTextSelectionBand(data, box, node.derivedTextGlyphs, sampled)
-      if (bandPoly && bandPoly.length >= 6) {
-        const band = new r.ck.PathBuilder()
-        band.moveTo(bandPoly[0], bandPoly[1])
-        for (let i = 2; i < bandPoly.length; i += 2) band.lineTo(bandPoly[i], bandPoly[i + 1])
-        band.close()
-        const immutableBand = band.detachAndDelete()
-        r.auxFill.setColor(r.selColor(0.16))
-        canvas.drawPath(immutableBand, r.auxFill)
-        withScreenStroke(r, { color: r.selColor() }, (paint) =>
-          canvas.drawPath(immutableBand, paint)
+      // While editing, the text-edit overlay outlines the lettering instead.
+      if (!editing) {
+        // Faint dashed bounds + resize/rotate handles from the fitted path box.
+        withScreenStroke(
+          r,
+          { color: r.selColor(SELECTION_DASH_ALPHA), dash: SELECTION_DASH },
+          (paint) =>
+            canvas.drawRect(
+              r.ck.LTRBRect(box.x, box.y, box.x + box.width, box.y + box.height),
+              paint
+            )
         )
-        immutableBand.delete()
+        drawBoundsHandles(
+          r,
+          canvas,
+          box.x,
+          box.y,
+          box.x + box.width,
+          box.y + box.height,
+          rotationHandleLayout(node, createSceneGeometry(graph, preview), r.zoom, {
+            x: box.x,
+            y: box.y,
+            width: box.width,
+            height: box.height
+          })
+        )
       }
-
-      // Faint dashed bounds + resize/rotate handles from the fitted path box.
-      withScreenStroke(
-        r,
-        { color: r.selColor(SELECTION_DASH_ALPHA), dash: SELECTION_DASH },
-        (paint) =>
-          canvas.drawRect(r.ck.LTRBRect(box.x, box.y, box.x + box.width, box.y + box.height), paint)
-      )
-      drawBoundsHandles(
-        r,
-        canvas,
-        box.x,
-        box.y,
-        box.x + box.width,
-        box.y + box.height,
-        rotationHandleLayout(node, createSceneGeometry(graph, preview), r.zoom, {
-          x: box.x,
-          y: box.y,
-          width: box.x + box.width - box.x,
-          height: box.y + box.height - box.y
-        })
-      )
 
       // The path curve itself, sampled from the headless path metrics only for drawing.
       const path = new r.ck.PathBuilder()
@@ -278,17 +269,18 @@ function drawTextPathSelection(
       canvas.drawPath(immutablePath, r.selectionPaint)
       immutablePath.delete()
 
-      // Center crosshair at the fitted path box center (screen-constant size).
-      const cx = box.x + box.width / 2
-      const cy = box.y + box.height / 2
-      const arm = (HANDLE_HALF_SIZE * 2) / r.zoom
-      canvas.drawLine(cx - arm, cy, cx + arm, cy, r.selectionPaint)
-      canvas.drawLine(cx, cy - arm, cx, cy + arm, r.selectionPaint)
+      if (!editing) {
+        // Center crosshair at the fitted path box center (screen-constant size).
+        const cx = box.x + box.width / 2
+        const cy = box.y + box.height / 2
+        const arm = (HANDLE_HALF_SIZE * 2) / r.zoom
+        canvas.drawLine(cx - arm, cy, cx + arm, cy, r.selectionPaint)
+        canvas.drawLine(cx, cy - arm, cx, cy + arm, r.selectionPaint)
+      }
 
-      // Start-point marker on the curve at textPathStart.tValue (arc fraction).
+      // Start-point marker where aligned text is laid out from.
       // forward only flips travel direction, which the display-only marker ignores.
-      const s = Math.min(Math.max(data.tValue, 0), 1) * sampled.length
-      const start = pointAtArc(sampled, s)
+      const start = pointAtArc(sampled, textPathStartArc(data, sampled))
       drawHandle(r, canvas, start.x, start.y)
     },
     preview

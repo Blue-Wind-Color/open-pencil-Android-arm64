@@ -69,9 +69,10 @@ export function drawTextEditOverlay(
 }
 
 /**
- * Caret for text on a path: a tick standing perpendicular to the curve at the
- * insertion glyph (baseline → ~cap height), so the cursor sits on the lettering
- * instead of at the flat-layout position. Blinks with `caretVisible`.
+ * Text on a path while it is edited, as Figma draws it: the lettering outlined by the bounds of
+ * its glyph boxes, the selection covering each selected glyph from the font's descent to its
+ * ascent, turned with the glyph, and the caret square to the path between two characters over the
+ * same height.
  */
 function drawPathTextCaret(
   r: SkiaRenderer,
@@ -79,19 +80,39 @@ function drawPathTextCaret(
   node: SceneNode,
   editor: TextEditor
 ): void {
+  const corners = editor.getPathTextQuads().flat()
+  if (corners.length > 0) {
+    const xs = corners.map((point) => point.x)
+    const ys = corners.map((point) => point.y)
+    withScreenStroke(r, { color: r.selColor() }, (paint) =>
+      canvas.drawRect(
+        r.ck.LTRBRect(Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)),
+        paint
+      )
+    )
+  }
+
+  const quads = editor.getPathSelectionQuads()
+  if (quads.length > 0) {
+    // One path, so boxes overlapping where the path bends are not tinted twice.
+    const builder = new r.ck.PathBuilder()
+    for (const [first, ...rest] of quads) {
+      builder.moveTo(first.x, first.y)
+      for (const point of rest) builder.lineTo(point.x, point.y)
+      builder.close()
+    }
+    const path = builder.detachAndDelete()
+    r.auxFill.setColor(r.selColor(TEXT_SELECTION_ALPHA))
+    canvas.drawPath(path, r.auxFill)
+    path.delete()
+  }
+
   if (!editor.caretVisible || editor.hasSelection()) return
-  const glyphs = node.derivedTextGlyphs
-  const idx = editor.caretIndex
-  if (!glyphs?.length || idx == null) return
-  const g = glyphs[Math.min(Math.max(idx, 0), glyphs.length - 1)]
-  const fontSize = g.fontSize || 0
-  if (fontSize <= 0) return
-  const rot = g.rotation ?? 0
-  // Ascender ("up") direction from the glyph's on-path rotation.
-  const ux = -Math.sin(rot)
-  const uy = -Math.cos(rot)
-  r.auxStroke.setStrokeWidth((TEXT_CARET_WIDTH * 1.5) / r.zoom)
-  r.auxStroke.setColor(r.selColor())
+  const caret = editor.getPathCaret()
+  if (!caret) return
+  r.auxStroke.setStrokeWidth(TEXT_CARET_WIDTH / r.zoom)
+  const color = textCaretColor(node, editor.caretIndex ?? 0)
+  r.auxStroke.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
   r.auxStroke.setPathEffect(null)
-  canvas.drawLine(g.x, g.y, g.x + ux * fontSize * 0.72, g.y + uy * fontSize * 0.72, r.auxStroke)
+  canvas.drawLine(caret.from.x, caret.from.y, caret.to.x, caret.to.y, r.auxStroke)
 }

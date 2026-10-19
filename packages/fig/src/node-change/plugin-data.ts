@@ -64,14 +64,23 @@ export function applyExportSettingsPluginData(
  * layout path maps onto, after import-time box expansion and resize scaling).
  * The Kiwi schema has no home for it, and reconstructing it from an expanded,
  * resized node is ambiguous — persist it as plugin data so save/reopen keeps
- * reflow anchored correctly.
+ * reflow anchored correctly. A node still saved in its Figma box gets none: the
+ * reader rebuilds the box from that, and this one, in the expanded node's
+ * coordinates, would shift the path off the lettering a second time.
  */
-export function applyTextPathBoxPluginData(node: {
-  textPathBox: Rect | null
-  pluginData: PluginDataEntry[]
-}): void {
+export function applyTextPathBoxPluginData(
+  node: {
+    textPathBox: Rect | null
+    pluginData: PluginDataEntry[]
+  },
+  savedInFigmaBox: boolean
+): void {
   if (!node.textPathBox) return
-  node.pluginData = withPluginData(node.pluginData, textPathBox, node.textPathBox)
+  node.pluginData = withPluginData(
+    node.pluginData,
+    textPathBox,
+    savedInFigmaBox ? undefined : node.textPathBox
+  )
 }
 
 export function extractTextPathBox(nc: NodeChange): Rect | null {

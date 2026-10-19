@@ -171,6 +171,16 @@ export function fontDecorationMetricsSync(
   }
 }
 
+/** How far a loaded font reaches above and below the baseline, in ems; null when not loaded. */
+export function fontVerticalMetricsSync(
+  family: string,
+  style: string
+): { ascent: number; descent: number } | null {
+  const font = getParsedFont(family, style)
+  if (!font || !(font.unitsPerEm > 0)) return null
+  return { ascent: font.ascender / font.unitsPerEm, descent: -font.descender / font.unitsPerEm }
+}
+
 export interface GlyphOutlineMetrics {
   commands: OutlineCommand[]
   x: number
