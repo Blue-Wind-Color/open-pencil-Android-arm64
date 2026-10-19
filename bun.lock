@@ -719,6 +719,12 @@
         "typescript": "~5.8.3",
       },
     },
+    "tools/generate/emoji-metrics": {
+      "name": "@open-pencil/emoji-metrics-tools",
+      "devDependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+      },
+    },
     "tools/generate/landing-posters": {
       "name": "@open-pencil/landing-posters-tools",
       "dependencies": {
@@ -1586,6 +1592,8 @@
     "@open-pencil/dom-css": ["@open-pencil/dom-css@workspace:packages/dom-css"],
 
     "@open-pencil/emit": ["@open-pencil/emit@workspace:packages/emit"],
+
+    "@open-pencil/emoji-metrics-tools": ["@open-pencil/emoji-metrics-tools@workspace:tools/generate/emoji-metrics"],
 
     "@open-pencil/feedback": ["@open-pencil/feedback@workspace:packages/feedback"],
 

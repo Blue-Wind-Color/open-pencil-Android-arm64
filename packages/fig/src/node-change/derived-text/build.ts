@@ -16,6 +16,7 @@ import { weightToFigmaStyle } from '../font/style'
 import { bakeGlyphScale, encodePathCommandsBlob, type OutlineCommand } from '../path/commands'
 import { characterStyleIDs } from '../text/data-export'
 import { buildDerivedTextData } from './data'
+import { emojiGlyphFields } from './glyphs'
 
 type DerivedTextData = NonNullable<NodeChange['derivedTextData']>
 type DerivedTextBaseline = NonNullable<DerivedTextData['baselines']>[number]
@@ -240,7 +241,8 @@ function savedGlyphRecords(
       firstCharacter: characters[index],
       advance: savedAdvance(glyph, sameLine ? next : undefined),
       // Preserve path-text radians; hardcoding 0 used to flatten circular text on re-export.
-      rotation: glyph.rotation ?? 0
+      rotation: glyph.rotation ?? 0,
+      ...emojiGlyphFields(glyph)
     }
   })
 }

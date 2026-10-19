@@ -213,7 +213,13 @@ function copyPropertyDefs(
 
 /** Deep-copy path-text glyphs (fresh commandsBlob buffers). */
 export function copyDerivedGlyphs(glyphs: DerivedTextGlyph[] | null): DerivedTextGlyph[] | null {
-  return glyphs ? glyphs.map((g) => ({ ...g, commandsBlob: new Uint8Array(g.commandsBlob) })) : null
+  return glyphs
+    ? glyphs.map((g) => ({
+        ...g,
+        commandsBlob: new Uint8Array(g.commandsBlob),
+        ...(g.emojiCodePoints ? { emojiCodePoints: [...g.emojiCodePoints] } : {})
+      }))
+    : null
 }
 
 // --- Complex structure copy functions ---

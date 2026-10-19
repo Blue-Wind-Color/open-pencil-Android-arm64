@@ -2,6 +2,7 @@ import { uniq } from 'es-toolkit/array'
 
 import { ResourceCache } from '#core/cache/resource'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
+import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { fontManager } from '#core/text/fonts'
 
 const familiesCache = new ResourceCache<string, string[]>({ maxEntries: 256 })
@@ -24,7 +25,8 @@ export function resolveParagraphFontFamilies(
   if (cached) return cached
   const families = [renderPrimary]
   if (primary !== DEFAULT_FONT_FAMILY) families.push(DEFAULT_FONT_FAMILY)
-  families.push(...renderArabicFallbacks, ...renderCJKFallbacks)
+  // Emoji come last, so a character a script's font has stays in that font.
+  families.push(...renderArabicFallbacks, ...renderCJKFallbacks, EMOJI_METRICS_FAMILY)
   const resolved = uniq(families)
   familiesCache.set(key, resolved)
   return resolved

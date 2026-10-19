@@ -11,6 +11,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
+import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { fontManager } from '#core/text/fonts'
 import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
 
@@ -41,6 +42,26 @@ describe('text shaping for saved glyphs', () => {
       'bundled Inter font'
     )
     fontManager.markLoaded('Inter', 'Regular', inter)
+  })
+
+  /**
+   * Figma saves every emoji as a 1 em square, a joined sequence or a flag as one: the layout
+   * falls back to the emoji metrics font for them, which gives them that width.
+   */
+  test('lays an emoji out 1 em wide, a joined sequence and a flag as one', async () => {
+    const metrics = expectDefined(
+      await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
+      'bundled emoji metrics font'
+    )
+    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    const family = '👨‍👩‍👧‍👦'
+    const shaped = expectDefined(
+      await shape({ text: `a😀${family}🇺🇸b`, fontSize: 40, width: 400, textAutoResize: 'NONE' }),
+      'shaped text'
+    )
+    const advance = (character: number) =>
+      shaped.glyphs.find((glyph) => glyph.firstCharacter === character)?.advance
+    expect([advance(1), advance(3), advance(3 + family.length)]).toEqual([40, 40, 40])
   })
 
   test('breaks lines at the layer width (#914)', async () => {

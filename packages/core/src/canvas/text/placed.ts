@@ -66,6 +66,23 @@ function* candidateSources(font: ReturnType<typeof fontAt>) {
   }
 }
 
+/**
+ * The family the paragraph draws the character at `index` of `text` in, as it falls back: the
+ * first of the fonts it lists, the style's own then its fallbacks, that maps the character.
+ */
+export function characterFamily(node: SceneNode, text: string, index: number): string | null {
+  const codePoint = text.codePointAt(index)
+  if (codePoint === undefined) return null
+  const character = String.fromCodePoint(codePoint)
+  const font = fontAt(node, index)
+  for (const family of resolveParagraphFontFamilies(font.family, font.style)) {
+    const style = loadedStyle(family, font.weight, font.italic)
+    if (style && glyphOutlineSourceSync(family, style, font.variations)?.covers(character))
+      return family
+  }
+  return null
+}
+
 /** Whether a glyph the shaper chose is the one the font maps its character to. */
 function drawsOwnGlyph(
   source: GlyphOutlineSource,

@@ -14,6 +14,7 @@ function disposePathCaches(r: SkiaRenderer): void {
   r.nodePaths.clear()
   r.glyphSilhouetteCache.clear()
   r.derivedGlyphPathCache.clear()
+  r.emojiImageCache.clear()
 }
 
 /** Frees every live image `r`'s surface holds and forgets those an earlier surface held. */

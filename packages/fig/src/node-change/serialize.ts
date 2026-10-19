@@ -127,7 +127,8 @@ function serializeTextProps(
   nc.fontVariantContextualLigatures = true
   applyFontFeaturesToKiwi(nc, node.fontFeatures)
   nc.fontVersion = ''
-  nc.emojiImageSet = 'APPLE'
+  // FigJam text draws Noto emoji; a file's own set is replayed from its raw fields.
+  if (!('emojiImageSet' in rawNodeFields)) nc.emojiImageSet = 'APPLE'
   if (node.textCase !== 'ORIGINAL') nc.textCase = node.textCase
   if (node.textTruncation === 'ENDING') nc.textTruncation = 'ENDING'
   if (node.maxLines != null) nc.maxLines = node.maxLines

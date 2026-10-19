@@ -446,6 +446,13 @@ export interface DerivedTextGlyph {
    */
   scaleX?: number
   scaleY?: number
+  /**
+   * The code points of the emoji this glyph stands for, sequence and all. Its outline is only a
+   * placeholder square a 1 em wide; the emoji's image is drawn there instead, as Figma does.
+   */
+  emojiCodePoints?: number[]
+  /** The image set Figma draws the emoji from, when the file names one other than Apple's. */
+  emojiImageSet?: 'NOTO'
 }
 
 export interface SymbolLink {

@@ -6,6 +6,7 @@ import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-directio
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { TextLayout } from '#core/canvas/text/layout'
+import { nextGraphemeBoundary, previousGraphemeBoundary } from '#core/text/graphemes'
 
 export interface TextCaret {
   x: number
@@ -259,7 +260,9 @@ export class TextEditor {
   backspace(node: SceneNode): void {
     const s = this.current()
     if (!s) return
-    const range = this.getSelectionRange() ?? (s.cursor > 0 ? [s.cursor - 1, s.cursor] : null)
+    const range =
+      this.getSelectionRange() ??
+      (s.cursor > 0 ? [previousGraphemeBoundary(s.text, s.cursor), s.cursor] : null)
     if (range) this.replaceRange(range[0], range[1], '')
     this.rebuildParagraph(node)
   }
@@ -268,7 +271,8 @@ export class TextEditor {
     const s = this.current()
     if (!s) return
     const range =
-      this.getSelectionRange() ?? (s.cursor < s.text.length ? [s.cursor, s.cursor + 1] : null)
+      this.getSelectionRange() ??
+      (s.cursor < s.text.length ? [s.cursor, nextGraphemeBoundary(s.text, s.cursor)] : null)
     if (range) this.replaceRange(range[0], range[1], '')
     this.rebuildParagraph(node)
   }
@@ -279,9 +283,9 @@ export class TextEditor {
     if (!extend && this.collapseSelectionTo(visualDirection === 'left' ? 0 : 1)) return
     this.prepareMove(extend)
     const movesForward = (visualDirection === 'left') === (s.textDirection === 'RTL')
-    const step = movesForward ? 1 : -1
-    const next = s.cursor + step
-    if (next >= 0 && next <= s.text.length) s.cursor = next
+    s.cursor = movesForward
+      ? nextGraphemeBoundary(s.text, s.cursor)
+      : previousGraphemeBoundary(s.text, s.cursor)
   }
 
   moveLeft(extend = false): void {

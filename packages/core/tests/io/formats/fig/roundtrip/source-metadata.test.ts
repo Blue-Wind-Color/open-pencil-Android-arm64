@@ -224,6 +224,7 @@ describe('fig roundtrip source metadata', () => {
     text.source.fig.rawNodeFields.toggledOffOTFeatures = ['LIGA']
     text.source.fig.rawNodeFields.semanticWeight = 'BOLD'
     text.source.fig.rawNodeFields.semanticItalic = 'ITALIC'
+    text.source.fig.rawNodeFields.emojiImageSet = 'NOTO'
     text.source.fig.rawNodeFields.derivedTextData = {
       layoutSize: { x: 80, y: 20 },
       derivedLines: [{ directionality: 'LTR' }]
@@ -245,6 +246,7 @@ describe('fig roundtrip source metadata', () => {
     expect(exported?.toggledOffOTFeatures).toEqual(['LIGA'])
     expect(exported?.semanticWeight).toBe('BOLD')
     expect(exported?.semanticItalic).toBe('ITALIC')
+    expect(exported?.emojiImageSet).toBe('NOTO')
     expect(exported?.derivedTextData?.layoutSize).toEqual({ x: 80, y: 20 })
   })
 

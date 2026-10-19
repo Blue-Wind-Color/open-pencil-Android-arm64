@@ -1,12 +1,30 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Color, SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { TEXT_CARET_COLOR, TEXT_CARET_WIDTH, TEXT_SELECTION_ALPHA } from '#core/constants'
 import type { TextEditor } from '#core/text/editor'
+import { previousGraphemeBoundary } from '#core/text/graphemes'
 
 import { withScreenStroke } from './outline'
+
+/**
+ * The caret's colour at `index`, as Figma draws it: the fill of the character before the caret,
+ * or of the first at the text's start, when that is one visible solid fill, with its opacity;
+ * black for a gradient, several fills, or none. The layer's opacity leaves it be. Measured in
+ * Figma desktop.
+ */
+export function textCaretColor(node: SceneNode, index: number): Color {
+  const character = index > 0 ? previousGraphemeBoundary(node.text, index) : 0
+  const run = node.styleRuns.find(
+    (item) => character >= item.start && character < item.start + item.length
+  )
+  const visible = (run?.style.fills ?? node.fills).filter((fill) => fill.visible)
+  const [fill] = visible
+  if (visible.length !== 1 || fill.type !== 'SOLID') return TEXT_CARET_COLOR
+  return { ...fill.color, a: fill.color.a * fill.opacity }
+}
 
 export function drawTextEditOverlay(
   r: SkiaRenderer,
@@ -39,9 +57,8 @@ export function drawTextEditOverlay(
   if (editor.caretVisible && !editor.hasSelection()) {
     const caret = editor.getCaretRect()
     if (caret) {
-      r.auxFill.setColor(
-        r.ck.Color4f(TEXT_CARET_COLOR.r, TEXT_CARET_COLOR.g, TEXT_CARET_COLOR.b, TEXT_CARET_COLOR.a)
-      )
+      const color = textCaretColor(node, editor.caretIndex ?? 0)
+      r.auxFill.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
       const w = TEXT_CARET_WIDTH / r.zoom
       canvas.drawRect(
         r.ck.LTRBRect(caret.x - w / 2, caret.y0, caret.x + w / 2, caret.y1),

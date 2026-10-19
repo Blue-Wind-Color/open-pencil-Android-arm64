@@ -9,6 +9,7 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import { EffectRasterCache } from '#core/canvas/renderer/effect-raster-cache'
 import { destroyRenderer } from '#core/canvas/renderer/lifecycle'
 import { createDerivedGlyphPathCache, createGlyphSilhouetteCache } from '#core/canvas/text/derived'
+import { createEmojiImageCache } from '#core/canvas/text/emoji'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 
 import { asDouble, asRenderer } from './helpers'
@@ -29,6 +30,7 @@ function createRenderer() {
     nodePaths: new NodePathCaches(),
     glyphSilhouetteCache: createGlyphSilhouetteCache(),
     derivedGlyphPathCache: createDerivedGlyphPathCache(),
+    emojiImageCache: createEmojiImageCache(),
     fillPaint: deletable<Paint>(),
     strokePaint: deletable<Paint>(),
     selectionPaint: deletable<Paint>(),

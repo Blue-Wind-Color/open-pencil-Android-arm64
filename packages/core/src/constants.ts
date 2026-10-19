@@ -166,6 +166,7 @@ export const AI_DONE_DURATION_MS = 800
 
 /** Opacity of the selection color behind selected text while editing. */
 export const TEXT_SELECTION_ALPHA = 0.3
+/** The caret's colour where the text's fill gives it none, as Figma's. */
 export const TEXT_CARET_COLOR = BLACK
 export const TEXT_CARET_WIDTH = 1
 

@@ -323,6 +323,10 @@ export interface NodeChange {
       advance: number
       /** Radians along the text path; kiwi omits the field for axis-aligned text. */
       rotation?: number
+      /** An emoji's code points; Figma draws its image in place of the glyph's placeholder. */
+      emojiCodePoints?: number[]
+      /** The image set the emoji is drawn from; left out for the default, APPLE. */
+      emojiImageSet?: 'APPLE' | 'NOTO'
     }>
     /** Underlines and strikethroughs, which Figma draws saved text's decorations from. */
     decorations?: Array<{

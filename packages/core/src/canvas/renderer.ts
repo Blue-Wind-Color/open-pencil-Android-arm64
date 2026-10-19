@@ -42,6 +42,7 @@ import * as RendererState from './renderer/state'
 import * as RenderText from './text'
 import type { SavedDecorationCache } from './text/decorations'
 import { createDerivedGlyphPathCache, createGlyphSilhouetteCache } from './text/derived'
+import { createEmojiImageCache } from './text/emoji'
 import { TextPreparationCache } from './text/preparation/cache'
 export type {
   MeasurementMode,
@@ -149,6 +150,8 @@ export class SkiaRenderer {
   glyphSilhouetteCache = createGlyphSilhouetteCache()
   derivedGlyphPathCache = createDerivedGlyphPathCache()
   derivedDecorationCache: SavedDecorationCache = new WeakMap()
+  /** Images of the emoji saved text draws, by what drew them and the emoji. */
+  emojiImageCache = createEmojiImageCache()
   renderingSceneBacking = false
   scenePicture: SkPicture | null = null
   scenePictureVersion = -1

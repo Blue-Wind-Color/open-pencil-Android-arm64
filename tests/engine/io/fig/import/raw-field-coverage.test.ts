@@ -85,6 +85,7 @@ const RAW_FIELD_COVERAGE = {
     'detachedSymbolId',
     'documentColorProfile',
     'editInfo',
+    'emojiImageSet',
     'fontVersion',
     'gridChildHorizontalAlign',
     'gridChildVerticalAlign',
