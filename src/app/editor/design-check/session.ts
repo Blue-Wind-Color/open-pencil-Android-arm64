@@ -144,19 +144,23 @@ export function createDesignCheck(editor: Editor, state: AppEditorState) {
     })
     watch(pagesNeeded, (on) => (on ? pages.start() : pages.stop()), { immediate: true })
     watch(snapshot, (current) => current && pages.report(current.pageId, current.issues))
+    // The switch itself settles the new page's layout, which changes the scene again, so the
+    // check waits for that instead of running once inside the switch and once after it.
     watch(
       () => state.currentPageId,
       () => {
         focusedIssueId.value = null
         editor.setDesignIssueHighlight(null)
-        if (enabled.value) run()
+        publishMarkers()
+        if (enabled.value) schedule()
       }
     )
     watch(
       () => state.sceneVersion,
       () => enabled.value && schedule()
     )
-    watch([snapshot, () => preferences.value.showOnCanvas], publishMarkers)
+    // Immediate: the first check runs before this watcher exists, while `enabled` starts up.
+    watch([snapshot, () => preferences.value.showOnCanvas], publishMarkers, { immediate: true })
   })
 
   const unsubscribeGraph = editor.onEditorEvent('graph:replaced', () => {
@@ -196,6 +200,8 @@ export function createDesignCheck(editor: Editor, state: AppEditorState) {
     // A page switch clears the focused issue, so focus follows the switch.
     if (issue.pageId !== state.currentPageId && editor.graph.getNode(issue.pageId)) {
       await editor.switchPage(issue.pageId)
+      // The row to focus belongs to the new page's check, which would otherwise come later.
+      run()
     }
     focusedIssueId.value = issue.id
     if (!editor.graph.getNode(issue.nodeId)) return
