@@ -5,7 +5,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { renderEffects } from '#core/canvas/shadows'
 
 import { asCanvas } from '../helpers'
-import { createMockCanvas, createMockRenderer } from './helpers'
+import { createMockCanvas, createMockRenderer, OPAQUE_FILL } from './helpers'
 
 describe('Shadow spread support (Behavioral)', () => {
   test('drop shadow uses spread for shape expansion', () => {
@@ -71,7 +71,7 @@ describe('Shadow spread support (Behavioral)', () => {
       type: 'RECTANGLE',
       width: 100,
       height: 100,
-      fills: [],
+      fills: [OPAQUE_FILL],
       childIds: [],
       effects: [
         {

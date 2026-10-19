@@ -20,7 +20,10 @@ function effect(type: Effect['type'], radius: number, y = 0): Effect {
   }
 }
 
-/** Layer blur, drop and inner shadow, and background blur, each at a 16px radius. */
+/**
+ * Layer blur, drop and inner shadow, and background blur, each at a 16px radius, plus a drop
+ * shadow, shown behind the node, under a fill at 0% opacity, which casts nothing.
+ */
 export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void {
   const card = { y: 100, width: 120, height: 120, cornerRadius: 20 }
   graph.createNode('RECTANGLE', pageId, {
@@ -67,5 +70,19 @@ export function createBlurEffectsScene(graph: SceneGraph, pageId: string): void 
     cornerRadius: 16,
     fills: [solid(1, 1, 1, 0.2)],
     effects: [effect('BACKGROUND_BLUR', 16)]
+  })
+  graph.createNode('RECTANGLE', pageId, {
+    name: 'Transparent fill shadow',
+    x: 80,
+    ...card,
+    y: 280,
+    fills: [solid(1, 1, 1, 0)],
+    effects: [
+      {
+        ...effect('DROP_SHADOW', 16, 8),
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        showShadowBehindNode: true
+      }
+    ]
   })
 }

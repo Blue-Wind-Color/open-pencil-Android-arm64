@@ -5,7 +5,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { renderEffects } from '#core/canvas/shadows'
 
 import { asCanvas } from '../helpers'
-import { createMockCanvas, createMockRenderer, mockCalls } from './helpers'
+import { createMockCanvas, createMockRenderer, mockCalls, OPAQUE_FILL } from './helpers'
 
 const requiredNodeFields = { childIds: [] as string[], strokeGeometry: [] }
 
@@ -18,7 +18,7 @@ describe('path shape shadows', () => {
       type: 'STAR',
       width: 100,
       height: 100,
-      fills: [],
+      fills: [OPAQUE_FILL],
       effects: [
         {
           type: 'DROP_SHADOW',
@@ -83,7 +83,7 @@ describe('path shape shadows', () => {
       type: 'POLYGON',
       width: 100,
       height: 100,
-      fills: [],
+      fills: [OPAQUE_FILL],
       effects: [
         {
           type: 'INNER_SHADOW',

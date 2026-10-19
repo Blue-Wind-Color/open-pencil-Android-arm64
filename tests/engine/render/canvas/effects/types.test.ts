@@ -10,7 +10,7 @@ import { renderNode } from '#core/canvas/scene'
 import { renderEffects } from '#core/canvas/shadows'
 
 import { asCanvas, asDouble } from '../helpers'
-import { createMockCanvas, createMockRenderer, mockCalls } from './helpers'
+import { createMockCanvas, createMockRenderer, mockCalls, OPAQUE_FILL } from './helpers'
 
 describe('Renderer handles all effect types (Behavioral)', () => {
   test('handles DROP_SHADOW', () => {
@@ -20,7 +20,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       type: 'RECTANGLE',
       width: 100,
       height: 100,
-      fills: [],
+      fills: [OPAQUE_FILL],
       childIds: [],
       strokeGeometry: [],
       effects: [
@@ -51,6 +51,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       width: 100,
       height: 100,
       fills: [],
+      strokes: [{ ...OPAQUE_FILL, weight: 1, align: 'CENTER' }],
       childIds: [],
       strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: new Uint8Array([0]) }],
       effects: [
@@ -82,7 +83,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       type: 'RECTANGLE',
       width: 100,
       height: 100,
-      fills: [],
+      fills: [OPAQUE_FILL],
       childIds: [],
       strokeGeometry: [],
       effects: [
@@ -111,7 +112,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       type: 'RECTANGLE',
       width: 100,
       height: 100,
-      fills: [],
+      fills: [OPAQUE_FILL],
       childIds: [],
       effects: [
         {

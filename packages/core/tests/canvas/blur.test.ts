@@ -173,3 +173,62 @@ describe('blur effects fall off as in Figma', () => {
     expectFigmaEdge(row, FIGMA['BACKGROUND_BLUR 16'])
   })
 })
+
+describe('shadows of a transparent fill', () => {
+  const shadowRow = (opacity: number, showShadowBehindNode = false) =>
+    edgeRow(
+      (graph, frameId) =>
+        square(graph, frameId, {
+          fills: [solid(1, 1, 1, opacity)],
+          effects: [{ ...effect('DROP_SHADOW', 16), showShadowBehindNode }]
+        }),
+      3
+    )
+
+  test('a fill at 0% opacity casts no shadow', () => {
+    expect(Math.max(...shadowRow(0))).toBe(0)
+  })
+
+  test('a fill at 1% opacity casts a full one', () => {
+    expect(shadowRow(0.01).slice(0, 40)).toEqual(shadowRow(1).slice(0, 40))
+  })
+
+  test('a fill at 0% opacity casts none when the shadow shows behind the node', () => {
+    expect(Math.max(...shadowRow(0, true))).toBe(0)
+  })
+
+  test('a fill at 0% opacity takes no inner shadow', () => {
+    const row = edgeRow(
+      (graph, frameId) =>
+        square(graph, frameId, {
+          fills: [solid(1, 1, 1, 0)],
+          effects: [effect('INNER_SHADOW', 16)]
+        }),
+      3
+    )
+    expect(Math.max(...row)).toBe(0)
+  })
+
+  test('a frame with a fill at 0% opacity casts only its child shadow', () => {
+    const row = edgeRow((graph, frameId) => {
+      const frame = graph.createNode('FRAME', frameId, {
+        x: 100,
+        y: 100,
+        width: 200,
+        height: 200,
+        fills: [solid(1, 1, 1, 0)],
+        clipsContent: false,
+        effects: [effect('DROP_SHADOW', 16)]
+      })
+      graph.createNode('RECTANGLE', frame.id, {
+        x: 40,
+        y: 40,
+        width: 120,
+        height: 120,
+        fills: [solid(0, 0, 1)]
+      })
+    }, 3)
+    expect(Math.max(...row.slice(0, 41))).toBe(0)
+    expect(row[79]).toBeGreaterThan(0)
+  })
+})

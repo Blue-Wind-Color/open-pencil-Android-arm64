@@ -2,6 +2,8 @@ import { mock } from 'bun:test'
 
 import type { InputRect, Paint } from 'canvaskit-wasm'
 
+import type { Fill } from '@open-pencil/scene-graph'
+
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderEffects } from '#core/canvas/shadows'
 
@@ -16,6 +18,14 @@ export function mockCalls(fn: unknown): unknown[][] {
   const calls = (fn as { mock?: { calls?: unknown[][] } }).mock?.calls
   if (!calls) throw new Error('expected a mock function with recorded calls')
   return calls
+}
+
+/** A fill to cast from: Figma casts no shadow from a shape with no fill, stroke, or child. */
+export const OPAQUE_FILL: Fill = {
+  type: 'SOLID',
+  color: { r: 1, g: 1, b: 1, a: 1 },
+  opacity: 1,
+  visible: true
 }
 
 export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaRenderer {

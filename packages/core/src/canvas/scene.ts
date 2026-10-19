@@ -37,6 +37,7 @@ import {
   effectRasterScale,
   effectRasterScaleMatches
 } from './renderer/effect-raster-cache'
+import { paintCastsShadow } from './shadows'
 import { makeSmoothRRectPath, nodeHasRadius, nodeHasSmoothCorners } from './shapes'
 import {
   configureStrokePaint,
@@ -643,8 +644,8 @@ export function renderShape(
 }
 
 function getShadowShapeChild(node: SceneNode, graph: SceneGraph): SceneNode | null {
-  if (node.fills.some((f) => f.visible)) return null
-  if (node.strokes.some((stroke) => stroke.visible)) return null
+  if (node.fills.some(paintCastsShadow)) return null
+  if (node.strokes.some(paintCastsShadow)) return null
   if (node.childIds.length === 0) return null
   const child = graph.getNode(node.childIds[0])
   if (!child?.visible) return null
