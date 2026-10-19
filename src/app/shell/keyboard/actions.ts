@@ -27,6 +27,7 @@ export function createKeyboardActions({
     return (
       store.state.nodeEditState &&
       (store.state.nodeEditState.selectedVertexIndices.size > 0 ||
+        store.state.nodeEditState.selectedSegmentIndices.size > 0 ||
         store.state.nodeEditState.selectedHandles.size > 0)
     )
   }

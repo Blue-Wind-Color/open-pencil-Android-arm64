@@ -83,6 +83,7 @@ export function createVectorEditLifecycle(editor: Editor, state: VectorEditState
       history: [],
       future: [],
       selectedVertexIndices: new Set(),
+      selectedSegmentIndices: new Set(),
       draggedHandleInfo: null,
       selectedHandles: new Set(),
       hoveredHandleInfo: null

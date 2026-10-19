@@ -40,6 +40,7 @@ describe('vector edit snapping', () => {
       vertices: [{ x: 10, y: 20 }],
       segments: [],
       selectedVertexIndices: new Set([0]),
+      selectedSegmentIndices: new Set<number>(),
       selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
@@ -80,6 +81,7 @@ describe('vector edit snapping', () => {
       ],
       segments: [],
       selectedVertexIndices: new Set([0]),
+      selectedSegmentIndices: new Set<number>(),
       selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
@@ -121,6 +123,7 @@ describe('vector edit snapping', () => {
       ],
       segments: [],
       selectedVertexIndices: new Set([0]),
+      selectedSegmentIndices: new Set<number>(),
       selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
@@ -158,6 +161,7 @@ describe('vector edit snapping', () => {
       ],
       segments: [],
       selectedVertexIndices: new Set([0]),
+      selectedSegmentIndices: new Set<number>(),
       selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
@@ -195,6 +199,7 @@ describe('vector edit snapping', () => {
       vertices: [{ x: 10.2, y: 20.4 }],
       segments: [],
       selectedVertexIndices: new Set([0]),
+      selectedSegmentIndices: new Set<number>(),
       selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }

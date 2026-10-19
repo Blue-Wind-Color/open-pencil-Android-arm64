@@ -177,6 +177,11 @@ export interface DragEditNode {
   startX: number
   startY: number
   origPositions: Map<number, Vector>
+  /**
+   * A selected segment that was pressed: releasing without a drag selects only it, or with Shift
+   * takes it out of the selection.
+   */
+  segmentClick?: { segment: number; deselect: boolean }
 }
 
 export interface DragEditHandle {
@@ -187,6 +192,17 @@ export interface DragEditHandle {
   startX: number
   startY: number
   initialTangent: Vector | null
+}
+
+/** A drag over empty space while editing a path: selects the points and segments it encloses. */
+export interface DragEditMarquee {
+  type: 'edit-marquee'
+  startX: number
+  startY: number
+  /** Points kept selected alongside the enclosed ones, as with Shift held. */
+  baseSelection: Set<number>
+  /** Segments kept selected alongside the enclosed ones, as with Shift held. */
+  baseSegments: Set<number>
 }
 
 export interface DragBendHandle {
@@ -250,6 +266,7 @@ export type DragState =
   | DragTextSelect
   | DragEditNode
   | DragEditHandle
+  | DragEditMarquee
   | DragBendHandle
   | DragGuide
 

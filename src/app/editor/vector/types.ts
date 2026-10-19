@@ -22,6 +22,8 @@ export type NodeEditState = {
   /** Geometry at the last undo/redo restore; divergence invalidates `future` */
   futureBaseline?: VectorNetwork | null
   selectedVertexIndices: Set<number>
+  /** Segments selected as segments, apart from their endpoints, as in Figma */
+  selectedSegmentIndices: Set<number>
   draggedHandleInfo: {
     vertexIndex: number
     handleType: 'tangentStart' | 'tangentEnd'

@@ -5,6 +5,7 @@ export { freehandNetwork, simplifyFreehand } from './freehand'
 export {
   breakAtVertex,
   computeAccurateBounds,
+  deleteVectorParts,
   deleteVertex,
   findAllHandles,
   findOppositeHandle,

@@ -15,6 +15,7 @@ import { handleToolMouseDown } from '#vue/canvas/tools/input'
 import { createCanvasTransformInput } from '#vue/canvas/transform/input'
 import { finishMarquee } from '#vue/canvas/transform/marquee'
 import {
+  cancelNodeEditDrag,
   handleBendHandleMove,
   handleNodeEditPointerUp,
   updateNodeEditHover
@@ -30,7 +31,7 @@ import { resolveShapeHandleHover } from '#vue/shared/input/shape-handles'
 import { useSpaceHeld } from '#vue/shared/input/space-key'
 import { applyStickyScale } from '#vue/shared/input/sticky/scale'
 import type { DragState } from '#vue/shared/input/types'
-import { handleNodeEditMove } from '#vue/shared/input/vector'
+import { handleNodeEditMarqueeMove, handleNodeEditMove } from '#vue/shared/input/vector'
 
 /**
  * Wires pointer and mouse interaction to an OpenPencil canvas.
@@ -335,6 +336,11 @@ export function useCanvasInput(
       return
     }
 
+    if (d.type === 'edit-marquee') {
+      handleNodeEditMarqueeMove(d, cx, cy, editor)
+      return
+    }
+
     if (d.type === 'draw') {
       handleDrawMove(d, cx, cy, e.shiftKey)
       return
@@ -415,10 +421,7 @@ export function useCanvasInput(
     else if (d.type === 'rotate') {
       if (editor.state.rotationPreview?.nodeId === d.nodeId) editor.setRotationPreview(null)
     } else if (d.type === 'draw' || d.type === 'gradient' || d.type === 'shape-handle') d.cancel()
-    else if (d.type === 'edit-node' || d.type === 'edit-handle' || d.type === 'bend-handle') {
-      const methods = editor as Editor & { nodeEditCancelDrag?: () => void }
-      methods.nodeEditCancelDrag?.()
-    }
+    else cancelNodeEditDrag(d, editor)
   }
 
   function cancelPointerInteraction() {
@@ -468,10 +471,12 @@ export function useCanvasInput(
     (event) => {
       if (event.code !== 'Escape' || event.isComposing || !isEnabled()) return
       const type = drag.value?.type
-      if (type !== 'draw' && type !== 'gradient' && type !== 'rotate') return
+      // A vector edit marquee carries on through Escape, as in Figma, and keeps the path open.
+      const swallowed = type === 'edit-marquee'
+      if (type !== 'draw' && type !== 'gradient' && type !== 'rotate' && !swallowed) return
       event.preventDefault()
       event.stopImmediatePropagation()
-      cancelPointerInteraction()
+      if (!swallowed) cancelPointerInteraction()
     },
     { capture: true }
   )

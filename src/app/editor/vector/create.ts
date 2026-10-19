@@ -15,7 +15,7 @@ export function createVectorEditActions(editor: Editor, state: VectorEditState) 
     nodeEditAlignVertices,
     nodeEditDeleteSelected,
     nodeEditBreakAtVertex
-  } = createVectorEditSelectionActions(editor, state)
+  } = createVectorEditSelectionActions(editor, state, exitNodeEditMode)
 
   const { nodeEditSetHandle, nodeEditBendHandle, nodeEditZeroVertexHandles } =
     createVectorEditHandleActions(editor, getNodeEditState)
