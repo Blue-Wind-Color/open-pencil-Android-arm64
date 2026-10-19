@@ -12,9 +12,10 @@ let cachedRenderer: SkiaRenderer | null = null
 export async function initCanvasKit(): Promise<CanvasKit> {
   if (cachedCk) return cachedCk
   const CanvasKitInit = (await import('canvaskit-wasm/full')).default
-  const ckPath = import.meta.resolve('canvaskit-wasm/full')
-  const binDir = new URL('.', ckPath).pathname
-  cachedCk = await CanvasKitInit({ locateFile: (file: string) => binDir + file })
+  const ckURL = import.meta.resolve('canvaskit-wasm/full')
+  cachedCk = await CanvasKitInit({
+    locateFile: (file: string) => new URL(file, ckURL).href
+  })
   return cachedCk
 }
 

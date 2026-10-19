@@ -13,10 +13,8 @@ export async function getCanvasKit(options?: CanvasKitOptions): Promise<CanvasKi
   if (instance) return instance
 
   const defaultLocate = (file: string) => {
-    if (!IS_BROWSER) {
-      const ckPath = import.meta.resolve('canvaskit-wasm')
-      return decodeURIComponent(new URL(file, ckPath).pathname)
-    }
+    // CanvasKit's Node loader reads `file:` URLs itself, so Windows paths need no conversion.
+    if (!IS_BROWSER) return new URL(file, import.meta.resolve('canvaskit-wasm')).href
     const base = 'env' in import.meta ? import.meta.env.BASE_URL : '/'
     const prefix = base === '/' ? '' : base.replace(/\/$/, '')
     return `${prefix}/${file}`
