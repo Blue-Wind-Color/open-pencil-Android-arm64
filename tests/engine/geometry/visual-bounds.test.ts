@@ -449,7 +449,8 @@ describe('computeVisualBounds', () => {
       (id) => nodes[id as keyof typeof nodes],
       () => ({ x: 0, y: 0 })
     )
-    expect(bounds?.minY).toBe(-18)
+    // A triangle head reaches furthest on a short line: from the end to its base corners.
+    expect(bounds?.minY).toBeCloseTo(-4 * Math.hypot(5, 5 / Math.sqrt(3)), 5)
   })
 
   test('nested clipping stops descendants outside the ancestor clip', () => {

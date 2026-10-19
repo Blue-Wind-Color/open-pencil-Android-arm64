@@ -44,6 +44,7 @@ import { createGraphReadActions } from './graph-reads'
 import { createGuideActions } from './guides'
 import { createIconActions } from './icons'
 import { createDesignIssueActions } from './issues'
+import { createLineEndActions } from './line-ends'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
 import { createPlayActions } from './play/actions'
@@ -306,6 +307,7 @@ export function createEditor(options?: EditorOptions) {
     clipboard.deleteNodes
   )
   const connectorStyles = createConnectorStyleActions(ctx)
+  const lineEnds = createLineEndActions(ctx, nodes.beginNodePreview)
   const shaders = createShaderActions(ctx, nodes)
   const alignment = createAlignmentActions(ctx)
   const preview = createPlayActions(ctx)
@@ -479,6 +481,7 @@ export function createEditor(options?: EditorOptions) {
     setStatusWorkflow: statuses.setStatusWorkflow,
     ...connectorDrawing,
     ...connectorEndpoints,
+    ...lineEnds,
     ...connectorStyles,
     ...shaders,
     ...shaderFrames,

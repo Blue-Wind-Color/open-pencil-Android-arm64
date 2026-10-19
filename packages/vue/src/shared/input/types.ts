@@ -55,6 +55,13 @@ export interface DragConnectorEnd {
   cancel: () => void
 }
 
+/** An end of a selected line or arrow dragged to aim it. */
+export interface DragLineEnd {
+  type: 'line-end'
+  commit: () => void
+  cancel: () => void
+}
+
 /** A sticky note being drawn: it grows from the press corner with the drag, as a frame does. */
 export interface DragStickyDraw {
   type: 'sticky-draw'
@@ -279,6 +286,7 @@ export type DragState =
   | DragStickyDraw
   | DragConnectorDraw
   | DragConnectorEnd
+  | DragLineEnd
   | DragGradient
   | DragMove
   | DragPan

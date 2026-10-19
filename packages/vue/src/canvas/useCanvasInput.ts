@@ -47,7 +47,8 @@ const ESCAPABLE_DRAGS: ReadonlySet<DragState['type']> = new Set<DragState['type'
   'gradient',
   'rotate',
   'connector-draw',
-  'connector-end'
+  'connector-end',
+  'line-end'
 ])
 
 export function useCanvasInput(
@@ -375,6 +376,11 @@ export function useCanvasInput(
       return
     }
 
+    if (d.type === 'line-end') {
+      editor.lineEndDrag(cx, cy, { shift: e.shiftKey, alt: e.altKey })
+      return
+    }
+
     if (d.type === 'sticky-scale') {
       applyStickyScale(d, cx, cy, editor)
       return
@@ -431,16 +437,10 @@ export function useCanvasInput(
     guideInput.clearHoverAndPreview()
   }
 
-  /** Drops what a resize or pencil stroke showed without changing the document. */
+  /** Drops what a drag showed without changing the document. */
   function discardDrawnPreview(d: DragState) {
     if (d.type === 'resize') cancelResizePreview(d, editor)
-    else if (
-      d.type === 'sticky-scale' ||
-      d.type === 'sticky-draw' ||
-      d.type === 'connector-draw' ||
-      d.type === 'connector-end'
-    )
-      d.cancel()
+    else if ('cancel' in d) d.cancel()
     else if (d.type === 'pencil-drag') editor.pencilCancel()
   }
 
@@ -450,8 +450,7 @@ export function useCanvasInput(
     if (d.type === 'move') cancelMove(d, editor)
     else if (d.type === 'rotate') {
       if (editor.state.rotationPreview?.nodeId === d.nodeId) editor.setRotationPreview(null)
-    } else if (d.type === 'draw' || d.type === 'gradient' || d.type === 'shape-handle') d.cancel()
-    else cancelNodeEditDrag(d, editor)
+    } else cancelNodeEditDrag(d, editor)
   }
 
   function cancelPointerInteraction() {
