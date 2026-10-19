@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
-import { getSharedStyles, SceneGraph, type Variable } from '@open-pencil/scene-graph'
+import {
+  getSharedStyles,
+  parseVariableFormula,
+  SceneGraph,
+  type Variable
+} from '@open-pencil/scene-graph'
 
 import {
   defaultTokenImportOptions,
@@ -255,4 +260,18 @@ describe('design token import', () => {
       { type: 'DROP_SHADOW', radius: 2 }
     ])
   })
+})
+
+test('a formula token holds its result and keeps the formula with token references', () => {
+  const graph = new SceneGraph()
+  const space = graph.createCollection('Space')
+  const mode = space.defaultModeId
+  graph.createVariable('Base', 'FLOAT', space.id, 4)
+  const large = graph.createVariable('Large', 'FLOAT', space.id, 0)
+  large.valuesByMode[mode] = parseVariableFormula(graph, large.id, mode, '{Base} * 4').value
+  const { files, issues } = exportDesignTokens(graph)
+  expect(issues).toEqual([])
+  const token = JSON.stringify(files.map((file) => file.content))
+  expect(token).toContain('"$value":{"value":16,"unit":"px"}')
+  expect(token).toContain('"formula":"{Base} * 4"')
 })

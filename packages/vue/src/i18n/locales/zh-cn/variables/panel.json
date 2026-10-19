@@ -24,6 +24,13 @@
   "values": "值",
   "expression": "CSS 表达式",
   "expressionHint": "在 CSS 中替代该值，例如 clamp(1rem, 4vw, 1.5rem)。",
+  "addExpression": "添加 CSS 表达式",
+  "removeExpression": "移除 CSS 表达式",
+  "cssExpressionUnclosed": "函数缺少 )",
+  "cssExpressionSyntax": "不是有效的 CSS",
+  "cssExpressionNegated": "要取负值，请写 calc(-1 * var({property}))",
+  "cssExpressionUnknownToken": "没有名为 {name} 的令牌",
+  "cssExpressionInvalid": "不是 {property} 的有效值",
   "scopes": "范围",
   "description": "描述",
   "collection": "集合",
@@ -118,5 +125,8 @@
   "importInvalidFile": "{file} 不是设计令牌文件",
   "importMissingFile": "未选择 {from} 引用的 {file}",
   "importNothing": "这些文件中没有设计令牌。",
-  "importAction": "导入"
+  "importAction": "导入",
+  "formula": "公式",
+  "useFormula": "使用公式",
+  "formulaPlaceholder": "值或公式"
 }

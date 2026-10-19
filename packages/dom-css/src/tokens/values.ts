@@ -10,6 +10,20 @@ import { variableNamespace } from './names'
 const UNITLESS_SCOPES = new Set<VariableScope>(['OPACITY', 'FONT_STYLE', 'FONT_VARIATIONS'])
 
 /**
+ * A property that takes values in each token unit, where a browser checks or computes a CSS
+ * expression written for the token: `scale` takes any plain number, `width` any length.
+ */
+export const TOKEN_UNIT_PROPERTY: Record<TokenUnit, string> = {
+  none: 'scale',
+  px: 'width',
+  rem: 'width',
+  '%': 'width',
+  ms: 'transition-duration',
+  s: 'transition-duration',
+  deg: 'rotate'
+}
+
+/**
  * The unit a FLOAT token is written in. An explicit unit wins; opacity and font weights are
  * unitless; every other number is a pixel length, which is what the canvas draws.
  */

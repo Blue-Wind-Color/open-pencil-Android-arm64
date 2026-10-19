@@ -1,4 +1,9 @@
-import type { SceneGraph, Variable, VariableType } from '@open-pencil/scene-graph'
+import {
+  formatVariableFormula,
+  type SceneGraph,
+  type Variable,
+  type VariableType
+} from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 
 import { exportTokenStylesheet, type TokenExport } from '#core/tools/codegen/tokens'
@@ -23,6 +28,16 @@ function formatVariableValue(variable: Variable, graph: SceneGraph): string {
 
   if (typeof raw === 'object' && 'r' in raw) {
     return colorToHex(raw).toLowerCase()
+  }
+  if (typeof raw === 'object' && 'expression' in raw) {
+    // A formula reads as written, with what it gives now; a composed color by its result.
+    const resolved = graph.resolveVariable(variable.id, modeId)
+    let result = '—'
+    if (typeof resolved === 'object') result = colorToHex(resolved).toLowerCase()
+    else if (resolved !== undefined) result = String(resolved)
+    return raw.expression === 'FORMULA'
+      ? `${formatVariableFormula(graph, raw)} = ${result}`
+      : result
   }
 
   return String(raw)

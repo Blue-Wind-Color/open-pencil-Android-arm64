@@ -1,15 +1,17 @@
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
-import { createConnector, freeEndpoint } from '@open-pencil/scene-graph'
-import type {
-  GroupFitOptions,
-  SceneGraph,
-  SceneNode as CoreSceneNode,
-  NodeType,
-  Variable,
-  VariableCollection,
-  VariableType,
-  VariableValue
+import {
+  createConnector,
+  freeEndpoint,
+  updateTokenExpression,
+  type GroupFitOptions,
+  type SceneGraph,
+  type SceneNode as CoreSceneNode,
+  type NodeType,
+  type Variable,
+  type VariableCollection,
+  type VariableType,
+  type VariableValue
 } from '@open-pencil/scene-graph'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
@@ -366,6 +368,7 @@ export class FigmaAPI implements NodeProxyHost {
     const variable = this.graph.variables.get(variableId)
     if (!variable) throw new Error(`Variable "${variableId}" not found`)
     variable.valuesByMode[modeId] = structuredClone(value)
+    updateTokenExpression(variable, modeId, value)
     reconcileVariableLayouts(this.graph, { variables: [variableId] })
   }
 

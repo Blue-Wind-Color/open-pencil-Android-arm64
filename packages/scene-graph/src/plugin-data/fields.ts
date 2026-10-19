@@ -104,13 +104,16 @@ const cssText = v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(1000))
 /** Token fields Figma has no slot for, with mode ids as the file spells them. */
 export interface StoredToken {
   unit?: TokenUnit
-  expressions?: Record<string, { css: string; resolved: number }>
+  expressions?: Record<string, { css: string; resolved?: number }>
 }
 
 const token: v.GenericSchema<unknown, StoredToken> = v.object({
   unit: v.optional(v.picklist(TOKEN_UNITS)),
   expressions: v.optional(
-    v.record(v.string(), v.object({ css: cssText, resolved: v.pipe(v.number(), v.finite()) }))
+    v.record(
+      v.string(),
+      v.object({ css: cssText, resolved: v.optional(v.pipe(v.number(), v.finite())) })
+    )
   )
 })
 

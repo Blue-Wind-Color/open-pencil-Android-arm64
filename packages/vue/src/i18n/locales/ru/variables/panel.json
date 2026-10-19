@@ -24,6 +24,13 @@
   "values": "Значения",
   "expression": "Выражение CSS",
   "expressionHint": "Записывается в CSS вместо значения, например clamp(1rem, 4vw, 1.5rem).",
+  "addExpression": "Добавить CSS-выражение",
+  "removeExpression": "Удалить CSS-выражение",
+  "cssExpressionUnclosed": "У функции нет закрывающей )",
+  "cssExpressionSyntax": "Некорректный CSS",
+  "cssExpressionNegated": "Чтобы взять токен с минусом, напишите calc(-1 * var({property}))",
+  "cssExpressionUnknownToken": "Нет токена с именем {name}",
+  "cssExpressionInvalid": "Недопустимое значение для {property}",
   "scopes": "Области применения",
   "description": "Описание",
   "collection": "Коллекция",
@@ -118,5 +125,8 @@
   "importInvalidFile": "{file} — не файл дизайн-токенов",
   "importMissingFile": "Не выбран {file}, на который ссылается {from}",
   "importNothing": "В этих файлах нет дизайн-токенов.",
-  "importAction": "Импортировать"
+  "importAction": "Импортировать",
+  "formula": "Формула",
+  "useFormula": "Использовать формулу",
+  "formulaPlaceholder": "Значение или формула"
 }

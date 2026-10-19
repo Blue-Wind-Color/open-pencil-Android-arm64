@@ -816,7 +816,54 @@ export interface ComponentPropertyDefinition {
 }
 
 export type VariableType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'
-export type VariableValue = Color | number | string | boolean | { aliasId: string }
+export interface VariableAlias {
+  aliasId: string
+}
+
+/** Figma's two-argument color expression; opacity is a percentage, not an alpha multiplier. */
+export interface VariableColorExpression {
+  expression: 'COMPOSE_COLOR'
+  color: Color | VariableAlias
+  opacity: number | VariableAlias
+}
+
+export type VariableLiteral = Color | number | string | boolean
+/** Figma's `ExpressionFunction` names for the arithmetic, comparison and logic a formula uses. */
+export const VARIABLE_FORMULA_OPERATORS = [
+  'ADDITION',
+  'SUBTRACTION',
+  'MULTIPLY',
+  'DIVIDE',
+  'NEGATE',
+  'EQUALS',
+  'NOT_EQUAL',
+  'LESS_THAN',
+  'LESS_THAN_OR_EQUAL',
+  'GREATER_THAN',
+  'GREATER_THAN_OR_EQUAL',
+  'AND',
+  'OR',
+  'NOT'
+] as const
+export type VariableFormulaOperator = (typeof VARIABLE_FORMULA_OPERATORS)[number]
+export type VariableFormulaNode =
+  | number
+  | boolean
+  | VariableAlias
+  | {
+      operator: VariableFormulaOperator
+      operands: VariableFormulaNode[]
+    }
+export interface VariableFormula {
+  expression: 'FORMULA'
+  type: 'FLOAT' | 'BOOLEAN'
+  value: VariableFormulaNode
+}
+export type VariableValue =
+  | VariableLiteral
+  | VariableAlias
+  | VariableColorExpression
+  | VariableFormula
 export type VariableModeMap = Record<string, string>
 
 /** Property pickers a variable is offered in, as Figma names them. */
@@ -857,10 +904,14 @@ export type CodeSyntaxPlatform = (typeof CODE_SYNTAX_PLATFORMS)[number]
 export const TOKEN_UNITS = ['none', 'px', 'rem', '%', 'ms', 's', 'deg'] as const
 export type TokenUnit = (typeof TOKEN_UNITS)[number]
 
-/** A mode value authored as raw CSS. `resolved` is the number the canvas drew for it. */
+/**
+ * CSS written in place of a number mode's value, such as `clamp(1rem, 4vw, 1.5rem)`. While the
+ * mode holds a plain number, `resolved` records it, so a number later edited elsewhere, Figma
+ * included, shows the CSS no longer describes it.
+ */
 export interface TokenExpression {
   css: string
-  resolved: number
+  resolved?: number
 }
 
 export interface Variable {

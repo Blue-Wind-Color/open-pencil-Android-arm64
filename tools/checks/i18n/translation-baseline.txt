@@ -352,6 +352,7 @@ fr:variables.description
 fr:variables.collection
 fr:variables.condition
 fr:variables.mode
+it:variables.formula
 it:variables.unitAuto
 pl:variables.unitAuto
 es:menu.variables

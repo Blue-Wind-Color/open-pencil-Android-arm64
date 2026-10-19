@@ -416,6 +416,10 @@ zh-cn:variables.copyAsCSS
 zh-cn:variables.copyAsTailwindTheme
 ja:variables.cssName
 ja:variables.expression
+ja:variables.addExpression
+ja:variables.removeExpression
+ja:variables.cssExpressionNegated
+ja:variables.cssExpressionSyntax
 ja:variables.expressionHint
 ja:variables.conditionHint
 ja:variables.conditionCustom
@@ -423,6 +427,10 @@ ja:variables.libraryCollectionHint
 ja:variables.addedToLibraryCollection
 zh-cn:variables.cssName
 zh-cn:variables.expression
+zh-cn:variables.addExpression
+zh-cn:variables.removeExpression
+zh-cn:variables.cssExpressionNegated
+zh-cn:variables.cssExpressionSyntax
 zh-cn:variables.expressionHint
 zh-cn:variables.conditionHint
 zh-cn:variables.conditionCustom

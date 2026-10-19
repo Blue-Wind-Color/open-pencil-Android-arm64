@@ -24,6 +24,13 @@
   "values": "値",
   "expression": "CSS 式",
   "expressionHint": "CSS で値の代わりに記述されます。例: clamp(1rem, 4vw, 1.5rem)",
+  "addExpression": "CSS 式を追加",
+  "removeExpression": "CSS 式を削除",
+  "cssExpressionUnclosed": "関数の ) がありません",
+  "cssExpressionSyntax": "CSS として正しくありません",
+  "cssExpressionNegated": "トークンを負にするには calc(-1 * var({property})) と書きます",
+  "cssExpressionUnknownToken": "{name} という名前のトークンはありません",
+  "cssExpressionInvalid": "{property} に使えない値です",
   "scopes": "スコープ",
   "description": "説明",
   "collection": "コレクション",
@@ -118,5 +125,8 @@
   "importInvalidFile": "{file} はデザイントークンのファイルではありません",
   "importMissingFile": "{from} が参照する {file} が選ばれていません",
   "importNothing": "これらのファイルにデザイントークンはありません。",
-  "importAction": "読み込む"
+  "importAction": "読み込む",
+  "formula": "数式",
+  "useFormula": "数式を使用",
+  "formulaPlaceholder": "値または数式"
 }

@@ -1,11 +1,12 @@
 import {
   BEHAVIOUR_CONTRACTS,
   BEHAVIOUR_KINDS,
+  parseVariableFormula,
   type BehaviourKind,
   type BehaviourSpec
 } from '@open-pencil/scene-graph'
 
-import type { FigmaAPI } from '#core/figma-api'
+import type { FigmaAPI } from '#core/figma-api/index'
 
 import {
   getBehaviour,
@@ -40,6 +41,40 @@ export {
  */
 export class OpenPencilAPI {
   constructor(private readonly figma: FigmaAPI) {}
+
+  /**
+   * Set a numeric or Boolean token formula by collection, variable and optional mode names.
+   * References use `{variable/name}` or `{Collection::variable/name}` and persist by ID; a
+   * true/false formula can compare numbers, as in `{width} > 600 and not {loading}`.
+   */
+  setVariableFormula(
+    collectionName: string,
+    variableName: string,
+    source: string,
+    modeName?: string
+  ): number | boolean {
+    const graph = this.figma.graph
+    const collections = [...graph.variableCollections.values()].filter(
+      (item) => item.name === collectionName
+    )
+    const collection = collections.at(0)
+    if (!collection || collections.length !== 1)
+      throw new Error(`Unknown or ambiguous collection: ${collectionName}`)
+    const variables = [...graph.variables.values()].filter(
+      (item) => item.collectionId === collection.id && item.name === variableName
+    )
+    const variable = variables.at(0)
+    if (!variable || variables.length !== 1)
+      throw new Error(`Unknown or ambiguous variable: ${variableName}`)
+    const modes = collection.modes.filter((mode) =>
+      modeName ? mode.name === modeName : mode.modeId === collection.defaultModeId
+    )
+    const mode = modes.at(0)
+    if (!mode || modes.length !== 1) throw new Error(`Unknown or ambiguous mode: ${modeName}`)
+    const { value, resolved } = parseVariableFormula(graph, variable.id, mode.modeId, source)
+    this.figma.setVariableValue(variable.id, mode.modeId, value)
+    return resolved
+  }
 
   /** The behaviour kinds, after Reka UI's primitives, with the values and parts each binds. */
   get behaviourKinds() {

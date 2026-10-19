@@ -11,10 +11,13 @@ import {
 import {
   tokenNumberFromUnit,
   tokenNumberInUnit,
+  variableValueReferences,
+  printFormula,
   type Color,
   type SceneGraph,
   type Variable,
   type VariableCollection,
+  type VariableColorExpression,
   type VariableValue
 } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
@@ -25,8 +28,12 @@ export interface TokenModeValue {
   modeId: string
   css: string
   color?: Color
+  /** A formula as it reads, with variable names; `css` holds what it gives in this mode. */
+  formula?: string
   /** The aliased variable's name, when the value points at another token. */
   alias?: string
+  /** What an alias gives in this mode, in the token's unit; a color shows as its swatch. */
+  result?: string
   /** A CSS expression written instead of the stored number, such as `clamp(…)`. */
   expression?: string
 }
@@ -39,10 +46,44 @@ export interface TokenRow {
   values: TokenModeValue[]
 }
 
+export interface TokenFormulaActions {
+  /** Variables a formula can use; a true/false formula can also compare numbers. */
+  candidates: AliasCandidate[]
+  parse: (modeId: string, source: string) => { value: VariableValue; resolved: number | boolean }
+  format: (value: VariableValue) => string
+  reference: (id: string) => string
+}
+
 export interface TokenGroup {
   /** The name path above the rows, `Blue` for `Blue/500`; empty for top-level tokens. */
   path: string
   rows: TokenRow[]
+}
+
+function colorExpressionMode(
+  graph: SceneGraph,
+  variable: Variable,
+  modeId: string,
+  value: VariableColorExpression
+): TokenModeValue {
+  const resolved = graph.resolveVariable(variable.id, modeId)
+  const color = typeof resolved === 'object' ? resolved : undefined
+  const base =
+    'aliasId' in value.color
+      ? (graph.variables.get(value.color.aliasId)?.name ?? value.color.aliasId)
+      : colorToHex(value.color)
+  const opacity =
+    typeof value.opacity === 'number'
+      ? `${tokenNumberToCSS(value.opacity, 'none')}%`
+      : (graph.variables.get(value.opacity.aliasId)?.name ?? value.opacity.aliasId)
+  const label = `${base} · ${opacity}`
+  return { modeId, css: label, alias: label, color }
+}
+
+function aliasResult(variable: Variable, resolved: VariableValue | undefined) {
+  if (typeof resolved === 'number') return tokenNumberToCSS(resolved, variableUnit(variable))
+  if (typeof resolved === 'boolean' || typeof resolved === 'string') return String(resolved)
+  return undefined
 }
 
 function modeValue(
@@ -52,12 +93,33 @@ function modeValue(
   value: VariableValue | undefined
 ): TokenModeValue {
   const expression = variable.expressions?.[modeId]?.css
+  if (typeof value === 'object' && 'expression' in value) {
+    if (value.expression === 'COMPOSE_COLOR')
+      return colorExpressionMode(graph, variable, modeId, value)
+    const resolved = graph.resolveVariable(variable.id, modeId)
+    let result: string | undefined
+    if (typeof resolved === 'number') result = tokenNumberToCSS(resolved, variableUnit(variable))
+    if (typeof resolved === 'boolean') result = String(resolved)
+    return {
+      modeId,
+      css: result ?? '',
+      formula: printFormula(value.value, (id) => graph.variables.get(id)?.name ?? id),
+      expression
+    }
+  }
   if (typeof value === 'object' && 'aliasId' in value) {
     const target = graph.variables.get(value.aliasId)
     // The column's own mode, so Dark previews what the alias gives in Dark.
-    const resolved = graph.resolveVariable(value.aliasId, modeId)
+    const resolved = graph.resolveVariable(variable.id, modeId)
     const color = typeof resolved === 'object' && 'r' in resolved ? resolved : undefined
-    return { modeId, css: target?.name ?? value.aliasId, alias: target?.name, color, expression }
+    return {
+      modeId,
+      css: target?.name ?? value.aliasId,
+      alias: target?.name,
+      result: aliasResult(variable, resolved),
+      color,
+      expression
+    }
   }
   if (typeof value === 'object') return { modeId, css: colorToHex(value), color: value, expression }
   if (typeof value === 'number')
@@ -165,7 +227,9 @@ export function searchTokenIds(rows: readonly TokenRow[], query: string): Set<st
     name: row.variable.name,
     css: `--${row.cssName}`,
     description: row.variable.description,
-    values: row.values.flatMap((value) => compact([value.css, value.alias, value.expression]))
+    values: row.values.flatMap((value) =>
+      compact([value.css, value.alias, value.expression, value.formula])
+    )
   }))
   return new Set(fuzzyFilter(entries, TOKEN_SEARCH_KEYS, query).map((entry) => entry.id))
 }
@@ -229,6 +293,44 @@ export interface AliasCandidate {
   name: string
   collection: string
   color?: Color
+  text?: string
+}
+
+/** A reference pill shows the last part of a variable's name, as its group row does. */
+export function referencePillName(name: string) {
+  return name.split('/').at(-1) ?? name
+}
+
+/** A number token a CSS expression can name as `var(--name)`. */
+export interface CSSReferenceCandidate {
+  id: string
+  name: string
+  cssName: string
+  collection: string
+  /** The token's value in its unit, as the list shows it. */
+  text: string
+}
+
+/** Every other number token, by the CSS name the stylesheet declares it under. */
+export function cssReferenceCandidates(
+  graph: SceneGraph,
+  variable: Variable
+): CSSReferenceCandidate[] {
+  const names = variableCSSNames(collectionVariables(graph))
+  return [...graph.variables.values()].flatMap((candidate) => {
+    const cssName = names.get(candidate.id)
+    if (candidate.id === variable.id || candidate.type !== 'FLOAT' || !cssName) return []
+    const number = graph.resolveNumberVariable(candidate.id)
+    return [
+      {
+        id: candidate.id,
+        name: candidate.name,
+        cssName,
+        collection: graph.variableCollections.get(candidate.collectionId)?.name ?? '',
+        text: number === undefined ? '—' : tokenNumberToCSS(number, variableUnit(candidate))
+      }
+    ]
+  })
 }
 
 /** Whether `fromId` reaches `targetId` through aliases in any mode. */
@@ -242,11 +344,8 @@ function aliasesTo(
   if (seen.has(fromId)) return false
   seen.add(fromId)
   const from = graph.variables.get(fromId)
-  return Object.values(from?.valuesByMode ?? {}).some(
-    (value) =>
-      typeof value === 'object' &&
-      'aliasId' in value &&
-      aliasesTo(graph, value.aliasId, targetId, seen)
+  return Object.values(from?.valuesByMode ?? {}).some((value) =>
+    variableValueReferences(value).some((id) => aliasesTo(graph, id, targetId, seen))
   )
 }
 
@@ -255,14 +354,34 @@ function aliasesTo(
  * points back at it, which would make the two resolve to nothing.
  */
 export function aliasCandidates(graph: SceneGraph, variable: Variable): AliasCandidate[] {
+  return referenceCandidates(graph, variable, [variable.type])
+}
+
+/** Variables a number or true/false formula can refer to: a true/false one compares numbers too. */
+export function formulaCandidates(graph: SceneGraph, variable: Variable): AliasCandidate[] {
+  return referenceCandidates(
+    graph,
+    variable,
+    variable.type === 'BOOLEAN' ? ['BOOLEAN', 'FLOAT'] : [variable.type]
+  )
+}
+
+function referenceCandidates(
+  graph: SceneGraph,
+  variable: Variable,
+  types: readonly Variable['type'][]
+): AliasCandidate[] {
   return [...graph.variables.values()].flatMap((candidate) => {
-    if (candidate.type !== variable.type || aliasesTo(graph, candidate.id, variable.id)) return []
+    if (!types.includes(candidate.type) || aliasesTo(graph, candidate.id, variable.id)) return []
+    const number =
+      candidate.type === 'FLOAT' ? graph.resolveNumberVariable(candidate.id) : undefined
     return [
       {
         id: candidate.id,
         name: candidate.name,
         collection: graph.variableCollections.get(candidate.collectionId)?.name ?? '',
-        color: variable.type === 'COLOR' ? graph.resolveColorVariable(candidate.id) : undefined
+        color: candidate.type === 'COLOR' ? graph.resolveColorVariable(candidate.id) : undefined,
+        text: number === undefined ? undefined : tokenNumberToCSS(number, variableUnit(candidate))
       }
     ]
   })

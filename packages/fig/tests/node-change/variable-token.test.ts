@@ -58,4 +58,29 @@ describe('token plugin data', () => {
       a: { css: 'calc(100vw / 3)', resolved: 1234.567 }
     })
   })
+
+  test('keep an expression written over a formula or reference, which has no number to check', () => {
+    const nc = record(
+      OPEN_PENCIL_PLUGIN_DATA.token.key,
+      JSON.stringify({
+        expressions: {
+          formula: { css: 'clamp(1rem, 4vw, 2rem)' },
+          alias: { css: 'calc(100vw / 3)' },
+          edited: { css: 'clamp(1rem, 4vw, 2rem)' }
+        }
+      })
+    )
+    const formula = {
+      expression: 'FORMULA' as const,
+      type: 'FLOAT' as const,
+      value: { operator: 'MULTIPLY' as const, operands: [{ aliasId: '1:2' }, 2] }
+    }
+    // A number now where no number was recorded was edited elsewhere: the expression goes.
+    expect(
+      readVariableToken(nc, { formula, alias: { aliasId: '1:2' }, edited: 12 }).expressions
+    ).toEqual({
+      formula: { css: 'clamp(1rem, 4vw, 2rem)' },
+      alias: { css: 'calc(100vw / 3)' }
+    })
+  })
 })
