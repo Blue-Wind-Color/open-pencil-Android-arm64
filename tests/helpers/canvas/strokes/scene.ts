@@ -4,15 +4,20 @@ const ALIGNS = ['INSIDE', 'CENTER', 'OUTSIDE'] as const
 const CORNERS = [
   { name: 'sharp', cornerRadius: 0, dashPattern: undefined },
   { name: 'rounded', cornerRadius: 24, dashPattern: undefined },
-  { name: 'dashed', cornerRadius: 0, dashPattern: [20, 10] }
+  { name: 'dashed', cornerRadius: 0, dashPattern: [20, 10] },
+  { name: 'rounded dashed', cornerRadius: 24, dashPattern: [20, 10] }
 ]
 
-/** Translucent frames with sides of their own weights: one row per alignment, sharp, rounded, and dashed. */
+/**
+ * Translucent frames with sides of their own weights, one row per alignment, then a row with
+ * every side at one weight: sharp, rounded, dashed, and rounded and dashed.
+ */
 export function createSideStrokesScene(graph: SceneGraph, pageId: string): void {
-  for (const [row, align] of ALIGNS.entries()) {
+  for (const [row, align] of [...ALIGNS, 'CENTER' as const].entries()) {
+    const even = row === ALIGNS.length
     for (const [column, corner] of CORNERS.entries()) {
       graph.createNode('FRAME', pageId, {
-        name: `${align} ${corner.name}`,
+        name: `${even ? 'even' : align} ${corner.name}`,
         x: 60 + column * 200,
         y: 60 + row * 170,
         width: 140,
@@ -33,7 +38,7 @@ export function createSideStrokesScene(graph: SceneGraph, pageId: string): void 
         ],
         strokeWeight: 8,
         strokeAlign: align,
-        independentStrokeWeights: true,
+        independentStrokeWeights: !even,
         borderTopWeight: 8,
         borderRightWeight: 0,
         borderBottomWeight: 16,

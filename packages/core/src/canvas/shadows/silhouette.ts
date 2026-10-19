@@ -349,7 +349,7 @@ export function shadowIncludesChildren(graph: SceneGraph, node: SceneNode): bool
 
 /**
  * The one child a container's shadows come from when the container paints nothing itself and
- * draws only that child, unturned, so the shadow is that child's own; null otherwise.
+ * draws only that child, so the shadow is that child's own, turned with it; null otherwise.
  */
 export function soleShadowChild(graph: SceneGraph, node: SceneNode): SceneNode | null {
   if (!isLayerContainer(node) || paintsCastShadow(node) || clipsChildren(node)) return null
@@ -361,7 +361,6 @@ export function soleShadowChild(graph: SceneGraph, node: SceneNode): SceneNode |
     sole = child
   }
   if (!sole) return null
-  if (sole.rotation !== 0 || sole.flipX || sole.flipY) return null
   if (isLayerContainer(sole) && shadowIncludesChildren(graph, sole)) return null
   return sole
 }

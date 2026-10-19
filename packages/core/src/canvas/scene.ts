@@ -50,6 +50,7 @@ import {
   getStrokeJoinEntity,
   normalizeDashPattern
 } from './strokes'
+import { drawDashedRectStroke, strokeDashesByOutline, strokeSideWeights } from './strokes/sides'
 import { textVerticalOffset, withTextParagraph } from './text'
 import { drawTextLayout } from './text/decorations'
 import {
@@ -755,6 +756,12 @@ function drawRegularStroke(
 
   if (node.independentStrokeWeights && r.isRectangularType(node.type)) {
     r.drawIndividualSideStrokes(canvas, node, stroke)
+  } else if (
+    dash.length > 0 &&
+    r.isRectangularType(node.type) &&
+    strokeDashesByOutline(node, stroke)
+  ) {
+    drawDashedRectStroke(r, canvas, node, stroke, strokeSideWeights(node, stroke), dash)
   } else {
     r.drawStrokeWithAlign(canvas, node, rect, hasRadius, stroke.align)
   }

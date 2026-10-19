@@ -2,7 +2,9 @@ import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core'
 import { initCanvasKit } from '@open-pencil/core/io'
-import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
+
+import { soleShadowChild } from '#core/canvas/shadows/silhouette'
 
 import { expectDefined } from '../helpers/assert'
 import { expectFigmaRow, renderRow, type FigmaRowScene } from '../helpers/figma-rows'
@@ -90,6 +92,19 @@ const FIGMA: Record<string, number[]> = {
   "inner-frame-clip-child-at-edge": [
     0, 0, 1, 13, 41, 85, 144, 195, 231, 251, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
     255, 255, 255, 255, 255, 255, 255
+  ],
+  "turned-child-drop": [
+    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 254, 248, 232, 201, 161,
+    112, 64, 30, 11, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  ],
+  "flipped-child-drop": [
+    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 250, 240, 224, 194, 154,
+    108, 62, 28, 11, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  ],
+  "turned-child-inner": [
+    0, 0, 0, 0, 0, 0, 7, 36, 87, 154, 208, 242, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 254, 255, 0, 0, 0, 0, 0, 0, 0, 0
   ],
 }
 
@@ -400,5 +415,51 @@ describe('inner shadows sit where Figma draws them', () => {
     // Opaque black covers the first 50px; past the blur the fill shows again.
     expect(Math.max(...values.slice(0, 22))).toBeLessThanOrEqual(2)
     expect(values.at(-1)).toBe(255)
+  })
+})
+
+describe('a container with one turned child casts from that child alone, as in Figma', () => {
+  const turnedChild =
+    (effect: Effect, child: Partial<SceneNode>): FigmaRowScene =>
+    (graph, hostId) => {
+      const frame = graph.createNode('FRAME', hostId, {
+        ...square,
+        fills: [],
+        clipsContent: false,
+        effects: [effect]
+      })
+      graph.createNode('RECTANGLE', frame.id, {
+        x: 30,
+        y: 50,
+        width: 100,
+        height: 60,
+        fills: [RED],
+        ...child
+      })
+    }
+
+  test('takes the turned child as the source of its shadows', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    turnedChild(shadow('DROP_SHADOW'), { rotation: 30, flipX: true })(graph, page)
+    const frame = expectDefined(graph.getNode(expectDefined(graph.getNode(page)).childIds[0]))
+    expect(soleShadowChild(graph, frame)?.id).toBe(frame.childIds[0])
+  })
+
+  test('offsets the drop shadow in the container’s space, however the child turns', () => {
+    const drop = shadow('DROP_SHADOW', { offset: { x: 12, y: 0 } })
+    expectFigmaRow(row(turnedChild(drop, { rotation: 30 }), 150, 230, 300), FIGMA['turned-child-drop'])
+    expectFigmaRow(
+      row(turnedChild(drop, { rotation: 30, flipX: true }), 150, 230, 300),
+      FIGMA['flipped-child-drop']
+    )
+  })
+
+  test('offsets the inner shadow the same way (red channel)', () => {
+    const inner = shadow('INNER_SHADOW', { radius: 6, offset: { x: 10, y: 0 } })
+    expectFigmaRow(
+      row(turnedChild(inner, { rotation: 30 }), 140, 140, 260, 0),
+      FIGMA['turned-child-inner']
+    )
   })
 })

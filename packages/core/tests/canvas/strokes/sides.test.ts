@@ -2,7 +2,7 @@ import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core'
 import { initCanvasKit } from '@open-pencil/core/io'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { sideDashSpans, sideStrokeRRects } from '#core/canvas/strokes/sides'
@@ -21,6 +21,27 @@ const FIGMA = {
   dashed: [
     0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255,
     255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255
+  ],
+  evenSharp: [
+    0, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255,
+    255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0,
+    255
+  ],
+  evenRound: [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 144, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0,
+    0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255,
+    255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+    0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0
+  ],
+  evenRoundInside: [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 16, 0, 239, 255, 128, 0, 0, 255, 255, 128, 0, 0,
+    255, 255, 128, 0, 0, 255, 255, 128, 0, 0, 255, 255, 128, 0, 0, 255, 255, 128, 0, 0
+  ],
+  sidesRound: [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 144, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0,
+    0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255,
+    255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+    0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 223, 0, 0, 0, 0, 0, 0, 0, 0
   ]
 }
 
@@ -102,6 +123,49 @@ describe('strokes with sides of their own weights, as in Figma', () => {
     expect(values.filter((alpha) => alpha === 255).length).toBeGreaterThan(10)
   })
 
+  test('keep round dash ends, which Figma’s flat-ended layout does not cover', () => {
+    const rounded = sidesFrame({ cornerRadius: 24 }, 1)
+    const dashedRow = (strokeCap: SceneNode['strokeCap']) =>
+      renderRow(
+        ck,
+        renderer,
+        (graph, hostId) => {
+          rounded(graph, hostId)
+          const frame = graph.getNode(expectDefined(graph.getNode(hostId)).childIds[0])
+          if (!frame) return
+          frame.strokeCap = strokeCap
+          frame.strokes = frame.strokes.map((stroke) => ({ ...stroke, dashPattern: [20, 10] }))
+        },
+        70,
+        160,
+        240
+      )
+    expect(dashedRow('ROUND')).not.toEqual(dashedRow('NONE'))
+  })
+
+  test('draw nothing when no side has a weight', () => {
+    const empty = sidesFrame({
+      cornerRadius: 24,
+      borderTopWeight: 0,
+      borderRightWeight: 0,
+      borderBottomWeight: 0,
+      borderLeftWeight: 0
+    }, 1)
+    const values = renderRow(
+      ck,
+      renderer,
+      (graph, hostId) => {
+        empty(graph, hostId)
+        const frame = graph.getNode(expectDefined(graph.getNode(hostId)).childIds[0])
+        if (frame) frame.strokes = frame.strokes.map((stroke) => ({ ...stroke, dashPattern: [20, 10] }))
+      },
+      70,
+      112,
+      170
+    )
+    expect(Math.max(...values)).toBe(0)
+  })
+
   test('take Figma’s corner radii: inner by each side, outer by the narrower side', () => {
     const node = createDefaultNode(() => 'frame', 'FRAME', {
       width: 160,
@@ -139,5 +203,62 @@ describe('strokes with sides of their own weights, as in Figma', () => {
       [29.17, 40.83],
       [64.17, 70]
     ])
+  })
+})
+
+describe('dashed rectangles, as in Figma', () => {
+  const dashedRect = (props: Partial<SceneNode>, align: Stroke['align'], dashPattern: number[]) =>
+    (graph: SceneGraph, hostId: string) => {
+      graph.createNode('RECTANGLE', hostId, {
+        x: 120,
+        y: 70,
+        fills: [],
+        strokes: [
+          {
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 1, a: 1 },
+            opacity: 1,
+            visible: true,
+            weight: 8,
+            align,
+            dashPattern
+          }
+        ],
+        strokeWeight: 8,
+        strokeAlign: align,
+        ...props
+      })
+    }
+
+  test('dash each side on its own and fill the sharp corners', () => {
+    const scene = dashedRect({ width: 150, height: 90 }, 'CENTER', [20, 10])
+    expectFigmaRow(renderRow(ck, renderer, scene, 70, 112, 200), FIGMA.evenSharp)
+  })
+
+  test('dash each corner arc on its own, between the dashes of the straight sides', () => {
+    const scene = dashedRect({ width: 168, height: 108, cornerRadius: 24 }, 'CENTER', [20, 10])
+    expectFigmaRow(renderRow(ck, renderer, scene, 70, 112, 290), FIGMA.evenRound)
+  })
+
+  test('measure corner arcs on the shape’s edge, whatever the stroke’s alignment', () => {
+    const scene = dashedRect({ width: 168, height: 168, cornerRadius: 24 }, 'INSIDE', [5, 5])
+    expectFigmaRow(renderRow(ck, renderer, scene, 74, 112, 200), FIGMA.evenRoundInside)
+  })
+
+  test('dash rounded corners between sides of their own weights the same way', () => {
+    const scene = sidesFrame({ width: 168, height: 168, cornerRadius: 24 }, 1)
+    const values = renderRow(
+      ck,
+      renderer,
+      (graph, hostId) => {
+        scene(graph, hostId)
+        const frame = graph.getNode(expectDefined(graph.getNode(hostId)).childIds[0])
+        if (frame) frame.strokes = frame.strokes.map((stroke) => ({ ...stroke, dashPattern: [20, 10] }))
+      },
+      70,
+      112,
+      290
+    )
+    expectFigmaRow(values, FIGMA.sidesRound)
   })
 })

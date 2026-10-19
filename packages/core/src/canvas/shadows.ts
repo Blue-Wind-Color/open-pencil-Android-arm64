@@ -1,6 +1,9 @@
 import type { BlendMode, Canvas, ImageFilter } from 'canvaskit-wasm'
 
 import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import Matrix from '@open-pencil/scene-graph/matrix'
+
+import { nodeOrientationMatrix } from '#core/geometry'
 
 import { figmaBlendModeToSkia } from './blend'
 import { blurSigma, renderNoiseEffects } from './effects'
@@ -158,12 +161,26 @@ function drawOwnShapeDropShadow(
   return true
 }
 
-/** Draws a shadow cast by `child`, in its parent's coordinates. */
-function withChildCoordinates<T>(canvas: Canvas, child: SceneNode, draw: () => T): T {
+/**
+ * Draws a shadow cast by `child`, in its parent's coordinates. The parent's effect is drawn in the
+ * child's own space, so its offset is turned back by the child's rotation and flips; blur and
+ * spread are the same in every direction.
+ */
+function withChildCoordinates<T>(
+  canvas: Canvas,
+  child: SceneNode,
+  effect: Effect,
+  draw: (local: Effect) => T
+): T {
+  const orientation = nodeOrientationMatrix(child)
+  const inverse = Matrix.invert(orientation) ?? Matrix.identity()
+  const origin = Matrix.mapPoint(inverse, { x: 0, y: 0 })
+  const offset = Matrix.mapPoint(inverse, effect.offset)
   canvas.save()
   try {
     canvas.translate(child.x, child.y)
-    return draw()
+    canvas.concat(orientation)
+    return draw({ ...effect, offset: { x: offset.x - origin.x, y: offset.y - origin.y } })
   } finally {
     canvas.restore()
   }
@@ -184,8 +201,8 @@ function renderDropShadow(
     effect.showShadowBehindNode === false && !paintsOverKnockout(graph, node, includeChildren)
   const sole = includeChildren ? soleShadowChild(graph, node) : null
   const drawnAlone = sole
-    ? withChildCoordinates(canvas, sole, () =>
-        drawOwnShapeDropShadow(r, canvas, sole, effect, spread, blendMode, knockout)
+    ? withChildCoordinates(canvas, sole, effect, (local) =>
+        drawOwnShapeDropShadow(r, canvas, sole, local, spread, blendMode, knockout)
       )
     : !includeChildren &&
       drawOwnShapeDropShadow(r, canvas, node, effect, spread, blendMode, knockout)
@@ -300,13 +317,13 @@ function renderInnerShadow(
   if (!includeChildren && !paintsCastShadow(node)) return
   const sole = includeChildren ? soleShadowChild(graph, node) : null
   if (sole && castsFromOwnShape(sole)) {
-    withChildCoordinates(canvas, sole, () =>
+    withChildCoordinates(canvas, sole, effect, (local) =>
       drawShapeInnerShadow(
         r,
         canvas,
         sole,
         r.ck.LTRBRect(0, 0, sole.width, sole.height),
-        effect,
+        local,
         nodeHasRadius(sole)
       )
     )

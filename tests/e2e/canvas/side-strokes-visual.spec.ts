@@ -9,8 +9,10 @@ test('strokes with sides of their own weights', async () => {
   await scene.show()
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
-  // The corners are small next to the canvas: pin an absolute pixel budget below one corner.
+  // The corners are small next to the canvas: pin an absolute pixel budget below one corner,
+  // and a colour threshold under the gap between a translucent stroke and the canvas.
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('side-strokes.png', {
-    maxDiffPixels: 24
+    maxDiffPixels: 24,
+    threshold: 0.05
   })
 })
