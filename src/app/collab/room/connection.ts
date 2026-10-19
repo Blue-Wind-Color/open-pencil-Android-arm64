@@ -30,6 +30,8 @@ export type CollabRoomConnection = {
   sendSyncStep1: (data: Uint8Array, peerId?: string) => void
   /** What agents preview while they stream, apart from presence (`app/collab/agent-preview.ts`). */
   agentPreview: CollabAction
+  /** Asking whoever saves the room's document to upload it now (`app/cloud/rooms/upload.ts`). */
+  upload: CollabAction
   /** Follow peers leaving the room; returns the unsubscribe. */
   onPeerLeave: (handler: (peerId: string) => void) => () => void
   /** The peer whose awareness carries a presence client, so media reaches the right person. */
@@ -96,6 +98,7 @@ export function connectCollabRoom({
   const [sendSyncStep1, getSyncStep1] = room.makeAction(COLLAB_ACTIONS.syncStep1)
   const [sendSyncReply, getSyncReply] = room.makeAction(COLLAB_ACTIONS.syncReply)
   const agentPreview = room.makeAction(COLLAB_ACTIONS.agentPreview)
+  const upload = room.makeAction(COLLAB_ACTIONS.upload)
   const [, getVersions] = room.makeAction(COLLAB_ACTIONS.versions)
   // A transport keeps one leave handler, so the connection shares it with its users.
   const leaveHandlers = new Set<(peerId: string) => void>()
@@ -170,6 +173,7 @@ export function connectCollabRoom({
     sendAwareness,
     sendSyncStep1,
     agentPreview,
+    upload,
     onPeerLeave(handler) {
       leaveHandlers.add(handler)
       return () => leaveHandlers.delete(handler)

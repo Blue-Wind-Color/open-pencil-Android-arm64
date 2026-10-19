@@ -200,6 +200,42 @@ describe('Cloud document rooms', () => {
     await until(() => first.session.peers.value.length > 0)
     expect(compact([grace.state.autosaveEnabled, ada.state.autosaveEnabled])).toHaveLength(1)
   })
+
+  test('a tab that does not save has the saver upload its latest edit', async () => {
+    const relay = await startRelay()
+    const documentId = crypto.randomUUID()
+    const roomId = `cloud:${documentId}:0`
+    const [grace, ada] = await openedTwice()
+    const uploaded: boolean[] = []
+    const open = (store: typeof grace, name: string) => {
+      const room = openCloudDocumentRoom(store, {
+        roomId,
+        transport: relay.join(documentId, name, 'edit', 'user'),
+        permission: 'edit',
+        uploadNow: async () => {
+          uploaded.push(store.graph.getNode('late:edit') !== undefined)
+          return true
+        }
+      })
+      cleanups.push(() => {
+        room.stop()
+        room.session.dispose()
+      })
+      return room
+    }
+    const first = open(grace, 'Grace')
+    await until(() => first.session.roomHasDocument())
+    const second = open(ada, 'Ada')
+    await until(() => first.session.peers.value.length > 0 && second.session.peers.value.length > 0)
+    await until(() => grace.state.autosaveEnabled !== ada.state.autosaveEnabled)
+
+    const [other, room] = grace.state.autosaveEnabled ? [ada, second] : [grace, first]
+    const page = other.graph.getPages()[0]
+    if (!page) throw new Error('Expected a page')
+    other.graph.createNode('ELLIPSE', page.id, { id: 'late:edit', name: 'Dot' })
+    expect(await room.upload()).toBe(true)
+    expect(uploaded).toEqual([true])
+  })
 })
 
 describe('Cloud document rooms, live order', () => {

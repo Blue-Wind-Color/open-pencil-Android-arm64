@@ -18,6 +18,7 @@ import {
   type YNodes
 } from '@/app/collab/shared-tree/fields'
 import type { JoinCollabRoom } from '@/app/collab/transport'
+import type { CollabAction } from '@/app/collab/transport/types'
 import type { RemotePeer } from '@/app/collab/types'
 import { bindVariableSync, type YRecords } from '@/app/collab/variables'
 import { attachRoomVoice, type RoomVoice } from '@/app/collab/voice/room'
@@ -57,6 +58,10 @@ export interface RoomSession {
   presence(): ReadonlyMap<number, Record<string, unknown>>
   /** This tab's awareness client. */
   readonly clientId: number
+  /** The peer whose presence carries a client, to address it alone. */
+  peerForClient(clientId: number): string | undefined
+  /** The room's channel for asking whoever saves its document to upload it now. */
+  readonly upload: CollabAction
   /** Leaves the room and releases its connection, presence, and saved-copy handle. */
   dispose(): void
 }
@@ -256,6 +261,8 @@ export function openRoomSession({
     onVersionsChanged: (handler) => connection.onVersionsChanged(handler),
     presence: () => awareness.getStates() as Map<number, Record<string, unknown>>,
     clientId: awareness.clientID,
+    peerForClient: (clientId) => connection.peerForClient(clientId),
+    upload: connection.upload,
     dispose() {
       if (disposed) return
       // Unbinding writes an edit still waiting to be sent, so it runs while the room is open.

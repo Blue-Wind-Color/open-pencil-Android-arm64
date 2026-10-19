@@ -16,6 +16,7 @@ export const COLLAB_ACTIONS = {
   syncReply: 'sync-reply',
   awareness: 'awareness',
   agentPreview: 'agent-preview',
+  upload: 'upload',
   /** From the server only: the document's version history changed, so open lists load it again. */
   versions: 'versions'
 } as const

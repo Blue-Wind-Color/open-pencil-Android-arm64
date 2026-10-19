@@ -6,10 +6,9 @@ import type {
 } from '@open-pencil/cloud/contract'
 
 import type { EditorStore } from '@/app/editor/session'
-import { followUpload, kickSyncEngine } from '@/app/storage/sync'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
 
-import { restartCloudRoom } from '../rooms/live'
+import { restartCloudRoom, uploadCloudDocument } from '../rooms/live'
 import { cloudShareTarget } from '../sharing/document'
 import { closeVersionHistory, versionHistoryOf } from './history'
 
@@ -34,20 +33,16 @@ export async function listVersions(store: EditorStore, before?: string): Promise
 }
 
 /**
- * Names the document as it is now. The saver's unsaved edits are uploaded first, so the version
- * holds what is on screen.
+ * Names the document as it is now. Edits not on the server yet are uploaded first, by the room's
+ * saver when another tab saves for the room, so the version holds what is on screen.
  */
 export async function saveVersion(
   store: EditorStore,
   input: SaveDocumentVersionInput
 ): Promise<DocumentVersion> {
   const { document, target } = targetOf(store)
-  if (document.state.autosaveEnabled && document.hasUnsavedChanges()) {
-    await document.saveFigFile()
-    await kickSyncEngine()
-    if ((await followUpload(target.documentId)) !== 'uploaded') {
-      throw new Error('The document could not be saved before naming the version')
-    }
+  if (!(await uploadCloudDocument(document))) {
+    throw new Error('The document could not be saved before naming the version')
   }
   return target.client.saveDocumentVersion(target.documentId, input)
 }
