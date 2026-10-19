@@ -11,9 +11,10 @@ import {
   type ConnectorExportScope
 } from '../connectors'
 import { elementTag } from '../elements'
+import { stickyBody, stickyName, stickyProps } from '../stickies'
 import { rekaExport, type RekaExport } from './behaviours'
 import { iconProps } from './icons'
-import { collectProps } from './props'
+import { collectProps, positionProps } from './props'
 import { textChildren } from './text'
 import { plainValue, propAttribute, Reference, type JSXProp } from './value'
 
@@ -63,6 +64,17 @@ interface OwnElement {
 const OWN_ELEMENTS: Partial<
   Record<NodeType, (graph: SceneGraph, node: SceneNode, scope?: ConnectorExportScope) => OwnElement>
 > = {
+  STICKY: (graph, node) => {
+    const name = stickyName(node)
+    return {
+      props: [
+        ...(name ? [['name', name] satisfies JSXProp] : []),
+        ...positionProps(node, graph),
+        ...stickyProps(graph, node).map(([key, value]): JSXProp => [key, plainValue(value)])
+      ],
+      text: stickyBody(graph, node)
+    }
+  },
   CONNECTOR: (graph, node, scope) => ({
     props: connectorProps(graph, node, scope).map(([key, value]): JSXProp => [
       key,
@@ -180,8 +192,8 @@ export function designJSXElement(nodeId: string, graph: SceneGraph): DesignJSXEl
   const tag = node && elementTag(node.type)
   const printed = sceneNodeAttributes(nodeId, graph)
   if (!node || !tag || !printed) return null
-  // A text layer's content, or a connector's label, is written as its children, not as the
-  // `text` attribute; a connector's generated layers are not written at all.
+  // A text layer's content, a connector's label, or a sticky note's body is written as its
+  // children, not as the `text` attribute; the layers they generate are not written at all.
   const own = OWN_ELEMENTS[node.type]
   const hasContent = node.type === 'TEXT' || own !== undefined
   const attributes = Object.fromEntries(

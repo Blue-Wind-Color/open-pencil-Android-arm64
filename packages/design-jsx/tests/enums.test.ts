@@ -4,6 +4,7 @@ import {
   BLEND_MODE,
   CONSTRAINT,
   MASK_TYPE,
+  STICKY_TEXT_SIZE,
   STROKE_ALIGN,
   STROKE_CAP,
   STROKE_JOIN,
@@ -110,6 +111,13 @@ describe('design JSX enums', () => {
     )
     expect(node.textDecorationStyle).toBe('WAVY')
     expect(warnings).toEqual([])
+  })
+
+  test('a sticky text size reads as its camelCase name in any case, and an unknown one warns', async () => {
+    expect(STICKY_TEXT_SIZE.parse('extralarge')).toBe('extraLarge')
+    expect(STICKY_TEXT_SIZE.print('extraLarge')).toBe('extraLarge')
+    const { warnings } = await render('<Sticky textSize="giant">Hi</Sticky>')
+    expect(warnings[0]).toStartWith('Unknown textSize "giant" on <sticky> is ignored')
   })
 
   test('a connector cap is spelled as strokeCap spells it, and an unknown one warns', async () => {

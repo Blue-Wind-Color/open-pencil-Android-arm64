@@ -6,6 +6,7 @@ import type {
   MaskType,
   SceneNode,
   Stroke,
+  StickyTextSize,
   StrokeCap,
   StrokeJoin,
   TextAutoResize,
@@ -38,14 +39,15 @@ export function jsxEnum<T extends string>(
   aliases: Readonly<Record<string, T>> = {}
 ): JSXEnum<T> {
   const entries = Object.entries(spellings) as [T, string][]
-  const byName = new Map<string, T>([
-    ...entries.map(([value, name]): [string, T] => [name, value]),
-    ...Object.entries(aliases)
-  ])
+  const byName = new Map<string, T>(
+    [...entries.map(([value, name]): [string, T] => [name, value]), ...Object.entries(aliases)].map(
+      ([name, value]): [string, T] => [name.toLowerCase(), value]
+    )
+  )
   return {
     parse: (value) => (typeof value === 'string' ? byName.get(value.toLowerCase()) : undefined),
     print: (value) => spellings[value],
-    names: [...byName.keys()]
+    names: [...entries.map(([, name]) => name), ...Object.keys(aliases)]
   }
 }
 
@@ -117,6 +119,13 @@ export const TEXT_DECORATION = lowercaseEnum<TextDecoration>(['NONE', 'UNDERLINE
 export const TEXT_DECORATION_STYLE = lowercaseEnum<TextDecorationStyle>(['SOLID', 'DOTTED', 'WAVY'])
 export const TEXT_CASE = lowercaseEnum<TextCase>(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE'])
 
+export const STICKY_TEXT_SIZE = jsxEnum<StickyTextSize>({
+  small: 'small',
+  medium: 'medium',
+  large: 'large',
+  extraLarge: 'extraLarge',
+  huge: 'huge'
+})
 export const CONNECTOR_LINE = lowercaseEnum<ConnectorLineType>(['ELBOWED', 'STRAIGHT', 'CURVED'])
 /** The sides a `<Connector>` end attaches by; the other magnets come only from files. */
 export const CONNECTOR_SIDE = lowercaseEnum<
@@ -137,6 +146,7 @@ export const ENUM_PROPS: Readonly<Partial<Record<string, JSXEnum<string>>>> = {
   textDecoration: TEXT_DECORATION,
   textDecorationStyle: TEXT_DECORATION_STYLE,
   textCase: TEXT_CASE,
+  textSize: STICKY_TEXT_SIZE,
   line: CONNECTOR_LINE,
   fromSide: CONNECTOR_SIDE,
   toSide: CONNECTOR_SIDE,

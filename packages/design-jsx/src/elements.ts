@@ -8,6 +8,8 @@ import {
   DESIGN_JSX_CONNECTOR_PROPERTY_NAMES,
   DESIGN_JSX_PARAGRAPH_PROPERTY_NAMES,
   DESIGN_JSX_SPAN_PROPERTY_NAMES,
+  DESIGN_JSX_STICKY_LAYER_PROPERTY_NAMES,
+  DESIGN_JSX_STICKY_PROPERTY_NAMES,
   DESIGN_JSX_SUPPORTED_PROPERTY_NAMES,
   DESIGN_JSX_TEXT_PARAGRAPH_PROPERTY_NAMES
 } from './schema'
@@ -154,6 +156,13 @@ export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
     nodeType: 'RECTANGLE'
   },
   { name: 'Icon', runtimeType: 'icon', description: 'An Iconify icon.' },
+  {
+    name: 'Sticky',
+    runtimeType: 'sticky',
+    description: 'A FigJam sticky note; its text is the body.',
+    props: [...DESIGN_JSX_STICKY_PROPERTY_NAMES, ...DESIGN_JSX_STICKY_LAYER_PROPERTY_NAMES],
+    writes: ['STICKY']
+  },
   {
     name: 'Connector',
     runtimeType: 'connector',

@@ -23,6 +23,7 @@ import { applySizeOverrides, propsToOverrides } from './props-overrides'
 import { LayerRefs } from './refs'
 import { prepareScalarBindings } from './scalar-bindings'
 import type { DesignJSXServices } from './services'
+import { renderStickyNode, STICKY_ELEMENT } from './stickies'
 import { isTextContent, TEXT_CONTENT_NAMES, textContentFields } from './text-content'
 import { FRAGMENT, isTreeNode } from './tree'
 import type { TreeNode } from './tree'
@@ -514,6 +515,8 @@ function renderOwnElement<Artwork>(
       return renderArtworkNode(services, graph, tree, parentId)
     case 'instance':
       return renderInstanceNode(graph, tree, parentId)
+    case STICKY_ELEMENT:
+      return Promise.resolve(renderStickyNode(graph, tree, parentId))
     case CONNECTOR_ELEMENT:
       return Promise.resolve(renderConnectorElement(graph, tree, parentId))
     default:
