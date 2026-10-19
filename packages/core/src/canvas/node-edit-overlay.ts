@@ -20,6 +20,7 @@ import {
 } from '#core/vector'
 import { evalCubic, segmentToAbsolute } from '#core/vector/curve-math'
 
+import { drawRegionHatch } from './region-hatch'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 
 type ToScreenFn = (x: number, y: number) => Vector
@@ -38,6 +39,8 @@ export interface NodeEditOverlayState {
   selectedSegmentIndices?: Set<number>
   selectedHandles?: Set<number>
   hoveredHandleInfo?: HandleInfo
+  hoveredRegion?: number | null
+  selectedRegions?: Set<number>
 }
 
 // Blue = rgb(59,130,246) ≈ 0.23, 0.51, 0.96
@@ -97,6 +100,9 @@ export function drawNodeEditOverlay(
 
   // Draw the node shape with its original fills/strokes/effects using live vertices
   drawLiveShape(r, canvas, graph, editState.nodeId, vertices, segments, regions)
+
+  // Hatch the hovered and selected regions, as Figma does
+  drawRegionHatch(r, canvas, graph, editState)
 
   // Draw technical stroke outline over the shape
   drawTechStroke(r, canvas, graph, editState.nodeId, vertices, segments, regions)

@@ -208,10 +208,10 @@ export interface DragEditNode {
   startY: number
   origPositions: Map<number, Vector>
   /**
-   * A selected segment that was pressed: releasing without a drag selects only it, or with Shift
-   * takes it out of the selection.
+   * A selected segment or region that was pressed: releasing without a drag selects only it, or
+   * with Shift takes it out of the selection.
    */
-  segmentClick?: { segment: number; deselect: boolean }
+  click?: { part: 'segment' | 'region'; index: number; deselect: boolean }
 }
 
 export interface DragEditHandle {

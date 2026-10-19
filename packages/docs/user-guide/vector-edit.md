@@ -50,6 +50,12 @@ This activates geometry editing for the selected vector.
 - Drag over empty space to select the anchors inside the rectangle and the segments between them.
 - <kbd>Shift</kbd> + drag adds them to the selection.
 
+### Select a Region
+
+- Move the pointer inside a filled area: the region under it is hatched with diagonal lines.
+- Click inside it to select the region and all of its points; drag to move it.
+- <kbd>Shift</kbd> + click adds the region to the selection.
+
 ### Delete Anchors and Segments
 
 - Press <kbd>Delete</kbd> or <kbd>Backspace</kbd> to delete the selection.

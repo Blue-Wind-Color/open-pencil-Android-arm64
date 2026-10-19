@@ -9,6 +9,7 @@ import {
   editVerticesInRect,
   getNodeEditState,
   hitTestEditHandle,
+  hitTestEditRegion,
   hitTestEditSegment,
   hitTestEditVertex,
   isEndpoint,
@@ -19,12 +20,13 @@ import { applyNodeEditSnap } from '#vue/shared/input/vector/snap'
 export {
   getNodeEditState,
   hitTestEditHandle,
+  hitTestEditRegion,
   hitTestEditSegment,
   isEndpoint,
   NODE_HIT_THRESHOLD
 } from '#vue/shared/input/vector/hit-test'
 import type { Editor } from '@open-pencil/core/editor'
-import { vectorHandleId } from '@open-pencil/core/vector'
+import { regionVertexIndices, vectorHandleId } from '@open-pencil/core/vector'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 type NodeEditEditor = Partial<{
@@ -59,34 +61,21 @@ export function handleNodeEditDown(
   const nodeEditEditor = editor as Editor & NodeEditEditor
 
   const handleHit = hitTestEditHandle(editor, cx, cy)
-  if (handleHit) {
-    const key = vectorHandleId(handleHit.segmentIndex, handleHit.tangentField)
+  const ri = handleHit ? null : hitTestEditRegion(editor, cx, cy)
+  if (!e.shiftKey && !pressesPickedRegion(es, ri)) es.selectedRegions = new Set()
 
-    if (e.shiftKey) {
-      const next = new Set(es.selectedHandles)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      es.selectedHandles = next
-    } else {
-      es.selectedVertexIndices = new Set()
-      es.selectedSegmentIndices = new Set()
-      es.selectedHandles = new Set([key])
-    }
-    nodeEditEditor.nodeEditPushHistory?.()
-    setDrag({
-      type: 'edit-handle',
-      segmentIndex: handleHit.segmentIndex,
-      tangentField: handleHit.tangentField,
-      vertexIndex: handleHit.vertexIndex,
-      startX: cx,
-      startY: cy,
-      initialTangent: (() => {
-        const seg = es.segments[handleHit.segmentIndex]
-        const tangent =
-          handleHit.tangentField === 'tangentStart' ? seg.tangentStart : seg.tangentEnd
-        return { x: tangent.x, y: tangent.y }
-      })()
-    })
+  if (handleHit) {
+    pressHandle(es, handleHit, e.shiftKey, cx, cy, nodeEditEditor, setDrag)
+    return
+  }
+
+  // As in Figma, a press inside a region away from its points and segments picks the region:
+  // its points are selected with it and drag with it. A press on a picked region keeps the
+  // selection so all of it drags, as with segments.
+  if (ri !== null) {
+    const click = pickRegion(es, ri, e.shiftKey)
+    editor.requestRepaint()
+    startPointsDrag(es, regionPoints(es, ri), cx, cy, nodeEditEditor, setDrag, click)
     return
   }
 
@@ -123,20 +112,10 @@ export function handleNodeEditDown(
   // selection so all of it drags; the click acts only on a release without a drag.
   const si = hitTestEditSegment(editor, cx, cy)
   if (si !== null) {
-    const wasSelected = es.selectedSegmentIndices.has(si)
-    es.selectedHandles = new Set()
-    if (!wasSelected) selectPressedSegment(es, si, e.shiftKey)
+    const click = selectPressedSegment(es, si, e.shiftKey)
     editor.requestRepaint()
     const { start, end } = es.segments[si]
-    startPointsDrag(
-      es,
-      [start, end],
-      cx,
-      cy,
-      nodeEditEditor,
-      setDrag,
-      wasSelected ? { segment: si, deselect: e.shiftKey } : undefined
-    )
+    startPointsDrag(es, [start, end], cx, cy, nodeEditEditor, setDrag, click)
     return
   }
 
@@ -150,17 +129,105 @@ export function handleNodeEditDown(
   })
 }
 
-/** Shift adds the pressed segment to the selection; otherwise it becomes the selection. */
-function selectPressedSegment(es: NodeEditState, segmentIndex: number, add: boolean) {
-  if (!add) es.selectedVertexIndices = new Set()
-  es.selectedSegmentIndices = add
+/**
+ * Whether a press lands on a region already picked, which keeps the picked regions; any other
+ * press without Shift picks something else, so they go.
+ */
+function pressesPickedRegion(es: NodeEditState, region: number | null) {
+  return region !== null && Boolean(es.selectedRegions?.has(region))
+}
+
+/** Selects a pressed tangent handle, toggling it with Shift, and starts dragging it. */
+function pressHandle(
+  es: NodeEditState,
+  handleHit: NonNullable<ReturnType<typeof hitTestEditHandle>>,
+  shift: boolean,
+  cx: number,
+  cy: number,
+  nodeEditEditor: NodeEditEditor,
+  setDrag: (d: DragState) => void
+) {
+  const key = vectorHandleId(handleHit.segmentIndex, handleHit.tangentField)
+
+  if (shift) {
+    const next = new Set(es.selectedHandles)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    es.selectedHandles = next
+  } else {
+    es.selectedVertexIndices = new Set()
+    es.selectedSegmentIndices = new Set()
+    es.selectedHandles = new Set([key])
+  }
+  nodeEditEditor.nodeEditPushHistory?.()
+  setDrag({
+    type: 'edit-handle',
+    segmentIndex: handleHit.segmentIndex,
+    tangentField: handleHit.tangentField,
+    vertexIndex: handleHit.vertexIndex,
+    startX: cx,
+    startY: cy,
+    initialTangent: (() => {
+      const seg = es.segments[handleHit.segmentIndex]
+      const tangent = handleHit.tangentField === 'tangentStart' ? seg.tangentStart : seg.tangentEnd
+      return { x: tangent.x, y: tangent.y }
+    })()
+  })
+}
+
+/**
+ * Selects a pressed segment: Shift adds it, otherwise it becomes the selection. A segment already
+ * selected stays as it is, so all of the selection drags; the result is what a release without a
+ * drag does to it then.
+ */
+function selectPressedSegment(
+  es: NodeEditState,
+  segmentIndex: number,
+  shift: boolean
+): DragEditNode['click'] {
+  es.selectedHandles = new Set()
+  if (es.selectedSegmentIndices.has(segmentIndex)) {
+    return { part: 'segment', index: segmentIndex, deselect: shift }
+  }
+  if (!shift) es.selectedVertexIndices = new Set()
+  es.selectedSegmentIndices = shift
     ? new Set([...es.selectedSegmentIndices, segmentIndex])
     : new Set([segmentIndex])
+  return undefined
+}
+
+function regionPoints(es: NodeEditState, regionIndex: number): number[] {
+  return regionVertexIndices(
+    { vertices: es.vertices, segments: es.segments, regions: es.regions },
+    regionIndex
+  )
+}
+
+/**
+ * Picks a pressed region and its points: Shift adds them, otherwise they become the selection. A
+ * region already picked stays as it is, so all of the selection drags; the result is what a
+ * release without a drag does to it then.
+ */
+function pickRegion(es: NodeEditState, regionIndex: number, add: boolean): DragEditNode['click'] {
+  es.selectedHandles = new Set()
+  if (es.selectedRegions?.has(regionIndex)) {
+    return { part: 'region', index: regionIndex, deselect: add }
+  }
+  const points = regionPoints(es, regionIndex)
+  if (add) {
+    es.selectedRegions = new Set([...(es.selectedRegions ?? new Set<number>()), regionIndex])
+    es.selectedVertexIndices = new Set([...es.selectedVertexIndices, ...points])
+  } else {
+    es.selectedRegions = new Set([regionIndex])
+    es.selectedVertexIndices = new Set(points)
+    es.selectedSegmentIndices = new Set()
+  }
+  return undefined
 }
 
 /**
  * Drags the selected points and segments, and `pressed` with them, from where the pointer went
- * down. `segmentClick` is what a release without a drag does to a selected segment.
+ * down. `click` is what a release without a drag does to the selected part that was pressed.
  */
 function startPointsDrag(
   es: NodeEditState,
@@ -169,7 +236,7 @@ function startPointsDrag(
   cy: number,
   nodeEditEditor: NodeEditEditor,
   setDrag: (d: DragState) => void,
-  segmentClick?: DragEditNode['segmentClick']
+  click?: DragEditNode['click']
 ) {
   const segmentEnds = [...es.selectedSegmentIndices].flatMap((index) => {
     const segment = es.segments.at(index)
@@ -180,22 +247,27 @@ function startPointsDrag(
     origPositions.set(index, { x: es.vertices[index].x, y: es.vertices[index].y })
   }
   nodeEditEditor.nodeEditPushHistory?.()
-  setDrag({ type: 'edit-node', startX: cx, startY: cy, origPositions, segmentClick })
+  setDrag({ type: 'edit-node', startX: cx, startY: cy, origPositions, click })
 }
 
 /**
- * A press on a selected segment that ends without moving anything: as in Figma, a click selects
- * only that segment and a Shift-click takes it out of the selection.
+ * A press on a selected segment or region that ends without moving anything: as in Figma, a click
+ * selects only that part and a Shift-click takes it out of the selection.
  */
-export function finishSegmentClick(d: DragEditNode, editor: Editor) {
+export function finishPartClick(d: DragEditNode, editor: Editor) {
   const es = getNodeEditState(editor)
-  if (!es || !d.segmentClick) return
+  if (!es || !d.click) return
   const moved = [...d.origPositions].some(([index, orig]) => {
     const vertex = es.vertices.at(index)
     return vertex !== undefined && (vertex.x !== orig.x || vertex.y !== orig.y)
   })
   if (moved) return
-  const { segment, deselect } = d.segmentClick
+  if (d.click.part === 'segment') clickSegment(es, d.click.index, d.click.deselect)
+  else clickRegion(es, d.click.index, d.click.deselect)
+  editor.requestRepaint()
+}
+
+function clickSegment(es: NodeEditState, segment: number, deselect: boolean) {
   if (deselect) {
     const next = new Set(es.selectedSegmentIndices)
     next.delete(segment)
@@ -204,7 +276,23 @@ export function finishSegmentClick(d: DragEditNode, editor: Editor) {
     es.selectedVertexIndices = new Set()
     es.selectedSegmentIndices = new Set([segment])
   }
-  editor.requestRepaint()
+}
+
+/** A deselected region takes its points with it, except those another picked region shares. */
+function clickRegion(es: NodeEditState, region: number, deselect: boolean) {
+  if (!deselect) {
+    es.selectedRegions = new Set([region])
+    es.selectedVertexIndices = new Set(regionPoints(es, region))
+    es.selectedSegmentIndices = new Set()
+    return
+  }
+  const rest = [...(es.selectedRegions ?? [])].filter((index) => index !== region)
+  const kept = new Set(rest.flatMap((index) => regionPoints(es, index)))
+  const dropped = new Set(regionPoints(es, region).filter((index) => !kept.has(index)))
+  es.selectedRegions = new Set(rest)
+  es.selectedVertexIndices = new Set(
+    [...es.selectedVertexIndices].filter((index) => !dropped.has(index))
+  )
 }
 
 /** Selects the points inside the marquee and the segments between them, with what it started with. */

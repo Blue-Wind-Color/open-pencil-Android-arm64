@@ -86,7 +86,9 @@ export function createVectorEditLifecycle(editor: Editor, state: VectorEditState
       selectedSegmentIndices: new Set(),
       draggedHandleInfo: null,
       selectedHandles: new Set(),
-      hoveredHandleInfo: null
+      hoveredHandleInfo: null,
+      hoveredRegion: null,
+      selectedRegions: new Set()
     }
 
     editor.select([nodeId])

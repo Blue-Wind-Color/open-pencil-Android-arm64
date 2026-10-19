@@ -40,6 +40,7 @@ export function createVectorEditHistoryActions(editor: Editor, state: VectorEdit
     // indices may no longer exist in the restored geometry
     es.selectedVertexIndices = new Set()
     es.selectedSegmentIndices = new Set()
+    es.selectedRegions = new Set()
     es.selectedHandles = new Set()
     es.hoveredHandleInfo = null
     editor.requestRender()
