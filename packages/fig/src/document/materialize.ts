@@ -38,7 +38,10 @@ import type { ComponentConstruction } from './components'
 import { loadPageTransaction } from './load-transaction'
 import { applyDocumentMetadata } from './metadata'
 import { createArchiveDocumentReader, createDocumentReader } from './read'
-import { materializeVariableResources } from './variables'
+import {
+  materializeVariableResources,
+  type UnsupportedVariableExpressionDiagnostic
+} from './variables'
 
 export interface DocumentAssemblyOptions extends InterpretInstanceOptions {
   /** Restrict scene population to these source pages plus required component ownership. */
@@ -46,6 +49,8 @@ export interface DocumentAssemblyOptions extends InterpretInstanceOptions {
   images?: ReadonlyMap<string, Uint8Array>
   /** A resource record the materializer does not convert; acknowledged rather than dropped. */
   onUnsupportedResource?: (resource: NodeChange) => void
+  /** Explicitly preserve expression-valued variables without evaluating them. */
+  onUnsupportedVariableExpression?: (diagnostic: UnsupportedVariableExpressionDiagnostic) => void
   onUnresolvedBinding?: (diagnostic: BindingReferenceDiagnostic) => void
 }
 
@@ -256,7 +261,13 @@ function createAssemblyState(
   applyDocumentMetadata(graph, reader.documentRecord)
   for (const [hash, bytes] of options.images ?? []) graph.images.set(hash, bytes.slice())
   graph.applyImportedStateDuring(
-    () => materializeVariableResources(graph, reader.resources, options.onUnsupportedResource),
+    () =>
+      materializeVariableResources(
+        graph,
+        reader.resources,
+        options.onUnsupportedResource,
+        options.onUnsupportedVariableExpression
+      ),
     () => `0:${nextImportedId++}`
   )
   for (const page of graph.getPages()) graph.deleteNode(page.id)

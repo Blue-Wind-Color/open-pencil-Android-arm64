@@ -128,5 +128,6 @@
   "importAction": "导入",
   "formula": "公式",
   "useFormula": "使用公式",
-  "formulaPlaceholder": "值或公式"
+  "formulaPlaceholder": "值或公式",
+  "unsupportedExpression": "OpenPencil 暂不能计算 {name}。保存时会原样保留。"
 }

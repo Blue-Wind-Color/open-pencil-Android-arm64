@@ -52,7 +52,11 @@ export function prepareVariableTransfer(
   assertUniqueMappings(references.collections, 'collection')
   assertUniqueMappings(references.modes, 'mode')
   const value = (input: VariableValue): VariableValue =>
-    mapVariableValueReferences(input, (id) => mapped(references.variables, id, 'variable alias'))
+    mapVariableValueReferences(
+      input,
+      (id) => mapped(references.variables, id, 'variable alias'),
+      (id) => references.modes.get(id) ?? id
+    )
   return {
     collections: collections.map((collection) => ({
       ...structuredClone(collection),

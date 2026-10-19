@@ -30,5 +30,6 @@
   "openQueuedFilesFailed": "Nie udało się otworzyć plików przekazanych do OpenPencil: {error}",
   "tokensLeftOut": "Pominięte w arkuszu stylów: {names}.",
   "designTokensLeftOut": "Pominięte w tokenach projektowych: {names}.",
-  "designTokensImported": "Zaimportowano tokeny projektowe: {count}."
+  "designTokensImported": "Zaimportowano tokeny projektowe: {count}.",
+  "unsupportedVariableExpressions": "OpenPencil nie potrafi jeszcze obliczyć tych zmiennych, więc warstwy zachowują wartości zapisane w pliku: {names}."
 }

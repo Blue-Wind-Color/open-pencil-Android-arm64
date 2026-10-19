@@ -30,5 +30,6 @@
   "openQueuedFilesFailed": "Impossibile aprire i file passati a OpenPencil: {error}",
   "tokensLeftOut": "Esclusi dal foglio di stile: {names}.",
   "designTokensLeftOut": "Esclusi dai design token: {names}.",
-  "designTokensImported": "Importati {count} design token."
+  "designTokensImported": "Importati {count} design token.",
+  "unsupportedVariableExpressions": "OpenPencil non sa ancora valutare queste variabili, quindi i livelli mantengono i valori salvati nel file: {names}."
 }

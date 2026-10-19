@@ -128,5 +128,6 @@
   "importAction": "Импортировать",
   "formula": "Формула",
   "useFormula": "Использовать формулу",
-  "formulaPlaceholder": "Значение или формула"
+  "formulaPlaceholder": "Значение или формула",
+  "unsupportedExpression": "OpenPencil пока не умеет вычислять {name}. При сохранении оно остаётся как есть."
 }

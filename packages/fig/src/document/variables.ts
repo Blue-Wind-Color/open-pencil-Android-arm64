@@ -21,7 +21,19 @@ import {
   readVariableToken,
   withoutTokenPluginData
 } from '../node-change/variable/token'
+import { mapUnsupportedExpressionReferences } from '../node-change/variable/unsupported'
 import { createResourceResolver } from './resource-reference'
+
+export interface UnsupportedVariableExpressionDiagnostic {
+  sourceId: string
+  modeId: string
+  reason: 'unsupported-variable-expression'
+}
+type ExpressionReporter = (diagnostic: UnsupportedVariableExpressionDiagnostic) => void
+
+class UnsupportedExpressionError extends Error {
+  override name = 'UnsupportedExpressionError'
+}
 
 function valueOf(
   entry: VariableDataEntry,
@@ -55,7 +67,14 @@ function expressionValue(
   if (value.expressionValue?.expressionFunction === 'COMPOSE_COLOR')
     return colorExpression(entry, resolve)
   const expression = value.expressionValue
-  const operator = v.parse(v.picklist(VARIABLE_FORMULA_OPERATORS), expression?.expressionFunction)
+  const parsed = v.safeParse(v.picklist(VARIABLE_FORMULA_OPERATORS), expression?.expressionFunction)
+  if (!parsed.success) {
+    if (!expression?.expressionFunction) throw new Error('Missing variable expression function')
+    throw new UnsupportedExpressionError(
+      `Unsupported variable expression ${expression.expressionFunction}`
+    )
+  }
+  const operator = parsed.output
   const type = formulaResultType(operator)
   if (entry.resolvedDataType && entry.resolvedDataType !== type)
     throw new Error(`Expression result type does not match ${entry.resolvedDataType}`)
@@ -81,10 +100,12 @@ function colorExpression(
   const expression = entry.value?.expressionValue
   const args = expression?.expressionArguments
   if (expression?.expressionFunction !== 'COMPOSE_COLOR' || args?.length !== 2)
-    throw new Error(`Unsupported variable expression ${expression?.expressionFunction}`)
+    throw new UnsupportedExpressionError(
+      `Unsupported variable expression ${expression?.expressionFunction}`
+    )
   // Only literal or alias operands are supported; other functions must not be flattened.
   if (args.some((arg) => arg.dataType === 'EXPRESSION'))
-    throw new Error('Unsupported nested color expression')
+    throw new UnsupportedExpressionError('Unsupported nested color expression')
   const color = valueOf(args[0], resolve)
   const opacity = valueOf(args[1], resolve)
   return v.parse(variableColorExpressionSchema, { expression: 'COMPOSE_COLOR', color, opacity })
@@ -93,7 +114,8 @@ function colorExpression(
 function modeValues(
   resource: NodeChange,
   modes: readonly string[],
-  resolve: ReturnType<typeof createResourceResolver>
+  resolve: ReturnType<typeof createResourceResolver>,
+  onUnsupportedExpression?: ExpressionReporter
 ): Record<string, VariableValue> {
   const entries = resource.variableDataValues?.entries ?? []
   if (!entries.length) throw new Error('Missing mode values')
@@ -101,7 +123,38 @@ function modeValues(
   for (const entry of entries) {
     const modeId = guidToString(entry.modeID)
     if (!modes.includes(modeId)) throw new Error('Unknown mode')
-    const value = valueOf(entry.variableData, resolve)
+    let value: VariableValue
+    try {
+      value = valueOf(entry.variableData, resolve)
+    } catch (error) {
+      if (!(error instanceof UnsupportedExpressionError) || !onUnsupportedExpression) throw error
+      const data = structuredClone(entry.variableData)
+      const references: (string | null)[] = []
+      const modeKeys: string[] = []
+      mapUnsupportedExpressionReferences(
+        data,
+        (reference) => {
+          references.push(resolve(reference) ?? null)
+          return undefined
+        },
+        (guid) => {
+          modeKeys.push(guidToString(guid))
+          return guid
+        }
+      )
+      value = {
+        expression: 'UNSUPPORTED',
+        function: data.value?.expressionValue?.expressionFunction ?? '',
+        value: { ...data },
+        references,
+        modes: modeKeys
+      }
+      onUnsupportedExpression({
+        sourceId: resource.guid ? guidToString(resource.guid) : '',
+        modeId,
+        reason: 'unsupported-variable-expression'
+      })
+    }
     if (
       typeof value === 'object' &&
       'expression' in value &&
@@ -118,7 +171,8 @@ function modeValues(
 export function materializeVariableResources(
   graph: SceneGraph,
   resources: readonly NodeChange[],
-  onUnsupported?: (resource: NodeChange) => void
+  onUnsupported?: (resource: NodeChange) => void,
+  onUnsupportedExpression?: ExpressionReporter
 ): void {
   const report = (resource: NodeChange, reason: string): void => {
     if (!onUnsupported) throw new Error(`Unsupported document resource ${resource.type}: ${reason}`)
@@ -153,13 +207,14 @@ export function materializeVariableResources(
       version: typeof resource.version === 'string' ? resource.version : undefined
     })
   }
-  addVariables(graph, resources, report)
+  addVariables(graph, resources, report, onUnsupportedExpression)
 }
 
 function addVariables(
   graph: SceneGraph,
   resources: readonly NodeChange[],
-  report: (resource: NodeChange, reason: string) => void
+  report: (resource: NodeChange, reason: string) => void,
+  onUnsupportedExpression?: ExpressionReporter
 ): void {
   const resolve = createResourceResolver(resources)
   for (const resource of resources) {
@@ -185,7 +240,8 @@ function addVariables(
         modeValues(
           resource,
           collection.modes.map((mode) => mode.modeId),
-          resolve
+          resolve,
+          onUnsupportedExpression
         )
       )
     } catch (error) {

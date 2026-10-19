@@ -180,6 +180,13 @@ export interface VariableAnyValue {
   symbolIdValue?: { guid?: GUID }
   // fig.kiwi PropRefValue: the component property a parameter entry points at.
   propRefValue?: { defId?: GUID }
+  mapValue?: { values?: { key?: string; guidKey?: GUID; value?: VariableDataEntry }[] }
+  colorArrayValue?: { colors?: VariableDataEntry[] }
+  fontStyleValue?: {
+    asString?: VariableDataEntry
+    asFloat?: VariableDataEntry
+    asVariations?: VariableDataEntry
+  }
   expressionValue?: {
     expressionFunction?: string
     expressionArguments?: VariableDataEntry[]

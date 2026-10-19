@@ -128,5 +128,6 @@
   "importAction": "Importieren",
   "formula": "Formel",
   "useFormula": "Formel verwenden",
-  "formulaPlaceholder": "Wert oder Formel"
+  "formulaPlaceholder": "Wert oder Formel",
+  "unsupportedExpression": "OpenPencil kann {name} noch nicht auswerten. Beim Speichern bleibt es unverändert."
 }

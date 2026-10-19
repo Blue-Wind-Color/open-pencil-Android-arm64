@@ -128,5 +128,6 @@
   "importAction": "読み込む",
   "formula": "数式",
   "useFormula": "数式を使用",
-  "formulaPlaceholder": "値または数式"
+  "formulaPlaceholder": "値または数式",
+  "unsupportedExpression": "OpenPencil はまだ {name} を評価できません。保存してもそのまま残ります。"
 }

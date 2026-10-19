@@ -14,6 +14,9 @@ export const notificationMessageDefaults = {
   tokensLeftOut: params('Left out of the stylesheet: {names}.'),
   designTokensLeftOut: params('Left out of the design tokens: {names}.'),
   designTokensImported: params('Imported {count} design tokens.'),
+  unsupportedVariableExpressions: params(
+    'OpenPencil can’t evaluate these variables yet, so layers keep the values saved in the file: {names}.'
+  ),
   nodeID: 'node ID',
   nodeIDs: 'node IDs',
   xPath: 'XPath',

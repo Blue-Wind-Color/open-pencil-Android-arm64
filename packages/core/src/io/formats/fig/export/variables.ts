@@ -3,6 +3,8 @@ import * as v from 'valibot'
 import {
   collectionPluginDataNodeChange,
   parseGuidOrNull,
+  mapUnsupportedExpressionReferences,
+  unsupportedExpressionData,
   variableAlias,
   variableMetadataNodeChange
 } from '@open-pencil/fig/node-change'
@@ -10,6 +12,7 @@ import type { GUID, NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import {
   modesDefaultFirst,
+  isUnsupportedVariableValue,
   MAX_FORMULA_DEPTH,
   formulaResultType,
   variableFormulaSchema,
@@ -144,8 +147,21 @@ function variableValueToKiwi(
   graph: SceneGraph,
   value: VariableValue,
   type: string,
-  ids: Map<string, GUID>
+  ids: Map<string, GUID>,
+  modes?: ReadonlyMap<string, GUID>
 ): VariableDataEntry {
+  if (isUnsupportedVariableValue(value)) {
+    const data = unsupportedExpressionData(value.value)
+    mapUnsupportedExpressionReferences(
+      data,
+      (_, index) => {
+        const id = value.references[index]
+        return id && graph.variables.has(id) ? variableAlias(graph, id, ids) : undefined
+      },
+      (guid, index) => modes?.get(value.modes[index] ?? '') ?? guid
+    )
+    return data
+  }
   if (typeof value === 'object' && 'expression' in value && value.expression === 'FORMULA') {
     const formula = v.parse(variableFormulaSchema, value)
     if (formula.type !== type) throw new Error('Formula type does not match variable type')
@@ -275,7 +291,7 @@ export function appendVariableNodeChanges(
         variableDataValues: {
           entries: Object.entries(variable.valuesByMode).map(([mode, value]) => ({
             modeID: modes.get(mode) ?? stringToGuid(mode),
-            variableData: variableValueToKiwi(graph, value, variable.type, ids)
+            variableData: variableValueToKiwi(graph, value, variable.type, ids, modes)
           }))
         },
         ...variableMetadataNodeChange(variable, modeKey),

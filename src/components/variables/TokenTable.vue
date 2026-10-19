@@ -297,6 +297,12 @@ function dropEdge(id: string) {
                   </Tip>
                   <span class="truncate">{{ value.css || '—' }}</span>
                 </template>
+                <Tip
+                  v-else-if="value.unsupported"
+                  :label="variables.unsupportedExpression({ name: value.unsupported })"
+                >
+                  <span :class="ui.aliasResult()">{{ value.unsupported }}(…)</span>
+                </Tip>
                 <template v-else-if="value.alias">
                   <BindingPill :class="ui.aliasPill()" :label="value.alias" />
                   <span v-if="value.result" :class="ui.aliasResult()">{{ value.result }}</span>

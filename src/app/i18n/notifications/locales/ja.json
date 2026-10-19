@@ -30,5 +30,6 @@
   "openQueuedFilesFailed": "OpenPencil に渡されたファイルを開けませんでした: {error}",
   "tokensLeftOut": "スタイルシートに含まれていません: {names}",
   "designTokensLeftOut": "デザイントークンに含まれていません: {names}",
-  "designTokensImported": "{count} 個のデザイントークンを読み込みました。"
+  "designTokensImported": "{count} 個のデザイントークンを読み込みました。",
+  "unsupportedVariableExpressions": "OpenPencil はまだこれらの変数を評価できないため、レイヤーはファイルに保存された値を保ちます: {names}"
 }
