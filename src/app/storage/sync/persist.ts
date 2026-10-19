@@ -19,6 +19,16 @@ export type PersistStorageCanvasOptions = StorageLocation & {
   figBytes: Uint8Array
 }
 
+/** The preview a `.fig` carries, read in place. */
+function figThumbnail(figBytes: Uint8Array): Promise<Uint8Array | null> {
+  return extractFigThumbnailFromReader({
+    size: figBytes.byteLength,
+    async read(start, endExclusive) {
+      return figBytes.subarray(start, endExclusive)
+    }
+  })
+}
+
 /** Write locally before scheduling remote synchronization. */
 export async function persistStorageCanvasLocally(
   options: PersistStorageCanvasOptions,
@@ -28,12 +38,7 @@ export async function persistStorageCanvasLocally(
     store: getLocalCanvasStore(),
     enqueueCanvas: enqueuePutCanvas
   }
-  const thumbnailBytes = await extractFigThumbnailFromReader({
-    size: options.figBytes.byteLength,
-    async read(start, endExclusive) {
-      return options.figBytes.subarray(start, endExclusive)
-    }
-  })
+  const thumbnailBytes = await figThumbnail(options.figBytes)
   const metadata = await runtime.store.writeCanvas({
     id: options.canvasId,
     providerId: options.providerId,
@@ -76,7 +81,8 @@ export async function seedStorageCanvasFromRemote(
     updatedAt: options.updatedAt,
     remoteRevision: options.remoteRevision ?? null,
     figBytes: options.figBytes,
-    thumbBytes: options.thumbnailBytes,
+    // Home shows the preview from the local copy, so a downloaded document brings its own.
+    thumbBytes: options.thumbnailBytes ?? (await figThumbnail(options.figBytes)),
     syncStatus: options.markSynced === false ? 'pending' : 'synced'
   })
   if (options.markSynced === false) return

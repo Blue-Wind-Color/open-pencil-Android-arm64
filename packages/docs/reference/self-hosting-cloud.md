@@ -52,7 +52,7 @@ Either way, the desktop app connects to the server directly, and the web editor 
 
 - Terminate TLS in front of the server and the object store, on stable hostnames.
 - Forward WebSocket upgrades for `/api/collaboration/relay`. Collaboration tickets name the relay at `public_url` with a `ws:` or `wss:` scheme; set `[collaboration] relay_url` when clients reach it elsewhere.
-- The object store must accept presigned uploads from the editor's origins: allow `PUT` and `GET` from `trusted_origins` in its CORS rules.
+- The object store must accept presigned uploads from the editor's origins: allow `PUT` and `GET` from `trusted_origins` in its CORS rules, with the `Range` request header, which Home uses to read a document's preview without downloading the whole file.
 
 ## The first administrator
 

@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
 
 import { fromUint8Array } from 'js-base64'
 
@@ -20,6 +21,13 @@ function cloudServer() {
   type Doc = { name: string; revision: string | null; version: number; checksum?: string }
   const documents = new Map<string, Doc>()
   const objects = new Map<string, Uint8Array>()
+  let fullReads = 0
+  let cancelledReads = 0
+  /**
+   * How the object store answers a range: as asked, by ignoring it, with more or fewer bytes
+   * than asked and no `Content-Range` to tell, or with another range than asked.
+   */
+  let ranges: 'honored' | 'ignored' | 'oversized' | 'short' | 'other' = 'honored'
   const uploads = new Map<string, { documentId: string; base: string | null }>()
   const summary = (id: string, doc: Doc) => ({
     id,
@@ -128,7 +136,46 @@ function cloudServer() {
       return new Response(null, { status: 200 })
     }
     const bytes = objects.get(key)
-    return bytes ? new Response(Uint8Array.from(bytes)) : new Response(null, { status: 404 })
+    if (!bytes) return new Response(null, { status: 404 })
+    const range = /^bytes=(\d+)-(\d+)$/.exec(new Headers(init.headers).get('Range') ?? '')
+    if (!range) {
+      fullReads += 1
+      return new Response(Uint8Array.from(bytes))
+    }
+    const [, first = '0', last = '0'] = range
+    const start = Number(first)
+    const end = Number(last) + 1
+    // A chunk at a time, so a reader can stop it partway.
+    const streamed = (from: number, to: number) => {
+      let offset = from
+      return new ReadableStream<Uint8Array>({
+        pull(controller) {
+          controller.enqueue(bytes.slice(offset, Math.min(offset + 1024, to)))
+          offset += 1024
+          if (offset >= to) controller.close()
+        },
+        cancel() {
+          cancelledReads += 1
+        }
+      })
+    }
+    if (ranges === 'ignored') {
+      fullReads += 1
+      return new Response(streamed(0, bytes.byteLength))
+    }
+    const sent = {
+      honored: [start, end],
+      oversized: [start, bytes.byteLength],
+      short: [start, end - 1],
+      other: [start + 1, end + 1]
+    }[ranges]
+    const [from = start, to = end] = sent
+    // A store whose CORS rules hide `Content-Range` leaves only the body's length to go by.
+    const headers: Record<string, string> =
+      ranges === 'oversized' || ranges === 'short'
+        ? {}
+        : { 'Content-Range': `bytes ${from}-${to - 1}/${bytes.byteLength}` }
+    return new Response(streamed(from, to), { status: 206, headers })
   }
 
   /** Someone else saves the document, moving its revision on. */
@@ -138,7 +185,17 @@ function cloudServer() {
   }
 
   const client = createCloudAPIClient('https://cloud.test/api', { fetch: api })
-  return { client, objectFetch, saveElsewhere, objects }
+  return {
+    client,
+    objectFetch,
+    saveElsewhere,
+    objects,
+    fullReads: () => fullReads,
+    cancelledReads: () => cancelledReads,
+    answerRanges(answer: typeof ranges) {
+      ranges = answer
+    }
+  }
 }
 
 function adapter(server: ReturnType<typeof cloudServer>) {
@@ -214,5 +271,46 @@ describe('Cloud storage adapter', () => {
     })
     server.objects.set(saved.revision ?? '', new Uint8Array([9, 9, 9]))
     await expect(storage.getDocument(id)).rejects.toThrow('does not match')
+  })
+
+  test('reads a document’s preview without downloading the whole file', async () => {
+    const server = cloudServer()
+    const storage = adapter(server)
+    const id = crypto.randomUUID()
+    const figBytes = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+    await storage.putDocument(id, figBytes, { name: 'Preview', updatedAt: '' })
+    const thumbnail = await storage.getThumbnail?.(id)
+    expect(thumbnail?.subarray(0, 8)).toEqual(
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    )
+    expect(server.fullReads()).toBe(0)
+  })
+
+  test('gives up on a preview when the object store sends the whole file', async () => {
+    const server = cloudServer()
+    const storage = adapter(server)
+    const id = crypto.randomUUID()
+    const figBytes = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+    await storage.putDocument(id, figBytes, { name: 'Preview', updatedAt: '' })
+    server.answerRanges('ignored')
+    await expect(storage.getThumbnail?.(id) ?? Promise.resolve()).rejects.toThrow('HTTP 200')
+    expect(server.cancelledReads()).toBe(1)
+  })
+
+  test('takes only the range it asked for, stopping one that runs on', async () => {
+    const server = cloudServer()
+    const storage = adapter(server)
+    const id = crypto.randomUUID()
+    const figBytes = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+    await storage.putDocument(id, figBytes, { name: 'Preview', updatedAt: '' })
+    const preview = () => storage.getThumbnail?.(id) ?? Promise.resolve()
+
+    server.answerRanges('oversized')
+    await expect(preview()).rejects.toThrow('more than')
+    expect(server.cancelledReads()).toBeGreaterThan(0)
+    server.answerRanges('short')
+    await expect(preview()).rejects.toThrow('sent')
+    server.answerRanges('other')
+    await expect(preview()).rejects.toThrow('HTTP 206 (bytes')
   })
 })

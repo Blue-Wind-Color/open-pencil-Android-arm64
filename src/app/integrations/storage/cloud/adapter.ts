@@ -1,4 +1,5 @@
 import { CloudAPIError, type CloudAPIClient } from '@open-pencil/cloud/client'
+import { extractFigThumbnailFromReader } from '@open-pencil/fig'
 
 import { cloudServerHost } from '@/app/cloud/servers/address'
 import { findCloudServer } from '@/app/cloud/servers/store'
@@ -11,7 +12,7 @@ import {
 import { StorageRevisionConflictError, StorageUnavailableError } from '../errors'
 import { storageFetch } from '../s3/fetch'
 import type { StorageAdapter, StorageProviderRuntime } from '../types'
-import { cloudChecksum, downloadCloudRevision } from './download'
+import { cloudChecksum, downloadCloudRevision, readCloudRevisionRange } from './download'
 import { uploadCloudObject } from './upload'
 
 function revisionConflict(error: unknown): boolean {
@@ -127,6 +128,17 @@ export function createCloudStorageAdapter(
         }
         throw error
       }
+    },
+
+    async getThumbnail(id) {
+      const download = await (await client()).getDocument(id)
+      const objectFetch = (input: string, init: RequestInit) =>
+        dependencies.objectFetch(input, init)
+      return extractFigThumbnailFromReader({
+        size: download.byteSize,
+        read: (start, endExclusive) =>
+          readCloudRevisionRange(download, objectFetch, start, endExclusive)
+      })
     },
 
     async deleteDocument(id) {
