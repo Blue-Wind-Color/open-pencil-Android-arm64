@@ -5,6 +5,7 @@ import type {
   SceneGraph,
   SceneGraphEvents,
   SceneNode,
+  VectorNetwork,
   VectorSegment,
   VectorVertex
 } from '@open-pencil/scene-graph'
@@ -101,6 +102,18 @@ export interface EditorSharedState {
   canvasVersion: number
 }
 
+/**
+ * The path a pen continues, in page coordinates, and where the pen's chain sits in it. The pen
+ * walks one chain out of the network; committing writes the chain back and keeps the rest.
+ */
+export interface ResumedPath {
+  network: VectorNetwork
+  /** Each chain vertex's index in `network`. */
+  vertices: number[]
+  /** Each chain segment's index in `network`, and whether the chain runs it from end to start. */
+  segments: Array<{ index: number; reversed: boolean }>
+}
+
 export interface PencilState {
   points: Vector[]
   /** The point Shift was pressed at; the stroke runs straight from it while Shift is held. */
@@ -138,6 +151,7 @@ export interface EditorViewState {
     pendingClose?: boolean
     closingToFirst: boolean
     resumingNodeId?: string
+    resumedPath?: ResumedPath
     resumedFills?: SceneNode['fills']
     resumedStrokes?: SceneNode['strokes']
   } | null

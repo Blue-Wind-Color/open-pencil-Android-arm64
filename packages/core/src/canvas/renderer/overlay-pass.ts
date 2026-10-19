@@ -146,6 +146,7 @@ export function drawOverlayPass(
   r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
   r.drawPenOverlay(canvas, overlays.penState)
   r.drawPencilOverlay(canvas, overlays.pencilState)
+  r.drawSnapMarks(canvas, overlays.snapGuides)
   updateIssueMarkers(r, graph, overlays)
   drawIssueMarkers(r, canvas, r.issueMarkers, overlays.designIssues?.hoveredMarkerKey)
   r.drawPresenceCursors(canvas, graph, overlays.presenceCursors)

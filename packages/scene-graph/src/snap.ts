@@ -9,6 +9,8 @@ export interface SnapGuide {
   position: number
   from: number
   to: number
+  /** Points along the guide that lined up, marked with a cross: a guide through path vertices. */
+  marks?: number[]
 }
 
 export interface SnapResult {

@@ -202,7 +202,10 @@ export function createEditor(options?: EditorOptions) {
     const previous = state.activeTool
     state.activeTool = tool
     if (tool !== 'SELECT') state.measurementMode = 'off'
-    if (previous !== tool) emitEditorEvent('tool:changed', tool, previous)
+    if (previous === tool) return
+    // Guides the pen showed for its next point do not belong to the next tool.
+    if (previous === 'PEN') state.snapGuides = []
+    emitEditorEvent('tool:changed', tool, previous)
   }
 
   const graphReads = createGraphReadActions(() => _graph)
@@ -273,7 +276,6 @@ export function createEditor(options?: EditorOptions) {
   const pages = createPageActions(ctx, shaderFrames)
   const guides = createGuideActions(ctx)
   const designIssues = createDesignIssueActions(ctx)
-  const shapes = createShapeActions(ctx)
   const structure = createStructureActions(ctx)
   const components = createComponentActions(ctx)
   const clipboard = createClipboardActions(ctx)
@@ -281,6 +283,7 @@ export function createEditor(options?: EditorOptions) {
   const undoActions = createUndoActions(ctx)
   const text = createTextActions(ctx)
   const nodes = createNodeActions(ctx)
+  const shapes = createShapeActions(ctx, nodes.updateNodeWithUndo)
   const clipboardProperties = createClipboardPropertiesActions(
     ctx,
     nodes.updateNodeWithUndo,

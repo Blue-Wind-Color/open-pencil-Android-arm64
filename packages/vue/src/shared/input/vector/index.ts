@@ -22,7 +22,8 @@ type NodeEditEditor = Partial<{
   exitNodeEditMode: (commit: boolean) => void
   nodeEditRemoveVertex: (vertexIndex: number) => void
   penResumeFromEndpoint: (nodeId: string, endpointVertexIndex: number) => void
-  nodeEditAddVertex: (cx: number, cy: number) => void
+  penStartPiece: (nodeId: string, point: Vector) => void
+  nodeEditAddVertex: (cx: number, cy: number) => boolean
   nodeEditPushHistory: () => void
   nodeEditSetHandle: (
     segmentIndex: number,
@@ -123,7 +124,17 @@ export function handleNodeEditDown(
   nodeEditEditor.exitNodeEditMode?.(true)
 }
 
-export function handlePenNodeEditDown(e: MouseEvent, cx: number, cy: number, editor: Editor) {
+/**
+ * A pen press on the path being edited: an end point continues the path from there, a segment gets
+ * a point, and anywhere else starts a new piece of the same path at `pieceStart`, as in Figma.
+ */
+export function handlePenNodeEditDown(
+  e: Pick<MouseEvent, 'altKey'>,
+  cx: number,
+  cy: number,
+  editor: Editor,
+  pieceStart: Vector = { x: cx, y: cy }
+) {
   const es = getNodeEditState(editor)
   if (!es) return
   const nodeEditEditor = editor as Editor & NodeEditEditor
@@ -142,7 +153,10 @@ export function handlePenNodeEditDown(e: MouseEvent, cx: number, cy: number, edi
     return
   }
 
-  nodeEditEditor.nodeEditAddVertex?.(cx, cy)
+  if (nodeEditEditor.nodeEditAddVertex?.(cx, cy)) return
+  const nodeId = es.nodeId
+  nodeEditEditor.exitNodeEditMode?.(true)
+  nodeEditEditor.penStartPiece?.(nodeId, pieceStart)
 }
 
 export function handleNodeEditMove(

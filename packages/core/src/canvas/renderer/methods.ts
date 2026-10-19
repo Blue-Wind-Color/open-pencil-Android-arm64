@@ -117,6 +117,10 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Overlays.drawSnapGuides(this, canvas, guides)
   },
 
+  drawSnapMarks(canvas: Canvas, guides?: SnapGuide[]): void {
+    Overlays.drawSnapMarks(this, canvas, guides)
+  },
+
   drawMarquee(canvas: Canvas, marquee?: Rect | null): void {
     Overlays.drawMarquee(this, canvas, marquee)
   },

@@ -27,6 +27,7 @@ import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
 export { regenerateFillGeometry } from './fill-geometry'
 export { addStrokeRunToPath, strokeRuns, type StrokeRun } from './path-helpers'
+export { vectorChangesFromPagePath, type VectorPathChanges } from './placement'
 
 /**
  * Fill types go on the detached `Path`: CanvasKit 0.41's `PathBuilder.setFillType` returns an
