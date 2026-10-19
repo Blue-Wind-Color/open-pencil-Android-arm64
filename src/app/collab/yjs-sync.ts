@@ -348,5 +348,33 @@ export function createYjsGraphSync({
       })
   }
 
-  return { syncNodeToYjs, syncLocalEdit, syncAllNodesToYjs, applyYjsToGraph }
+  /**
+   * Removes the layers under the document's root that the room does not hold. A stored document
+   * opened in several tabs numbers its layers afresh each time, so its copies of layers the room
+   * already has would otherwise sit beside the room's own.
+   */
+  function dropLayersOutsideRoom() {
+    const graph = getStore().graph
+    const ynodes = getYnodes()
+    if (!ynodes) return
+    const outside: string[] = []
+    const visit = (id: string) => {
+      for (const childId of graph.getNode(id)?.childIds ?? []) {
+        if (ynodes.has(childId)) visit(childId)
+        else outside.push(childId)
+      }
+    }
+    visit(graph.rootId)
+    for (const id of outside) graph.deleteNode(id)
+    // The page the tab was on may have been the file's own; it moves to one of the room's.
+    if (outside.length > 0) ensureCurrentPageExists(getStore())
+  }
+
+  return {
+    syncNodeToYjs,
+    syncLocalEdit,
+    syncAllNodesToYjs,
+    applyYjsToGraph,
+    dropLayersOutsideRoom
+  }
 }

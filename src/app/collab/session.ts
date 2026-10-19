@@ -126,6 +126,8 @@ export function openRoomSession({
   const connectedSince = ref<number | null>(null)
   let suppressYjsEvents = false
   let suppressGraphSync = false
+  /** Whether a tab that holds a stored document has given way to the room's copy of it. */
+  let followsRoom = false
   let disposed = false
 
   const status = computed(() =>
@@ -155,6 +157,16 @@ export function openRoomSession({
     if (disposed) return
     const rootId = readRoot(meta)
     hasDocument.value = rootId === undefined ? holdsDocument : store.graph.rootId === rootId
+    // The room's document is what a stored document's tab shows once the room holds it.
+    if (holdsDocument && hasDocument.value && rootId !== undefined && !followsRoom) {
+      followsRoom = true
+      suppressGraphSync = true
+      try {
+        sync.dropLayersOutsideRoom()
+      } finally {
+        suppressGraphSync = false
+      }
+    }
     // Newcomers wait for someone who has the file, so peers say whether they do.
     if (awareness.getLocalState()?.hasFile !== hasDocument.value) {
       awareness.setLocalStateField('hasFile', hasDocument.value)
