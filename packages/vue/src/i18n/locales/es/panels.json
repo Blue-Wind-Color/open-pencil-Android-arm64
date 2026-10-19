@@ -148,6 +148,7 @@
   "ignoreAutoLayout": "Ignorar diseño automático",
   "flipVertical": "Voltear verticalmente",
   "rotate90": "Girar 90°",
+  "imageTileScale": "Escala del mosaico",
   "mixedFillsHelp": "Haz clic en + para reemplazar rellenos mixtos",
   "mixedStrokesHelp": "Haz clic en + para reemplazar trazos mixtos",
   "mixedEffectsHelp": "Haz clic en + para reemplazar efectos mixtos",

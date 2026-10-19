@@ -25,6 +25,7 @@ export const INSTANCE_SYNC_TEXT_PROPS = [
 
 /** Fields that belong to another one: overriding the owner keeps them too. */
 export const INSTANCE_SYNC_FIELD_OWNERS: Readonly<Partial<Record<string, string>>> = {
+  fillStyleId: 'fills',
   styleRuns: 'text',
   textParagraphs: 'text'
 }

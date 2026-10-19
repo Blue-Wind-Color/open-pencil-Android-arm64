@@ -133,6 +133,7 @@
   "ignoreAutoLayout": "Ignoruj auto layout",
   "flipVertical": "Odbij pionowo",
   "rotate90": "Obróć o 90°",
+  "imageTileScale": "Skala kafelków",
   "mixedFillsHelp": "Kliknij +, aby zastąpić mieszane wypełnienia",
   "mixedStrokesHelp": "Kliknij +, aby zastąpić mieszane obrysy",
   "mixedEffectsHelp": "Kliknij +, aby zastąpić mieszane efekty",

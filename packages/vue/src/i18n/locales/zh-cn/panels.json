@@ -106,6 +106,7 @@
   "ignoreAutoLayout": "忽略自动布局",
   "flipVertical": "垂直翻转",
   "rotate90": "旋转 90°",
+  "imageTileScale": "平铺缩放",
   "mixedFillsHelp": "点击 + 替换混合填充",
   "mixedStrokesHelp": "点击 + 替换混合描边",
   "mixedEffectsHelp": "点击 + 替换混合效果",

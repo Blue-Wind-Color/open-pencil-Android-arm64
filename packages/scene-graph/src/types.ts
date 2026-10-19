@@ -174,7 +174,10 @@ export interface Fill {
   gradientTransform?: GradientTransform
   imageHash?: string
   imageScaleMode?: ImageScaleMode
+  /** A crop's image-space window; Fill, Fit and Tile ignore it. */
   imageTransform?: GradientTransform
+  /** Clockwise turn of a Fill, Fit or Tile image, in multiples of 90°; a crop holds its own. */
+  imageRotation?: number
   sourceNodeId?: string
   scale?: number
   spacing?: number

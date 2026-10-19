@@ -157,6 +157,7 @@ function updateSolidColor(
                   :fill="displayFill(fill, binding.resolvedValue)"
                   :okhcl="createFillOkhclAdapter(okhcl, activeNode, index)"
                   :shader="fillShader(activeNode, fill)"
+                  :layer-size="selectedNodeIds.length === 1 ? activeNode : null"
                   :keep-open="gradients.pressesHandle"
                   :active-stop="gradients.stop(gradients.target(selectedNodeIds, 'fills', index))"
                   @update:active-stop="

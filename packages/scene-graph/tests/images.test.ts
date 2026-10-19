@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { computeImageHash, imageMimeType } from '@open-pencil/scene-graph'
+import { computeImageHash, coverImageTransform, imageMimeType } from '@open-pencil/scene-graph'
 
 describe('computeImageHash', () => {
   test('names bytes by their SHA-1, as Figma names images', () => {
@@ -24,5 +24,20 @@ describe('imageMimeType', () => {
   test('reports bytes with no known signature as PNG', () => {
     expect(imageMimeType(new TextEncoder().encode('RIFF\0\0\0\0WAVEfmt '))).toBe('image/png')
     expect(imageMimeType(new Uint8Array())).toBe('image/png')
+  })
+})
+
+describe('coverImageTransform', () => {
+  test('crops the image to cover the layer, centred, as Figma starts a crop', () => {
+    // Measured in Figma: a 412 × 364 image cropped on a 160 × 120 layer.
+    const crop = coverImageTransform(160, 120, 412, 364)
+    expect(crop.m00).toBeCloseTo(1)
+    expect(crop.m02).toBeCloseTo(0)
+    expect(crop.m11).toBeCloseTo(0.848901093006134)
+    expect(crop.m12).toBeCloseTo(0.07554945349693298)
+    const tall = coverImageTransform(100, 300, 200, 200)
+    expect([tall.m00, tall.m02, tall.m11, tall.m12].map((v) => Math.round(v * 1000))).toEqual([
+      333, 333, 1000, 0
+    ])
   })
 })

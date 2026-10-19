@@ -133,6 +133,7 @@
   "ignoreAutoLayout": "Auto-Layout ignorieren",
   "flipVertical": "Vertikal spiegeln",
   "rotate90": "90° drehen",
+  "imageTileScale": "Kachelgröße",
   "mixedFillsHelp": "Klicke auf +, um gemischte Füllungen zu ersetzen",
   "mixedStrokesHelp": "Klicke auf +, um gemischte Konturen zu ersetzen",
   "mixedEffectsHelp": "Klicke auf +, um gemischte Effekte zu ersetzen",

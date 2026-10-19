@@ -433,6 +433,7 @@ export const panelMessageDefaults = {
   ignoreAutoLayout: 'Ignore auto layout',
   flipVertical: 'Flip vertical',
   rotate90: 'Rotate 90°',
+  imageTileScale: 'Tile scale',
   mixedFillsHelp: 'Click + to replace mixed fills',
   mixedStrokesHelp: 'Click + to replace mixed strokes',
   mixedEffectsHelp: 'Click + to replace mixed effects',

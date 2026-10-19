@@ -77,6 +77,18 @@ function resizedInPlace(
   return { position: placed.position, size }
 }
 
+/** Keep a placed box's constrained edges or center when its content determines its size. */
+export function resizedChildRect(
+  placed: Rect,
+  size: Pick<Rect, 'width' | 'height'>,
+  horizontal: ConstraintType,
+  vertical: ConstraintType
+): Rect {
+  const x = resizedInPlace({ position: placed.x, size: placed.width }, size.width, horizontal)
+  const y = resizedInPlace({ position: placed.y, size: placed.height }, size.height, vertical)
+  return { x: x.position, y: y.position, width: x.size, height: y.size }
+}
+
 /**
  * A locked aspect ratio holds when exactly one axis follows the parent, as in Figma: that axis
  * sizes the other. With both axes following the parent, or neither, the ratio gives way.

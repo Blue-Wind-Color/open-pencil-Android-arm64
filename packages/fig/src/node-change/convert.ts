@@ -5,6 +5,7 @@ import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_STROKE_MITER_LIMIT,
   DEFAULT_STROKE_WEIGHT,
+  getNodeLocalMatrix,
   OPEN_PENCIL_PLUGIN_DATA,
   styleToWeight
 } from '@open-pencil/scene-graph'
@@ -253,27 +254,29 @@ export function convertFigmaTransformProps(
   let y = nc.transform?.m12 ?? 0
   let rotation = 0
   let flipX = false
-  if (nc.transform) {
+  const type = mapNodeType(nc.type)
+  // Documents and variables are not placed; every layer type is.
+  if (nc.transform && type !== 'DOCUMENT' && type !== 'VARIABLE') {
     const t = nc.transform
     const det = t.m00 * t.m11 - t.m01 * t.m10
     if (det < 0) flipX = true
     rotation = Math.atan2(t.m10, flipX ? t.m11 : t.m00) * (180 / Math.PI)
 
-    // Scene nodes apply their reflection and rotation around the center. Decompose the Figma
-    // matrix into that same linear transform, then recover the node translation so recomposing
-    // it produces the original matrix. Reflected rotations need their angle read from the
-    // second row; treating them as ordinary rotations reverses connector instances by 180°.
-    const radians = (rotation * Math.PI) / 180
-    const cos = Math.cos(radians)
-    const sin = Math.sin(radians)
-    const centerX = width / 2
-    const centerY = height / 2
-    const m00 = flipX ? -cos : cos
-    const m01 = flipX ? sin : -sin
-    const m10 = sin
-    const m11 = cos
-    x = t.m02 - centerX + m00 * centerX + m01 * centerY
-    y = t.m12 - centerY + m10 * centerX + m11 * centerY
+    // Reflected rotations need their angle read from the second row; treating them as ordinary
+    // rotations reverses connector instances by 180°. The Scene Graph's placement at the origin,
+    // with its own pivot and reflection, then gives the translation Figma's matrix adds.
+    const placed = getNodeLocalMatrix({
+      type,
+      x: 0,
+      y: 0,
+      width,
+      height,
+      rotation,
+      flipX,
+      flipY: false
+    })
+    x = t.m02 - placed[2]
+    y = t.m12 - placed[5]
   }
 
   return { x, y, width, height, rotation, flipX, flipY: false }
@@ -475,12 +478,8 @@ function visibleContainerDerivedLayout(
     (nc.strokePaints?.some((paint) => paint.visible !== false) ?? false)
   if (layoutMode === 'NONE' || !hasHugAxis || !hasVisiblePaint) return undefined
 
-  return {
-    x: nc.transform?.m02 ?? 0,
-    y: nc.transform?.m12 ?? 0,
-    width: nc.size?.x ?? 100,
-    height: nc.size?.y ?? 100
-  }
+  const { x, y, width, height } = convertFigmaTransformProps(nc)
+  return { x, y, width, height }
 }
 
 function minimumSizeDimension(size: NodeChange['minSize'], axis: 'x' | 'y'): number | null {

@@ -133,6 +133,8 @@ export interface Paint {
   imageThumbnail?: ImageSource
   animatedImage?: ImageSource
   imageScaleMode?: string
+  /** Degrees an image turns in Fill, Fit, and Tile; a crop's transform holds its own turn. */
+  rotation?: number
   sourceNodeId?: GUID
   scale?: number
   spacing?: number

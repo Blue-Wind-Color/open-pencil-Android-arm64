@@ -168,6 +168,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
                 :label="panels.stroke"
                 :fill="displayStroke(stroke, binding.resolvedValue)"
                 :okhcl="createStrokeOkhclAdapter(okhcl, activeNode, index)"
+                :layer-size="selectedNodeIds.length === 1 ? activeNode : null"
                 :keep-open="gradients.pressesHandle"
                 :active-stop="gradients.stop(gradients.target(selectedNodeIds, 'strokes', index))"
                 @update:active-stop="

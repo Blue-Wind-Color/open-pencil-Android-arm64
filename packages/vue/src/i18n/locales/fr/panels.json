@@ -133,6 +133,7 @@
   "ignoreAutoLayout": "Ignorer la mise en page automatique",
   "flipVertical": "Retourner verticalement",
   "rotate90": "Pivoter de 90°",
+  "imageTileScale": "Échelle des tuiles",
   "mixedFillsHelp": "Cliquez sur + pour remplacer les remplissages mixtes",
   "mixedStrokesHelp": "Cliquez sur + pour remplacer les contours mixtes",
   "mixedEffectsHelp": "Cliquez sur + pour remplacer les effets mixtes",

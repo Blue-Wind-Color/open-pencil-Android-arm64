@@ -148,6 +148,7 @@
   "ignoreAutoLayout": "オートレイアウトを無視",
   "flipVertical": "垂直方向に反転",
   "rotate90": "90°回転",
+  "imageTileScale": "タイルの拡大率",
   "mixedFillsHelp": "+ をクリックして混合塗りを置換",
   "mixedStrokesHelp": "+ をクリックして混合線を置換",
   "mixedEffectsHelp": "+ をクリックして混合エフェクトを置換",
