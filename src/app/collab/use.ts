@@ -34,8 +34,9 @@ export function useCollab() {
       roomId: room?.roomId ?? null,
       status: room?.status.value ?? null,
       peers: room?.peers.value ?? [],
-      localName: identity.name.value,
-      localColor: identity.color,
+      // A room may know this tab by another name, such as a Cloud account's.
+      localName: room?.identity.name.value ?? identity.name.value,
+      localColor: room?.identity.color ?? identity.color,
       hasChosenName: identity.hasChosenName.value
     }
   })

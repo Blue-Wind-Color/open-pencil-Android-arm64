@@ -3,7 +3,7 @@ import { shallowRef, watch } from 'vue'
 import { RELAY_SERVER_PEER, type CollaborationTicket } from '@open-pencil/cloud/contract'
 
 import { leaveRoom, openDocumentRoom, roomForStore } from '@/app/collab/rooms'
-import type { RoomSession } from '@/app/collab/session'
+import type { RoomIdentity, RoomSession } from '@/app/collab/session'
 import type { JoinCollabRoom } from '@/app/collab/transport'
 import { createCloudRelayJoin } from '@/app/collab/transport/cloud'
 import type { EditorStore } from '@/app/editor/session'
@@ -19,9 +19,10 @@ import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 import { allTabs, getTabForStore, getTabsSnapshot, reloadStorageDocumentInTab } from '@/app/tabs'
 
 import { isCloudBinding } from '../documents/status'
-import { cloudConnections } from '../sessions/connection'
+import { cloudConnection, cloudConnections } from '../sessions/connection'
 import { cloudShareTarget } from '../sharing/document'
 import { versionListRevision } from '../versions/history'
+import { accountRoomIdentity } from './identity'
 import { shareRoomUploads, uploadStoredDocument } from './upload'
 
 /** Each Cloud tab's permission in its room, for the status beside the name. */
@@ -150,11 +151,13 @@ export function openCloudDocumentRoom(
     onRestored?: () => void
     /** How the saver gets the document onto the server; the tab's own upload unless a test stands in. */
     uploadNow?: () => Promise<boolean>
+    /** Who the tab is in the room; the device's own identity unless an account names it. */
+    identity?: RoomIdentity
   }
 ) {
   const canEdit = options.permission === 'edit'
   const canSave = canEdit && !options.guest
-  const session = openDocumentRoom(store, options.roomId, options.transport)
+  const session = openDocumentRoom(store, options.roomId, options.transport, options.identity)
   setPermission(store, options.permission)
   // A viewer sees the room's edits and makes none, as Figma's view-only files do.
   store.setReadOnly(!canEdit)
@@ -259,7 +262,9 @@ export async function startCloudRoom(store: EditorStore): Promise<void> {
     if (first.provider !== 'relay' || !first.serverURL || !current) return
     const nextTicket = () => target.client.getCollaborationTicket(binding.documentId)
     const restart = () => void restartCloudRoom(store)
+    const account = cloudConnection(target.server.id).account
     const room = openCloudDocumentRoom(store, {
+      identity: account ? accountRoomIdentity(account) : undefined,
       roomId: first.roomId,
       transport: cloudRelayTransport(first.serverURL, first, nextTicket, restart),
       permission: first.permission,

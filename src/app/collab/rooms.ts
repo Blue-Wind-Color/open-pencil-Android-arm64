@@ -2,7 +2,7 @@ import { computed, shallowRef, watch } from 'vue'
 
 import { generateRoomId } from '@/app/collab/awareness'
 import { isRoomId } from '@/app/collab/room/id'
-import { openRoomSession, type RoomSession } from '@/app/collab/session'
+import { openRoomSession, type RoomIdentity, type RoomSession } from '@/app/collab/session'
 import type { JoinCollabRoom } from '@/app/collab/transport'
 import type { EditorStore } from '@/app/editor/active-store'
 import { activeTab, allTabs, closeTab, createTab, getTabForStore, switchTab } from '@/app/tabs'
@@ -57,12 +57,14 @@ export function shareDocument(store: EditorStore, roomId = generateRoomId()): Ro
 
 /**
  * Puts a tab's stored document into its server's room. The tab stays that document; what the room
- * already holds arrives through the connection, and an empty room is seeded by whoever asks.
+ * already holds arrives through the connection, and an empty room is seeded by whoever asks. The
+ * tab is the device's own identity there unless the server names it.
  */
 export function openDocumentRoom(
   store: EditorStore,
   roomId: string,
-  transport: JoinCollabRoom
+  transport: JoinCollabRoom,
+  identity?: RoomIdentity
 ): RoomSession {
   const existing = roomForStore(store)
   if (existing) return existing
@@ -71,7 +73,8 @@ export function openDocumentRoom(
     store,
     origin: 'shared',
     joinRoom: transport,
-    holdsDocument: true
+    holdsDocument: true,
+    identity
   })
   addSession(session)
   return session

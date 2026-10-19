@@ -4,6 +4,8 @@ import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { shareAgentPreviews } from '@/app/collab/agent-preview'
 import { buildRemotePeers } from '@/app/collab/awareness'
 import { useCollabIdentity } from '@/app/collab/identity'
@@ -34,6 +36,9 @@ import { ROOM_STATUS_TICK_MS, ROOM_UNREACHABLE_MS } from '@/constants'
 /** How a tab came to be in a room: by sharing its own document, or by joining someone's. */
 export type RoomOrigin = 'shared' | 'joined'
 
+/** Who this tab is in a room: the name and color everyone sees, this tab included. */
+export type RoomIdentity = { name: Readonly<Ref<string>>; color: Color }
+
 /** One room, live in one tab: its document, presence, connection, and saved copy. */
 export interface RoomSession {
   readonly roomId: string
@@ -44,6 +49,8 @@ export interface RoomSession {
   /** Whether the room's document has reached this tab, from a peer or the saved copy. */
   readonly hasDocument: Readonly<Ref<boolean>>
   readonly voice: RoomVoice
+  /** Who this tab is in the room. */
+  readonly identity: RoomIdentity
   updateCursor(x: number, y: number, pageId: string): void
   updateSelection(ids: string[]): void
   /** Writes the tab's whole document into the room and makes its root the room's. */
@@ -78,7 +85,7 @@ export interface RoomSessionOptions {
   origin: RoomOrigin
   joinRoom?: JoinCollabRoom
   /** Who this tab is in the room; the device's own identity unless a host stands in for one. */
-  identity?: Pick<ReturnType<typeof useCollabIdentity>, 'name' | 'color'>
+  identity?: RoomIdentity
   openSavedCopy?: (roomId: string, ydoc: Y.Doc) => RoomSavedCopy
   /** How long the tab tries to reach the service that introduces peers before saying it cannot. */
   unreachableMs?: number
@@ -256,6 +263,7 @@ export function openRoomSession({
     status,
     hasDocument,
     voice,
+    identity,
     updateCursor(x, y, pageId) {
       awareness.setLocalStateField('cursor', { x, y, pageId, zoom: store.state.zoom })
     },

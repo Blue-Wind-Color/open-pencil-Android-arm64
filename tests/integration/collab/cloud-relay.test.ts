@@ -9,8 +9,10 @@ import type { DocumentPermission } from '@open-pencil/cloud/contract'
 import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { accountRoomIdentity } from '@/app/cloud/rooms/identity'
 import { openCloudDocumentRoom } from '@/app/cloud/rooms/live'
 import { versionListRevision } from '@/app/cloud/versions/history'
+import { useCollabIdentity } from '@/app/collab/identity'
 import { connectCollabRoom } from '@/app/collab/room/connection'
 import { createEditorStore } from '@/app/editor/session'
 
@@ -123,6 +125,43 @@ describe('collaboration through the Cloud relay', () => {
       user: { name: 'Grace', color: '#000' },
       cloud: { kind: 'guest', name: 'Grace', permission: 'view' }
     })
+  })
+})
+
+describe('Cloud document rooms, identity', () => {
+  test('a member is their account in the room, in every tab', async () => {
+    const relay = await startRelay()
+    const documentId = crypto.randomUUID()
+    const [grace, again] = await openedTwice()
+    // The account's name differs from this device's, so the assertions show which one a tab took.
+    useCollabIdentity().setName('This device')
+    cleanups.push(() => useCollabIdentity().setName(''))
+    const account = { id: crypto.randomUUID(), name: 'Grace Hopper' }
+    const open = (store: typeof grace) => {
+      const room = openCloudDocumentRoom(store, {
+        roomId: `cloud:${documentId}:0`,
+        transport: relay.join(documentId, 'Grace Hopper', 'edit', 'user'),
+        permission: 'edit',
+        identity: accountRoomIdentity(account)
+      })
+      cleanups.push(() => {
+        room.stop()
+        room.session.dispose()
+      })
+      return room
+    }
+    const first = open(grace)
+    const second = open(again)
+    await until(() => first.session.peers.value.length > 0 && second.session.peers.value.length > 0)
+    const own = (room: typeof first) => room.session.presence().get(room.session.clientId)?.user
+    expect(own(first)).toMatchObject({ name: 'Grace Hopper' })
+    expect(own(second)).toEqual(own(first))
+    // Each tab sees the other as it presents itself; the name comes from the ticket, which the
+    // server takes from the same account.
+    const seen = (room: typeof first) =>
+      room.session.peers.value.map((peer) => ({ name: peer.name, color: peer.color }))
+    expect([own(second)]).toEqual(seen(first))
+    expect([own(first)]).toEqual(seen(second))
   })
 })
 

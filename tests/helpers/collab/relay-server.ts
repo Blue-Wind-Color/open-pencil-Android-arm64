@@ -50,7 +50,12 @@ export async function startTestRelay() {
     ) {
       const principal =
         kind === 'user'
-          ? { kind, userId: crypto.randomUUID(), name, email: `${name.toLowerCase()}@example.com` }
+          ? {
+              kind,
+              userId: crypto.randomUUID(),
+              name,
+              email: `${name.toLowerCase().replaceAll(' ', '.')}@example.com`
+            }
           : { kind, guestId: crypto.randomUUID(), name }
       return createCloudRelayJoin({
         url,
