@@ -144,6 +144,12 @@ describe('startServer option validation', () => {
       'appWaitTimeoutMs must be a safe integer'
     )
   })
+
+  test('rejects an invalid session idle timeout', async () => {
+    for (const sessionIdleTimeoutMs of [-1, Number.NaN, Infinity, 1.5, 2_147_483_648]) {
+      await expect(startServer({ sessionIdleTimeoutMs })).rejects.toThrow(RangeError)
+    }
+  })
 })
 
 describe('MCP server', () => {

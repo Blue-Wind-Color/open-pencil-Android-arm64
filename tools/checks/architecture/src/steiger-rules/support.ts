@@ -66,7 +66,7 @@ export const PACKAGE_ALIAS_OWNERS: Record<string, string> = {
   '#dom-css-tests/': 'packages/dom-css/tests/',
   '#vue/': 'packages/vue/',
   '#cli/': 'packages/cli/',
-  '#mcp/': 'packages/mcp/src/',
+  '#mcp/': 'packages/mcp/',
   '#feedback/': 'packages/feedback/',
   '#feedback-tests/': 'packages/feedback/tests/',
   '#cloud/': 'packages/cloud/',
