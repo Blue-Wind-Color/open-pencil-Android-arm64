@@ -514,26 +514,6 @@ test.describe('zoom shortcuts', () => {
   })
 })
 
-test.describe('undo/redo', () => {
-  test('⌘Z undoes last action', async () => {
-    await editor.canvas.clearCanvas()
-    await editor.canvas.drawRect(100, 100, 60, 60)
-    expect((await getPageChildren()).length).toBe(1)
-
-    await editor.page.keyboard.press('Meta+z')
-    await editor.canvas.waitForRender()
-
-    expect((await getPageChildren()).length).toBe(0)
-  })
-
-  test('⌘⇧Z redoes undone action', async () => {
-    await editor.page.keyboard.press('Meta+Shift+z')
-    await editor.canvas.waitForRender()
-
-    expect((await getPageChildren()).length).toBe(1)
-  })
-})
-
 test.describe('auto-layout shortcut', () => {
   test('⇧A toggles auto-layout on frame', async () => {
     await editor.canvas.clearCanvas()

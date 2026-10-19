@@ -17,6 +17,7 @@ import { Annotation, EditorSelection, Prec } from '@codemirror/state'
 import { EditorView, keymap, placeholder, tooltips } from '@codemirror/view'
 import { getCurrentInstance, watch, type Ref, type ShallowRef } from 'vue'
 
+import { shortcutCode } from '@/app/shell/keyboard/layout'
 import { useCodeMirror } from '@/components/code-editor/useCodeMirror'
 import { formulaEditorTheme } from '@/theme/code/formula'
 
@@ -82,13 +83,11 @@ export function useFormulaField(
         EditorView.domEventHandlers({
           keydown(event, editor) {
             if (event.isComposing) return false
-            if (
-              (event.metaKey || event.ctrlKey) &&
-              (event.code === 'KeyZ' || event.code === 'KeyY')
-            ) {
+            const code = shortcutCode(event)
+            if ((event.metaKey || event.ctrlKey) && (code === 'KeyZ' || code === 'KeyY')) {
               event.preventDefault()
               event.stopPropagation()
-              if (event.shiftKey || event.code === 'KeyY') redo(editor)
+              if (event.shiftKey || code === 'KeyY') redo(editor)
               else undo(editor)
               return true
             }

@@ -3,6 +3,7 @@ import { createKeybindingsHandler, type KeyBindingMap } from 'tinykeys'
 import { editorCommandMetadata, useEditorCommands, type EditorCommandId } from '@open-pencil/vue'
 
 import { isEditing } from '@/app/shell/keyboard/focus'
+import { shortcutEvent } from '@/app/shell/keyboard/layout'
 
 const DOCUMENT_COMMANDS = ['edit.undo', 'edit.redo'] as const satisfies EditorCommandId[]
 
@@ -25,5 +26,5 @@ export function useDocumentShortcuts(): (event: KeyboardEvent) => void {
     }
   }
   const handler = createKeybindingsHandler(bindings)
-  return (event) => handler(event)
+  return (event) => handler(shortcutEvent(event))
 }

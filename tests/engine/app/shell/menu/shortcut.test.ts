@@ -14,7 +14,7 @@ describe('app menu shortcut conversion', () => {
   })
 
   test('converts shortcut tokens to tinykeys bindings', () => {
-    expect(shortcutTokenToTinykeys('MOD+SHIFT+S')).toBe('$mod+Shift+S')
+    expect(shortcutTokenToTinykeys('MOD+SHIFT+S')).toBe('$mod+Shift+KeyS')
     expect(shortcutTokenToTinykeys('ALT+Delete')).toBe('Alt+Delete')
     expect(shortcutTokenToTinykeys('⌫')).toBe('Backspace')
   })
