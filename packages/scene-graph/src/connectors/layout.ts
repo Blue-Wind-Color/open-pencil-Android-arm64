@@ -14,7 +14,8 @@ import { connectorRouteEnds, connectorSublayers, type ConnectorSublayers } from 
 
 /**
  * An end as the router sees it, in the connector's parent's axes: the box of the layer it follows
- * by a magnet, or a point. An end whose layer is gone stays where its route last ended.
+ * by a magnet, or a point, which an end pinned to a point of its layer follows as the layer moves.
+ * An end whose layer is gone stays where its route last ended.
  */
 function routeEnd(
   graph: SceneGraph,
@@ -31,7 +32,7 @@ function routeEnd(
     const point = endpoint.nodeId && fallback ? fallback : endpoint.position
     return { box: null, point, magnet: 'NONE', cap, outline: 0 }
   }
-  if (endpoint.magnet === 'NONE') {
+  if (endpoint.magnet === 'NONE' || endpoint.magnet === 'ABSOLUTE') {
     // A point in the layer's own axes, carried into the connector's parent's.
     const toParent =
       Matrix.invert(getParentWorldMatrix(graph.getNode(parentId), graph)) ?? Matrix.identity()
@@ -39,7 +40,7 @@ function routeEnd(
       endpoint.position.x,
       endpoint.position.y
     ])
-    return { box: null, point: { x, y }, magnet: 'NONE', cap, outline: 0 }
+    return { box: null, point: { x, y }, magnet: endpoint.magnet, cap, outline: 0 }
   }
   return {
     box: getAxisAlignedBoundsInParent([node], parentId, graph),

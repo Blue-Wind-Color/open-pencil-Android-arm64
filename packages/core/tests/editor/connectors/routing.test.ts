@@ -123,6 +123,30 @@ describe('connector routing', () => {
     }
   })
 
+  test('an end pinned to a point of a section follows it as it moves, not as it resizes', async () => {
+    const { editor, page, connector } = setup()
+    try {
+      const section = editor.graph.createNode('SECTION', page, {
+        x: 400,
+        y: -200,
+        width: 400,
+        height: 320
+      })
+      const pinned = { nodeId: section.id, magnet: 'ABSOLUTE' as const, position: { x: 40, y: 258 } }
+      editor.updateNodeWithUndo(connector.id, { connectorEnd: pinned }, 'Bind')
+      await settle()
+      expect(route(editor, connector).at(-1)).toEqual([433.5, 58])
+      editor.updateNodeWithUndo(section.id, { x: 500 }, 'Move')
+      await settle()
+      expect(route(editor, connector).at(-1)).toEqual([533.5, 58])
+      editor.updateNodeWithUndo(section.id, { width: 200, height: 160 }, 'Resize')
+      await settle()
+      expect(route(editor, connector).at(-1)).toEqual([533.5, 58])
+    } finally {
+      editor.dispose()
+    }
+  })
+
   test('a free end stays where it is put', async () => {
     const { editor, connector } = setup()
     try {

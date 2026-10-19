@@ -15,9 +15,9 @@ export const OUTWARD: Record<ConnectorSide, Vector> = {
 
 /** One end of a connector as the router sees it: the box it follows, or a free point. */
 export interface ConnectorRouteEnd {
-  /** The bound layer's box in the connector's parent's axes; null for a free end. */
+  /** The bound layer's box in the connector's parent's axes; null for an end at a point. */
   box: Rect | null
-  /** Where a free end sits, in the connector's parent's axes. */
+  /** Where an end at a point sits, in the connector's parent's axes. */
   point: Vector
   magnet: ConnectorMagnet
   cap: StrokeCap
@@ -39,8 +39,8 @@ export function sidesFor(magnet: ConnectorMagnet): readonly ConnectorSide[] {
   if (magnet === 'TOP' || magnet === 'RIGHT' || magnet === 'BOTTOM' || magnet === 'LEFT') {
     return [magnet]
   }
-  // Figma keeps `EDGE` and `ABSOLUTE` ends at a point of the layer; until those are drawn they
-  // leave by the nearest side.
+  // No file seen so far uses `EDGE`; until one shows what it means, its ends leave by the nearest
+  // side.
   return SIDES
 }
 

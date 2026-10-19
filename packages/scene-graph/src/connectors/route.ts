@@ -91,8 +91,17 @@ function curvedRoute(
 }
 
 /**
- * The pieces of a connector's line between its two ends, in the connector's parent's axes. Bound
- * ends stop short of their layers by their caps' gaps; free ends sit on their points. Layers that
+ * Whether an end stops short of where it attaches by its cap's gap: every end attached by a
+ * magnet does, including one FigJam pins to a point of a section (`ABSOLUTE`); a free end, or a
+ * point a script sets (`NONE`), is reached exactly.
+ */
+function gapped(end: ConnectorRouteEnd): boolean {
+  return end.magnet !== 'NONE'
+}
+
+/**
+ * The pieces of a connector's line between its two ends, in the connector's parent's axes. Ends
+ * attached by a magnet stop short by their caps' gaps; free ends sit on their points. Layers that
  * touch or overlap leave an elbow or a curve nothing to route but the start, as in Figma.
  */
 export function routeConnector(
@@ -102,8 +111,8 @@ export function routeConnector(
   strokeWeight: number
 ): ConnectorPiece[] {
   const gaps: [number, number] = [
-    start.box ? connectorEndGap(start, strokeWeight, 'start') : 0,
-    end.box ? connectorEndGap(end, strokeWeight, 'end') : 0
+    gapped(start) ? connectorEndGap(start, strokeWeight, 'start') : 0,
+    gapped(end) ? connectorEndGap(end, strokeWeight, 'end') : 0
   ]
   if (lineType === 'STRAIGHT') return straightRoute(start, end, gaps)
   const [startSide, endSide] = connectorSides(start, end)

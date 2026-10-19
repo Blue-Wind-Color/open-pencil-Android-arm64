@@ -60,7 +60,10 @@ function editConnector(
   if (node) layoutConnector(graph(target, internals), node)
 }
 
-/** An end as Figma's plugin API reports it; a free end names the page it lies on. */
+/**
+ * An end as Figma's plugin API reports it; a free end names the page it lies on, and an end
+ * pinned to a point of a section reports the magnet as `EDGE`.
+ */
 function pluginEndpoint(target: ProxyThis, internals: NodeProxyInternals, end: ConnectorEnd) {
   const node = raw(target, internals)
   const endpoint = node[end]
@@ -70,7 +73,8 @@ function pluginEndpoint(target: ProxyThis, internals: NodeProxyInternals, end: C
     return { endpointNodeId: graph(target, internals).pageOf(node.id) ?? '', position }
   }
   if (endpoint.magnet === 'NONE') return { endpointNodeId: endpoint.nodeId, position }
-  return { endpointNodeId: endpoint.nodeId, magnet: endpoint.magnet }
+  const magnet = endpoint.magnet === 'ABSOLUTE' ? 'EDGE' : endpoint.magnet
+  return { endpointNodeId: endpoint.nodeId, magnet }
 }
 
 interface PluginEndpoint {

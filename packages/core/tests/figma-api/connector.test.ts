@@ -77,6 +77,19 @@ describe('ConnectorNode', () => {
     expect(connector.x).toBe(206)
   })
 
+  test('an end FigJam pinned to a point of a section reports the magnet as EDGE', () => {
+    const { graph, api, a } = setup()
+    const connector = api.createConnector()
+    const section = api.createSection()
+    graph.updateNode(connector.id, {
+      connectorEnd: { nodeId: section.id, magnet: 'ABSOLUTE', position: { x: 40, y: 258 } }
+    })
+    connector.connectorStart = { endpointNodeId: a.id, magnet: 'AUTO' }
+    // Figma's plugin typings leave `EDGE` out, though Figma reports it.
+    const end: unknown = connector.connectorEnd
+    expect(end).toEqual({ endpointNodeId: section.id, magnet: 'EDGE' })
+  })
+
   test('a straight connector attaches by centres and refuses side magnets', () => {
     const { api, a } = setup()
     const connector = api.createConnector()

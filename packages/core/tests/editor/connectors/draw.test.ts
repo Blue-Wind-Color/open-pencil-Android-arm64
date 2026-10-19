@@ -55,6 +55,36 @@ describe('where a connector end attaches', () => {
   })
 })
 
+// Measured with FigJam's connector tool on a 400 × 320 section at 100% on 2026-10-19.
+describe('where a connector end attaches inside a section', () => {
+  const SECTION = { x: 0, y: 0, width: 400, height: 320 }
+
+  test('near its outline it attaches as to any layer', () => {
+    expect(magnetAt(SECTION, { x: 212, y: 10 }, 1, true)).toBe('TOP')
+    expect(magnetAt(SECTION, { x: 220, y: 10 }, 1, true)).toBe('AUTO_HORIZONTAL')
+    expect(magnetAt(SECTION, { x: 200, y: 312 }, 1, true)).toBe('BOTTOM')
+  })
+
+  test('near its centre it takes the nearest side, and elsewhere it is pinned', () => {
+    expect(magnetAt(SECTION, { x: 200, y: 160 }, 1, true)).toBe('TOP')
+    expect(magnetAt(SECTION, { x: 216, y: 160 }, 1, true)).toBe('TOP')
+    expect(magnetAt(SECTION, { x: 224, y: 160 }, 1, true)).toBe('ABSOLUTE')
+    expect(magnetAt(SECTION, { x: 20, y: 168 }, 1, true)).toBe('ABSOLUTE')
+    expect(magnetAt(SECTION, { x: 40, y: 288 }, 1, true)).toBe('ABSOLUTE')
+  })
+
+  test("a pinned end keeps the point in the section's own axes", () => {
+    const editor = createEditor()
+    const page = editor.state.currentPageId
+    const section = editor.graph.createNode('SECTION', page, { x: 480, y: -100, width: 400, height: 320 })
+    expect(connectorAttachment(editor.graph, page, { x: 520, y: 158 }, { zoom: 1 })).toEqual({
+      endpoint: { nodeId: section.id, magnet: 'ABSOLUTE', position: { x: 40, y: 258 } },
+      target: { nodeId: section.id, magnet: 'ABSOLUTE' }
+    })
+    editor.dispose()
+  })
+})
+
 describe('the connector tool', () => {
   test('a drag from one layer to another joins them in one undo step and stays on', () => {
     const { editor, a, b } = setup()

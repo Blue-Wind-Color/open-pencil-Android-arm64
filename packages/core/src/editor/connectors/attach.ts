@@ -8,14 +8,17 @@ import {
   type SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
-import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
+import { getAxisAlignedBoundsInParent, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 /**
  * Where FigJam attaches a connector end dropped on a layer, measured on a 200 px square at 100%:
  * within 12 screen px inside its outline or 8 outside, the end holds to the outline and picks
  * left or right as the route needs; within 16 px of a side's midpoint it takes that side; inside,
- * the nearest of the side midpoints and the centre wins, the centre meaning any side.
+ * the nearest of the side midpoints and the centre wins, the centre meaning any side. Inside a
+ * section, measured on a 400 × 320 one, an end within 16 px of the centre takes the nearest side
+ * and any other is pinned where it was dropped.
  */
 const OUTLINE_INSIDE = 12
 const OUTLINE_OUTSIDE = 8
@@ -62,8 +65,16 @@ function outlineDistance(box: Rect, point: Vector): number {
   return Math.hypot(Math.max(dx, 0), Math.max(dy, 0))
 }
 
-/** The magnet a point on or near `box` picks, or null when it is too far outside. */
-export function magnetAt(box: Rect, point: Vector, zoom: number): ConnectorMagnet | null {
+/**
+ * The magnet a point on or near `box` picks, or null when it is too far outside. A layer that
+ * `pins` ends, as a section does, takes one dropped inside away from its centre as `ABSOLUTE`.
+ */
+export function magnetAt(
+  box: Rect,
+  point: Vector,
+  zoom: number,
+  pins = false
+): ConnectorMagnet | null {
   const distance = outlineDistance(box, point)
   if (distance > OUTLINE_OUTSIDE / zoom) return null
   const candidates = sidePoints(box).map(([magnet, at]) => ({
@@ -83,7 +94,13 @@ export function magnetAt(box: Rect, point: Vector, zoom: number): ConnectorMagne
     )
     return side?.magnet ?? 'AUTO_HORIZONTAL'
   }
-  return nearest.magnet
+  if (!pins) return nearest.magnet
+  const centre = candidates[candidates.length - 1]
+  if (centre.distance > MIDPOINT_SNAP / zoom) return 'ABSOLUTE'
+  // Near the centre the nearest side midpoint wins, ties going to the top.
+  return candidates
+    .slice(0, -1)
+    .reduce((best, candidate) => (candidate.distance < best.distance ? candidate : best)).magnet
 }
 
 function attachable(node: SceneNode): boolean {
@@ -111,7 +128,7 @@ function targetIn(
     const node = children[index]
     if (!attachable(node) || exclude.has(node.id)) continue
     const box = getAxisAlignedBoundsInParent([node], pageId, graph)
-    const magnet = magnetAt(box, point, zoom)
+    const magnet = magnetAt(box, point, zoom, node.type === 'SECTION')
     // A container that does not clip shows children beyond its box, which an end may reach.
     if (PASS_THROUGH.has(node.type) && (magnet || !node.clipsContent)) {
       const inner = targetIn(graph, node.id, search)
@@ -140,8 +157,9 @@ function containersOf(graph: SceneGraph, nodeId: string | undefined): Set<string
 
 /**
  * Where a connector end lands at `point`, in page coordinates: on the layer under it by the
- * magnet its position picks, or free at the point. Straight connectors attach by centres. An end
- * dropped on a layer the connector sits in stays free there, as FigJam leaves one in its section.
+ * magnet its position picks, pinned at the point in the layer's own axes, or free at the point.
+ * Straight connectors attach by centres. An end dropped on a layer the connector sits in stays
+ * free there, as FigJam leaves one in its section.
  */
 export function connectorAttachment(
   graph: SceneGraph,
@@ -158,5 +176,9 @@ export function connectorAttachment(
   })
   if (!hit) return { endpoint: freeEndpoint(point.x, point.y), target: null }
   const magnet = options.straight ? 'CENTER' : hit.magnet
-  return { endpoint: boundEndpoint(hit.node.id, magnet), target: { nodeId: hit.node.id, magnet } }
+  const target = { nodeId: hit.node.id, magnet }
+  if (magnet !== 'ABSOLUTE') return { endpoint: boundEndpoint(hit.node.id, magnet), target }
+  const toLayer = Matrix.invert(getWorldMatrix(hit.node, graph)) ?? Matrix.identity()
+  const [x, y] = Matrix.mapPoints(toLayer, [point.x, point.y])
+  return { endpoint: { nodeId: hit.node.id, magnet, position: { x, y } }, target }
 }

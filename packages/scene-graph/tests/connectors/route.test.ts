@@ -158,3 +158,37 @@ test('a label on a line with no length keeps the line its one point', () => {
   expect(placed?.pieces).toEqual(pieces)
   expect(placed?.plate).toEqual({ x: 30, y: -10, width: 40, height: 20 })
 })
+
+/**
+ * Ends FigJam pinned to a point of a 400 × 320 section at (480, -100), dropped there from a
+ * connector leaving a 160 px shape at the origin, a 96 px one below the section, and one to its
+ * right; measured on 2026-10-19 from the connectors' boxes.
+ */
+describe('an end pinned to a point of a section', () => {
+  const pinned = (x: number, y: number, magnet: 'ABSOLUTE' | 'NONE'): ConnectorRouteEnd => ({
+    box: null,
+    point: { x, y },
+    magnet,
+    cap: 'ARROW_LINES',
+    outline: 0
+  })
+  const from = (x: number, y: number, size: number): ConnectorRouteEnd => ({
+    box: { x, y, width: size, height: size },
+    point: { x: 0, y: 0 },
+    magnet: 'AUTO',
+    cap: 'ROUND',
+    outline: 0
+  })
+  const last = (start: ConnectorRouteEnd, end: ConnectorRouteEnd) =>
+    routeConnector('ELBOWED', start, end, 4).at(-1)?.to
+
+  test('is reached along the longer axis and stops short by its cap', () => {
+    expect(last(from(0, 0, 160), pinned(520, 158, 'ABSOLUTE'))).toEqual({ x: 513.5, y: 158 })
+    expect(last(from(632, 364, 96), pinned(560, 158, 'ABSOLUTE'))).toEqual({ x: 560, y: 164.5 })
+    expect(last(from(1040, 12, 96), pinned(560, 158, 'ABSOLUTE'))).toEqual({ x: 566.5, y: 158 })
+  })
+
+  test('set by a script, is reached exactly', () => {
+    expect(last(from(0, 0, 160), pinned(520, 158, 'NONE'))).toEqual({ x: 520, y: 158 })
+  })
+})

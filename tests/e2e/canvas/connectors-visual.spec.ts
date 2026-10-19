@@ -39,3 +39,15 @@ test('connectors draw their filled caps, the end handles of a selected one, and 
     'connector-caps-and-handles.png'
   )
 })
+
+test('connector ends pinned to points of a section stop short of them, reached along the longer axis', async () => {
+  await connectors.showPinnedEnds()
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  expect((await connectors.connectors()).map((connector) => connector.end?.magnet)).toEqual([
+    'ABSOLUTE',
+    'ABSOLUTE',
+    'ABSOLUTE'
+  ])
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('connector-pinned-ends.png')
+})

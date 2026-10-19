@@ -158,6 +158,44 @@ export function connectorDriver(page: () => Page) {
       })
     },
 
+    /**
+     * Setup: a section with connectors drawn into it from boxes left of it, below it, and right
+     * of it, dropped away from its outline and centre so each end is pinned where it was dropped.
+     */
+    showPinnedEnds() {
+      return page().evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const page = store.state.currentPageId
+        const fills = [
+          {
+            type: 'SOLID' as const,
+            color: { r: 0.85, g: 0.88, b: 0.95, a: 1 },
+            opacity: 1,
+            visible: true
+          }
+        ]
+        store.graph.createNode('SECTION', page, { x: 400, y: 40, width: 360, height: 320, fills })
+        const sources = [
+          { box: { x: 20, y: 140, width: 160, height: 160 }, drop: { x: 440, y: 298 } },
+          { box: { x: 552, y: 504, width: 96, height: 96 }, drop: { x: 480, y: 298 } },
+          { box: { x: 790, y: 152, width: 96, height: 96 }, drop: { x: 480, y: 120 } }
+        ]
+        store.setTool('CONNECTOR')
+        for (const { box, drop } of sources) {
+          store.graph.createNode('RECTANGLE', page, { ...box, fills })
+          store.connectorBegin(box.x + box.width / 2, box.y + box.height / 2)
+          store.connectorRelease(drop.x, drop.y, true)
+        }
+        store.setTool('SELECT')
+        store.clearSelection()
+        store.state.zoom = 1
+        store.state.panX = 0
+        store.state.panY = 0
+        store.requestRender()
+      })
+    },
+
     /** Driver: selects one connector, as clicking its line would. */
     select(id: string) {
       return page().evaluate((connectorId) => {
