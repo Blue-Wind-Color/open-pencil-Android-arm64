@@ -19,6 +19,7 @@ import { collectGraphFontRequirements } from '#core/text/requirements'
 import { missingGraphFontScripts } from '#core/text/resolved-requirements'
 
 import { createPageViewportStore } from './page-viewports'
+import { createPageLayouts } from './pages/layouts'
 import type { EditorContext } from './types'
 
 export interface PageSwitchProgress {
@@ -83,6 +84,7 @@ export function componentSetPages(graph: SceneGraph, pageId: string): string[] {
 
 export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
   const pageViewportStore = createPageViewportStore(ctx)
+  const pageLayouts = createPageLayouts(ctx)
   function syncPageColor() {
     ctx.state.pageColor = getPageColor(ctx.graph.getNode(ctx.state.currentPageId))
   }
@@ -223,9 +225,11 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
     await resolvePageFonts(pageId, page.name, options)
     throwIfAborted(options.signal)
     if (generation !== pageSwitchGeneration) return null
-    if (ctx.getRenderer() || populated) {
+    // A page visited before keeps the layout it got then, unless something it depends on changed.
+    if ((ctx.getRenderer() || populated) && !pageLayouts.isCurrent(pageId)) {
       options.onProgress?.({ phase: 'layout', detail: page.name })
       ctx.graph.applyDerivedLayoutDuring(() => computeAllLayouts(ctx.graph, pageId))
+      pageLayouts.record(pageId)
     }
     throwIfAborted(options.signal)
     if (generation !== pageSwitchGeneration) return null

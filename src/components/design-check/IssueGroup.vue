@@ -6,7 +6,7 @@ import {
   DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useDesignCheckMessages } from '@open-pencil/vue'
 
@@ -22,13 +22,7 @@ import { designCheck } from '@/theme/design-check'
 import IssueRow from './IssueRow.vue'
 import type { IssueGroupView, IssueRowView } from './types'
 
-/** Rows rendered before a group asks to show the rest. */
-const ROW_PAGE_SIZE = 50
-
-const { group, focusedIssueId = null } = defineProps<{
-  group: IssueGroupView
-  focusedIssueId?: string | null
-}>()
+const { group } = defineProps<{ group: IssueGroupView }>()
 const open = defineModel<boolean>('open', { default: true })
 const emit = defineEmits<{
   openRow: [row: IssueRowView]
@@ -36,6 +30,7 @@ const emit = defineEmits<{
   fix: [row: IssueRowView]
   fixAll: []
   turnOff: []
+  showMore: []
 }>()
 
 const messages = useDesignCheckMessages()
@@ -43,19 +38,8 @@ const styles = designCheck()
 const menuCls = useMenuUI({ content: 'min-w-40' })
 const itemCls = menuItem({ justify: 'start' })
 const menuOpen = ref(false)
-const limit = ref(ROW_PAGE_SIZE)
 
-// A focused row past the ones shown, such as one a canvas marker opened, shows its page too.
-watch(
-  () => (focusedIssueId ? group.rows.findIndex((row) => row.issue.id === focusedIssueId) : -1),
-  (index) => {
-    if (index >= limit.value) limit.value = Math.ceil((index + 1) / ROW_PAGE_SIZE) * ROW_PAGE_SIZE
-  },
-  { immediate: true }
-)
-
-const visibleRows = computed(() => group.rows.slice(0, limit.value))
-const hiddenCount = computed(() => group.rows.length - visibleRows.value.length)
+const hiddenCount = computed(() => group.count - group.rows.length)
 </script>
 
 <template>
@@ -108,7 +92,7 @@ const hiddenCount = computed(() => group.rows.length - visibleRows.value.length)
 
     <ul :class="styles.rows()">
       <IssueRow
-        v-for="row in visibleRows"
+        v-for="row in group.rows"
         :key="row.issue.id"
         :row="row"
         @open="emit('openRow', row)"
@@ -121,7 +105,7 @@ const hiddenCount = computed(() => group.rows.length - visibleRows.value.length)
       color="primary"
       size="xs"
       :class="styles.more()"
-      @click="limit += ROW_PAGE_SIZE * 4"
+      @click="emit('showMore')"
     >
       {{ messages.showMore({ count: hiddenCount }) }}
     </AppButton>

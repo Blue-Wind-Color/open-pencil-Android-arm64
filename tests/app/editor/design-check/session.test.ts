@@ -34,6 +34,19 @@ function twoPagesWithIssues() {
   return { store, first, second, firstText, secondText, checkedPages, markedNodes }
 }
 
+/** The editor's own switch; the app's adds a progress overlay with timers of its own. */
+async function switchPage(store: ReturnType<typeof createEditorStore>, pageId: string) {
+  const prepared = await store.preparePage(pageId)
+  if (prepared) store.commitPageSwitch(prepared)
+  await nextTick()
+}
+
+/** Lets the check scheduled after a change run. */
+async function settleCheck() {
+  jest.advanceTimersByTime(1000)
+  await nextTick()
+}
+
 describe('the design check across a page switch', () => {
   test('checks the new page once, after the switch', async () => {
     jest.useFakeTimers()
@@ -42,17 +55,12 @@ describe('the design check across a page switch', () => {
     expect(store.designCheck.snapshot.value?.pageId).toBe(first.id)
     expect(markedNodes()).toEqual([firstText.id])
 
-    // The editor's own switch; the app's adds a progress overlay with timers of its own.
-    const prepared = await store.preparePage(second.id)
-    if (prepared) store.commitPageSwitch(prepared)
-    expect(store.state.currentPageId).toBe(second.id)
-    await nextTick()
+    await switchPage(store, second.id)
     // The previous page's markers would point at layers that are no longer shown.
     expect(markedNodes()).toEqual([])
     expect(checkedPages).toEqual([])
 
-    jest.advanceTimersByTime(1000)
-    await nextTick()
+    await settleCheck()
     expect(checkedPages).toEqual([second.id])
     expect(markedNodes()).toEqual([secondText.id])
   })
@@ -77,5 +85,76 @@ describe('the design check across a page switch', () => {
     expect(checkedPages).toEqual([second.id])
     expect(store.designCheck.snapshot.value?.issues.map(({ id }) => id)).toContain(issue.id)
     expect(store.designCheck.focusedIssueId.value).toBe(issue.id)
+  })
+})
+
+describe('a page visited before', () => {
+  test('shows its last result at once when nothing on it changed', async () => {
+    jest.useFakeTimers()
+    const { store, first, second, secondText, markedNodes } = twoPagesWithIssues()
+    await switchPage(store, second.id)
+    await settleCheck()
+    await switchPage(store, first.id)
+    await settleCheck()
+
+    await switchPage(store, second.id)
+
+    // Before the check that follows the switch runs.
+    expect(markedNodes()).toEqual([secondText.id])
+  })
+
+  test('shows the first page checked at once too', async () => {
+    jest.useFakeTimers()
+    const { store, first, second, firstText, markedNodes } = twoPagesWithIssues()
+    await switchPage(store, second.id)
+    // The second page's check replaces the first's result; the background checks wait longer.
+    jest.advanceTimersByTime(300)
+    await nextTick()
+
+    await switchPage(store, first.id)
+
+    expect(markedNodes()).toEqual([firstText.id])
+  })
+
+  test('waits for a new check when it changed while away', async () => {
+    jest.useFakeTimers()
+    const { store, first, second, secondText, markedNodes } = twoPagesWithIssues()
+    await switchPage(store, second.id)
+    await settleCheck()
+    await switchPage(store, first.id)
+    await settleCheck()
+    store.updateNode(secondText.id, { fontSize: 16 })
+
+    await switchPage(store, second.id)
+    expect(markedNodes()).toEqual([])
+
+    await settleCheck()
+    expect(markedNodes()).toEqual([])
+  })
+})
+
+describe('the focused issue', () => {
+  test('is dropped as soon as its layer is deleted', () => {
+    const { store, firstText } = twoPagesWithIssues()
+    store.designCheck.openMarker([firstText.id])
+    expect(store.designCheck.focusedIssueId.value).not.toBeNull()
+
+    // Until the next check, the panel still lists the deleted layer's issue and would reveal it.
+    store.deleteSelected()
+
+    expect(store.designCheck.focusedIssueId.value).toBeNull()
+  })
+
+  test('is dropped once the check no longer finds it', async () => {
+    jest.useFakeTimers()
+    const { store, firstText } = twoPagesWithIssues()
+    store.designCheck.openMarker([firstText.id])
+
+    store.updateNode(firstText.id, { fontSize: 16 })
+    await nextTick()
+    jest.advanceTimersByTime(1000)
+    await nextTick()
+
+    expect(store.designCheck.focusedIssueId.value).toBeNull()
   })
 })

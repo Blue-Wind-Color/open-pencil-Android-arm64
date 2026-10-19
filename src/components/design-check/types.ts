@@ -24,9 +24,9 @@ export interface IssueGroupView {
   severity: DesignIssueSeverity
   title: string
   help: string | null
-  /** How many issues the group lists, whether or not its rows are built. */
+  /** How many issues the group lists, whether or not their rows are built. */
   count: number
-  /** The rows of an open group; a collapsed group builds none. */
+  /** The rows shown: none while the group is collapsed, its first page or more while open. */
   rows: IssueRowView[]
   /** Safe fixes of the rows, which the group applies together. */
   fixes: LintFixRequest[]

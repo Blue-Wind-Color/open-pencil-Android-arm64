@@ -19,6 +19,10 @@ import { issueGroupView, type RowContext } from './rows'
 import type { DesignCheckScope, IssueGroupView, IssueRowView } from './types'
 import { usePresetLabels } from './usePresetLabels'
 
+/** Rows an open group shows at first, and how many more each "show more" adds. */
+const ROW_PAGE = 50
+const MORE_ROWS = ROW_PAGE * 4
+
 /**
  * State of the Lint panel: scope, filters, grouped rows and empty states. While the panel is
  * shown it keeps the design check running and brings focused issues into view in `list`.
@@ -37,6 +41,9 @@ export function useDesignCheckPanel(options: {
   const visibleSeverities = ref<DesignIssueSeverity[]>([...DESIGN_ISSUE_SEVERITIES])
   /** Explicit open state per rule; suggestions start collapsed, problems start open. */
   const openGroups = reactive(new Map<string, boolean>())
+  /** Rows shown per rule once more than the first page was asked for, until the list changes. */
+  const rowLimits = reactive(new Map<string, number>())
+  watch([options.active, () => store.state.currentPageId, scope], () => rowLimits.clear())
 
   // Issues in scope
 
@@ -83,7 +90,7 @@ export function useDesignCheckPanel(options: {
       visibleSeverities.value.includes(issue.severity)
     )
     return groupIssuesByRule(shown).map((group) =>
-      issueGroupView(group, isGroupOpen(group), context)
+      issueGroupView(group, isGroupOpen(group) ? rowLimit(group.ruleId) : 0, context)
     )
   })
 
@@ -107,6 +114,20 @@ export function useDesignCheckPanel(options: {
 
   function setGroupOpen(ruleId: string, open: boolean) {
     openGroups.set(ruleId, open)
+  }
+
+  function rowLimit(ruleId: string): number {
+    return rowLimits.get(ruleId) ?? ROW_PAGE
+  }
+
+  function showMoreRows(ruleId: string) {
+    rowLimits.set(ruleId, rowLimit(ruleId) + MORE_ROWS)
+  }
+
+  /** Shows a group's rows at least up to `index`, a whole page at a time. */
+  function showRowsUpTo(ruleId: string, index: number) {
+    if (index >= rowLimit(ruleId))
+      rowLimits.set(ruleId, Math.ceil((index + 1) / ROW_PAGE) * ROW_PAGE)
   }
 
   function clearFilters() {
@@ -164,6 +185,11 @@ export function useDesignCheckPanel(options: {
       visibleSeverities.value = [...visibleSeverities.value, issue.severity]
     }
     openGroups.set(issue.ruleId, true)
+    const ruleIssues = scopedIssues.value.filter(({ ruleId }) => ruleId === issue.ruleId)
+    showRowsUpTo(
+      issue.ruleId,
+      ruleIssues.findIndex(({ id }) => id === issueId)
+    )
     await nextTick()
     options.list.value
       ?.querySelector(`[data-issue-id="${CSS.escape(issueId)}"]`)
@@ -193,6 +219,7 @@ export function useDesignCheckPanel(options: {
     isGroupOpen,
     setGroupOpen,
     clearFilters,
+    showMoreRows,
     hoverRow
   }
 }

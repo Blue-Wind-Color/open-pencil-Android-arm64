@@ -37,6 +37,7 @@ const {
   isGroupOpen,
   setGroupOpen,
   clearFilters,
+  showMoreRows,
   hoverRow
 } = useDesignCheckPanel({ active: () => active, list, initialScope })
 
@@ -94,7 +95,6 @@ const scopeModel = computed({
         v-for="group in groups"
         :key="group.ruleId"
         :group="group"
-        :focused-issue-id="check.focusedIssueId.value"
         :open="isGroupOpen(group)"
         @update:open="(open) => setGroupOpen(group.ruleId, open)"
         @open-row="(row) => void check.openIssue(row.issue)"
@@ -102,6 +102,7 @@ const scopeModel = computed({
         @fix="(row) => row.action && check.applyFixes([row.action.request])"
         @fix-all="check.applyFixes(group.fixes)"
         @turn-off="turnOffDesignCheckRule(group.ruleId)"
+        @show-more="showMoreRows(group.ruleId)"
       />
     </div>
   </section>

@@ -52,12 +52,12 @@ export function issueRowView(issue: DesignIssue, context: RowContext): IssueRowV
 }
 
 /**
- * A rule's group. Rows are built only when it is open, since each reads its layer and a large
- * page has thousands of issues; fixes skip layers deleted since the check either way.
+ * A rule's group with its first `shownRows` rows: each row reads its layer and a large page has
+ * thousands of issues, so only rows on screen are built. Fixes skip deleted layers either way.
  */
 export function issueGroupView(
   group: DesignIssueGroup,
-  open: boolean,
+  shownRows: number,
   context: RowContext
 ): IssueGroupView {
   const fixes = group.issues.flatMap(({ nodeId, fix }) =>
@@ -69,7 +69,7 @@ export function issueGroupView(
     title: ruleTitle(group.ruleId, context.messages),
     help: ruleHelp(group.ruleId, context.messages),
     count: group.issues.length,
-    rows: open ? group.issues.map((issue) => issueRowView(issue, context)) : [],
+    rows: group.issues.slice(0, shownRows).map((issue) => issueRowView(issue, context)),
     fixes,
     bindsOnly: fixes.every(({ fix }) => fix.kind === 'bind-variable')
   }
