@@ -1,0 +1,252 @@
+import { isEqual, pick } from 'es-toolkit'
+
+import {
+  connectorRouteEnds,
+  freeEndpoint,
+  generatedFrameOwner,
+  layoutConnector,
+  SIZE_FIELDS,
+  TRANSFORM_FIELDS,
+  type ConnectorEndpoint,
+  type SceneGraph,
+  type SceneNode,
+  type UndoEntry
+} from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
+import type { EditorContext } from '#core/editor/types'
+import { routeUnroutedConnectors } from '#core/layout'
+
+/** Fields of any layer that move a connector attached to it or to a layer inside it. */
+const PLACEMENT_FIELDS: ReadonlySet<string> = new Set<string>([
+  ...TRANSFORM_FIELDS,
+  ...SIZE_FIELDS,
+  'parentId'
+])
+
+/** A connector's own fields that change its route. */
+const CONNECTOR_FIELDS: ReadonlySet<string> = new Set<keyof SceneNode>([
+  'connectorStart',
+  'connectorEnd',
+  'connectorLineType',
+  'connectorStartCap',
+  'connectorEndCap'
+])
+
+/** Fields of a connector's sublayers that change its route: the line's weight, the label's size. */
+const SUBLAYER_FIELDS: ReadonlySet<string> = new Set<string>([
+  ...SIZE_FIELDS,
+  'text',
+  'strokes',
+  'strokeWeight'
+])
+
+/**
+ * The ends a connector moved as a whole carries along: its free ends stay where its line now
+ * draws them, as a pasted or dragged connector's do in FigJam. Ends on layers follow their
+ * layers. Null when nothing moves.
+ */
+function carriedFreeEnds(graph: SceneGraph, connector: SceneNode): Partial<SceneNode> | null {
+  const drawn = connectorRouteEnds(graph, connector)
+  if (!drawn) return null
+  const carried = (endpoint: ConnectorEndpoint | null, at: Vector) =>
+    endpoint?.nodeId === null ? freeEndpoint(at.x, at.y) : endpoint
+  const changes = {
+    connectorStart: carried(connector.connectorStart, drawn.start),
+    connectorEnd: carried(connector.connectorEnd, drawn.end)
+  }
+  return isEqual(changes, pick(connector, ['connectorStart', 'connectorEnd'])) ? null : changes
+}
+
+/** Whether `id` or a layer above it is one of `ids`. */
+function underAny(graph: SceneGraph, id: string, ids: ReadonlySet<string>): boolean {
+  return graph.closest(id, (node) => ids.has(node.id)) !== undefined
+}
+
+/**
+ * Keeps connectors routed as the layers they attach to move, resize, or change, as FigJam does:
+ * while a drag previews, and when an edit, undo, or redo lands. A route derives from the layers,
+ * so it is laid out again rather than recorded; loading a document keeps the routes it saved,
+ * though a label its fonts resize moves its plate, and routes a connector it saved without one
+ * once the page it is on is shown.
+ */
+export function createConnectorRouting(ctx: EditorContext) {
+  let indexed: SceneGraph | null = null
+  const connectorIds = new Set<string>()
+  /** Layers changed since the last pass, and whether any change was more than a preview. */
+  let pending: { ids: Set<string>; committed: boolean } | null = null
+  let routing = false
+  /**
+   * The ends of connectors moved since the last undo step, as they were before the move. A move
+   * records its step after it lands, as a drag or a run of nudges does, so the next step takes
+   * them along.
+   */
+  const unrecorded = new Map<string, Pick<SceneNode, 'connectorStart' | 'connectorEnd'>>()
+  /** Steps already seen at the top of the history, to tell a new step from undo and redo. */
+  const seenSteps = new WeakSet<UndoEntry>()
+
+  function connectors(graph: SceneGraph): Set<string> {
+    if (indexed !== graph) {
+      indexed = graph
+      connectorIds.clear()
+      for (const node of graph.getAllNodes()) {
+        if (node.type === 'CONNECTOR') connectorIds.add(node.id)
+      }
+    }
+    return connectorIds
+  }
+
+  function schedule(id: string, committed: boolean) {
+    if (routing || ctx.graph.isApplyingImportedState) return
+    if (!pending) {
+      pending = { ids: new Set(), committed: false }
+      queueMicrotask(flush)
+    }
+    pending.ids.add(id)
+    pending.committed ||= committed
+  }
+
+  function changed(id: string, changes: Partial<SceneNode>, committed: boolean) {
+    const keys = Object.keys(changes)
+    const node = ctx.graph.getNode(id)
+    if (!node) return
+    if (node.type === 'CONNECTOR' && keys.some((key) => CONNECTOR_FIELDS.has(key))) {
+      schedule(id, committed)
+      return
+    }
+    if (node.type === 'CONNECTOR' && (keys.includes('x') || keys.includes('y'))) {
+      carryFreeEnds(node, committed)
+      schedule(id, committed)
+      return
+    }
+    const owner = generatedFrameOwner(ctx.graph, node)
+    if (owner?.type === 'CONNECTOR') {
+      // A label laid out as its font loads moves its plate too.
+      if (keys.some((key) => SUBLAYER_FIELDS.has(key))) schedule(owner.id, committed)
+      return
+    }
+    // Laying out a page as it loads moves nothing a saved route depends on.
+    if (ctx.graph.isApplyingDerivedLayout) return
+    if (keys.some((key) => PLACEMENT_FIELDS.has(key))) schedule(id, committed)
+  }
+
+  /**
+   * Carries a connector's free ends as it moves, by as much as its line moved, before the line is
+   * laid out again. Undo and redo put the ends back with the step that recorded them instead.
+   */
+  function carryFreeEnds(connector: SceneNode, committed: boolean) {
+    const graph = ctx.graph
+    if (
+      routing ||
+      ctx.undo.isReplaying ||
+      graph.isApplyingImportedState ||
+      graph.isApplyingLayout
+    ) {
+      return
+    }
+    const carried = carriedFreeEnds(graph, connector)
+    if (!carried) return
+    if (!unrecorded.has(connector.id)) {
+      unrecorded.set(
+        connector.id,
+        structuredClone(pick(connector, ['connectorStart', 'connectorEnd']))
+      )
+    }
+    routing = true
+    try {
+      if (committed) graph.withLayoutMutations(() => graph.updateNode(connector.id, carried))
+      else graph.updateNodePreview(connector.id, carried)
+    } finally {
+      routing = false
+    }
+    schedule(connector.id, committed)
+  }
+
+  /** Adds the ends connectors were carried from and to into the step just recorded. */
+  function recordCarriedEnds() {
+    const step = ctx.undo.peekUndo()
+    const fresh = step !== undefined && !seenSteps.has(step)
+    if (step) seenSteps.add(step)
+    const graph = ctx.graph
+    const moves = fresh
+      ? [...unrecorded].flatMap(([id, before]) => {
+          const node = graph.getNode(id)
+          if (!node) return []
+          const after = structuredClone(pick(node, ['connectorStart', 'connectorEnd']))
+          return isEqual(before, after) ? [] : [{ id, before, after }]
+        })
+      : []
+    unrecorded.clear()
+    if (moves.length === 0) return
+    const apply = (ends: 'before' | 'after') => {
+      for (const move of moves) graph.updateNode(move.id, structuredClone(move[ends]))
+    }
+    ctx.undo.extendLastStep({
+      label: 'Move connector',
+      forward: () => apply('after'),
+      inverse: () => apply('before')
+    })
+  }
+
+  function flush() {
+    const batch = pending
+    pending = null
+    if (!batch) return
+    const graph = ctx.graph
+    const ids = connectors(graph)
+    const affected: SceneNode[] = []
+    for (const id of ids) {
+      const connector = graph.getNode(id)
+      if (!connector) {
+        ids.delete(id)
+        continue
+      }
+      const watched = [id, connector.connectorStart?.nodeId, connector.connectorEnd?.nodeId]
+      if (watched.some((watchedId) => watchedId && underAny(graph, watchedId, batch.ids))) {
+        affected.push(connector)
+      }
+    }
+    if (affected.length === 0) return
+    routing = true
+    try {
+      const update = batch.committed
+        ? (id: string, changes: Partial<SceneNode>) =>
+            graph.withLayoutMutations(() => graph.updateNode(id, changes))
+        : (id: string, changes: Partial<SceneNode>) => graph.updateNodePreview(id, changes)
+      // A preview keeps each connector's own box, so a drag that places it from where it started
+      // carries its free ends by the drag alone; the edit that lands fits the box again.
+      const keepBox = !batch.committed
+      let moved = false
+      for (const connector of affected) {
+        moved = layoutConnector(graph, connector, update, { keepBox }) || moved
+      }
+      if (moved) ctx.requestRender()
+    } finally {
+      routing = false
+    }
+  }
+
+  // A document read without layout, as a `.fig` is, routes such connectors when shown.
+  function routeShownPage(graph: SceneGraph, pageId: string) {
+    graph.applyDerivedLayoutDuring(() =>
+      graph.withLayoutMutations(() => routeUnroutedConnectors(graph, pageId))
+    )
+  }
+
+  ctx.onEditorEvent('history:changed', recordCarriedEnds)
+  ctx.onEditorEvent('graph:replaced', (graph) => {
+    unrecorded.clear()
+    routeShownPage(graph, ctx.state.currentPageId)
+  })
+  ctx.onEditorEvent('page:changed', (pageId) => routeShownPage(ctx.graph, pageId))
+  ctx.onEditorEvent('node:updated', (id, changes) => changed(id, changes, true))
+  ctx.onEditorEvent('node:previewUpdated', (id, changes) => changed(id, changes, false))
+  ctx.onEditorEvent('node:created', (node) => {
+    if (node.type === 'CONNECTOR' && indexed === ctx.graph) connectorIds.add(node.id)
+  })
+  ctx.onEditorEvent('node:reparented', (id) => schedule(id, true))
+  // Moving a layer into another parent by reordering moves it as reparenting does.
+  ctx.onEditorEvent('node:reordered', (id, parentId, _index, previousParentId) => {
+    if (parentId !== previousParentId) schedule(id, true)
+  })
+}

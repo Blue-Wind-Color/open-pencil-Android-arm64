@@ -64,6 +64,13 @@ function autoLayoutMoveTarget(id: string, editor: Editor): string {
   return target?.id ?? id
 }
 
+/** Whether a connector holds onto a layer at either end. */
+function joinsLayer(node: SceneNode) {
+  return (
+    node.type === 'CONNECTOR' && [node.connectorStart, node.connectorEnd].some((end) => end?.nodeId)
+  )
+}
+
 function collectMoveOriginals(editor: Editor) {
   const originals = new Map<string, MovePlace>()
   for (const selectedId of editor.state.selectedIds) {
@@ -80,6 +87,11 @@ function collectMoveOriginals(editor: Editor) {
       })
     }
   }
+  // FigJam moves a connector held by a layer only along with other layers; dragged alone, it
+  // stays put.
+  const [only] = originals.keys()
+  const lone = originals.size === 1 ? editor.graph.getNode(only) : undefined
+  if (lone && joinsLayer(lone)) originals.clear()
   return originals
 }
 

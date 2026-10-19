@@ -1,4 +1,10 @@
-import { CommittedGraphEventError, cycleSafeParent } from '@open-pencil/scene-graph'
+import { uniq } from 'es-toolkit'
+
+import {
+  attachedConnectors,
+  CommittedGraphEventError,
+  cycleSafeParent
+} from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
@@ -367,18 +373,27 @@ export function createClipboardActions(ctx: EditorContext) {
     ctx.undo.runBatch('Delete', () => deleteLayers(nodeIds, nextSelection))
   }
 
+  /** Whether a delete removes this layer: one that is unlocked and may leave its parent. */
+  function deletable(id: string): boolean {
+    const node = ctx.graph.getNode(id)
+    if (!node || node.locked) return false
+    return acceptsChildren(ctx, node.parentId ?? ctx.state.currentPageId)
+  }
+
   function deleteLayers(nodeIds: Iterable<string>, nextSelection?: ReadonlySet<string>) {
+    const requested = [...nodeIds].filter(deletable)
+    // Connectors go with a layer they attach to, as in FigJam; one that stays keeps them.
+    const attached = attachedConnectors(ctx.graph, requested).map((node) => node.id)
     const entries: Array<{
       id: string
       parentId: string
       index: number
       subtree: Map<string, SceneNode>
     }> = []
-    for (const id of nodeIds) {
+    for (const id of uniq([...requested, ...attached])) {
       const node = ctx.graph.getNode(id)
-      if (!node || node.locked) continue
+      if (!node || !deletable(id)) continue
       const parentId = node.parentId ?? ctx.state.currentPageId
-      if (!acceptsChildren(ctx, parentId)) continue
       const parent = ctx.graph.getNode(parentId)
       const index = parent?.childIds.indexOf(id) ?? -1
       entries.push({ id, parentId, index, subtree: snapshotSubtree(ctx.graph, id) })
