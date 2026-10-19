@@ -106,6 +106,7 @@ import { bindNodeEvents } from './events'
 import * as HitTest from './hit-test'
 export type { DropTargetOptions } from './hit-test'
 import * as Instances from './instances'
+import { LayoutWrites } from './layout/writes'
 import Matrix, { type Mat3 } from './matrix'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
@@ -218,6 +219,7 @@ export class SceneGraph {
   private importedStateApplicationDepth = 0
   private importedIdGenerator: (() => string) | undefined
   private layoutMutationDepth = 0
+  private layoutWrites: LayoutWrites | null = null
   private derivedLayoutDepth = 0
   positionPreviewVersion = 0
   instanceIndex = new Map<string, Set<string>>()
@@ -635,12 +637,31 @@ export class SceneGraph {
     return this.derivedLayoutDepth > 0
   }
 
+  /**
+   * Runs `fn` as layout. Its updates are published once the outermost layout ends, still as
+   * layout, and without values a pass changed and a later pass put back (`LayoutWrites`).
+   */
   withLayoutMutations(fn: () => void): void {
+    const outermost = this.layoutMutationDepth === 0
     this.layoutMutationDepth++
+    if (outermost) this.layoutWrites = new LayoutWrites()
     try {
       fn()
     } finally {
-      this.layoutMutationDepth--
+      try {
+        if (outermost) this.publishLayoutUpdates()
+      } finally {
+        this.layoutMutationDepth--
+      }
+    }
+  }
+
+  private publishLayoutUpdates(): void {
+    const writes = this.layoutWrites
+    this.layoutWrites = null
+    if (!writes) return
+    for (const [id, changes] of writes.updates((nodeId) => this.nodes.get(nodeId))) {
+      this.emitter.emit('node:updated', id, changes)
     }
   }
   get isApplyingLayout(): boolean {
@@ -717,11 +738,17 @@ export class SceneGraph {
     if (changes.vectorNetwork) {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     }
+    this.layoutWrites?.record(node, changes)
     Object.assign(node, changes)
     if (changes.fills) removeStaleBindings(node, 'fills', changes)
     if (changes.strokes) removeStaleBindings(node, 'strokes', changes)
     for (const key of absent) Reflect.deleteProperty(node, key)
-    this.emitter.emit('node:updated', id, changes)
+    this.publishNodeUpdate(id, changes)
+  }
+
+  /** Publishes an update now, or leaves it to the running layout, which publishes once it ends. */
+  private publishNodeUpdate(id: string, changes: Partial<SceneNode>): void {
+    if (!this.layoutWrites) this.emitter.emit('node:updated', id, changes)
   }
 
   reparentNode(nodeId: string, newParentId: string): void {
