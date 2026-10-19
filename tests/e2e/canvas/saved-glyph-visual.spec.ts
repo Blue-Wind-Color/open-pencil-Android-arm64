@@ -262,3 +262,74 @@ test('typed emoji take a 1 em square and draw their image', async () => {
     maxDiffPixels: 500
   })
 })
+
+/**
+ * Figma draws a keycap as the text font's character with Noto Sans Symbols' keycap frame after
+ * it, in the colour of its text, a style run's included; the whole text used to disappear, as
+ * Inter has no keycap mark.
+ */
+test('typed keycaps draw their character in a keycap frame', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('Missing editor')
+    store.graph.createNode('TEXT', store.state.currentPageId, {
+      x: 40,
+      y: 100,
+      width: 600,
+      height: 80,
+      text: 'Keys 1⃣ #⃣ ok',
+      fontFamily: 'Inter',
+      fontSize: 48,
+      fills: [
+        { type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.2, a: 1 }, opacity: 1, visible: true }
+      ],
+      styleRuns: [
+        {
+          start: 8,
+          length: 2,
+          style: {
+            fills: [
+              { type: 'SOLID', color: { r: 0.9, g: 0.1, b: 0.1, a: 1 }, opacity: 1, visible: true }
+            ]
+          }
+        }
+      ]
+    })
+    // Upper-cased, ß shows as SS: the keycap's run is found by its source index all the same.
+    store.graph.createNode('TEXT', store.state.currentPageId, {
+      x: 40,
+      y: 200,
+      width: 600,
+      height: 80,
+      text: '\u00df 1\u20e3',
+      textCase: 'UPPER',
+      fontFamily: 'Inter',
+      fontSize: 48,
+      fills: [
+        { type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.2, a: 1 }, opacity: 1, visible: true }
+      ],
+      styleRuns: [
+        {
+          start: 2,
+          length: 2,
+          style: {
+            fills: [
+              { type: 'SOLID', color: { r: 0.9, g: 0.1, b: 0.1, a: 1 }, opacity: 1, visible: true }
+            ]
+          }
+        }
+      ]
+    })
+    store.requestRender()
+  })
+  await editor.page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+  )
+  // Letters a few hundred pixels wide stand out from edge noise; the default 1% would not.
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('typed-keycap.png', {
+    maxDiffPixels: 500
+  })
+})

@@ -34,8 +34,8 @@ test('the committed metrics font gives each emoji 1 em and its joiners none', as
   expect(advance(0x1f600)).toBe(unitsPerEm)
   expect(advance(0x1f1fa)).toBe(unitsPerEm)
   expect(advance(0x200d)).toBe(0)
-  expect(advance(0x20e3)).toBe(0)
-  // Keycaps keep the text font's character, as Figma draws them.
+  // Keycaps keep the text font's character and Core draws their frame, as Figma draws them.
+  expect(advance(0x20e3)).toBeUndefined()
   expect([...characters.keys()].some((codePoint) => codePoint < 0x80)).toBe(false)
   expect(tables.has('CBDT') || tables.has('COLR') || tables.has('SVG ')).toBe(false)
 })

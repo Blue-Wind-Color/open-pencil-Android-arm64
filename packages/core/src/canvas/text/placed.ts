@@ -1,8 +1,10 @@
 import type { Paragraph } from 'canvaskit-wasm'
+import { uniq } from 'es-toolkit/array'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
+import { laidOutText } from '#core/canvas/text/keycap'
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
 import { textFontVariations } from '#core/canvas/text/paragraph'
 import { utf16IndicesByUtf8 } from '#core/canvas/text/utf8'
@@ -100,6 +102,45 @@ function drawsOwnGlyph(
   return false
 }
 
+/** Characters a shaper draws as nothing, such as variation selectors and joiners, whatever the font. */
+const DRAWN_AS_NOTHING = /[\s\p{Default_Ignorable_Code_Point}]/u
+
+/**
+ * The characters a run draws with glyphs of its font, leaving out whitespace and characters the
+ * shaper draws as nothing. A character no font has is shaped as the run font's missing glyph
+ * (ID 0), which says nothing about which font that is, so it does not count against the font
+ * the run's other characters confirm.
+ */
+function drawnCharacters(
+  text: string,
+  run: GlyphRun,
+  offsets: number[],
+  start: number,
+  end: number
+): string {
+  // A glyph covers the characters up to the next greater offset in the run, whatever its
+  // direction; the sorted offsets give that once for every glyph.
+  const boundaries = uniq([...offsets, end]).sort((a, b) => a - b)
+  const nextBoundary = new Map(
+    boundaries.map((offset, index) => [offset, boundaries[index + 1] ?? end])
+  )
+  const missing = new Set<number>()
+  for (const [index, glyph] of run.glyphs.entries()) {
+    if (glyph !== 0) continue
+    const from = offsets[index]
+    const to = nextBoundary.get(from) ?? end
+    for (let character = from; character < to; character++) missing.add(character)
+  }
+  let characters = ''
+  for (let index = start; index < end;) {
+    const codePoint = text.codePointAt(index) ?? 0
+    const character = String.fromCodePoint(codePoint)
+    if (!missing.has(index) && !DRAWN_AS_NOTHING.test(character)) characters += character
+    index += character.length
+  }
+  return characters
+}
+
 /**
  * The font a run was shaped with. CanvasKit leaves `GlyphRun.typeface` null, so the run's font
  * is found as the paragraph falls back: the first of the fonts it lists, the style's own then
@@ -109,6 +150,7 @@ function drawsOwnGlyph(
 function runOutlineSource(
   node: SceneNode,
   text: string,
+  shaped: string,
   run: GlyphRun,
   characterAt: (offset: number) => number
 ): GlyphOutlineSource | null {
@@ -116,7 +158,7 @@ function runOutlineSource(
   const offsets = Array.from(run.offsets, characterAt)
   const start = Math.min(...offsets)
   const end = Math.max(...offsets)
-  const characters = text.slice(start, end).replace(/\s/g, '')
+  const characters = drawnCharacters(shaped, run, offsets, start, end)
   for (const source of candidateSources(fontAt(node, start))) {
     if (!source.covers(characters)) continue
     if (characters === '' || drawsOwnGlyph(source, run, text, characterAt)) return source
@@ -186,6 +228,8 @@ export function laidOutGlyphs(
   const metrics = layout.getLineMetrics()
   if (lines.length === 0 || lines.length !== metrics.length) return null
   const characterAt = utf16IndicesByUtf8(text)
+  // The runs drew the text as laid out, a keycap mark as a zero-width space.
+  const shaped = laidOutText(text)
   const markers = new Map(layout.getMarkers().map((marker) => [marker.lineNumber, marker]))
   const glyphs: LaidOutGlyph[] = []
   for (const [lineIndex, line] of lines.entries()) {
@@ -198,7 +242,7 @@ export function laidOutGlyphs(
         lastLine && runIndex === line.runs.length - 1 && layout.didExceedMaxLines()
           ? ellipsisSource(node, run, characterAt)
           : null
-      const source = ellipsis ?? runOutlineSource(node, text, run, characterAt)
+      const source = ellipsis ?? runOutlineSource(node, text, shaped, run, characterAt)
       for (let index = 0; index < run.glyphs.length; index++) {
         const x = run.positions[index * 2]
         glyphs.push({

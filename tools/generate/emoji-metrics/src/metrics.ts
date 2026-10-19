@@ -1,4 +1,5 @@
 import { readCharacterMap, writeCharacterMap } from './cmap'
+import { COMBINING_KEYCAP } from './keycap'
 import type { FontTables } from './sfnt'
 
 /** The family the metrics font registers under, which the editor's text layout falls back to. */
@@ -11,12 +12,11 @@ export const EMOJI_METRICS_ASSET = 'OpenPencilEmojiMetrics-Regular.ttf'
 const KEPT_TABLES = ['GSUB', 'OS/2', 'post'] as const
 
 /**
- * Noto maps ASCII digits, `#`, `*`, and the space for its keycap sequences. Figma draws a keycap
- * as the text font's character with the combining keycap after it, so those stay with the text
- * font and the keycap mark takes no room.
+ * Noto maps ASCII digits, `#`, `*`, the space, and the combining keycap for its keycap sequences.
+ * Figma draws a keycap as the text font's character with a keycap frame after it, which Core
+ * draws itself, so none of them are the metrics font's.
  */
 const TEXT_CHARACTER_LIMIT = 0x80
-const COMBINING_KEYCAP = 0x20e3
 
 /**
  * The missing glyph's outline: a glyph header with no contours, all zero. Browsers' font
@@ -97,16 +97,15 @@ export function emojiMetricsFont(source: FontTables, copyright: string): FontTab
 
   const characters = new Map(
     [...readCharacterMap(required(source, 'cmap'))].filter(
-      ([codePoint]) => codePoint >= TEXT_CHARACTER_LIMIT
+      ([codePoint]) => codePoint >= TEXT_CHARACTER_LIMIT && codePoint !== COMBINING_KEYCAP
     )
   )
-  const zeroWidth = new Set([characters.get(COMBINING_KEYCAP)])
 
   const hmtx = new Uint8Array(glyphCount * 4)
   const hmtxView = new DataView(hmtx.buffer)
   for (let glyph = 0; glyph < glyphCount; glyph++) {
     const advance = sourceView.getUint16(Math.min(glyph, sourceMetricCount - 1) * 4)
-    hmtxView.setUint16(glyph * 4, advance > 0 && !zeroWidth.has(glyph) ? unitsPerEm : 0)
+    hmtxView.setUint16(glyph * 4, advance > 0 ? unitsPerEm : 0)
   }
   // Short offsets, in words: the missing glyph holds the only outline, and every other is empty.
   headView.setInt16(50, 0)

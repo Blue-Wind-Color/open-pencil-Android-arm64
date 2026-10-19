@@ -8,7 +8,11 @@
   "scripts": {
     "test": "bun test tests"
   },
+  "dependencies": {
+    "opentype.js": "^2.0.0"
+  },
   "devDependencies": {
+    "@open-pencil/core": "workspace:*",
     "@open-pencil/package-artifacts-tools": "workspace:*"
   }
 }

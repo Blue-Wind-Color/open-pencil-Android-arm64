@@ -161,7 +161,9 @@ function observedGlyphReadiness(r: TextRenderer, node: SceneNode): NodeFontReadi
     }
   }
   if (pending) return 'pending'
-  return exhausted ? 'exhausted' : 'ready'
+  // Once no fallback is left for a character, the text draws with the fonts it has, the font's
+  // missing-glyph box standing in for that character, rather than not at all.
+  return exhausted ? 'substituted' : 'ready'
 }
 
 function canObserveGlyphCoverage(r: FontReadinessRenderer): r is TextRenderer {

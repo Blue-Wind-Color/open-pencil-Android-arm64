@@ -64,6 +64,159 @@ describe('text shaping for saved glyphs', () => {
     expect([advance(1), advance(3), advance(3 + family.length)]).toEqual([40, 40, 40])
   })
 
+  /**
+   * Figma draws a saved emoji from its code points over a placeholder square 1 em wide, from
+   * 0.07 em below the baseline, and saves ☺ with the selector for its emoji form; measured in
+   * Figma desktop. The other glyphs keep their outlines.
+   */
+  test('saves an emoji as Figma does: a placeholder square with its code points', async () => {
+    const metrics = expectDefined(
+      await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
+      'bundled emoji metrics font'
+    )
+    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    const shaped = expectDefined(
+      await shape({ text: 'a😀☺©', fontSize: 40, width: 400, textAutoResize: 'NONE' }),
+      'shaped text'
+    )
+    const glyph = (character: number) =>
+      expectDefined(
+        shaped.glyphs.find((candidate) => candidate.firstCharacter === character),
+        `glyph ${character}`
+      )
+    expect(glyph(1).emojiCodePoints).toEqual([0x1f600])
+    expect(glyph(3).emojiCodePoints).toEqual([0x263a, 0xfe0f])
+    const square = (glyph(1).commands ?? []).map(({ type, x, y }) => [type, x, y?.toFixed(2)])
+    expect(square).toEqual([
+      ['M', 0, '2.80'],
+      ['L', 40, '2.80'],
+      ['L', 40, '-37.20'],
+      ['L', 0, '-37.20'],
+      ['L', 0, '2.80'],
+      ['Z', undefined, undefined]
+    ])
+    for (const character of [0, 4]) {
+      expect(glyph(character).emojiCodePoints).toBeUndefined()
+      expect(glyph(character).commands?.length).toBeGreaterThan(1)
+    }
+  })
+
+  /**
+   * Figma draws pasted or saved text only from the glyph outlines written for it. A character no
+   * font has is shaped as the font's missing glyph; it must not cost the other characters their
+   * outlines, or Figma shows the text blank. Checked by pasting into Figma desktop.
+   */
+  test('outlines every glyph of text with a character no font has', async () => {
+    const shaped = expectDefined(
+      await shape({ text: 'Tamil \u0b86 ok', fontSize: 40, width: 400, textAutoResize: 'NONE' }),
+      'shaped text'
+    )
+    expect(shaped.glyphs.every((glyph) => glyph.commands !== null)).toBe(true)
+  })
+
+  /**
+   * Figma draws a keycap as the text font's character with Noto Sans Symbols' keycap frame
+   * after it: no advance, centred where the character ends, from 0.01 em below the baseline to
+   * 0.83 em above. Measured from a keycap Figma saved.
+   */
+  test('saves a keycap as Figma does: the character, then the frame around it', async () => {
+    const shaped = expectDefined(
+      await shape({ text: 'Key 1\ufe0f\u20e3', fontSize: 100, width: 600, textAutoResize: 'NONE' }),
+      'shaped text'
+    )
+    expect(shaped.glyphs.every((glyph) => glyph.commands !== null)).toBe(true)
+    const frame = expectDefined(
+      shaped.glyphs.find((glyph) => glyph.firstCharacter === 6),
+      'keycap frame glyph'
+    )
+    const digit = expectDefined(
+      shaped.glyphs.find((glyph) => glyph.firstCharacter === 4),
+      'keycap digit glyph'
+    )
+    const bounds = (axis: 'x' | 'y') => {
+      const values = (frame.commands ?? []).flatMap((command) =>
+        command[axis] === undefined ? [] : [command[axis]]
+      )
+      return [Math.min(...values), Math.max(...values)].map((value) => Number(value.toFixed(2)))
+    }
+    expect(frame.advance).toBe(0)
+    expect(frame.x).toBeCloseTo(digit.x + digit.advance, 3)
+    expect(bounds('x')).toEqual([-42.2, 42.2])
+    expect(bounds('y')).toEqual([-83.2, 1])
+  })
+
+  /** An emoji sequence the font does not join is several glyphs; Figma gets the emoji once. */
+  test('saves an unjoined emoji sequence once, at its first glyph', async () => {
+    const metrics = expectDefined(
+      await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
+      'bundled emoji metrics font'
+    )
+    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    const sequence = '\u{1f469}\u200d\u{1f9af}\u200d\u{1f4bb}'
+    const shaped = expectDefined(
+      await shape({ text: `x${sequence}x`, fontSize: 40, width: 400, textAutoResize: 'NONE' }),
+      'shaped text'
+    )
+    const emoji = shaped.glyphs.filter((glyph) => glyph.emojiCodePoints)
+    expect(emoji.map((glyph) => glyph.firstCharacter)).toEqual([1])
+    expect(emoji[0]?.emojiCodePoints).toEqual(Array.from(sequence, (c) => c.codePointAt(0) ?? 0))
+    expect(shaped.glyphs.length).toBeGreaterThan(3)
+    expect(shaped.glyphs.every((glyph) => glyph.commands !== null)).toBe(true)
+  })
+
+  /**
+   * Glyphs come in visual order, so in right-to-left text a letter before an emoji can follow
+   * it; that letter keeps its outline.
+   */
+  test('keeps the outlines of letters an emoji precedes in right-to-left text', async () => {
+    const metrics = expectDefined(
+      await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
+      'bundled emoji metrics font'
+    )
+    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    const shaped = expectDefined(
+      await shape({
+        text: '\u05d0\u{1f600}\u05d1',
+        textDirection: 'RTL',
+        fontSize: 40,
+        width: 400,
+        textAutoResize: 'NONE'
+      }),
+      'shaped text'
+    )
+    // Inter has no Hebrew: each letter is the missing glyph's box, an outline all the same.
+    for (const character of [0, 3]) {
+      const glyph = shaped.glyphs.find((candidate) => candidate.firstCharacter === character)
+      expect(glyph?.commands?.length).toBeGreaterThan(1)
+    }
+  })
+
+  /**
+   * Characters the shaper draws as nothing, tag characters among them, take two UTF-16 units
+   * past the Basic Multilingual Plane; they must not cost the letters around them their outlines.
+   */
+  test('outlines letters beside a tag sequence and a supplementary tag character', async () => {
+    const metrics = expectDefined(
+      await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
+      'bundled emoji metrics font'
+    )
+    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    const scotland = '\u{1f3f4}\u{e0067}\u{e0062}\u{e0073}\u{e0063}\u{e0074}\u{e007f}'
+    const shaped = expectDefined(
+      await shape({
+        text: `Flag ${scotland} a\u{e0001}b`,
+        fontSize: 40,
+        width: 600,
+        textAutoResize: 'NONE'
+      }),
+      'shaped text'
+    )
+    expect(shaped.glyphs.every((glyph) => glyph.commands !== null)).toBe(true)
+    expect(shaped.glyphs.find((glyph) => glyph.emojiCodePoints)?.emojiCodePoints).toEqual(
+      Array.from(scotland, (c) => c.codePointAt(0) ?? 0)
+    )
+  })
+
   test('breaks lines at the layer width (#914)', async () => {
     const shaped = expectDefined(await shape({ text: SENTENCE }), 'shaped text')
     const [first, second] = shaped.baselines
