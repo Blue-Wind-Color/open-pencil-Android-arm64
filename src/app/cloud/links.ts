@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { cloudDesktopLinkURL, type CloudLinkKind } from '@open-pencil/cloud/client'
+import { cloudDesktopLinkURL, type CloudLinkKind } from '@open-pencil/cloud/contract'
 import { cloudMessages, useViewportKind } from '@open-pencil/vue'
 
 import { toast } from '@/app/shell/ui'

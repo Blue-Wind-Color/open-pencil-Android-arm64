@@ -124,5 +124,13 @@ export {
   type WorkspaceRole,
   type WorkspaceSummary
 } from './workspaces'
+export {
+  cloudDesktopLinkURL,
+  cloudDocumentPath,
+  cloudDocumentURL,
+  cloudInvitationURL,
+  cloudShareURL,
+  type CloudLinkKind
+} from './links'
 export { CLOUD_PORTAL_PAGE_ROOTS, isCloudPortalPage } from './portal'
 export * from './versions'

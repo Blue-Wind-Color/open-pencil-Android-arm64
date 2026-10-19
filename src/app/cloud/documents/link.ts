@@ -2,7 +2,7 @@ import { useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { ref, watch } from 'vue'
 
-import { cloudDocumentPath, cloudDocumentURL } from '@open-pencil/cloud/client'
+import { cloudDocumentPath, cloudDocumentURL } from '@open-pencil/cloud/contract'
 import { cloudMessages } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/session'
@@ -92,7 +92,7 @@ export function cloudVersionLinkURL(store: EditorStore, versionId: string): stri
   const target = linkTarget(store)
   if (!target) return null
   const { binding, server, discovery } = target
-  return cloudDocumentURL(discovery, server.url, binding.documentId, versionId)
+  return cloudDocumentURL(discovery.appURL, server.url, binding.documentId, versionId)
 }
 
 /**

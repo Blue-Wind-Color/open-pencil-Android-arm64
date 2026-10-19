@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { cloudEditorReturnURL, cloudSignInURL } from '#cloud/client'
+import { cloudEditorReturnURL, cloudRedirectPath, cloudSignInURL } from '#cloud/client'
 import type { CloudDiscovery } from '#cloud/contract'
 
 const discovery: CloudDiscovery = {
@@ -51,4 +51,18 @@ test('a chosen provider rides along only when the server offers it', () => {
   expect(google.searchParams.get('provider')).toBe('google')
   const apple = new URL(cloudSignInURL(social, 'https://editor.example/', 'apple'))
   expect(apple.searchParams.has('provider')).toBe(false)
+})
+
+test('authentication continuation stays on the issuing origin', () => {
+  expect(cloudRedirectPath('/cloud/device?user_code=ABCD')).toBe('/cloud/device?user_code=ABCD')
+  for (const input of [
+    '//evil.example',
+    '/\\evil.example',
+    'https://evil.example',
+    // eslint-disable-next-line no-script-url -- Reject script URLs at the untrusted navigation boundary.
+    'javascript:alert(1)',
+    undefined
+  ]) {
+    expect(cloudRedirectPath(input)).toBe('/app')
+  }
 })

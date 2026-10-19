@@ -3,23 +3,14 @@ import { expect, test } from 'bun:test'
 import {
   cloudDesktopLinkURL,
   cloudDocumentURL,
-  cloudRedirectPath,
+  cloudInvitationURL,
   cloudShareURL
-} from '#cloud/client'
-import type { CloudDiscovery } from '#cloud/contract'
+} from '#cloud/contract'
 
-const discovery: CloudDiscovery = {
-  protocolVersion: '1',
-  deployment: 'self-hosted',
-  apiURL: 'https://company.example/api',
-  authURL: 'https://company.example/api/auth',
-  appURL: 'https://editor.company.example',
-  authentication: { socialProviders: [], enterpriseSSO: false, enrollmentMode: 'open' },
-  capabilities: { documents: true, workspaces: true, collaboration: true }
-}
+const appURL = 'https://editor.company.example'
 
 test('sharing uses the owning public editor without requiring browser globals', () => {
-  const url = new URL(cloudShareURL(discovery, 'https://company.example', 'share-id', 'secret'))
+  const url = new URL(cloudShareURL(appURL, 'https://company.example', 'share-id', 'secret'))
   expect(url.origin).toBe('https://editor.company.example')
   expect(url.pathname).toBe('/cloud/share/share-id')
   expect(url.searchParams.get('server')).toBe('https://company.example')
@@ -28,16 +19,14 @@ test('sharing uses the owning public editor without requiring browser globals', 
 })
 
 test('sharing rejects absent or non-web editor URLs', () => {
+  expect(() => cloudShareURL(undefined, 'https://company.example', 'id', 'secret')).toThrow()
   expect(() =>
-    cloudShareURL({ ...discovery, appURL: undefined }, discovery.apiURL, 'id', 'secret')
-  ).toThrow()
-  expect(() =>
-    cloudShareURL({ ...discovery, appURL: 'tauri://localhost' }, discovery.apiURL, 'id', 'secret')
+    cloudShareURL('tauri://localhost', 'https://company.example', 'id', 'secret')
   ).toThrow()
 })
 
 test('a document or version address names its server and carries no secret', () => {
-  const document = new URL(cloudDocumentURL(discovery, 'https://company.example', 'doc-id'))
+  const document = new URL(cloudDocumentURL(appURL, 'https://company.example', 'doc-id'))
   expect(document.origin).toBe('https://editor.company.example')
   expect(document.pathname).toBe('/cloud/documents/doc-id')
   expect(document.searchParams.get('server')).toBe('https://company.example')
@@ -45,26 +34,23 @@ test('a document or version address names its server and carries no secret', () 
   expect(document.hash).toBe('')
 
   const version = new URL(
-    cloudDocumentURL(discovery, 'https://company.example', 'doc-id', 'version-id')
+    cloudDocumentURL(appURL, 'https://company.example', 'doc-id', 'version-id')
   )
   expect(version.searchParams.get('version')).toBe('version-id')
 
-  const anchored = { ...discovery, appURL: 'https://editor.company.example/#welcome' }
+  const anchored = 'https://editor.company.example/#welcome'
   expect(new URL(cloudDocumentURL(anchored, 'https://company.example', 'doc-id')).hash).toBe('')
 })
 
-test('authentication continuation stays on the issuing origin', () => {
-  expect(cloudRedirectPath('/cloud/device?user_code=ABCD')).toBe('/cloud/device?user_code=ABCD')
-  for (const input of [
-    '//evil.example',
-    '/\\evil.example',
-    'https://evil.example',
-    // eslint-disable-next-line no-script-url -- Reject script URLs at the untrusted navigation boundary.
-    'javascript:alert(1)',
-    undefined
-  ]) {
-    expect(cloudRedirectPath(input)).toBe('/app')
-  }
+test('an invitation names its server and carries its token in the fragment', () => {
+  const url = new URL(
+    cloudInvitationURL(appURL, 'https://company.example', 'invitation/id', 'token')
+  )
+  expect(url.origin).toBe('https://editor.company.example')
+  expect(url.pathname).toBe('/cloud/invitations/invitation%2Fid')
+  expect(url.searchParams.get('server')).toBe('https://company.example')
+  expect(url.hash).toBe('#token')
+  expect(url.search).not.toContain('token')
 })
 
 test('desktop links keep the web link path, server, and secret under the app scheme', () => {

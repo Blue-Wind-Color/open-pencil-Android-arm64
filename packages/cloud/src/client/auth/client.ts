@@ -2,6 +2,7 @@ import type { CloudDiscovery } from '#cloud/contract'
 import { passkeyClient } from '@better-auth/passkey/client'
 import { createAuthClient } from 'better-auth/client'
 import { deviceAuthorizationClient, twoFactorClient } from 'better-auth/client/plugins'
+import { withoutFragment } from 'ufo'
 
 import type { CloudFetch } from '../discovery'
 import { cloudAuthFailure, type CloudAuthResult } from './failure'
@@ -9,9 +10,7 @@ import { cloudAuthFailure, type CloudAuthResult } from './failure'
 export type CloudSocialProvider = CloudDiscovery['authentication']['socialProviders'][number]
 
 function returnURL(): string {
-  const url = new URL(globalThis.location.href)
-  url.hash = ''
-  return url.href
+  return withoutFragment(globalThis.location.href)
 }
 
 type DeviceActionResult = Promise<{

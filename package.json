@@ -200,6 +200,7 @@
     "tailwind-variants": "^3.3.1",
     "tailwindcss": "^4.3.3",
     "tinykeys": "^3.1.0",
+    "ufo": "^1.6.4",
     "valibot": "^1.5.0",
     "vee-validate": "5.0.0-beta.0",
     "vue": "^3.5.43",

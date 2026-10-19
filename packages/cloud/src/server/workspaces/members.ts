@@ -7,6 +7,7 @@ import type {
   WorkspaceRole,
   WorkspaceSummary
 } from '#cloud/contract'
+import { cloudInvitationURL } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email/types'
@@ -163,10 +164,7 @@ export function createWorkspaceMemberService(
   }
 
   function acceptanceURL(invitationId: string, token: string): string {
-    return new URL(
-      `/cloud/invitations/${invitationId}?server=${encodeURIComponent(options.publicURL)}#${token}`,
-      options.appURL
-    ).href
+    return cloudInvitationURL(options.appURL, options.publicURL, invitationId, token)
   }
 
   return {

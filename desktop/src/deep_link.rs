@@ -323,6 +323,13 @@ mod tests {
                 ..
             }))
         ));
+        // The editor builds links with ufo, which leaves `:` in a query value as it is.
+        assert!(matches!(
+            cloud(&format!(
+                "openpencil://cloud/share/{CLOUD_ID}?server=https:%2F%2Fcloud.example.com#{CLOUD_SECRET}"
+            )),
+            Ok(DeepLink::Cloud(CloudLink { ref server, .. })) if server == "https://cloud.example.com/"
+        ));
     }
 
     #[test]

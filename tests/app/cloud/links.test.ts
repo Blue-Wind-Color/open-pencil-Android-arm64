@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, test } from 'bun:test'
 
-import { cloudDesktopLinkURL } from '@open-pencil/cloud/client'
+import { cloudDesktopLinkURL } from '@open-pencil/cloud/contract'
 
 import { readCloudLink } from '@/app/cloud/links'
 
@@ -36,8 +36,12 @@ describe('Cloud links', () => {
     )
     if (!web) throw new Error('Expected a Cloud link')
     const desktop = new URL(cloudDesktopLinkURL(web.kind, web.id, web.server, web.secret))
-    expect(desktop.href).toBe(
-      `openpencil://cloud/share/abc?server=${encodeURIComponent(SERVER)}#secret`
-    )
+    expect([desktop.protocol, desktop.host, desktop.pathname]).toEqual([
+      'openpencil:',
+      'cloud',
+      '/share/abc'
+    ])
+    expect(desktop.searchParams.get('server')).toBe(SERVER)
+    expect(desktop.hash).toBe('#secret')
   })
 })

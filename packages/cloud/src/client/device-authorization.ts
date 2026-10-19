@@ -1,4 +1,5 @@
 import type { CloudDiscovery } from '#cloud/contract'
+import { joinURL } from 'ufo'
 import * as v from 'valibot'
 
 import type { CloudFetch } from './discovery'
@@ -59,7 +60,7 @@ function abortableSleep(milliseconds: number, signal?: AbortSignal): Promise<voi
 }
 
 function authEndpoint(discovery: CloudDiscovery, path: string): string {
-  return new URL(path, `${discovery.authURL.replace(/\/$/, '')}/`).href
+  return joinURL(discovery.authURL, path)
 }
 
 export type CloudDeviceAuthorizationOptions = {
