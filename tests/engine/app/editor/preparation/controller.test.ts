@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, jest, test } from 'bun:test'
 
 import { createEditorPreparationController } from '@/app/editor/preparation/controller'
 import { createEditorPreparationEvents } from '@/app/editor/preparation/events'
@@ -83,6 +83,7 @@ describe('editor preparation controller', () => {
       presentationTimeoutMs: 1
     })
     const handle = controller.begin({ kind: 'page-switch' })
+    controller.attachCanvas()
 
     await expect(controller.waitForPresentation(handle.id, 7)).rejects.toHaveProperty(
       'message',
@@ -90,6 +91,67 @@ describe('editor preparation controller', () => {
     )
     handle.fail({ code: 'render-failed', message: 'Timed out', retryable: true })
     expect(state.preparation).toBeNull()
+  })
+  test('waits without a timeout while no canvas shows the document', async () => {
+    jest.useFakeTimers()
+    try {
+      const state = createInitialAppEditorState('page')
+      const controller = createEditorPreparationController(state, undefined, {
+        presentationTimeoutMs: 100
+      })
+      const handle = controller.begin({ kind: 'page-switch' })
+      let settled = false
+      const waiting = controller.waitForPresentation(handle.id, 7).finally(() => {
+        settled = true
+      })
+      // A tab opened in the background: nothing draws it, and that is not a failure.
+      jest.advanceTimersByTime(1_000)
+      await Promise.resolve()
+      expect(settled).toBe(false)
+
+      // Shown, it gets the usual time to draw; leaving it again pauses that.
+      const detach = controller.attachCanvas()
+      jest.advanceTimersByTime(50)
+      detach()
+      jest.advanceTimersByTime(1_000)
+      await Promise.resolve()
+      expect(settled).toBe(false)
+
+      controller.attachCanvas()
+      controller.acknowledgePresentation(7)
+      await waiting
+      handle.complete()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('counts the time a tab was shown toward the limit, across visits', async () => {
+    jest.useFakeTimers()
+    try {
+      const state = createInitialAppEditorState('page')
+      const controller = createEditorPreparationController(state, undefined, {
+        presentationTimeoutMs: 100
+      })
+      const handle = controller.begin({ kind: 'page-switch' })
+      let failure: unknown = null
+      const waiting = controller.waitForPresentation(handle.id, 7).catch((error: unknown) => {
+        failure = error
+      })
+      // Two visits of 60 ms each: the scene had longer than its 100 ms to draw.
+      const detach = controller.attachCanvas()
+      jest.advanceTimersByTime(60)
+      detach()
+      controller.attachCanvas()
+      jest.advanceTimersByTime(60)
+      await Promise.resolve()
+      expect(failure).toHaveProperty('message', 'The operation was timed out')
+      controller.acknowledgePresentation(7)
+      await waiting
+      handle.fail({ code: 'render-failed', message: 'Timed out', retryable: true })
+    } finally {
+      jest.useRealTimers()
+    }
   })
   test('emits exactly one terminal outcome', () => {
     const state = createInitialAppEditorState('page')

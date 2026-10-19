@@ -98,6 +98,9 @@ const shouldSuspendRender = () =>
 /** The pan and zoom of the scene's last drawn frame, which preview islands follow. */
 const drawnView = shallowRef<ViewportTransform | null>(null)
 
+// The tab's scene is presented only here, so waiting for it times out only while it is shown.
+onUnmounted(store.preparationController.attachCanvas())
+
 useCanvas(sceneCanvasRef, store, {
   layer: 'scene',
   onFrame: (view) => {
