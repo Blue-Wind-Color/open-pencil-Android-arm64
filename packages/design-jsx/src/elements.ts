@@ -1,18 +1,32 @@
 import { difference } from 'es-toolkit/array'
 
-import type { NodeType } from '@open-pencil/scene-graph'
+import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { REKA_ELEMENTS, rekaRole } from './behaviours'
 import {
-  DESIGN_JSX_CONNECTOR_LAYER_PROPERTY_NAMES,
-  DESIGN_JSX_CONNECTOR_PROPERTY_NAMES,
+  connectorBindingTarget,
+  ConnectorLayerProps,
+  ConnectorProps,
+  renderConnectorNode
+} from './connectors'
+import {
   DESIGN_JSX_PARAGRAPH_PROPERTY_NAMES,
   DESIGN_JSX_SPAN_PROPERTY_NAMES,
-  DESIGN_JSX_STICKY_LAYER_PROPERTY_NAMES,
-  DESIGN_JSX_STICKY_PROPERTY_NAMES,
   DESIGN_JSX_SUPPORTED_PROPERTY_NAMES,
   DESIGN_JSX_TEXT_PARAGRAPH_PROPERTY_NAMES
 } from './schema'
+import { renderStickyNode, StickyLayerProps, StickyProps } from './stickies'
+import type { TreeNode } from './tree'
+import type { ElementPropsSchema } from './validation'
+
+/** How an element that draws a layer of its own, such as a sticky note, renders it. */
+export interface OwnLayerRenderer {
+  /** The layer props it takes, made into fields as any layer's are. */
+  layer: ElementPropsSchema
+  render(graph: SceneGraph, tree: TreeNode, parentId: string, layer: Partial<SceneNode>): SceneNode
+  /** The layer a variable binding of `field` goes on, when not the element's own. */
+  bindingTarget?(graph: SceneGraph, node: SceneNode, field: string): string
+}
 
 /**
  * One design JSX element: what JSX names it, what it makes, the props it takes, and which layers
@@ -28,6 +42,10 @@ export type DesignJSXElementDefinition = {
   nodeType?: NodeType
   /** The props it takes; every layer prop when left out. */
   props?: readonly string[]
+  /** The props it takes and what each holds, for an element that reads them by this schema. */
+  schema?: ElementPropsSchema
+  /** How it draws its own layer, for an element that does. */
+  ownLayer?: OwnLayerRenderer
   /** The layers export writes as this element. */
   writes?: readonly NodeType[]
 }
@@ -160,7 +178,8 @@ export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
     name: 'Sticky',
     runtimeType: 'sticky',
     description: 'A FigJam sticky note; its text is the body.',
-    props: [...DESIGN_JSX_STICKY_PROPERTY_NAMES, ...DESIGN_JSX_STICKY_LAYER_PROPERTY_NAMES],
+    schema: StickyProps,
+    ownLayer: { layer: StickyLayerProps, render: renderStickyNode },
     writes: ['STICKY']
   },
   {
@@ -168,7 +187,12 @@ export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
     runtimeType: 'connector',
     description:
       'A FigJam connector between two layers of the same JSX, named by `from` and `to`, or points.',
-    props: [...DESIGN_JSX_CONNECTOR_PROPERTY_NAMES, ...DESIGN_JSX_CONNECTOR_LAYER_PROPERTY_NAMES],
+    schema: ConnectorProps,
+    ownLayer: {
+      layer: ConnectorLayerProps,
+      render: renderConnectorNode,
+      bindingTarget: connectorBindingTarget
+    },
     writes: ['CONNECTOR']
   },
   ...rekaElementDefinitions()
@@ -219,9 +243,10 @@ const BY_RUNTIME_TYPE = new Map(
 
 const PROPS_BY_RUNTIME_TYPE = new Map<string, ReadonlySet<string>>([
   ['svg', new Set([...LAYER_PROPS, ...SVG_PROPERTY_NAMES])],
-  ...DESIGN_JSX_ELEMENTS.flatMap((element): [string, ReadonlySet<string>][] =>
-    element.props ? [[element.runtimeType, new Set(element.props)]] : []
-  )
+  ...DESIGN_JSX_ELEMENTS.flatMap((element): [string, ReadonlySet<string>][] => {
+    const props = element.schema ? Object.keys(element.schema.entries) : element.props
+    return props ? [[element.runtimeType, new Set(props)]] : []
+  })
 ])
 
 const TAG_BY_NODE_TYPE = new Map(
@@ -238,6 +263,16 @@ export function elementNodeType(runtimeType: string): NodeType | undefined {
 /** The props an element of `runtimeType` takes. */
 export function elementProps(runtimeType: string): ReadonlySet<string> {
   return PROPS_BY_RUNTIME_TYPE.get(runtimeType) ?? LAYER_PROPS
+}
+
+/** The schema an element of `runtimeType` reads its props by, if it has one. */
+export function elementSchema(runtimeType: string): ElementPropsSchema | undefined {
+  return BY_RUNTIME_TYPE.get(runtimeType)?.schema
+}
+
+/** How an element of `runtimeType` draws its own layer, if it does. */
+export function elementOwnLayer(runtimeType: string): OwnLayerRenderer | undefined {
+  return BY_RUNTIME_TYPE.get(runtimeType)?.ownLayer
 }
 
 /** The element export writes a layer of `type` as, if any. */

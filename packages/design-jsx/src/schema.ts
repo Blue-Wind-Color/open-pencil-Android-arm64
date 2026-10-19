@@ -15,49 +15,6 @@ export const DESIGN_JSX_PARAGRAPH_PROPERTY_NAMES = [
   'indent'
 ] as const
 
-/** Props only `<Sticky>` takes. */
-export const DESIGN_JSX_STICKY_PROPERTY_NAMES = [
-  'color',
-  'author',
-  'authorVisible',
-  'wide',
-  'textSize',
-  'scale'
-] as const
-
-/** Layer props a sticky note takes too. */
-export const DESIGN_JSX_STICKY_LAYER_PROPERTY_NAMES = [
-  'name',
-  'key',
-  'x',
-  'y',
-  'position',
-  'visible',
-  'opacity'
-] as const
-
-/** Props only `<Connector>` takes. */
-export const DESIGN_JSX_CONNECTOR_PROPERTY_NAMES = [
-  'from',
-  'to',
-  'fromSide',
-  'toSide',
-  'line',
-  'startCap',
-  'endCap'
-] as const
-
-/** Layer props a connector takes too: its name and the stroke of its line. */
-export const DESIGN_JSX_CONNECTOR_LAYER_PROPERTY_NAMES = [
-  'name',
-  'key',
-  'visible',
-  'opacity',
-  'stroke',
-  'strokeWidth',
-  'dashPattern'
-] as const
-
 /** Props `<Span>` takes: `<Text>`'s character styles, under the same names, and a link. */
 export const DESIGN_JSX_SPAN_PROPERTY_NAMES = [
   'style',

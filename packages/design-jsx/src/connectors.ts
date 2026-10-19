@@ -1,5 +1,6 @@
 import { compact, countBy } from 'es-toolkit/array'
 import { camelCase } from 'es-toolkit/string'
+import * as v from 'valibot'
 
 import {
   boundEndpoint,
@@ -19,11 +20,12 @@ import {
 import { colorToHex, tryParseColor } from '@open-pencil/scene-graph/color'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { CONNECTOR_LINE, CONNECTOR_SIDE, STROKE_CAP } from './enums'
+import { CONNECTOR_LINE, CONNECTOR_SIDE, enumProp, STROKE_CAP } from './enums'
 import { Reference } from './export/value'
 import { isColor } from './overrides/fills'
-import { isLayerRef, type LayerRefs } from './refs'
-import type { TreeNode } from './tree'
+import { isLayerRef, type LayerRef, type LayerRefs } from './refs'
+import { plainTextOf, type TreeNode } from './tree'
+import { OwnLayerProps, readElementProps } from './validation'
 
 /**
  * `<Connector from="A" to="B">`: a FigJam connector whose ends name other layers of the same
@@ -32,21 +34,60 @@ import type { TreeNode } from './tree'
  */
 export const CONNECTOR_ELEMENT = 'connector'
 
-function isPoint(value: unknown): value is Vector {
-  if (typeof value !== 'object' || value === null || !('x' in value) || !('y' in value)) {
-    return false
-  }
-  return typeof value.x === 'number' && typeof value.y === 'number'
-}
+/** A layer of the same JSX by name or `ref()`, or a point in the connector's parent. */
+const ConnectorEnd = v.union(
+  [v.string(), v.custom<LayerRef>(isLayerRef), v.object({ x: v.number(), y: v.number() })],
+  'expected a layer name, a ref(), or { x, y }'
+)
 
-function labelOf(tree: TreeNode): string {
-  return tree.children.filter((child): child is string => typeof child === 'string').join('')
-}
+/** A colour as a string, or as the colour a `designVar()` resolves to. */
+const LineColor = v.union(
+  [
+    v.pipe(
+      v.string(),
+      v.rawTransform(({ dataset, addIssue, NEVER }): Color => {
+        const color = tryParseColor(dataset.value)
+        if (color) return color
+        addIssue({ message: 'expected a colour' })
+        return NEVER
+      })
+    ),
+    v.custom<Color>(isColor)
+  ],
+  'expected a colour'
+)
 
-/** Makes the connector an element describes, its ends free until `resolveConnectorEnds`. */
-export function renderConnectorNode(graph: SceneGraph, tree: TreeNode, parentId: string) {
-  const { props } = tree
-  const line = CONNECTOR_LINE.parse(props.line)
+/** The props `<Connector>` takes: its own, and the layer props that style its line. */
+export const ConnectorProps = v.object({
+  from: v.optional(ConnectorEnd),
+  to: v.optional(ConnectorEnd),
+  fromSide: v.optional(enumProp(CONNECTOR_SIDE)),
+  toSide: v.optional(enumProp(CONNECTOR_SIDE)),
+  line: v.optional(enumProp(CONNECTOR_LINE)),
+  startCap: v.optional(enumProp(STROKE_CAP)),
+  endCap: v.optional(enumProp(STROKE_CAP)),
+  ...OwnLayerProps.entries,
+  stroke: v.optional(LineColor),
+  strokeWidth: v.optional(v.pipe(v.number(), v.gtValue(0))),
+  dashPattern: v.optional(v.array(v.number()))
+})
+
+type ConnectorPropValues = v.InferOutput<typeof ConnectorProps>
+
+/** The layer props a connector has: no place or size, which its ends give it. */
+export const ConnectorLayerProps = OwnLayerProps
+
+/**
+ * Makes the connector an element describes, with `layer`'s fields, its ends free until
+ * `resolveConnectorEnds`.
+ */
+export function renderConnectorNode(
+  graph: SceneGraph,
+  tree: TreeNode,
+  parentId: string,
+  layer: Partial<SceneNode>
+) {
+  const props = readElementProps(ConnectorProps, tree.props)
   const parent = graph.getNode(parentId)
   const connector = createConnector(
     graph,
@@ -54,15 +95,13 @@ export function renderConnectorNode(graph: SceneGraph, tree: TreeNode, parentId:
     {
       start: freeEndpoint(0, 0),
       end: freeEndpoint(0, 0),
-      lineType: line,
-      startCap: STROKE_CAP.parse(props.startCap) ?? 'NONE',
-      endCap: STROKE_CAP.parse(props.endCap) ?? 'ARROW_LINES',
-      text: labelOf(tree)
+      lineType: props.line,
+      startCap: props.startCap ?? 'NONE',
+      endCap: props.endCap ?? 'ARROW_LINES',
+      text: plainTextOf(tree)
     },
     {
-      ...(typeof props.name === 'string' && { name: props.name }),
-      ...(props.visible === false && { visible: false }),
-      ...(typeof props.opacity === 'number' && { opacity: props.opacity }),
+      ...layer,
       // A connector is drawn between layers, not placed by its parent's auto layout.
       ...(parent && parent.layoutMode !== 'NONE' && { layoutPositioning: 'ABSOLUTE' as const })
     }
@@ -72,26 +111,21 @@ export function renderConnectorNode(graph: SceneGraph, tree: TreeNode, parentId:
   return connector
 }
 
-function colorOf(value: unknown): Color | undefined {
-  if (isColor(value)) return value
-  return typeof value === 'string' ? (tryParseColor(value) ?? undefined) : undefined
+/** The layer a connector's variable binding goes on: its line for the stroke, else itself. */
+export function connectorBindingTarget(graph: SceneGraph, connector: SceneNode, field: string) {
+  const onLine = field.startsWith('strokes/') || field === 'strokeWeight'
+  return (onLine && connectorSublayers(graph, connector)?.line.id) || connector.id
 }
 
 /** Restyles the line by `stroke`, `strokeWidth`, and `dashPattern`; each left out keeps FigJam's. */
-function styleLine(graph: SceneGraph, line: SceneNode, props: TreeNode['props']) {
+function styleLine(graph: SceneGraph, line: SceneNode, props: ConnectorPropValues) {
   const [stroke = connectorStroke()] = line.strokes
-  const color = colorOf(props.stroke) ?? stroke.color
-  const weight =
-    typeof props.strokeWidth === 'number' && props.strokeWidth > 0
-      ? props.strokeWidth
-      : stroke.weight
-  const dashPattern = Array.isArray(props.dashPattern)
-    ? props.dashPattern.filter((length): length is number => typeof length === 'number')
-    : line.dashPattern
+  const color = props.stroke ?? stroke.color
+  const weight = props.strokeWidth ?? stroke.weight
   graph.updateNode(line.id, {
     strokes: [{ ...stroke, color, weight }],
     strokeWeight: weight,
-    dashPattern
+    dashPattern: props.dashPattern ?? line.dashPattern
   })
 }
 
@@ -137,11 +171,16 @@ export function resolveConnectorEnds(
     else named.set(layer.name, [layer.id])
   }
   const warnings: string[] = []
-  const endpoint = (prop: 'from' | 'to', props: TreeNode['props'], straight: boolean) => {
+  const endpoint = (
+    prop: 'from' | 'to',
+    props: ConnectorPropValues,
+    written: TreeNode['props'],
+    straight: boolean
+  ) => {
     const value = props[prop]
-    if (isPoint(value)) return freeEndpoint(value.x, value.y)
     let id: string | undefined
     if (isLayerRef(value)) id = refs.layerOf(value)
+    else if (typeof value === 'object') return freeEndpoint(value.x, value.y)
     else if (typeof value === 'string') {
       const ids = named.get(value) ?? []
       if (ids.length > 1) {
@@ -153,16 +192,17 @@ export function resolveConnectorEnds(
     }
     if (!id) {
       const missing = isLayerRef(value) ? 'refers to no layer' : 'names no layer'
-      warnings.push(`<Connector> ${endSource(prop, value)} ${missing}.`)
+      warnings.push(`<Connector> ${endSource(prop, written[prop])} ${missing}.`)
       return null
     }
     const side = props[prop === 'from' ? 'fromSide' : 'toSide']
-    return boundEndpoint(id, straight ? 'CENTER' : (CONNECTOR_SIDE.parse(side) ?? 'AUTO'))
+    return boundEndpoint(id, straight ? 'CENTER' : (side ?? 'AUTO'))
   }
   for (const { node, tree } of connectors) {
     const straight = node.connectorLineType === 'STRAIGHT'
-    const start = endpoint('from', tree.props, straight)
-    const end = endpoint('to', tree.props, straight)
+    const props = readElementProps(ConnectorProps, tree.props)
+    const start = endpoint('from', props, tree.props, straight)
+    const end = endpoint('to', props, tree.props, straight)
     graph.updateNode(node.id, {
       ...(start && { connectorStart: start }),
       ...(end && { connectorEnd: end })

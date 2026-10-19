@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import {
   createSticky,
   isWideSticky,
@@ -9,11 +11,12 @@ import {
   type SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
-import { colorToHex, parseColor } from '@open-pencil/scene-graph/color'
+import { colorToHex, tryParseColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { STICKY_TEXT_SIZE } from './enums'
-import type { TreeNode } from './tree'
+import { enumProp, STICKY_TEXT_SIZE } from './enums'
+import { plainTextOf, type TreeNode } from './tree'
+import { PlacedOwnLayerProps, readElementProps } from './validation'
 
 /**
  * `<Sticky color="yellow" author="Ada">Body</Sticky>`: a FigJam sticky note, made from the same
@@ -28,22 +31,45 @@ function isStickyColorName(value: string): value is StickyColorName {
 }
 
 /** A palette name such as `"yellow"`, or any colour. */
-function colorOf(value: unknown): Color | undefined {
-  if (typeof value !== 'string') return undefined
-  return isStickyColorName(value) ? { ...STICKY_COLORS[value] } : parseColor(value)
-}
+const StickyColor = v.pipe(
+  v.string(),
+  v.rawTransform(({ dataset, addIssue, NEVER }): Color => {
+    const name = dataset.value
+    if (isStickyColorName(name)) return { ...STICKY_COLORS[name] }
+    const color = tryParseColor(name)
+    if (color) return color
+    addIssue({ message: `expected ${Object.keys(STICKY_COLORS).join(', ')}, or a colour` })
+    return NEVER
+  })
+)
 
-function bodyOf(tree: TreeNode): string {
-  return tree.children.filter((child): child is string => typeof child === 'string').join('')
-}
+/** The layer props a note has: those that place it, but no size, fills, or layout. */
+export const StickyLayerProps = PlacedOwnLayerProps
 
-/** The note an element describes, named by its body as FigJam names a note until renamed. */
-export function renderStickyNode(graph: SceneGraph, tree: TreeNode, parentId: string) {
-  const { props } = tree
-  const text = bodyOf(tree)
-  const author = typeof props.author === 'string' ? props.author : ''
-  const parent = graph.getNode(parentId)
-  const named = typeof props.name === 'string'
+/** The props `<Sticky>` takes: its own, and the few layer props a note has. */
+export const StickyProps = v.object({
+  color: v.optional(StickyColor),
+  author: v.optional(v.string()),
+  authorVisible: v.optional(v.boolean()),
+  wide: v.optional(v.boolean()),
+  textSize: v.optional(enumProp(STICKY_TEXT_SIZE)),
+  scale: v.optional(v.pipe(v.number(), v.gtValue(0))),
+  ...StickyLayerProps.entries
+})
+
+/**
+ * The note an element describes, with `layer`'s fields; it is named by its body, as FigJam names
+ * a note, until given a name.
+ */
+export function renderStickyNode(
+  graph: SceneGraph,
+  tree: TreeNode,
+  parentId: string,
+  layer: Partial<SceneNode>
+) {
+  const props = readElementProps(StickyProps, tree.props)
+  const text = plainTextOf(tree)
+  const author = props.author ?? ''
   const sticky = createSticky(
     graph,
     parentId,
@@ -51,24 +77,14 @@ export function renderStickyNode(graph: SceneGraph, tree: TreeNode, parentId: st
       text,
       author,
       authorVisible: props.authorVisible !== false && author !== '',
-      color: colorOf(props.color),
+      color: props.color,
       wide: props.wide === true,
-      scale: typeof props.scale === 'number' && props.scale > 0 ? props.scale : 1
+      scale: props.scale ?? 1
     },
-    {
-      name: named ? String(props.name) : text.trim() || 'Sticky',
-      autoRename: !named,
-      ...(typeof props.x === 'number' && { x: props.x }),
-      ...(typeof props.y === 'number' && { y: props.y }),
-      ...(props.visible === false && { visible: false }),
-      ...(typeof props.opacity === 'number' && { opacity: props.opacity }),
-      ...(props.position === 'absolute' &&
-        parent?.layoutMode !== 'NONE' && { layoutPositioning: 'ABSOLUTE' as const })
-    }
+    { ...layer, name: layer.name ?? (text.trim() || 'Sticky'), autoRename: !layer.name }
   )
   const body = stickySublayers(graph, sticky)?.body
-  const textSize = STICKY_TEXT_SIZE.parse(props.textSize)
-  if (body && textSize) graph.updateNode(body.id, stickyBodySizeFields(textSize))
+  if (body && props.textSize) graph.updateNode(body.id, stickyBodySizeFields(props.textSize))
   return sticky
 }
 

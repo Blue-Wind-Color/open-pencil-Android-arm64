@@ -230,6 +230,24 @@ return <Frame name="Flow" w={800} h={400}>
     expect(result.warnings).toContain('<Connector> to="Nowhere" names no layer.')
   })
 
+  test('a prop of the wrong kind warns and is left out, and end warnings are kept', async () => {
+    const graph = new SceneGraph()
+    const [result] = await renderJSX(
+      graph,
+      '<Frame name="Flow" w={400} h={200}><Frame name="A" w={50} h={50} /><Connector from={5} to="A" stroke="nope" strokeWidth={0} /></Frame>'
+    )
+    expect(result.warnings).toEqual([
+      'Invalid from 5 on <connector> is ignored; expected a layer name, a ref(), or { x, y }.',
+      'Invalid stroke "nope" on <connector> is ignored; expected a colour.',
+      'Invalid strokeWidth 0 on <connector> is ignored; expected >0.',
+      '<Connector> from="5" names no layer.'
+    ])
+    const connector = getNodeOrThrow(graph, graph.getChildren(result.id)[1].id)
+    const line = connectorSublayers(graph, connector)?.line
+    expect(line?.strokeWeight).toBe(4)
+    expect(connector.connectorEnd?.nodeId).toBe(graph.getChildren(result.id)[0].id)
+  })
+
   test('name the rendered roots too, not only the layers inside them', async () => {
     const graph = new SceneGraph()
     const [flow] = await renderJSX(

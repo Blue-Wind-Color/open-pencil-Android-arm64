@@ -4,7 +4,12 @@ import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
-import { SceneGraph, STICKY_COLORS, stickySublayers } from '@open-pencil/scene-graph'
+import {
+  DEFAULT_STICKY_COLOR,
+  SceneGraph,
+  STICKY_COLORS,
+  stickySublayers
+} from '@open-pencil/scene-graph'
 
 const BOARD = `
   <Frame name="Board" w={900} h={400}>
@@ -57,6 +62,55 @@ describe('sticky notes in design JSX', () => {
     const again = new SceneGraph()
     const [reread] = await renderJSX(again, jsx)
     expect(getNodeOrThrow(again, reread.id).autoRename).toBe(false)
+  })
+
+  test('a prop of the wrong kind warns and is left out', async () => {
+    const graph = new SceneGraph()
+    const [result] = await renderJSX(
+      graph,
+      '<Sticky color="sparkle" wide="yes" scale={0} textSize="giant">Hi</Sticky>'
+    )
+    expect(result.warnings).toEqual([
+      'Unknown color "sparkle" on <sticky> is ignored; expected white, gray, red, orange, yellow, green, teal, blue, violet, pink, or a colour.',
+      'Invalid wide "yes" on <sticky> is ignored; expected boolean.',
+      'Unknown textSize "giant" on <sticky> is ignored; expected small, medium, large, extraLarge, huge.',
+      'Invalid scale 0 on <sticky> is ignored; expected >0.'
+    ])
+    const sticky = getNodeOrThrow(graph, result.id)
+    expect(sticky).toMatchObject({ type: 'STICKY', width: 240 })
+    expect(sticky.fills[0]?.color).toEqual(DEFAULT_STICKY_COLOR)
+  })
+
+  test('take layer props as any layer does: a variable binds, and a placed note in auto layout is absolute', async () => {
+    const graph = new SceneGraph()
+    graph.addCollection({
+      id: 'numbers',
+      name: 'Numbers',
+      modes: [{ modeId: 'base', name: 'Base' }],
+      defaultModeId: 'base',
+      variableIds: []
+    })
+    graph.addVariable({
+      id: 'var-faded',
+      name: 'Faded',
+      type: 'FLOAT',
+      collectionId: 'numbers',
+      valuesByMode: { base: 0.5 },
+      description: '',
+      hiddenFromPublishing: false
+    })
+    const [result] = await renderJSX(
+      graph,
+      `<Frame name="Board" flex="col" w={600} h={600}>
+  <Sticky opacity={designVar('var-faded', 0.5)}>Faded</Sticky>
+  <Sticky x={300} y={40}>Placed</Sticky>
+</Frame>`
+    )
+    expect(result.warnings ?? []).toEqual([])
+    const [faded, placed] = graph.getChildren(result.id)
+    expect(faded.opacity).toBe(0.5)
+    expect(faded.boundVariables.opacity).toBe('var-faded')
+    expect(placed).toMatchObject({ x: 300, y: 40, layoutPositioning: 'ABSOLUTE' })
   })
 
   test('join connectors to themselves, never to the layers they generate', async () => {

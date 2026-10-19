@@ -1,5 +1,6 @@
+import { omitBy } from 'es-toolkit/object'
+
 import {
-  connectorSublayers,
   setInstanceOverride,
   type Color,
   type NodeType,
@@ -17,17 +18,17 @@ import {
   componentPropertyScope,
   inferComponentSetProperties
 } from './component-properties'
-import { CONNECTOR_ELEMENT, renderConnectorNode, resolveConnectorEnds } from './connectors'
-import { elementNodeType } from './elements'
+import { CONNECTOR_ELEMENT, resolveConnectorEnds } from './connectors'
+import { elementNodeType, elementOwnLayer, type OwnLayerRenderer } from './elements'
 import { applySizeOverrides, propsToOverrides } from './props-overrides'
 import { LayerRefs } from './refs'
 import { prepareScalarBindings } from './scalar-bindings'
 import type { DesignJSXServices } from './services'
-import { renderStickyNode, STICKY_ELEMENT } from './stickies'
 import { isTextContent, TEXT_CONTENT_NAMES, textContentFields } from './text-content'
 import { FRAGMENT, isTreeNode } from './tree'
 import type { TreeNode } from './tree'
 import type { RenderOptions } from './types'
+import { readElementProps } from './validation'
 import { isVariable, resolveVariableId, type DesignVariable } from './vars'
 
 export interface RenderResult {
@@ -193,18 +194,27 @@ function preparePropsForRender(
 }
 
 /**
- * A connector, its props resolved as any layer's are: a `designVar()` stroke colour or width
- * styles and binds the line it draws, and the rest bind the connector itself.
+ * An element that draws its own layer. Its props are resolved as any layer's are, so a
+ * `designVar()` binds, and its layer props become fields as any layer's do; the element reads the
+ * rest itself.
  */
-function renderConnectorElement(graph: SceneGraph, tree: TreeNode, parentId: string): SceneNode {
+function renderOwnLayerElement(
+  graph: SceneGraph,
+  tree: TreeNode,
+  parentId: string,
+  element: OwnLayerRenderer
+): SceneNode {
   const { props, bindings } = preparePropsForRender(graph, tree.props, false, parentId)
-  const connector = renderConnectorNode(graph, { ...tree, props }, parentId)
-  const line = connectorSublayers(graph, connector)?.line
+  const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
+  const layer = omitBy(
+    propsToOverrides(readElementProps(element.layer, props), false, parentLayout),
+    (value) => value === undefined
+  )
+  const node = element.render(graph, { ...tree, props }, parentId, layer)
   for (const [field, variableId] of Object.entries(bindings)) {
-    const onLine = field.startsWith('strokes/') || field === 'strokeWeight'
-    graph.bindVariable(onLine && line ? line.id : connector.id, field, variableId)
+    graph.bindVariable(element.bindingTarget?.(graph, node, field) ?? node.id, field, variableId)
   }
-  return connector
+  return node
 }
 
 function applyBindings(graph: SceneGraph, nodeId: string, bindings: Record<string, string>): void {
@@ -515,12 +525,10 @@ function renderOwnElement<Artwork>(
       return renderArtworkNode(services, graph, tree, parentId)
     case 'instance':
       return renderInstanceNode(graph, tree, parentId)
-    case STICKY_ELEMENT:
-      return Promise.resolve(renderStickyNode(graph, tree, parentId))
-    case CONNECTOR_ELEMENT:
-      return Promise.resolve(renderConnectorElement(graph, tree, parentId))
-    default:
-      return null
+    default: {
+      const element = elementOwnLayer(tree.type)
+      return element ? Promise.resolve(renderOwnLayerElement(graph, tree, parentId, element)) : null
+    }
   }
 }
 

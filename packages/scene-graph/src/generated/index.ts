@@ -13,21 +13,26 @@ import { STICKY_KIND } from './sticky'
  * Each type is described once, here; the editor and file formats ask it instead of testing for
  * the type.
  */
-const GENERATED_FRAME_KINDS: Partial<Record<NodeType, GeneratedFrameKind>> = {
+const GENERATED_FRAME_KINDS = {
   STICKY: STICKY_KIND,
   CONNECTOR: CONNECTOR_KIND
-}
+} satisfies Partial<Record<NodeType, GeneratedFrameKind>>
+
+/** The layer types that are generated frames, for tables that must cover each of them. */
+export type GeneratedFrameType = keyof typeof GENERATED_FRAME_KINDS
 
 export const GENERATED_FRAME_TYPES: ReadonlySet<NodeType> = new Set(
-  Object.keys(GENERATED_FRAME_KINDS) as NodeType[]
+  Object.keys(GENERATED_FRAME_KINDS) as GeneratedFrameType[]
 )
 
 /** What a generated frame's type says about it, or undefined for any other layer. */
 export function generatedFrameKind(node: Pick<SceneNode, 'type'>): GeneratedFrameKind | undefined {
-  return GENERATED_FRAME_KINDS[node.type]
+  return isGeneratedFrame(node) ? GENERATED_FRAME_KINDS[node.type] : undefined
 }
 
-export function isGeneratedFrame(node: Pick<SceneNode, 'type'>): boolean {
+export function isGeneratedFrame<N extends Pick<SceneNode, 'type'>>(
+  node: N
+): node is N & { type: GeneratedFrameType } {
   return GENERATED_FRAME_TYPES.has(node.type)
 }
 

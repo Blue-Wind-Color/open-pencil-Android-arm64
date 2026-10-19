@@ -3,7 +3,7 @@ import { uniq } from 'es-toolkit/array'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { REKA_ELEMENTS } from './behaviours'
-import { elementBindings, elementProps } from './elements'
+import { elementBindings, elementProps, elementSchema } from './elements'
 import { ENUM_PROPS } from './enums'
 import { designJSXHelpers } from './helpers'
 import * as React from './mini-react'
@@ -13,6 +13,7 @@ import { TEXT_CONTENT_NAMES } from './text-content'
 import { transformDesignJSXExpression } from './transform'
 import { isTreeNode, resolveToTree, type TreeNode } from './tree'
 import type { RenderOptions as RenderJSXOptions } from './types'
+import { elementPropWarnings } from './validation'
 
 /** `const Switch = { Root: 'Switch.Root', … }`: each Reka namespace as element types. */
 const REKA_ALIASES = Object.entries(REKA_ELEMENTS)
@@ -43,6 +44,8 @@ function collectUnsupportedPropWarnings(
   // An instance sets its component's properties by name, such as `State="On"` or `Title="Hi"`.
   const properties = componentPropNames(graph, tree.props)
   const element = TEXT_CONTENT_NAMES[tree.type] ?? tree.type
+  const schema = elementSchema(tree.type)
+  if (schema) warnings.push(...elementPropWarnings(schema, tree.props, element))
   for (const [key, value] of Object.entries(tree.props)) {
     if (!supported.has(key) && !properties.includes(key)) {
       warnings.push(`Unsupported prop "${key}" on <${element}> is ignored.`)
@@ -130,7 +133,12 @@ async function renderJSX<Artwork>(
   const results = await renderRoots(services, graph, tree, options)
   // After rendering, so an instance's component set drawn in the same JSX names its variants.
   // A helper called in a loop reports each ignored option once.
-  const warnings = uniq([...unsupportedPropWarnings(graph, tree), ...helperWarnings])
+  // Prop warnings come first, then the render's own, such as a connector end naming no layer.
+  const warnings = uniq([
+    ...unsupportedPropWarnings(graph, tree),
+    ...helperWarnings,
+    ...(results[0].warnings ?? [])
+  ])
   if (warnings.length > 0) results[0].warnings = warnings
   return results
 }
