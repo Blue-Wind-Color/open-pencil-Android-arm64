@@ -415,3 +415,45 @@ test('Canvas markers and Layers panel marks can be turned off from the View menu
   await editor.page.getByRole('menuitemcheckbox', { name: 'Design issues' }).click()
   await expect.poll(markerCount).toBeGreaterThan(0)
 })
+
+/** Sixty small notes in a grid, far enough apart that each one's marker can be clicked. */
+const NOTE = { columns: 6, gapX: 100, gapY: 50, width: 40, height: 10, left: 40, top: 60 }
+
+test('A marker opens an issue past the rows its group shows at first', async () => {
+  const lastNoteId = await editor.page.evaluate((note) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.state.zoom = 1
+    store.state.panX = 0
+    store.state.panY = 0
+    let last = ''
+    for (let index = 0; index < 60; index++) {
+      last = store.graph.createNode('TEXT', store.state.currentPageId, {
+        name: `Note ${index + 1}`,
+        text: 'Note',
+        fontSize: 8,
+        x: note.left + (index % note.columns) * note.gapX,
+        y: note.top + Math.floor(index / note.columns) * note.gapY,
+        width: note.width,
+        height: note.height
+      }).id
+    }
+    return last
+  }, NOTE)
+  await waitForMarkers(editor.page)
+
+  // The sixtieth note's row is past the fifty its group lists at first.
+  const last = 59
+  const marker = {
+    x: NOTE.left + (last % NOTE.columns) * NOTE.gapX + NOTE.width + 12,
+    y: NOTE.top + Math.floor(last / NOTE.columns) * NOTE.gapY - 12
+  }
+  await hoverMarker(marker)
+  await editor.canvas.click(marker.x, marker.y)
+
+  await expect(editor.page.getByRole('tab', { name: /^Lint/ })).toHaveAttribute(
+    'aria-selected',
+    'true'
+  )
+  await expect(lintPanel(editor.page).locator(`[data-node-id="${lastNoteId}"]`)).toBeInViewport()
+})

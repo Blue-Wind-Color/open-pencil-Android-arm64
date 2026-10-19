@@ -24,9 +24,19 @@ export interface IssueGroupView {
   severity: DesignIssueSeverity
   title: string
   help: string | null
+  /** How many issues the group lists, whether or not its rows are built. */
+  count: number
+  /** The rows of an open group; a collapsed group builds none. */
   rows: IssueRowView[]
   /** Safe fixes of the rows, which the group applies together. */
   fixes: LintFixRequest[]
   /** Whether every safe fix binds a variable, which the group button names. */
   bindsOnly: boolean
 }
+
+export type DesignCheckScope = 'page' | 'selection' | 'document'
+
+export type DesignCheckEmptyState =
+  | { kind: 'no-selection'; label: string; description: string }
+  | { kind: 'filtered'; label: string }
+  | { kind: 'clean'; label: string; description: string }

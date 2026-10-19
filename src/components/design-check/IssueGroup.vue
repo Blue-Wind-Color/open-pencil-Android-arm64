@@ -6,7 +6,7 @@ import {
   DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { useDesignCheckMessages } from '@open-pencil/vue'
 
@@ -25,7 +25,10 @@ import type { IssueGroupView, IssueRowView } from './types'
 /** Rows rendered before a group asks to show the rest. */
 const ROW_PAGE_SIZE = 50
 
-const { group } = defineProps<{ group: IssueGroupView }>()
+const { group, focusedIssueId = null } = defineProps<{
+  group: IssueGroupView
+  focusedIssueId?: string | null
+}>()
 const open = defineModel<boolean>('open', { default: true })
 const emit = defineEmits<{
   openRow: [row: IssueRowView]
@@ -41,6 +44,15 @@ const menuCls = useMenuUI({ content: 'min-w-40' })
 const itemCls = menuItem({ justify: 'start' })
 const menuOpen = ref(false)
 const limit = ref(ROW_PAGE_SIZE)
+
+// A focused row past the ones shown, such as one a canvas marker opened, shows its page too.
+watch(
+  () => (focusedIssueId ? group.rows.findIndex((row) => row.issue.id === focusedIssueId) : -1),
+  (index) => {
+    if (index >= limit.value) limit.value = Math.ceil((index + 1) / ROW_PAGE_SIZE) * ROW_PAGE_SIZE
+  },
+  { immediate: true }
+)
 
 const visibleRows = computed(() => group.rows.slice(0, limit.value))
 const hiddenCount = computed(() => group.rows.length - visibleRows.value.length)
@@ -65,7 +77,7 @@ const hiddenCount = computed(() => group.rows.length - visibleRows.value.length)
       <Tip :label="group.help ?? undefined" side="left">
         <span :class="styles.groupTitle()">{{ group.title }}</span>
       </Tip>
-      <span :class="styles.groupCount()">{{ group.rows.length }}</span>
+      <span :class="styles.groupCount()">{{ group.count }}</span>
     </template>
     <template #actions>
       <AppButton v-if="group.fixes.length > 1" color="primary" size="xs" @click="emit('fixAll')">
