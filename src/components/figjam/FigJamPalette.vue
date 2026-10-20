@@ -1,0 +1,65 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+
+import { FIGJAM_COLOR_NAMES, figJamColor, type FigJamColorName } from '@open-pencil/scene-graph'
+import { colorToHex } from '@open-pencil/scene-graph/color'
+import { useFigJamMessages } from '@open-pencil/vue'
+
+import Swatches from './Swatches.vue'
+
+/** FigJam's board palette in its menus' order, closed by a swatch for no colour at all. */
+const { label, selected, noneLabel, none } = defineProps<{
+  label: string
+  selected: FigJamColorName | null
+  noneLabel: string
+  /** Whether no colour is shown, which the none swatch marks. */
+  none: boolean
+}>()
+const emit = defineEmits<{ select: [name: FigJamColorName]; none: [] }>()
+const figjam = useFigJamMessages()
+
+type FigJamMessages = (typeof figjam)['value']
+
+const COLOR_LABEL_KEYS = {
+  black: 'colorBlack',
+  darkGray: 'colorDarkGray',
+  red: 'colorRed',
+  orange: 'colorOrange',
+  yellow: 'colorYellow',
+  green: 'colorGreen',
+  teal: 'colorTeal',
+  blue: 'colorBlue',
+  violet: 'colorViolet',
+  pink: 'colorPink',
+  white: 'colorWhite',
+  gray: 'colorGray',
+  lightGray: 'colorLightGray',
+  lightRed: 'colorLightRed',
+  lightOrange: 'colorLightOrange',
+  lightYellow: 'colorLightYellow',
+  lightGreen: 'colorLightGreen',
+  lightTeal: 'colorLightTeal',
+  lightBlue: 'colorLightBlue',
+  lightViolet: 'colorLightViolet',
+  lightPink: 'colorLightPink'
+} as const satisfies Record<FigJamColorName, keyof FigJamMessages>
+
+const swatches = computed(() =>
+  FIGJAM_COLOR_NAMES.map((name) => ({
+    value: name,
+    hex: colorToHex(figJamColor(name)),
+    label: figjam.value[COLOR_LABEL_KEYS[name]]
+  }))
+)
+</script>
+
+<template>
+  <Swatches
+    :label="label"
+    :swatches="swatches"
+    :selected="selected"
+    :none="{ label: noneLabel, active: none }"
+    @select="emit('select', $event)"
+    @none="emit('none')"
+  />
+</template>

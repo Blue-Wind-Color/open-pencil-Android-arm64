@@ -22,7 +22,7 @@ function isColor(value: unknown): value is Color {
   return value !== null && typeof value === 'object' && 'r' in value && 'a' in value
 }
 
-function isStrokeValue(value: unknown): value is StrokeValue {
+export function isStrokeValue(value: unknown): value is StrokeValue {
   if (value === null || typeof value !== 'object' || !('color' in value)) return false
   return typeof value.color === 'string' || isColor(value.color)
 }

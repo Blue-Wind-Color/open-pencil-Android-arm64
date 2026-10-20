@@ -15,6 +15,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 - `@open-pencil/yoga-layout` supplies both flexbox and CSS Grid.
 - Recompute layout after demo creation and for each materialized or imported page; scope computation to the affected page or subtree where possible.
 - The first Hug/Fill dimension mutation switches only that axis to Fixed; focus is non-destructive, and mode/value changes share one undo transaction.
+- A shape with text fits itself to its label before its auto layout runs: it grows from its given size only while the label needs room, and layout never changes that given size (`packages/core/tests/layout/generated/shape-with-text.test.ts`).
 
 ## Components and instances
 

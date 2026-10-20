@@ -11,6 +11,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
@@ -44,6 +45,7 @@ export type Tool =
   | 'STAR'
   | 'TEXT'
   | 'STICKY'
+  | 'SHAPE_WITH_TEXT'
   | 'CONNECTOR'
   | 'PEN'
   | 'PENCIL'
@@ -74,6 +76,8 @@ export interface ShapeHandleHover {
 
 export interface EditorSharedState {
   activeTool: Tool
+  /** The kind the shape-with-text tool places: the one picked last, as in FigJam. */
+  shapeWithTextKind: ShapeWithTextType
   /**
    * The document can be looked at, selected in, and copied from but not changed, as for a viewer
    * or an earlier version; set with `setReadOnly`.

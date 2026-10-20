@@ -41,6 +41,7 @@ import PositionSection from './properties/PositionSection.vue'
 import SelectionColorsSection from './properties/selection/SelectionColorsSection.vue'
 import SelectionLayoutSection from './properties/selection/SelectionLayoutSection.vue'
 import SelectionActionsControl from './properties/SelectionActionsControl.vue'
+import ShapeWithTextSection from './properties/shape-with-text/ShapeWithTextSection.vue'
 import StatusesSection from './properties/status/StatusesSection.vue'
 import StatusSection from './properties/status/StatusSection.vue'
 import StickySection from './properties/sticky/StickySection.vue'
@@ -213,6 +214,7 @@ const { panels } = useI18n()
 
       <IconSection />
       <StickySection />
+      <ShapeWithTextSection />
       <ConnectorSection />
       <!-- A connector is placed and shaped by its ends, and styled by its line. -->
       <template v-if="node.type !== 'CONNECTOR'">

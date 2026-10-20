@@ -1,5 +1,6 @@
 import { DEFAULT_TEXT_HEIGHT, DEFAULT_TEXT_WIDTH } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
+import { generatedFrameText, SHAPE_WITH_TEXT_TOOL_SIZE } from '@open-pencil/scene-graph'
 import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -106,10 +107,18 @@ function settleDrawnSize(preview: ReturnType<Editor['beginNodePreview']>, node: 
   } else if (node.type === 'LINE' && node.width < 2) {
     preview.update(node.id, { width: 100, height: 0, rotation: 0 })
     return true
+  } else if (clicked && node.type === 'SHAPE_WITH_TEXT') {
+    preview.update(node.id, { width: SHAPE_WITH_TEXT_TOOL_SIZE, height: SHAPE_WITH_TEXT_TOOL_SIZE })
   } else if (clicked) {
     preview.update(node.id, { width: 100, height: 100 })
   }
   return clicked
+}
+
+/** A new text, or a new shape's label, takes typing at once, as in FigJam. */
+function startTyping(editor: Editor, node: SceneNode) {
+  const typed = node.type === 'TEXT' ? node : generatedFrameText(editor.graph, node)
+  if (typed) editor.startTextEditing(typed.id)
 }
 
 function createDraw(
@@ -147,6 +156,8 @@ function createDraw(
       // Drawn into auto layout, the layer joins the flow at the end.
       const parent = graph.getNode(node?.parentId ?? '')
       if (parent && parent.layoutMode !== 'NONE') editor.runLayoutForNode(parent.id)
+      // A shape with text lays its label out in the size it was drawn at.
+      if (node?.type === 'SHAPE_WITH_TEXT') editor.runLayoutForNode(node.id)
       // A frame made by a click, not drawn over anything, takes nothing in.
       if (node?.type === 'SECTION' || (node?.type === 'FRAME' && !clicked)) {
         editor.adoptCoveredLayers(node.id)
@@ -158,7 +169,7 @@ function createDraw(
       throw error
     }
     editor.setTool('SELECT')
-    if (node?.type === 'TEXT') editor.startTextEditing(node.id)
+    if (node) startTyping(editor, node)
   }
 
   // Creation itself is already an edit: avoid rebuilding the backing on the first held frame.

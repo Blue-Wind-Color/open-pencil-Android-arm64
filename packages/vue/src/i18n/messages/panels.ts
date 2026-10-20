@@ -382,12 +382,6 @@ export const panelMessageDefaults = {
   stickyColorBlue: 'Blue',
   stickyColorViolet: 'Violet',
   stickyColorPink: 'Pink',
-  stickyTextSize: 'Text size',
-  stickyTextSmall: 'Small',
-  stickyTextMedium: 'Medium',
-  stickyTextLarge: 'Large',
-  stickyTextExtraLarge: 'Extra large',
-  stickyTextHuge: 'Huge',
   stickyShowAuthor: 'Show author',
 
   blendModePassThrough: 'Pass through',

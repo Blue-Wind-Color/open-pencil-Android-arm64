@@ -130,4 +130,12 @@ describe('sticky notes in design JSX', () => {
     expect(connector.connectorStart?.nodeId).toBe(sticky.id)
     expect(connector.connectorEnd?.nodeId).toBe(text.id)
   })
+
+  test('take a FigJam typeface for their body, and write it back', async () => {
+    const graph = new SceneGraph()
+    const [result] = await renderJSX(graph, '<Sticky typeface="bookish">Notes</Sticky>')
+    const body = stickySublayers(graph, getNodeOrThrow(graph, result.id))?.body
+    expect(body?.fontFamily).toBe('Merriweather')
+    expect(sceneNodeToJSX(result.id, graph)).toContain('typeface="bookish"')
+  })
 })

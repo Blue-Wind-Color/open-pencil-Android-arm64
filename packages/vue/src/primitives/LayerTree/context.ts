@@ -1,6 +1,7 @@
 import { type ComputedRef, type InjectionKey, type Ref, inject, provide } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
+import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 export interface LayerNode {
   id: string
@@ -11,6 +12,8 @@ export interface LayerNode {
   slot?: boolean
   /** Whether the layer is an icon from a set, which keeps its name to be swapped or exported. */
   icon?: boolean
+  /** A shape with text's kind, which its row draws. */
+  shapeWithTextType?: ShapeWithTextType
   visible: boolean
   locked: boolean
   /** The variable modes set on the layer itself, which Figma tags its row with. */

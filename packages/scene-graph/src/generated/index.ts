@@ -2,6 +2,7 @@ import { CONNECTOR_KIND } from '../connectors/sublayers'
 import type { SceneGraph } from '../index'
 import type { NodeType, SceneNode } from '../types'
 import type { GeneratedFrameKind } from './kind'
+import { SHAPE_WITH_TEXT_KIND } from './shape-with-text'
 import { STICKY_KIND } from './sticky'
 
 /**
@@ -14,6 +15,7 @@ import { STICKY_KIND } from './sticky'
  * the type.
  */
 const GENERATED_FRAME_KINDS = {
+  SHAPE_WITH_TEXT: SHAPE_WITH_TEXT_KIND,
   STICKY: STICKY_KIND,
   CONNECTOR: CONNECTOR_KIND
 } satisfies Partial<Record<NodeType, GeneratedFrameKind>>
@@ -46,6 +48,19 @@ export function generatedFrameText(graph: SceneGraph, node: SceneNode): SceneNod
   return generatedFrameKind(node)?.text(graph, node)
 }
 
+/**
+ * `changes` with what a width or height in them also sets on a generated frame
+ * (`GeneratedFrameKind.sized`); fields `changes` sets itself, such as an undo restoring them, win.
+ */
+export function withGeneratedFrameSize(
+  node: Pick<SceneNode, 'type'>,
+  changes: Partial<SceneNode>
+): Partial<SceneNode> {
+  const kind = generatedFrameKind(node)
+  if (!kind?.sized || (changes.width === undefined && changes.height === undefined)) return changes
+  return { ...kind.sized(changes), ...changes }
+}
+
 /** Whether a layer turns: any layer but a generated frame that stays upright. */
 export function layerRotates(node: Pick<SceneNode, 'type'>): boolean {
   return generatedFrameKind(node)?.rotates ?? true
@@ -57,4 +72,5 @@ export function layerResizes(node: Pick<SceneNode, 'type'>): boolean {
 }
 
 export type { GeneratedFrameKind } from './kind'
+export * from './shape-with-text'
 export * from './sticky'

@@ -53,6 +53,7 @@ import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
 import { createShaderFrames } from './shaders/frames'
 import { createShapeActions } from './shapes'
+import { createShapeWithTextActions } from './shapes/with-text'
 import { createDefaultEditorState } from './state'
 import { createStatusActions } from './statuses'
 import { createStickyActions } from './stickies'
@@ -60,6 +61,7 @@ import { createStructureActions } from './structure'
 import { createTextActions } from './text'
 import { createPendingTextLayout } from './text/pending-layout'
 import { createTextSelectionStyle } from './text/selection-style'
+import { createGeneratedTextActions } from './text/typeface'
 import type {
   EditorContext,
   EditorEventName,
@@ -298,6 +300,8 @@ export function createEditor(options?: EditorOptions) {
   const vectorize = createVectorizeActions(ctx)
   const icons = createIconActions(ctx)
   const stickies = createStickyActions(ctx)
+  const shapesWithText = createShapeWithTextActions(ctx)
+  const generatedText = createGeneratedTextActions(ctx)
   const statuses = createStatusActions(ctx)
   createConnectorRouting(ctx)
   const connectorDrawing = createConnectorDrawActions(ctx)
@@ -475,6 +479,8 @@ export function createEditor(options?: EditorOptions) {
     ...vectorize,
     ...icons,
     ...stickies,
+    ...shapesWithText,
+    ...generatedText,
     statusWorkflow: statuses.statusWorkflow,
     getShownStatus: statuses.getShownStatus,
     setStatus: statuses.setStatus,

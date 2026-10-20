@@ -15,6 +15,7 @@ import {
   DESIGN_JSX_SUPPORTED_PROPERTY_NAMES,
   DESIGN_JSX_TEXT_PARAGRAPH_PROPERTY_NAMES
 } from './schema'
+import { renderShapeNode, ShapeLayerProps, ShapeProps } from './shapes-with-text'
 import { renderStickyNode, StickyLayerProps, StickyProps } from './stickies'
 import type { TreeNode } from './tree'
 import type { ElementPropsSchema } from './validation'
@@ -181,6 +182,14 @@ export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
     schema: StickyProps,
     ownLayer: { layer: StickyLayerProps, render: renderStickyNode },
     writes: ['STICKY']
+  },
+  {
+    name: 'Shape',
+    runtimeType: 'shape',
+    description: 'A FigJam shape with text; its text is the label.',
+    schema: ShapeProps,
+    ownLayer: { layer: ShapeLayerProps, render: renderShapeNode },
+    writes: ['SHAPE_WITH_TEXT']
   },
   {
     name: 'Connector',

@@ -45,7 +45,10 @@ export const INSTANCE_FOLLOWED_FIELDS = [
   'maskType',
   'arcData',
   'pointCount',
-  'starInnerRadius'
+  'starInnerRadius',
+  'shapeWithTextType',
+  'shapeUserHeight',
+  'shapeUserWidth'
 ] as const
 
 /** Fields a component's layer gives its copies unless an instance overrides them. */

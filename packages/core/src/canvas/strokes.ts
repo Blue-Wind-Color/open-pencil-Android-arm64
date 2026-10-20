@@ -13,7 +13,7 @@ import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { applyGradientFill, applyImageFill } from './fills'
 import type { SkiaRenderer } from './renderer'
-import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
+import { makeShapeWithTextDetailsPath, makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
 
 export function getStrokeCapEntity(r: SkiaRenderer, cap: string | undefined): EmbindEnumEntity {
   switch (cap) {
@@ -297,6 +297,12 @@ export function drawNodeStroke(
       path.delete()
       break
     }
+    case 'SHAPE_WITH_TEXT': {
+      const path = r.makePolygonPath(node)
+      canvas.drawPath(path, r.strokePaint)
+      path.delete()
+      break
+    }
     default:
       if (nodeHasSmoothCorners(node)) {
         const path = makeSmoothRRectPath(r, node)
@@ -349,6 +355,16 @@ export function drawStrokeWithAlign(
     canvas.restore()
   } else {
     r.drawNodeStroke(canvas, node, rect, hasRadius)
+  }
+  // Inner lines, such as a database's front rim, lie inside the outline: they keep the stroke's
+  // own weight whatever its alignment, and end where the outline does.
+  const details = makeShapeWithTextDetailsPath(r, node)
+  if (details) {
+    canvas.save()
+    r.clipNodeShape(canvas, node, rect, hasRadius)
+    canvas.drawPath(details, r.strokePaint)
+    canvas.restore()
+    details.delete()
   }
 }
 
@@ -431,7 +447,8 @@ export function strokeNodeShape(
       canvas.drawLine(0, 0, node.width, node.height, paint)
       return
     case 'POLYGON':
-    case 'STAR': {
+    case 'STAR':
+    case 'SHAPE_WITH_TEXT': {
       const path = r.makePolygonPath(node)
       canvas.drawPath(path, paint)
       path.delete()

@@ -2,11 +2,13 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { STICKY_COLORS, type StickyTextSize } from '@open-pencil/scene-graph'
+import { STICKY_COLORS, type FigJamTextSize, type FigJamTypeface } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useI18n } from '@open-pencil/vue'
+import { useFigJamMessages, useI18n } from '@open-pencil/vue'
 
+import Swatches from '@/components/figjam/Swatches.vue'
+import { typefaceModel, useFigJamTextOptions } from '@/components/figjam/text-options'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
@@ -14,19 +16,24 @@ import stickyControlsTheme from '@/theme/sticky-controls'
 
 type StickyColorName = keyof typeof STICKY_COLORS
 
-const { color, textSize, authorVisible } = defineProps<{
+const { color, textSize, authorVisible, typeface, bodyFont } = defineProps<{
   color: Color | null
-  textSize: StickyTextSize | null
+  textSize: FigJamTextSize | null
   authorVisible: boolean
+  typeface: FigJamTypeface | null
+  /** The body's font family, which names a face FigJam's typeface menu does not offer. */
+  bodyFont?: string
 }>()
 
 const emit = defineEmits<{
   'update:color': [value: Color]
-  'update:textSize': [value: StickyTextSize]
+  'update:textSize': [value: FigJamTextSize]
   'update:authorVisible': [value: boolean]
+  'update:typeface': [value: FigJamTypeface]
 }>()
 
 const { panels } = useI18n()
+const figjam = useFigJamMessages()
 const styles = tv(stickyControlsTheme)
 
 const COLOR_LABEL_KEYS = {
@@ -44,52 +51,55 @@ const COLOR_LABEL_KEYS = {
 
 const swatches = computed(() =>
   (Object.entries(STICKY_COLORS) as [StickyColorName, Color][]).map(([name, value]) => ({
-    name,
-    value,
+    value: name,
     hex: colorToHex(value),
-    label: panels.value[COLOR_LABEL_KEYS[name]],
-    active: color !== null && colorToHex(color) === colorToHex(value)
+    label: panels.value[COLOR_LABEL_KEYS[name]]
   }))
 )
+const selectedColor = computed(
+  () =>
+    swatches.value.find((swatch) => color !== null && swatch.hex === colorToHex(color))?.value ??
+    null
+)
 
-const sizeOptions = computed<Array<{ value: StickyTextSize; label: string }>>(() => [
-  { value: 'small', label: panels.value.stickyTextSmall },
-  { value: 'medium', label: panels.value.stickyTextMedium },
-  { value: 'large', label: panels.value.stickyTextLarge },
-  { value: 'extraLarge', label: panels.value.stickyTextExtraLarge },
-  { value: 'huge', label: panels.value.stickyTextHuge }
-])
+const { sizeOptions, typefaceOptions } = useFigJamTextOptions()
 
-const selectedSize = computed<StickyTextSize>({
+const selectedSize = computed<FigJamTextSize>({
   get: () => textSize ?? 'small',
   set: (value) => emit('update:textSize', value)
 })
+
+const selectedTypeface = typefaceModel(
+  () => typeface,
+  (value) => emit('update:typeface', value)
+)
 </script>
 
 <template>
   <div :class="styles().root()">
     <PanelFieldGroup :label="panels.stickyColor">
-      <div :class="styles().swatches()" role="radiogroup" :aria-label="panels.stickyColor">
-        <button
-          v-for="swatch in swatches"
-          :key="swatch.name"
-          type="button"
-          role="radio"
-          :aria-checked="swatch.active"
-          :aria-label="swatch.label"
-          :data-sticky-color="swatch.name"
-          :class="styles({ active: swatch.active }).swatch()"
-          :style="{ backgroundColor: swatch.hex }"
-          @click="emit('update:color', swatch.value)"
-        />
-      </div>
+      <Swatches
+        :label="panels.stickyColor"
+        :swatches="swatches"
+        :selected="selectedColor"
+        @select="emit('update:color', STICKY_COLORS[$event])"
+      />
     </PanelFieldGroup>
-    <PanelFieldGroup :label="panels.stickyTextSize">
+    <PanelFieldGroup :label="figjam.textSize">
       <AppSelect
         v-model="selectedSize"
-        :label="panels.stickyTextSize"
+        :label="figjam.textSize"
         :options="sizeOptions"
         data-property="sticky-text-size"
+      />
+    </PanelFieldGroup>
+    <PanelFieldGroup :label="figjam.typeface">
+      <AppSelect
+        v-model="selectedTypeface"
+        :label="figjam.typeface"
+        :placeholder="bodyFont ?? figjam.typeface"
+        :options="typefaceOptions"
+        data-property="sticky-typeface"
       />
     </PanelFieldGroup>
     <label :class="styles().option()">

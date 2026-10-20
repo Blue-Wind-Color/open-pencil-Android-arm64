@@ -311,5 +311,6 @@ export const TOOL_TO_NODE: Partial<Record<Tool, NodeType>> = {
   LINE: 'LINE',
   POLYGON: 'POLYGON',
   STAR: 'STAR',
-  TEXT: 'TEXT'
+  TEXT: 'TEXT',
+  SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT'
 }

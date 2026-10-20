@@ -53,9 +53,10 @@ describe('FigJam connectors', () => {
     expect(label).toMatchObject({ text: 'label', visible: true })
     expect(labelBackground.visible).toBe(true)
 
-    // Its end on a FigJam shape, which does not paste, stays where Figma drew it.
+    // Its end on a FigJam shape with text binds to the shape it pasted as.
     const straight = byName('c-straight-magnets')
-    expect(straight.connectorEnd).toMatchObject({ nodeId: null, magnet: 'NONE' })
+    expect(straight.connectorEnd).toMatchObject({ magnet: 'CENTER' })
+    expect(endName(graph, straight, 'connectorEnd')).toBe('c-shape')
     const free = byName('c-curved-free')
     expect(free.connectorEnd).toEqual({
       nodeId: null,
@@ -103,13 +104,18 @@ describe('FigJam connectors', () => {
       if (node.type === 'CONNECTOR') delete node.derivedImmutableFrameData
     }
     const graph = new SceneGraph()
-    const ids = importClipboardNodes(parsed.nodes, graph, graph.getPages()[0].id, 0, 0, parsed.blobs)
+    const ids = importClipboardNodes(
+      parsed.nodes,
+      graph,
+      graph.getPages()[0].id,
+      0,
+      0,
+      parsed.blobs
+    )
     // The fixture's other two connectors keep a cut from a label since cleared, and one ends on
     // a layer left out of the copy, so Figma's saved routes for them are not what it would route.
     const routed = ['c-elbow-auto', 'c-curved-free'].map((name) =>
-      expectDefined(
-        ids.map((id) => graph.getNode(id)).find((node) => node?.name === name)
-      )
+      expectDefined(ids.map((id) => graph.getNode(id)).find((node) => node?.name === name))
     )
     for (const connector of routed) {
       const figma = drawn.byName(connector.name)

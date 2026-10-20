@@ -16,6 +16,7 @@ import {
   designCheckMessages,
   diagnosticsMessages,
   editorMessages,
+  figJamMessages,
   filesMessages,
   fontsMessages,
   mediaMessages,
@@ -26,6 +27,7 @@ import {
   renderingMessages,
   renameMessages,
   settingsMessages,
+  shapeMessages,
   statusMessages,
   storageMessages,
   toolMessages,
@@ -51,6 +53,7 @@ export const useCredentialMessages = () => useI18nNamespace(credentialsMessages)
 export const useDesignCheckMessages = () => useI18nNamespace(designCheckMessages)
 export const useDiagnosticsMessages = () => useI18nNamespace(diagnosticsMessages)
 export const useEditorMessages = () => useI18nNamespace(editorMessages)
+export const useFigJamMessages = () => useI18nNamespace(figJamMessages)
 export const useFileMessages = () => useI18nNamespace(filesMessages)
 export const useFontMessages = () => useI18nNamespace(fontsMessages)
 export const useMediaMessages = () => useI18nNamespace(mediaMessages)
@@ -61,6 +64,7 @@ export const useRecoveryMessages = () => useI18nNamespace(recoveryMessages)
 export const useRenderingMessages = () => useI18nNamespace(renderingMessages)
 export const useRenameMessages = () => useI18nNamespace(renameMessages)
 export const useSettingsMessages = () => useI18nNamespace(settingsMessages)
+export const useShapeMessages = () => useI18nNamespace(shapeMessages)
 export const useStatusMessages = () => useI18nNamespace(statusMessages)
 export const useStorageMessages = () => useI18nNamespace(storageMessages)
 export const useToolMessages = () => useI18nNamespace(toolMessages)

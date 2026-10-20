@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
-import { stickySublayers, stickyTextSize } from '@open-pencil/scene-graph'
-import type { SceneNode, StickyTextSize } from '@open-pencil/scene-graph'
+import { figJamTextSize, figJamTypeface, stickySublayers } from '@open-pencil/scene-graph'
+import type { FigJamTextSize, FigJamTypeface, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useEditor } from '#vue/editor/context'
@@ -30,16 +30,21 @@ export function useStickyNote() {
   })
 
   const color = computed<Color | null>(() => stickies.value.at(0)?.fills.at(0)?.color ?? null)
-  const textSize = computed<StickyTextSize | null>(() =>
-    sublayers.value ? stickyTextSize(sublayers.value.body) : null
+  const textSize = computed<FigJamTextSize | null>(() =>
+    sublayers.value ? figJamTextSize(sublayers.value.body) : null
   )
   const authorVisible = computed(() => sublayers.value?.author.visible ?? false)
+  /** The body's font family, which names a face FigJam's typeface menu does not offer. */
+  const bodyFont = computed(() => sublayers.value?.body.fontFamily ?? null)
+  const typeface = computed<FigJamTypeface | null>(() =>
+    sublayers.value ? figJamTypeface(sublayers.value.body) : null
+  )
 
   function setColor(value: Color) {
     editor.setStickyColor(ids.value, value)
   }
 
-  function setTextSize(value: StickyTextSize) {
+  function setTextSize(value: FigJamTextSize) {
     editor.setStickyTextSize(ids.value, value)
   }
 
@@ -47,5 +52,20 @@ export function useStickyNote() {
     editor.setStickyAuthorVisible(ids.value, value)
   }
 
-  return { active, color, textSize, authorVisible, setColor, setTextSize, setAuthorVisible }
+  function setTypeface(value: FigJamTypeface) {
+    return editor.setGeneratedTextTypeface(ids.value, value)
+  }
+
+  return {
+    active,
+    color,
+    textSize,
+    authorVisible,
+    typeface,
+    bodyFont,
+    setColor,
+    setTextSize,
+    setAuthorVisible,
+    setTypeface
+  }
 }

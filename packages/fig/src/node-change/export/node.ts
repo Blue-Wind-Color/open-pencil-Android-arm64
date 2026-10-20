@@ -908,6 +908,13 @@ function applyNodeVisualProps(
   if (!node.autoRename) nc.autoRename = false
 }
 
+/** The width a shape with text was given, which FigJam's record has no field for. */
+function applyShapeUserWidthPluginData(node: SceneNode): void {
+  const width =
+    node.type === 'SHAPE_WITH_TEXT' && node.shapeUserWidth > 0 ? node.shapeUserWidth : undefined
+  node.pluginData = withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.shapeUserWidth, width)
+}
+
 /**
  * Import maps TEXT_PATH → TEXT. Re-emit Kiwi type 41 only while path fidelity
  * remains (materialized path data + baked glyphs). After an edit that cannot
@@ -1052,6 +1059,7 @@ export function sceneNodeToKiwiWithContext(
   applyExportSettingsPluginData(node)
   applyLibrarySourcePluginData(node)
   serializeNodeStatus(node, nc)
+  applyShapeUserWidthPluginData(node)
   applyTextPathBoxPluginData(node, savedInFigmaBox(node))
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData

@@ -22,6 +22,7 @@ export function useToolLabels() {
     PENCIL: tools.value.pencil,
     TEXT: tools.value.text,
     STICKY: tools.value.sticky,
+    SHAPE_WITH_TEXT: tools.value.shape,
     CONNECTOR: tools.value.connector,
     HAND: tools.value.hand,
     COMMENT: tools.value.comment

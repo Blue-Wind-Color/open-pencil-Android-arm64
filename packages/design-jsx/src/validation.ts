@@ -1,6 +1,10 @@
 import { mapValues } from 'es-toolkit/object'
 import * as v from 'valibot'
 
+import { tryParseColor } from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import { isColor } from './overrides/fills'
 import { isVariable } from './vars'
 
 /**
@@ -35,6 +39,23 @@ export const PlacedOwnLayerProps = v.object({
   y: v.optional(v.number()),
   position: v.optional(v.picklist(['absolute']))
 })
+
+/** A colour as a string, or as the colour a `designVar()` resolves to. */
+export const ColorProp = v.union(
+  [
+    v.pipe(
+      v.string(),
+      v.rawTransform(({ dataset, addIssue, NEVER }): Color => {
+        const color = tryParseColor(dataset.value)
+        if (color) return color
+        addIssue({ message: 'expected a colour' })
+        return NEVER
+      })
+    ),
+    v.custom<Color>(isColor)
+  ],
+  'expected a colour'
+)
 
 /** The props of an element read one at a time, each of them optional. */
 export type ElementPropsSchema = v.ObjectSchema<v.ObjectEntries, undefined>

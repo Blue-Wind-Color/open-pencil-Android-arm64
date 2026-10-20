@@ -12,6 +12,7 @@ import type { Tool } from '@open-pencil/vue'
 
 import type { ToolbarAction, ToolbarItem as ToolbarLayoutItem } from '@/app/editor/toolbar/layout'
 import { toolTip } from '@/app/editor/toolbar/shortcuts'
+import ShapeToolButton from '@/components/toolbar/ShapeToolButton.vue'
 import ToolButton from '@/components/toolbar/ToolButton.vue'
 import ToolFlyout from '@/components/toolbar/ToolFlyout.vue'
 import type { ToolbarUI, ToolIconMap, ToolLabels } from '@/components/toolbar/types'
@@ -54,6 +55,8 @@ defineSlots<{
     >
       <template v-for="item in items" :key="item.kind === 'tool' ? item.tool.key : item.action">
         <slot v-if="item.kind === 'action'" name="action" :action="item.action" />
+
+        <ShapeToolButton v-else-if="item.tool.key === 'SHAPE_WITH_TEXT'" :ui="ui" />
 
         <Tip
           v-else-if="item.tool.flyout"

@@ -16,4 +16,9 @@ export interface GeneratedFrameKind {
   resizes: boolean
   /** Whether it takes its name from its text until the user names it, as a sticky note does. */
   namedByText: boolean
+  /**
+   * What a width or height set from outside layout also sets on the frame, such as the size a
+   * shape with text was given, which layout grows it from.
+   */
+  sized?(changes: Partial<SceneNode>): Partial<SceneNode>
 }

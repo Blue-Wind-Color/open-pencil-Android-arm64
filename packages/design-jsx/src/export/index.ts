@@ -16,10 +16,11 @@ import {
   type ConnectorExportScope
 } from '../connectors'
 import { elementTag } from '../elements'
-import { stickyBody, stickyName, stickyProps } from '../stickies'
+import { shapeWithTextLabelText, shapeWithTextProps } from '../shapes-with-text'
+import { stickyBody, stickyProps } from '../stickies'
 import { rekaExport, type RekaExport } from './behaviours'
 import { iconProps } from './icons'
-import { collectProps, positionProps } from './props'
+import { collectProps, positionProps, presenceProps } from './props'
 import { textChildren } from './text'
 import { plainValue, propAttribute, Reference, type JSXProp } from './value'
 
@@ -66,6 +67,14 @@ interface OwnElement {
 }
 
 /**
+ * The name an element named by its text writes: none while the layer still follows its text, and
+ * its name once renamed, even to its text, so reading it back keeps the name from following it.
+ */
+function textNamedName(node: SceneNode): JSXProp[] {
+  return node.autoRename ? [] : [['name', node.name]]
+}
+
+/**
  * The layers whose elements take props of their own rather than the layer props: every generated
  * frame, whose sublayers its element writes as props and text.
  */
@@ -73,17 +82,24 @@ const OWN_ELEMENTS: Record<
   GeneratedFrameType,
   (graph: SceneGraph, node: SceneNode, scope?: ConnectorExportScope) => OwnElement
 > = {
-  STICKY: (graph, node) => {
-    const name = stickyName(node)
-    return {
-      props: [
-        ...(name ? [['name', name] satisfies JSXProp] : []),
-        ...positionProps(node, graph),
-        ...stickyProps(graph, node).map(([key, value]): JSXProp => [key, plainValue(value)])
-      ],
-      text: stickyBody(graph, node)
-    }
-  },
+  STICKY: (graph, node) => ({
+    props: [
+      ...textNamedName(node),
+      ...positionProps(node, graph),
+      ...stickyProps(graph, node).map(([key, value]): JSXProp => [key, plainValue(value)]),
+      ...presenceProps(node)
+    ],
+    text: stickyBody(graph, node)
+  }),
+  SHAPE_WITH_TEXT: (graph, node) => ({
+    props: [
+      ...textNamedName(node),
+      ...positionProps(node, graph),
+      ...shapeWithTextProps(graph, node),
+      ...presenceProps(node)
+    ],
+    text: shapeWithTextLabelText(graph, node)
+  }),
   CONNECTOR: (graph, node, scope) => ({
     props: connectorProps(graph, node, scope).map(([key, value]): JSXProp => [
       key,

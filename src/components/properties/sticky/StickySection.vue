@@ -6,8 +6,18 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import StickyControls from './StickyControls.vue'
 
 const { panels } = useI18n()
-const { active, color, textSize, authorVisible, setColor, setTextSize, setAuthorVisible } =
-  useStickyNote()
+const {
+  active,
+  color,
+  textSize,
+  authorVisible,
+  typeface,
+  bodyFont,
+  setColor,
+  setTextSize,
+  setAuthorVisible,
+  setTypeface
+} = useStickyNote()
 </script>
 
 <template>
@@ -16,9 +26,12 @@ const { active, color, textSize, authorVisible, setColor, setTextSize, setAuthor
       :color="color"
       :text-size="textSize"
       :author-visible="authorVisible"
+      :typeface="typeface"
+      :body-font="bodyFont ?? undefined"
       @update:color="setColor"
       @update:text-size="setTextSize"
       @update:author-visible="setAuthorVisible"
+      @update:typeface="setTypeface"
     />
   </PanelSection>
 </template>

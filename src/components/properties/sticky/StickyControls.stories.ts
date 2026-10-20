@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 
-import { DEFAULT_STICKY_COLOR, type StickyTextSize } from '@open-pencil/scene-graph'
+import { DEFAULT_STICKY_COLOR, type FigJamTextSize } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import StickyControls from './StickyControls.vue'
@@ -22,7 +22,7 @@ const meta = {
     components: { StickyControls },
     setup() {
       const color = ref<Color>({ ...DEFAULT_STICKY_COLOR })
-      const textSize = ref<StickyTextSize>('small')
+      const textSize = ref<FigJamTextSize>('small')
       const authorVisible = ref(true)
       return { color, textSize, authorVisible }
     },
@@ -32,6 +32,7 @@ const meta = {
           :color="color"
           :text-size="textSize"
           :author-visible="authorVisible"
+          :typeface="null"
           @update:color="color = $event"
           @update:text-size="textSize = $event"
           @update:author-visible="authorVisible = $event"

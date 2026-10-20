@@ -17,15 +17,14 @@ import {
   type SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
-import { colorToHex, tryParseColor } from '@open-pencil/scene-graph/color'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import { colorToHex } from '@open-pencil/scene-graph/color'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { CONNECTOR_LINE, CONNECTOR_SIDE, enumProp, STROKE_CAP } from './enums'
 import { Reference } from './export/value'
-import { isColor } from './overrides/fills'
 import { isLayerRef, type LayerRef, type LayerRefs } from './refs'
 import { plainTextOf, type TreeNode } from './tree'
-import { OwnLayerProps, readElementProps } from './validation'
+import { ColorProp, OwnLayerProps, readElementProps } from './validation'
 
 /**
  * `<Connector from="A" to="B">`: a FigJam connector whose ends name other layers of the same
@@ -40,23 +39,6 @@ const ConnectorEnd = v.union(
   'expected a layer name, a ref(), or { x, y }'
 )
 
-/** A colour as a string, or as the colour a `designVar()` resolves to. */
-const LineColor = v.union(
-  [
-    v.pipe(
-      v.string(),
-      v.rawTransform(({ dataset, addIssue, NEVER }): Color => {
-        const color = tryParseColor(dataset.value)
-        if (color) return color
-        addIssue({ message: 'expected a colour' })
-        return NEVER
-      })
-    ),
-    v.custom<Color>(isColor)
-  ],
-  'expected a colour'
-)
-
 /** The props `<Connector>` takes: its own, and the layer props that style its line. */
 export const ConnectorProps = v.object({
   from: v.optional(ConnectorEnd),
@@ -67,7 +49,7 @@ export const ConnectorProps = v.object({
   startCap: v.optional(enumProp(STROKE_CAP)),
   endCap: v.optional(enumProp(STROKE_CAP)),
   ...OwnLayerProps.entries,
-  stroke: v.optional(LineColor),
+  stroke: v.optional(ColorProp),
   strokeWidth: v.optional(v.pipe(v.number(), v.gtValue(0))),
   dashPattern: v.optional(v.array(v.number()))
 })
