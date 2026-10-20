@@ -62,7 +62,8 @@ function expression(
   }
 }
 
-const ternary = expression('TERNARY', [
+/** A function OpenPencil does not evaluate, over one alias it has and one it does not. */
+const keyframe = expression('KEYFRAME', [
   { dataType: 'ALIAS', value: { alias: { guid: guid(4) } } },
   { dataType: 'FLOAT', value: { floatValue: 8 } },
   { dataType: 'ALIAS', value: { alias: { assetRef: { key: 'missing-library-variable' } } } }
@@ -74,24 +75,24 @@ function open(source: NodeChange[], options: DocumentAssemblyOptions = {}) {
 }
 
 test('a strict read still rejects an expression it cannot evaluate', () => {
-  expect(() => materializeDocument(resources(ternary))).toThrow(
-    'Unsupported variable expression TERNARY'
+  expect(() => materializeDocument(resources(keyframe))).toThrow(
+    'Unsupported variable expression KEYFRAME'
   )
 })
 
 test('a tolerant read keeps the expression with one reference slot per alias', () => {
-  const graph = open(resources(ternary))
+  const graph = open(resources(keyframe))
   expect(graph.variables.get(VARIABLE)?.valuesByMode[DEFAULT_MODE]).toEqual({
     expression: 'UNSUPPORTED',
-    function: 'TERNARY',
-    value: { ...ternary },
+    function: 'KEYFRAME',
+    value: { ...keyframe },
     references: [TARGET, null],
     modes: []
   })
 })
 
 test('a kept expression has no value, while the variable’s other modes still resolve', () => {
-  const graph = open(resources(ternary))
+  const graph = open(resources(keyframe))
   expect(graph.resolveVariable(VARIABLE, DEFAULT_MODE)).toBeUndefined()
   expect(graph.resolveVariable(VARIABLE, OTHER_MODE)).toBe(42)
   expect(graph.variableCollections.get(COLLECTION)?.modes).toHaveLength(2)
@@ -99,7 +100,7 @@ test('a kept expression has no value, while the variable’s other modes still r
 
 test('each kept expression is reported with its variable and mode', () => {
   const diagnostics: unknown[] = []
-  open(resources(ternary), {
+  open(resources(keyframe), {
     onUnsupportedVariableExpression: (diagnostic) => diagnostics.push(diagnostic)
   })
   expect(diagnostics).toEqual([
@@ -107,7 +108,7 @@ test('each kept expression is reported with its variable and mode', () => {
   ])
 })
 
-test.each(['STRINGIFY', 'VAR_MODE_LOOKUP', 'IS_TRUTHY', 'RESOLVE_VARIANT', 'KEYFRAME', 'UNKNOWN'])(
+test.each(['VAR_MODE_LOOKUP', 'RESOLVE_VARIANT', 'KEYFRAME', 'UNKNOWN'])(
   '%s is kept rather than evaluated',
   (name) => {
     const value = open(resources(expression(name))).variables.get(VARIABLE)?.valuesByMode[
@@ -119,11 +120,33 @@ test.each(['STRINGIFY', 'VAR_MODE_LOOKUP', 'IS_TRUTHY', 'RESOLVE_VARIANT', 'KEYF
 
 test('a color composed from another expression is kept whole', () => {
   const nested = {
-    ...expression('COMPOSE_COLOR', [expression('TERNARY'), { dataType: 'FLOAT', value: {} }]),
+    ...expression('COMPOSE_COLOR', [expression('KEYFRAME'), { dataType: 'FLOAT', value: {} }]),
     resolvedDataType: 'COLOR'
   }
   const value = open(resources(nested)).variables.get(VARIABLE)?.valuesByMode[DEFAULT_MODE]
   expect(value).toMatchObject({ expression: 'UNSUPPORTED', function: 'COMPOSE_COLOR' })
+})
+
+test.each([
+  [
+    'a variable the document lacks',
+    expression('TERNARY', [
+      { dataType: 'BOOLEAN', value: { boolValue: true } },
+      { dataType: 'FLOAT', value: { floatValue: 8 } },
+      { dataType: 'ALIAS', value: { alias: { assetRef: { key: 'missing-library-variable' } } } }
+    ])
+  ],
+  [
+    'operands Figma would not resolve',
+    expression('TERNARY', [
+      { dataType: 'FLOAT', value: { floatValue: 5 } },
+      { dataType: 'FLOAT', value: { floatValue: 1 } },
+      { dataType: 'FLOAT', value: { floatValue: 2 } }
+    ])
+  ]
+])('a formula with %s is kept as the file wrote it', (_, data) => {
+  const value = open(resources(data)).variables.get(VARIABLE)?.valuesByMode[DEFAULT_MODE]
+  expect(value).toMatchObject({ expression: 'UNSUPPORTED', function: 'TERNARY' })
 })
 
 test('formulas OpenPencil evaluates are not kept opaque', () => {
@@ -139,7 +162,7 @@ test('a kept expression is written back with fields the codec does not know', ()
     dataType: 'EXPRESSION',
     value: {
       expressionValue: {
-        expressionFunction: 'TERNARY',
+        expressionFunction: 'KEYFRAME',
         expressionArguments: [
           { value: { colorValue: { r: 1, g: 0, b: 0, a: 1, colorSpace: 'DISPLAY_P3' } } },
           { value: { alias: { assetRef: { key: 'remote', version: 'v1', futureField: true } } } }

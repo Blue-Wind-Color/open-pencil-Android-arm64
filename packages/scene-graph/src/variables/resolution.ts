@@ -1,7 +1,7 @@
 import type { SceneGraph } from '../index'
 import type { Color } from '../primitives'
 import type { Variable, VariableLiteral, VariableValue } from '../types'
-import { MAX_FORMULA_DEPTH, VariableFormulaError } from './formula/evaluate'
+import { MAX_FORMULA_DEPTH, VariableFormulaError } from './formula/tree'
 import { resolveVariableValue } from './value'
 
 export function getActiveModeId(graph: SceneGraph, collectionId: string): string {

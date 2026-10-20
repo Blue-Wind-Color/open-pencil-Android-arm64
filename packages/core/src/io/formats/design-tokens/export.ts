@@ -101,7 +101,9 @@ function variableToken(
       context.issues.push({ kind: 'missing-alias', ...where })
       return undefined
     }
-    formula = printFormula(value.value, (id) => tokenReference(context.references.get(id) ?? []))
+    formula = printFormula(value.value, (id) => tokenReference(context.references.get(id) ?? []), {
+      type: (id) => context.graph.variables.get(id)?.type
+    })
     $value = literalTokenValue(variable, resolved)
   } else if (typeof value === 'object' && 'expression' in value) {
     context.issues.push({ kind: 'unsupported-expression', ...where })

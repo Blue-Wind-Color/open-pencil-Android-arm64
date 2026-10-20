@@ -1,16 +1,23 @@
+import { formulaCallOperator, FORMULA_KEYWORDS } from './signatures'
+
 /**
- * What a piece of formula text is. `reference` is a braced `{name}`, which may still be open
- * while it is typed; `name` is a bare word that names a variable; `invalid` is any character
- * the syntax has no place for.
+ * What a piece of formula text is. `reference` is a braced `{name}` and `string` a quoted
+ * `"text"`, either of which may still be open while it is typed; `name` is a bare word that
+ * names a variable; `function` is a call's name, such as `if`; `invalid` is any character the
+ * syntax has no place for.
  */
 export type FormulaTokenKind =
   | 'number'
+  | 'string'
+  | 'color'
   | 'reference'
   | 'name'
+  | 'function'
   | 'keyword'
   | 'bool'
   | 'operator'
   | 'paren'
+  | 'comma'
   | 'invalid'
 
 export interface FormulaToken {
@@ -24,12 +31,21 @@ const NUMBER = /(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/y
 const WORD = /[\p{L}_$][\p{L}\p{N}_$]*/uy
 const OPERATOR = /<=|>=|==|!=|&&|\|\||[-+*/<>!]/y
 const SPACE = /\s+/y
-const KEYWORDS = new Set(['and', 'or', 'not'])
+const COLOR = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6})(?![\p{L}\p{N}_$])/uy
 const BOOLEANS = new Set(['true', 'false'])
 
 function matchAt(pattern: RegExp, source: string, at: number) {
   pattern.lastIndex = at
   return pattern.exec(source)?.[0]
+}
+
+/** A string runs to its unescaped closing quote, or, while it is still being typed, to the end. */
+function stringEnd(source: string, at: number) {
+  for (let index = at + 1; index < source.length; index++) {
+    if (source[index] === '\\') index++
+    else if (source[index] === '"') return index + 1
+  }
+  return source.length
 }
 
 /** A reference runs to its `}`, or, while it is still being typed, to the next `{` or the end. */
@@ -43,7 +59,8 @@ function referenceEnd(source: string, at: number) {
 
 function wordKind(word: string): FormulaTokenKind {
   const lower = word.toLowerCase()
-  if (KEYWORDS.has(lower)) return 'keyword'
+  if (FORMULA_KEYWORDS.has(lower)) return 'keyword'
+  if (formulaCallOperator(lower)) return 'function'
   return BOOLEANS.has(lower) ? 'bool' : 'name'
 }
 
@@ -60,7 +77,11 @@ export function readFormulaToken(source: string, at: number): FormulaToken {
   })
   const char = source[at] ?? ''
   if (char === '{') return token('reference', referenceEnd(source, at) - at)
+  if (char === '"') return token('string', stringEnd(source, at) - at)
   if (char === '(' || char === ')') return token('paren', 1)
+  if (char === ',') return token('comma', 1)
+  const color = matchAt(COLOR, source, at)
+  if (color) return token('color', color.length)
   const number = matchAt(NUMBER, source, at)
   if (number) return token('number', number.length)
   const word = matchAt(WORD, source, at)

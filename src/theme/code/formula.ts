@@ -15,7 +15,7 @@ export function formulaEditorTheme(dark: boolean) {
 const formulaHighlighting = syntaxHighlighting(
   HighlightStyle.define([
     { tag: tags.keyword, color: 'var(--color-code-keyword)' },
-    { tag: [tags.number, tags.bool], color: 'var(--color-code-number)' },
+    { tag: [tags.number, tags.bool, tags.color], color: 'var(--color-code-number)' },
     { tag: tags.string, color: 'var(--color-code-string)' },
     { tag: tags.function(tags.variableName), color: 'var(--color-code-tag)' },
     {

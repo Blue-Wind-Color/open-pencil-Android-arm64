@@ -129,5 +129,9 @@
   "formula": "Formel",
   "useFormula": "Formel verwenden",
   "formulaPlaceholder": "Wert oder Formel",
+  "formulaFunctions": "Funktionen",
+  "formulaIf": "Bedingung, dann, sonst",
+  "formulaText": "Zahl als Text",
+  "formulaTruthy": "Wert als wahr oder falsch",
   "unsupportedExpression": "OpenPencil kann {name} noch nicht auswerten. Beim Speichern bleibt es unverändert."
 }

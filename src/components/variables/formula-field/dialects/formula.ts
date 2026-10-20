@@ -27,7 +27,11 @@ const formulaLanguage = StreamLanguage.define<null>({
   },
   tokenTable: {
     reference: tags.special(tags.variableName),
-    name: tags.variableName
+    name: tags.variableName,
+    string: tags.string,
+    color: tags.color,
+    function: tags.function(tags.variableName),
+    comma: tags.separator
   } satisfies Partial<Record<FormulaTokenKind, unknown>>,
   // Adjacent operators or parentheses stay separate nodes, as the parser reads them.
   mergeTokens: false
@@ -35,10 +39,12 @@ const formulaLanguage = StreamLanguage.define<null>({
 
 /**
  * A variable path being typed, such as `space/ba`, reads as names joined by `/` operators; its
- * start is the first name of the run of touching tokens that ends at the caret.
+ * start is the first name of the run of touching tokens that ends at the caret. A function's
+ * name, such as `text`, is still a word being typed until a `(` follows it.
  */
 function pathStart(state: EditorState, last: SyntaxNode): number | undefined {
   const isSlash = (node: SyntaxNode) => node.name === 'operator' && nodeText(state, node) === '/'
+  if (last.name === 'function') return last.from
   if (last.name !== 'name' && !isSlash(last)) return undefined
   let first = last
   for (let node = last.prevSibling; node && node.to === first.from; node = node.prevSibling) {
@@ -61,14 +67,15 @@ function completionRange(context: CompletionContext) {
   const operand =
     !token ||
     token.name === 'operator' ||
+    token.name === 'comma' ||
     (token.name === 'keyword' && token.to < pos) ||
     (token.name === 'paren' && nodeText(state, token) === '(')
   return operand || context.explicit ? { from: pos, braced: false } : undefined
 }
 
 /**
- * Variables complete wherever an operand goes: while a name or `{` reference is typed, and
- * after an operator, `(`, or a logic word. The syntax tree says which, so completion agrees
+ * Variables and functions complete wherever an operand goes: while a name or `{` reference is
+ * typed, and after an operator, `(`, `,` or a logic word; inside braces only variables do. The syntax tree says which, so completion agrees
  * with the parser about what each piece of text is.
  */
 function completeFormula(references: () => readonly ReferenceCompletion[]) {
@@ -79,19 +86,23 @@ function completeFormula(references: () => readonly ReferenceCompletion[]) {
     return {
       from,
       validFor: braced ? /^[^{}]*$/ : /^[\p{L}\p{N}_$/]*$/u,
-      options: references().map(
-        ({ label, section, detail, insert }) =>
-          ({
-            label,
-            section,
-            detail,
-            type: 'variable',
-            apply(view, _completion, _from, to) {
-              const start = braced ? from - 1 : from
-              const end = braced && view.state.sliceDoc(to, to + 1) === '}' ? to + 1 : to
-              view.dispatch(insertCompletionText(view.state, insert, start, end))
-            }
-          }) satisfies Completion
+      options: references().flatMap(({ label, section, detail, insert, kind = 'variable' }) =>
+        braced && kind === 'function'
+          ? []
+          : ({
+              label,
+              section,
+              detail,
+              type: kind,
+              apply(view, _completion, _from, to) {
+                const start = braced ? from - 1 : from
+                const next = view.state.sliceDoc(to, to + 1)
+                const end = braced && next === '}' ? to + 1 : to
+                // A call whose `(` is already there takes its name alone.
+                const text = kind === 'function' && next === '(' ? label : insert
+                view.dispatch(insertCompletionText(view.state, text, start, end))
+              }
+            } satisfies Completion)
       )
     }
   }

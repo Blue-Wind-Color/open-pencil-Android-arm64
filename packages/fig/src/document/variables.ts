@@ -6,9 +6,10 @@ import {
   VARIABLE_FORMULA_OPERATORS,
   variableFormulaSchema,
   variableColorExpressionSchema,
-  formulaResultType,
+  inferFormulaType,
   MAX_FORMULA_DEPTH,
   type SceneGraph,
+  type VariableFormulaNode,
   type VariableValue,
   type VariableColorExpression
 } from '@open-pencil/scene-graph'
@@ -75,22 +76,41 @@ function expressionValue(
     )
   }
   const operator = parsed.output
-  const type = formulaResultType(operator)
-  if (entry.resolvedDataType && entry.resolvedDataType !== type)
-    throw new Error(`Expression result type does not match ${entry.resolvedDataType}`)
   const operands = (expression?.expressionArguments ?? []).map((arg) => {
-    const operand = valueOf(arg, resolve, depth + 1)
-    return typeof operand === 'object' &&
-      'expression' in operand &&
-      operand.expression === 'FORMULA'
-      ? operand.value
-      : operand
+    // A formula needs every variable it uses; one the document lacks keeps the file's tree.
+    if ((arg.dataType ?? arg.resolvedDataType) === 'ALIAS' && !resolve(arg.value?.alias))
+      throw new UnsupportedExpressionError(`${operator} uses a variable this document lacks`)
+    return formulaOperand(valueOf(arg, resolve, depth + 1))
   })
-  return v.parse(variableFormulaSchema, {
+  const node = { operator, operands }
+  // Figma writes the result type; a formula of references alone would otherwise leave it open.
+  const written = v.safeParse(
+    v.picklist(['FLOAT', 'BOOLEAN', 'STRING', 'COLOR']),
+    entry.resolvedDataType
+  )
+  const formula = v.safeParse(variableFormulaSchema, {
     expression: 'FORMULA',
-    type,
-    value: { operator, operands }
+    type: written.success ? written.output : inferredType(node),
+    value: node
   })
+  // Operands Figma itself would not resolve are kept as written rather than refused.
+  if (!formula.success) throw new UnsupportedExpressionError(`Invalid ${operator} expression`)
+  return formula.output
+}
+
+function inferredType(node: VariableFormulaNode) {
+  try {
+    return inferFormulaType(node)
+  } catch {
+    return undefined
+  }
+}
+
+/** An operand as a formula holds it; a color expression inside a formula is not one it can. */
+function formulaOperand(operand: VariableValue): VariableFormulaNode {
+  if (typeof operand !== 'object' || !('expression' in operand)) return operand
+  if (operand.expression === 'FORMULA') return operand.value
+  throw new UnsupportedExpressionError(`Unsupported nested ${operand.expression} expression`)
 }
 
 function colorExpression(

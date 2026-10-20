@@ -1,4 +1,4 @@
-import type { Variable, VariableFormulaNode } from '@open-pencil/scene-graph'
+import { foldFormula, type Variable, type VariableFormulaNode } from '@open-pencil/scene-graph'
 
 import { tokenNumberToCSS, variableUnit } from './values'
 
@@ -53,17 +53,24 @@ export function formulaToCSS(
 }
 
 function convert(node: VariableFormulaNode, context: FormulaContext): Term {
-  if (typeof node === 'number') return { kind: 'literal', value: node }
-  if (typeof node === 'boolean') throw new UnsupportedFormulaError('mixes true/false into a number')
-  if ('aliasId' in node) return reference(node.aliasId, context)
-  const operands = node.operands.map((operand) => convert(operand, context))
-  const [a, b] = operands
-  if (node.operator === 'NEGATE' && operands.length === 1) return negate(a, context)
-  if (operands.length !== 2 || !isArithmetic(node.operator))
-    throw new UnsupportedFormulaError('uses logic that CSS has no form for')
-  if (a.kind === 'literal' && b.kind === 'literal')
-    return { kind: 'literal', value: fold(node.operator, a.value, b.value) }
-  return binary(node.operator, a, b, context)
+  return foldFormula<Term>(node, {
+    literal: (value) => {
+      if (typeof value === 'number') return { kind: 'literal', value }
+      if (typeof value === 'boolean')
+        throw new UnsupportedFormulaError('mixes true/false into a number')
+      throw new UnsupportedFormulaError('mixes text or a color into a number')
+    },
+    reference: (id) => reference(id, context),
+    operation: ({ operator }, operands) => {
+      const [a, b] = operands
+      if (operator === 'NEGATE' && operands.length === 1) return negate(a, context)
+      if (operands.length !== 2 || !isArithmetic(operator))
+        throw new UnsupportedFormulaError('uses logic that CSS has no form for')
+      if (a.kind === 'literal' && b.kind === 'literal')
+        return { kind: 'literal', value: fold(operator, a.value, b.value) }
+      return binary(operator, a, b, context)
+    }
+  })
 }
 
 function reference(id: string, { variables, names }: FormulaContext): Term {
@@ -71,6 +78,8 @@ function reference(id: string, { variables, names }: FormulaContext): Term {
   const name = names.get(id)
   if (!target || !name)
     throw new UnsupportedFormulaError('refers to a variable that does not exist')
+  if (target.type !== 'FLOAT')
+    throw new UnsupportedFormulaError('uses a variable that is not a number')
   const dimension = variableUnit(target) !== 'none'
   return { kind: 'css', text: `var(--${name})`, precedence: ATOM, dimension }
 }

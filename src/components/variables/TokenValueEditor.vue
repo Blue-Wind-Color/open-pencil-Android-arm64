@@ -3,7 +3,13 @@ import { tv } from 'tailwind-variants'
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 
 import { tokenNumberToCSS, variableUnit } from '@open-pencil/dom-css/export'
-import type { Variable, VariableValue } from '@open-pencil/scene-graph'
+import {
+  formulaSymbol,
+  type Variable,
+  type VariableLiteral,
+  type VariableValue
+} from '@open-pencil/scene-graph'
+import { colorToHex8 } from '@open-pencil/scene-graph/color'
 import { useI18n } from '@open-pencil/vue'
 
 import {
@@ -57,13 +63,20 @@ const insertionCaret = ref<number | null>(null)
 /** Errors show once a value is committed, not while it is being typed. */
 const committed = ref(false)
 const commitError = ref('')
-/** A true/false value shows a switch until the user asks to write a formula instead. */
+/**
+ * A true/false, text or color value shows its own control, a switch or the `control` slot, until
+ * the user asks to write a formula instead.
+ */
 const writingFormula = ref(false)
 
 const value = computed(() => variable.valuesByMode[modeId])
 const saved = computed(() => tokenEditorText(variable, modeId, formula))
-const showsSwitch = computed(
-  () => variable.type === 'BOOLEAN' && typeof value.value === 'boolean' && !writingFormula.value
+/** A value written as it is: not a variable and not a formula. */
+function isLiteral(of: VariableValue | undefined) {
+  return of !== undefined && (typeof of !== 'object' || !('aliasId' in of || 'expression' in of))
+}
+const showsControl = computed(
+  () => variable.type !== 'FLOAT' && isLiteral(value.value) && !writingFormula.value
 )
 const alias = computed(() =>
   typeof value.value === 'object' && 'aliasId' in value.value ? value.value.aliasId : undefined
@@ -86,10 +99,12 @@ watch(draft, () => {
   commitError.value = ''
 })
 
-/** A resolved value as the list shows it: a number with its unit, or true and false. */
-function resultText(resolved: VariableValue | undefined) {
+/** A resolved value as the list shows it: a number with its unit, true and false, quoted text, or a hex color. */
+function resultText(resolved: VariableLiteral | undefined) {
   if (typeof resolved === 'number') return tokenNumberToCSS(resolved, variableUnit(variable))
   if (typeof resolved === 'boolean') return String(resolved)
+  if (typeof resolved === 'string') return JSON.stringify(resolved)
+  if (typeof resolved === 'object') return colorToHex8(resolved)
   return '—'
 }
 
@@ -104,14 +119,31 @@ function withValue(candidate: AliasCandidate) {
 }
 const pickerItems = computed(() => candidates.map(withValue))
 const referenceItems = computed(() => formula.candidates.map(withValue))
-const completions = computed(() =>
-  referenceItems.value.map((item) => ({
+/** The functions a formula calls, after the variables, each with what it takes. */
+const functionCompletions = computed(() =>
+  (
+    [
+      ['TERNARY', variables.value.formulaIf],
+      ['STRINGIFY', variables.value.formulaText],
+      ['IS_TRUTHY', variables.value.formulaTruthy]
+    ] as const
+  ).map(([operator, detail]) => ({
+    label: formulaSymbol(operator),
+    section: variables.value.formulaFunctions,
+    detail,
+    insert: `${formulaSymbol(operator)}(`,
+    kind: 'function' as const
+  }))
+)
+const completions = computed(() => [
+  ...referenceItems.value.map((item) => ({
     label: item.name,
     section: item.collection,
     detail: item.text,
     insert: formula.reference(item.id)
-  }))
-)
+  })),
+  ...functionCompletions.value
+])
 const candidatesBySource = computed(
   () => new Map(referenceItems.value.map((item) => [formula.reference(item.id), item]))
 )
@@ -160,13 +192,13 @@ const unit = computed(() => {
 function apply() {
   committed.value = true
   if (draft.value === saved.value) {
-    if (typeof value.value === 'boolean') writingFormula.value = false
+    if (isLiteral(value.value)) writingFormula.value = false
     return true
   }
   const edit = preview.value.edit
   if (!edit) return false
   emit('apply', edit.value)
-  if (typeof edit.value === 'boolean') writingFormula.value = false
+  if (isLiteral(edit.value)) writingFormula.value = false
   return true
 }
 function done() {
@@ -180,7 +212,7 @@ function cancel() {
   field.value?.blur()
 }
 
-const offersFormula = computed(() => showsSwitch.value)
+const offersFormula = computed(() => showsControl.value)
 async function writeFormula() {
   writingFormula.value = true
   await nextTick()
@@ -196,7 +228,7 @@ function toggleExpression() {
 /** A literal is replaced by the variable; inside a formula, the variable goes at the caret. */
 function insert(id: string) {
   const reference = formula.reference(id)
-  if (showsSwitch.value || preview.value.edit?.kind === 'literal' || !selection.value) {
+  if (showsControl.value || preview.value.edit?.kind === 'literal' || !selection.value) {
     const parsed = formula.parse(modeId, reference)
     emit('apply', parsed.value)
     return
@@ -214,7 +246,7 @@ function restoreInputFocus(event: Event) {
   field.value?.setSelectionRange(caret, caret)
   selection.value = { start: caret, end: caret }
 }
-/** The variable button sits at the field's end, or beside the switch, as in the properties panel. */
+/** The variable button sits at the field's end, or beside the control, as in the properties panel. */
 const picker = computed(() => ({
   items: pickerItems.value,
   selected: alias.value,
@@ -262,12 +294,15 @@ function detach() {
         </IconButton>
       </span>
     </div>
-    <div v-if="showsSwitch" :class="ui.control()">
+    <div v-if="showsControl" :class="ui.control()">
       <AppSwitch
+        v-if="variable.type === 'BOOLEAN'"
         :model-value="value === true"
         :label="label"
         @update:model-value="emit('apply', $event)"
       />
+      <!-- Text and colors edit in the inspector's own field and color picker. -->
+      <slot v-else name="control" />
       <VariablePicker v-bind="picker" />
     </div>
     <TokenFormulaField

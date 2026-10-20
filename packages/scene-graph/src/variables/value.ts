@@ -2,11 +2,9 @@ import { compact } from 'es-toolkit/array'
 import * as v from 'valibot'
 
 import type { VariableLiteral, VariableValue, VariableUnsupportedExpression } from '../types'
-import {
-  evaluateVariableFormula,
-  mapFormulaReferences,
-  VariableFormulaError
-} from './formula/evaluate'
+import { formulaValueType } from './formula/check'
+import { evaluateVariableFormula } from './formula/evaluate'
+import { mapFormulaReferences, VariableFormulaError } from './formula/tree'
 import { variableColorExpressionSchema } from './schema'
 
 export function isUnsupportedVariableValue(
@@ -72,7 +70,7 @@ export function resolveVariableValue(
     // Evaluation checks every node it visits, so drawing never walks the tree twice; files are
     // checked against the full schema where they are read.
     const result = evaluateVariableFormula(value.value, resolve)
-    if (typeof result !== (value.type === 'FLOAT' ? 'number' : 'boolean'))
+    if (formulaValueType(result) !== value.type)
       throw new VariableFormulaError('Wrong formula result type')
     return result
   }

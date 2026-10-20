@@ -59,3 +59,31 @@ test('true/false values read words, references, logic and number comparisons', (
   expect(() => read('{width}')).toThrow('This gives a number, but visible holds true or false')
   expect(() => read('var(--enabled)')).toThrow()
 })
+
+test('text and color values read quoted text, hex colors and formulas, and show as they read', () => {
+  const graph = new SceneGraph()
+  const collection = graph.createCollection('Copy')
+  const mode = collection.defaultModeId
+  graph.createVariable('count', 'FLOAT', collection.id, 3)
+  graph.createVariable('dark', 'BOOLEAN', collection.id, true)
+  const label = graph.createVariable('label', 'STRING', collection.id, 'Say "hi"')
+  const surface = graph.createVariable('surface', 'COLOR', collection.id, {
+    r: 1,
+    g: 0,
+    b: 0,
+    a: 1
+  })
+  const text = (value: string) => parseTokenEditorText(label, mode, value, actions(graph, label))
+  const color = (value: string) =>
+    parseTokenEditorText(surface, mode, value, actions(graph, surface))
+
+  expect(tokenEditorText(label, mode, actions(graph, label))).toBe('"Say \\"hi\\""')
+  expect(tokenEditorText(surface, mode, actions(graph, surface))).toBe('#FF0000')
+  expect(text('"Hello"')).toMatchObject({ value: 'Hello', kind: 'literal' })
+  expect(text('text({count}) + " items"')).toMatchObject({ resolved: '3 items', kind: 'formula' })
+  expect(color('#00FF00')).toMatchObject({ value: { r: 0, g: 1, b: 0, a: 1 }, kind: 'literal' })
+  expect(color('if({dark}, #000000, #FFFFFF)')).toMatchObject({
+    resolved: { r: 0, g: 0, b: 0, a: 1 },
+    kind: 'formula'
+  })
+})

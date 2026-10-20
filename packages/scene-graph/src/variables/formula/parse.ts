@@ -1,14 +1,20 @@
-import type { VariableFormulaNode, VariableFormulaOperator } from '@open-pencil/scene-graph'
+import * as v from 'valibot'
 
+import type { Color, VariableFormulaNode, VariableFormulaOperator } from '@open-pencil/scene-graph'
+import { tryParseColor } from '@open-pencil/scene-graph/color'
+
+import { checkFormulaOperands } from './check'
 import {
-  checkFormulaOperands,
-  formulaResultType,
-  MAX_FORMULA_DEPTH,
-  MAX_FORMULA_LENGTH,
-  VariableFormulaError,
+  binaryFormulaOperator,
+  formulaCallOperator,
+  formulaPrecedence,
+  FORMULA_NON_ASSOCIATIVE,
+  FORMULA_PREFIX_PRECEDENCE,
+  prefixFormulaOperator,
   type FormulaValueType
-} from './evaluate'
+} from './signatures'
 import { formulaTokenName, formulaTokens, type FormulaToken } from './tokens'
+import { MAX_FORMULA_DEPTH, MAX_FORMULA_LENGTH, VariableFormulaError } from './tree'
 
 /*
  * A small Pratt parser rather than a library. jsep configures operators globally, which the calc
@@ -17,53 +23,33 @@ import { formulaTokenName, formulaTokens, type FormulaToken } from './tokens'
  * consumer, and its generic error recovery would still need these type and arity messages.
  */
 
-/** Binding strength of each binary operator; prefix operators bind tighter than all of them. */
-export const FORMULA_PRECEDENCE: Partial<Record<VariableFormulaOperator, number>> = {
-  OR: 1,
-  AND: 2,
-  EQUALS: 3,
-  NOT_EQUAL: 3,
-  LESS_THAN: 4,
-  LESS_THAN_OR_EQUAL: 4,
-  GREATER_THAN: 4,
-  GREATER_THAN_OR_EQUAL: 4,
-  ADDITION: 5,
-  SUBTRACTION: 5,
-  MULTIPLY: 6,
-  DIVIDE: 6
-}
-export const FORMULA_PREFIX_PRECEDENCE = 7
-/** Comparisons do not chain: `a < b < c` reads as a mistake, not as `(a < b) < c`. */
-export const FORMULA_NON_ASSOCIATIVE = new Set([3, 4])
-
-const BINARY = new Map<string, VariableFormulaOperator>([
-  ['+', 'ADDITION'],
-  ['-', 'SUBTRACTION'],
-  ['*', 'MULTIPLY'],
-  ['/', 'DIVIDE'],
-  ['==', 'EQUALS'],
-  ['!=', 'NOT_EQUAL'],
-  ['<', 'LESS_THAN'],
-  ['<=', 'LESS_THAN_OR_EQUAL'],
-  ['>', 'GREATER_THAN'],
-  ['>=', 'GREATER_THAN_OR_EQUAL'],
-  ['and', 'AND'],
-  ['&&', 'AND'],
-  ['or', 'OR'],
-  ['||', 'OR']
-])
-
 /** Check what the editor may leave open while typing, which a saved formula cannot hold. */
 function checkedTokens(source: string): FormulaToken[] {
   const tokens = formulaTokens(source)
   for (const token of tokens) {
     if (token.kind === 'invalid') throw new VariableFormulaError(`Unexpected ${token.text}`)
+    if (token.kind === 'string' && (token.text.length < 2 || !token.text.endsWith('"')))
+      throw new VariableFormulaError('A text is missing its closing "')
     if (token.kind !== 'reference') continue
     if (!token.text.endsWith('}'))
       throw new VariableFormulaError('A reference is missing its closing }')
     if (!formulaTokenName(token)) throw new VariableFormulaError('Empty variable reference')
   }
   return tokens
+}
+
+/** A quoted string's text, read with JSON's escapes, as Figma reads it. */
+function stringValue(token: FormulaToken): string {
+  const parsed = v.safeParse(v.pipe(v.string(), v.parseJson(), v.string()), token.text)
+  if (!parsed.success) throw new VariableFormulaError(`Invalid text ${token.text}`)
+  return parsed.output
+}
+
+/** `#RRGGBB`, or `#RRGGBBAA` with opacity. */
+function colorValue(token: FormulaToken): Color {
+  const color = tryParseColor(token.text)
+  if (!color) throw new VariableFormulaError(`Invalid color ${token.text}`)
+  return color
 }
 
 export interface FormulaReference {
@@ -96,14 +82,26 @@ export function parseFormulaSyntax(
       : ''
 
   function operation(operator: VariableFormulaOperator, operands: ParsedFormula[]): ParsedFormula {
-    checkFormulaOperands(
+    const type = checkFormulaOperands(
       operator,
       operands.map((operand) => operand.type)
     )
-    return {
-      node: { operator, operands: operands.map((operand) => operand.node) },
-      type: formulaResultType(operator)
+    return { node: { operator, operands: operands.map((operand) => operand.node) }, type }
+  }
+
+  /** A call's operands, `(a, b)`, after its name. */
+  function call(operator: VariableFormulaOperator, name: string, depth: number): ParsedFormula {
+    if (symbolAt(tokens.at(index++)) !== '(') throw new VariableFormulaError(`Write ${name}(…)`)
+    const operands: ParsedFormula[] = []
+    if (symbolAt(peek()) !== ')') {
+      operands.push(expression(0, depth + 1))
+      while (peek()?.kind === 'comma') {
+        index++
+        operands.push(expression(0, depth + 1))
+      }
     }
+    if (symbolAt(tokens.at(index++)) !== ')') throw new VariableFormulaError('Missing )')
+    return operation(operator, operands)
   }
 
   function prefix(depth: number): ParsedFormula {
@@ -111,6 +109,10 @@ export function parseFormulaSyntax(
     const token = tokens.at(index++)
     if (!token) throw new VariableFormulaError('The formula ends too early')
     if (token.kind === 'number') return { node: Number(token.text), type: 'FLOAT' }
+    if (token.kind === 'string') return { node: stringValue(token), type: 'STRING' }
+    if (token.kind === 'color') return { node: colorValue(token), type: 'COLOR' }
+    const callee = token.kind === 'function' ? formulaCallOperator(token.text) : undefined
+    if (callee) return call(callee, token.text.toLowerCase(), depth)
     if (token.kind === 'reference' || token.kind === 'name') {
       const { id, type } = reference(formulaTokenName(token))
       return { node: { aliasId: id }, type }
@@ -126,33 +128,27 @@ export function parseFormulaSyntax(
       }
       case '+':
         return prefix(depth + 1)
-      case '-': {
-        const operand = expression(FORMULA_PREFIX_PRECEDENCE, depth + 1)
-        if (typeof operand.node === 'number') return { node: -operand.node, type: 'FLOAT' }
-        return operation('NEGATE', [operand])
-      }
-      case 'not':
-      case '!':
-        return operation('NOT', [expression(FORMULA_PREFIX_PRECEDENCE, depth + 1)])
     }
-    throw new VariableFormulaError(`Unexpected ${token.text}`)
+    const operator = prefixFormulaOperator(symbolAt(token))
+    if (!operator) throw new VariableFormulaError(`Unexpected ${token.text}`)
+    const operand = expression(FORMULA_PREFIX_PRECEDENCE, depth + 1)
+    // A negative number is a literal, not the negation of one.
+    if (operator === 'NEGATE' && typeof operand.node === 'number')
+      return { node: -operand.node, type: 'FLOAT' }
+    return operation(operator, [operand])
   }
 
   function expression(minimum: number, depth: number): ParsedFormula {
     let left = prefix(depth)
     for (;;) {
-      const operator = BINARY.get(symbolAt(peek()))
-      const precedence = operator ? (FORMULA_PRECEDENCE[operator] ?? 0) : 0
+      const operator = binaryFormulaOperator(symbolAt(peek()))
+      const precedence = operator ? (formulaPrecedence(operator) ?? 0) : 0
       if (!operator || precedence <= minimum) return left
       index++
       const right = expression(precedence, depth + 1)
       left = operation(operator, [left, right])
-      const next = BINARY.get(symbolAt(peek()))
-      if (
-        next &&
-        FORMULA_NON_ASSOCIATIVE.has(precedence) &&
-        FORMULA_PRECEDENCE[next] === precedence
-      )
+      const next = binaryFormulaOperator(symbolAt(peek()))
+      if (next && FORMULA_NON_ASSOCIATIVE.has(precedence) && formulaPrecedence(next) === precedence)
         throw new VariableFormulaError('Join comparisons with and or or')
     }
   }

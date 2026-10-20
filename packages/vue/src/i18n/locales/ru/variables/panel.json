@@ -129,5 +129,9 @@
   "formula": "Формула",
   "useFormula": "Использовать формулу",
   "formulaPlaceholder": "Значение или формула",
+  "formulaFunctions": "Функции",
+  "formulaIf": "условие, тогда, иначе",
+  "formulaText": "число как текст",
+  "formulaTruthy": "значение как истина или ложь",
   "unsupportedExpression": "OpenPencil пока не умеет вычислять {name}. При сохранении оно остаётся как есть."
 }

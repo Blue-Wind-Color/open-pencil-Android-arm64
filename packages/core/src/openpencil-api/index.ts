@@ -3,7 +3,8 @@ import {
   BEHAVIOUR_KINDS,
   parseVariableFormula,
   type BehaviourKind,
-  type BehaviourSpec
+  type BehaviourSpec,
+  type VariableLiteral
 } from '@open-pencil/scene-graph'
 
 import type { FigmaAPI } from '#core/figma-api/index'
@@ -43,16 +44,18 @@ export class OpenPencilAPI {
   constructor(private readonly figma: FigmaAPI) {}
 
   /**
-   * Set a numeric or Boolean token formula by collection, variable and optional mode names.
-   * References use `{variable/name}` or `{Collection::variable/name}` and persist by ID; a
-   * true/false formula can compare numbers, as in `{width} > 600 and not {loading}`.
+   * Set a token formula by collection, variable and optional mode names. References use
+   * `{variable/name}` or `{Collection::variable/name}` and persist by ID; a true/false formula
+   * can compare numbers, as in `{width} > 600 and not {loading}`, and `if()`, `text()` and
+   * `truthy()` pick values, write text, and test text or numbers, as in
+   * `if({compact}, "Hi", "Hello, " + {name})`.
    */
   setVariableFormula(
     collectionName: string,
     variableName: string,
     source: string,
     modeName?: string
-  ): number | boolean {
+  ): VariableLiteral {
     const graph = this.figma.graph
     const collections = [...graph.variableCollections.values()].filter(
       (item) => item.name === collectionName

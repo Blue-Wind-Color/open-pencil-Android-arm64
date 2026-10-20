@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { parseFigBuffer } from '@open-pencil/fig'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { parseVariableFormula } from '@open-pencil/scene-graph'
 
@@ -67,4 +68,42 @@ test.each([
     expression: 'FORMULA', type: 'FLOAT', value: { ...value, operands: [...value.operands] }
   })
   await expect(exportFigFile(graph)).rejects.toThrow()
+})
+
+test('text, truthiness and if() formulas survive a .fig save, written with the functions Figma uses', async () => {
+  await initCodec()
+  const graph = new SceneGraph()
+  const collection = graph.createCollection('Tokens')
+  const mode = collection.defaultModeId
+  graph.createVariable('count', 'FLOAT', collection.id, 3)
+  graph.createVariable('name', 'STRING', collection.id, 'Ada')
+  graph.createVariable('dark', 'BOOLEAN', collection.id, true)
+  graph.createVariable('ink', 'COLOR', collection.id, { r: 0, g: 0, b: 0, a: 1 })
+  const formulas = {
+    label: ['STRING', 'if({dark}, "Hi, " + {name}, text({count}) + " items")'],
+    named: ['BOOLEAN', 'truthy({name})'],
+    gap: ['FLOAT', 'if({count} > 2, 16, 8)'],
+    surface: ['COLOR', 'if(not {dark}, {ink}, #FFFFFF)']
+  } as const
+  for (const [name, [type, source]] of Object.entries(formulas)) {
+    const variable = graph.createVariable(name, type, collection.id, type === 'FLOAT' ? 0 : '')
+    variable.valuesByMode[mode] = parseVariableFormula(graph, variable.id, mode, source).value
+  }
+  const bytes = await exportFigFile(graph)
+  const reopened = await parseFigFile(Uint8Array.from(bytes).buffer)
+  const resolved = (name: string) =>
+    reopened.resolveVariable(
+      [...reopened.variables.values()].find((variable) => variable.name === name)?.id ?? ''
+    )
+  expect(['label', 'named', 'gap', 'surface'].map(resolved)).toEqual([
+    'Hi, Ada',
+    true,
+    16,
+    { r: 1, g: 1, b: 1, a: 1 }
+  ])
+  const functions = parseFigBuffer(Uint8Array.from(bytes).buffer)
+    .nodeChanges.filter((node) => node.type === 'VARIABLE')
+    .map((node) => node.variableDataValues?.entries?.[0].variableData.value?.expressionValue)
+    .flatMap((expression) => (expression ? [expression.expressionFunction] : []))
+  expect(functions).toEqual(['TERNARY', 'IS_TRUTHY', 'TERNARY', 'TERNARY'])
 })

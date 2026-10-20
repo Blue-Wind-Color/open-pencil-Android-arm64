@@ -18,6 +18,8 @@ import {
   type Variable,
   type VariableCollection,
   type VariableColorExpression,
+  type VariableFormula,
+  type VariableLiteral,
   type VariableValue
 } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
@@ -49,9 +51,9 @@ export interface TokenRow {
 }
 
 export interface TokenFormulaActions {
-  /** Variables a formula can use; a true/false formula can also compare numbers. */
+  /** Variables a formula can use, which may be of other types than the one it gives. */
   candidates: AliasCandidate[]
-  parse: (modeId: string, source: string) => { value: VariableValue; resolved: number | boolean }
+  parse: (modeId: string, source: string) => { value: VariableValue; resolved: VariableLiteral }
   format: (value: VariableValue) => string
   reference: (id: string) => string
 }
@@ -88,6 +90,25 @@ function aliasResult(variable: Variable, resolved: VariableValue | undefined) {
   return undefined
 }
 
+/** A formula's result in this mode, a color's as its hex, with the formula as it reads. */
+function formulaMode(
+  graph: SceneGraph,
+  variable: Variable,
+  modeId: string,
+  value: VariableFormula
+): TokenModeValue {
+  const resolved = graph.resolveVariable(variable.id, modeId)
+  const color = typeof resolved === 'object' && 'r' in resolved ? resolved : undefined
+  return {
+    modeId,
+    css: (color ? colorToHex(color) : aliasResult(variable, resolved)) ?? '',
+    color,
+    formula: printFormula(value.value, (id) => graph.variables.get(id)?.name ?? id, {
+      type: (id) => graph.variables.get(id)?.type
+    })
+  }
+}
+
 function modeValue(
   graph: SceneGraph,
   variable: Variable,
@@ -99,16 +120,7 @@ function modeValue(
     if (value.expression === 'UNSUPPORTED') return { modeId, css: '', unsupported: value.function }
     if (value.expression === 'COMPOSE_COLOR')
       return colorExpressionMode(graph, variable, modeId, value)
-    const resolved = graph.resolveVariable(variable.id, modeId)
-    let result: string | undefined
-    if (typeof resolved === 'number') result = tokenNumberToCSS(resolved, variableUnit(variable))
-    if (typeof resolved === 'boolean') result = String(resolved)
-    return {
-      modeId,
-      css: result ?? '',
-      formula: printFormula(value.value, (id) => graph.variables.get(id)?.name ?? id),
-      expression
-    }
+    return { ...formulaMode(graph, variable, modeId, value), expression }
   }
   if (typeof value === 'object' && 'aliasId' in value) {
     const target = graph.variables.get(value.aliasId)
@@ -360,12 +372,16 @@ export function aliasCandidates(graph: SceneGraph, variable: Variable): AliasCan
   return referenceCandidates(graph, variable, [variable.type])
 }
 
-/** Variables a number or true/false formula can refer to: a true/false one compares numbers too. */
+/**
+ * Variables a formula can refer to. Numbers, text and true/false values mix through comparisons,
+ * `+`, `text()`, `truthy()` and `if()`; colors only fill an `if()` that gives a color.
+ */
 export function formulaCandidates(graph: SceneGraph, variable: Variable): AliasCandidate[] {
+  const mixed = ['FLOAT', 'BOOLEAN', 'STRING'] as const
   return referenceCandidates(
     graph,
     variable,
-    variable.type === 'BOOLEAN' ? ['BOOLEAN', 'FLOAT'] : [variable.type]
+    variable.type === 'COLOR' ? [...mixed, 'COLOR'] : mixed
   )
 }
 

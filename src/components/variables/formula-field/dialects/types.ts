@@ -1,15 +1,20 @@
 import type { CompletionSource } from '@codemirror/autocomplete'
 import type { Extension } from '@codemirror/state'
 
-/** A variable the field can refer to, as its completion list shows it. */
+/** A variable the field can refer to, or a function it can call, as its completion list shows it. */
 export interface ReferenceCompletion {
   label: string
-  /** The collection, which groups the list as the variable picker does. */
+  /** The collection, which groups the list as the variable picker does, or the functions' heading. */
   section: string
-  /** The variable's current value, shown at the row's end. */
+  /** The variable's current value, or what the function takes, shown at the row's end. */
   detail: string
-  /** The reference as the field's text spells it, such as `{space/md}` or `var(--space-md)`. */
+  /**
+   * The text inserted: a reference as the field spells it, such as `{space/md}` or
+   * `var(--space-md)`, or a call's opening, such as `if(`.
+   */
   insert: string
+  /** A function is offered only where a bare name goes, never inside a `{` reference. */
+  kind?: 'variable' | 'function'
 }
 
 /** A finished reference in the text, which the field shows as a pill. */

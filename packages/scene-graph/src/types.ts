@@ -848,7 +848,7 @@ export interface VariableColorExpression {
 }
 
 export type VariableLiteral = Color | number | string | boolean
-/** Figma's `ExpressionFunction` names for the arithmetic, comparison and logic a formula uses. */
+/** Figma's `ExpressionFunction` names for the arithmetic, comparison, logic and text a formula uses. */
 export const VARIABLE_FORMULA_OPERATORS = [
   'ADDITION',
   'SUBTRACTION',
@@ -863,20 +863,20 @@ export const VARIABLE_FORMULA_OPERATORS = [
   'GREATER_THAN_OR_EQUAL',
   'AND',
   'OR',
-  'NOT'
+  'NOT',
+  'STRINGIFY',
+  'IS_TRUTHY',
+  'TERNARY'
 ] as const
 export type VariableFormulaOperator = (typeof VARIABLE_FORMULA_OPERATORS)[number]
-export type VariableFormulaNode =
-  | number
-  | boolean
-  | VariableAlias
-  | {
-      operator: VariableFormulaOperator
-      operands: VariableFormulaNode[]
-    }
+export interface VariableFormulaOperation {
+  operator: VariableFormulaOperator
+  operands: VariableFormulaNode[]
+}
+export type VariableFormulaNode = VariableLiteral | VariableAlias | VariableFormulaOperation
 export interface VariableFormula {
   expression: 'FORMULA'
-  type: 'FLOAT' | 'BOOLEAN'
+  type: VariableType
   value: VariableFormulaNode
 }
 /**
