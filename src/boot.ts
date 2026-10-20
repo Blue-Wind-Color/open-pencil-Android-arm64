@@ -6,6 +6,7 @@ import { createRetainedScopePlugin } from '@open-pencil/vue'
 
 import './app.css'
 import { recordRuntimeError } from '@/app/diagnostics'
+import { installCanvasKitBinary } from '@/app/editor/canvas/canvaskit'
 import { preloadFonts } from '@/app/editor/fonts'
 import { installBundledFonts } from '@/app/editor/fonts/bundled'
 import { observeBootErrors } from '@/app/shell/support/boot'
@@ -22,6 +23,7 @@ import router from './router'
  */
 export async function boot(): Promise<void> {
   installBundledFonts()
+  installCanvasKitBinary()
   preloadFonts()
   const head = createHead()
   const app = createApp(App)

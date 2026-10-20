@@ -19,7 +19,6 @@ import {
   localAutomationToken,
   openPencilAutomationPlugin
 } from './vite/automation'
-import { copyCanvasKitAssetsPlugin } from './vite/canvaskit-assets'
 import { cloudPortalBrandPlugin } from './vite/cloud-portal'
 import { aiIconCollection } from './vite/icons'
 import { openPencilPwaPlugin } from './vite/pwa'
@@ -52,7 +51,6 @@ export default defineConfig(async ({ command, mode }) => {
     optimizeDeps: { include: ['ai/test'] },
     plugins: [
       rawMarkdownPlugin(),
-      cloudPortal ? undefined : copyCanvasKitAssetsPlugin(),
       tailwindcss(),
       Icons({ compiler: 'vue3', customCollections: { ai: aiIconCollection() } }),
       Components({ resolvers: [IconsResolver({ prefix: 'icon', customCollections: ['ai'] })] }),
