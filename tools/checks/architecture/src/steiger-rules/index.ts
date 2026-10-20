@@ -1,14 +1,13 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { parse as parseVueSfc } from 'vue/compiler-sfc'
-
 import { noCrossPackageReexportShims } from './cross-package-reexport-shims.ts'
 import {
   noDynamicTailwindStateClasses,
   noVueTemplateUIHooksOrSVG
 } from './dynamic-tailwind-classes.ts'
 import { noGraphBuildersInFrontEnds } from './graph-builders.ts'
+import { noNativeTitleAttributesInVue } from './native-titles.ts'
 import {
   collectFiles,
   collectFolders,
@@ -337,15 +336,16 @@ const noNonUIImportsInSharedUI = createImportRule(
   }
 )
 
-// The editor's root and router, the desktop Software Update window's page entry, and the Cloud
-// portal's entry and router.
+// The editor's root and router, the desktop Software Update window's page entry, the Cloud
+// portal's entry and router, and the metrics dashboard's entry.
 const VIEW_ENTRYPOINTS = new Set([
   'src/App.vue',
   'src/main.ts',
   'src/router.ts',
   'src/updater.ts',
   'src/cloud/main.ts',
-  'src/cloud/router.ts'
+  'src/cloud/router.ts',
+  'src/metrics/main.ts'
 ])
 
 const noViewsImportedOutsideEntry = createImportRule(
@@ -357,14 +357,19 @@ const noViewsImportedOutsideEntry = createImportRule(
   }
 )
 
-// The Cloud portal is served by the Cloud server on its own; it reuses the app's UI, never the
-// editor, so its build stays small.
+// The Cloud portal is served by the Cloud server on its own, and the metrics dashboard by the
+// feedback Worker; both reuse the app's UI, never the editor, so their builds stay small.
 const CLOUD_PORTAL_SOURCES = [
   'src/cloud/',
   'src/views/cloud/',
   'src/app/cloud-portal/',
   'src/components/cloud-portal/',
-  'src/theme/cloud-portal/'
+  'src/theme/cloud-portal/',
+  'src/metrics/',
+  'src/views/metrics/',
+  'src/app/metrics/',
+  'src/components/metrics/',
+  'src/theme/metrics/'
 ]
 const EDITOR_ONLY_MODULES = ['src/app/editor/', 'src/app/shell/']
 
@@ -376,7 +381,7 @@ const noEditorImportsInCloudPortal = createImportRule(
       specifier.startsWith('canvaskit-wasm') ||
       EDITOR_ONLY_MODULES.some((prefix) => resolved?.startsWith(prefix))
     if (!editorOnly) return null
-    return 'The Cloud portal must not import editor sessions, CanvasKit, or the app shell, so `bun run build:cloud-portal` stays small.'
+    return 'The Cloud portal and the metrics dashboard must not import editor sessions, CanvasKit, or the app shell, so their standalone builds stay small.'
   }
 )
 
@@ -421,30 +426,6 @@ const noHardcodedMacOSShortcutGlyphs = createTextRule(
   }
 )
 
-const VUE_ATTRIBUTE_NODE = 6
-const VUE_DIRECTIVE_NODE = 7
-
-type VueTemplateNode = {
-  type?: number
-  name?: string
-  arg?: { content?: string }
-  props?: VueTemplateNode[]
-  children?: VueTemplateNode[]
-  loc?: { start?: { line?: number; column?: number } }
-}
-
-function walkVueTemplateAst(node: VueTemplateNode, visitor: (node: VueTemplateNode) => void) {
-  visitor(node)
-  for (const prop of node.props ?? []) walkVueTemplateAst(prop, visitor)
-  for (const child of node.children ?? []) walkVueTemplateAst(child, visitor)
-}
-
-function vuePropName(prop: VueTemplateNode) {
-  if (prop.type === VUE_ATTRIBUTE_NODE) return prop.name ?? null
-  if (prop.type === VUE_DIRECTIVE_NODE && prop.name === 'bind') return prop.arg?.content ?? null
-  return null
-}
-
 const SHARED_TEST_ID_ALLOWLIST = new Set([
   'packages/vue/src/primitives/ColorPicker/ColorPickerRoot.vue'
 ])
@@ -469,33 +450,6 @@ const noProductionTestIdsInSharedLayers = createTextRule(
         column: lines.at(-1)?.length ?? 0
       })
     }
-    return diagnostics
-  }
-)
-
-const noNativeTitleAttributesInVue = createTextRule(
-  'open-pencil/no-native-title-attributes-in-vue',
-  (sourceRel, content) => {
-    if (
-      !sourceRel.endsWith('.vue') ||
-      (!sourceRel.startsWith('src/') && !sourceRel.startsWith('packages/vue/src/'))
-    ) {
-      return []
-    }
-
-    const template = parseVueSfc(content, { filename: sourceRel }).descriptor.template?.ast
-    if (!template) return []
-
-    const diagnostics: Array<{ message: string; line?: number; column?: number }> = []
-    walkVueTemplateAst(template as VueTemplateNode, (node) => {
-      if (vuePropName(node) !== 'title') return
-      const loc = node.loc?.start
-      diagnostics.push({
-        message: 'Use Tip/Reka tooltip patterns instead of native title attributes.',
-        line: loc?.line,
-        column: loc?.column
-      })
-    })
     return diagnostics
   }
 )

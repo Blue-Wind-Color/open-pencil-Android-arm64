@@ -67,6 +67,20 @@ export async function createTestService() {
     ACCESS_TEAM_DOMAIN: 'https://openpencil.cloudflareaccess.com',
     ACCESS_AUD: 'admin-audience',
     POSTHOG_PERSONAL_KEY: 'phx_test',
+    // The built dashboard page as the asset binding serves it, at its file path only.
+    ASSETS: {
+      async fetch(input: RequestInfo | URL) {
+        const { pathname } = new URL(input instanceof Request ? input.url : String(input))
+        if (pathname === '/admin/metrics.html')
+          return new Response('<!doctype html><title>Metrics</title>', {
+            headers: { 'Content-Type': 'text/html' }
+          })
+        return new Response(null, { status: 404 })
+      },
+      connect() {
+        throw new Error('The test asset binding has no sockets')
+      }
+    },
     PING_LIMITER: limiters.ping,
     INGEST_LIMITER: limiters.ingest,
     WAITLIST_LIMITER: limiters.waitlist,

@@ -173,6 +173,21 @@ describe('admin access', () => {
     expect(response.headers.get('Cache-Control')).toBe('private, no-store')
   })
 
+  test('serves the dashboard page only through Access, without caching', async () => {
+    expect((await service.request('/admin/')).status).toBe(403)
+    expect((await service.request('/admin')).status).toBe(403)
+    const headers = { 'cf-access-jwt-assertion': await accessToken(signingKey) }
+    const page = await service.request('/admin/', { headers })
+    expect(page.status).toBe(200)
+    expect(page.headers.get('Content-Type')).toBe('text/html')
+    expect(page.headers.get('Cache-Control')).toBe('private, no-store')
+    expect(await page.text()).toContain('<title>Metrics</title>')
+    const folder = await service.request('/admin', { headers })
+    expect(folder.status).toBe(302)
+    expect(folder.headers.get('Location')).toBe('/admin/')
+    expect((await service.request('/admin/missing.js', { headers })).status).toBe(404)
+  })
+
   test('rejects a missing, malformed, or reversed range', async () => {
     const token = await accessToken(signingKey)
     for (const query of [
@@ -201,10 +216,23 @@ describe('metrics snapshot API', () => {
     ])
   })
 
+  test('earliest is the first day with pings or backfilled visits', async () => {
+    expect((await snapshot()).earliest).toBeNull()
+    await ping('2026-10-12', { version: '0.16.0-beta.2', platform: 'macos', app: 'desktop' }, 6)
+    expect((await snapshot()).earliest).toBe('2026-10-12')
+    await database()
+      .insertInto('siteVisits')
+      .values({ day: '2026-09-22', host: 'openpencil.dev', visits: 2000 })
+      .execute()
+    expect((await snapshot()).earliest).toBe('2026-09-22')
+  })
+
   test('an end after today stops at today', async () => {
     const result = await snapshot('2026-10-19', '2026-12-31')
     expect(result.end).toBe('2026-10-20')
     expect(result.dailyActive.map((day) => day.day)).toEqual(['2026-10-19', '2026-10-20'])
+    // Visits are recorded after a day ends, so today has none to show.
+    expect(result.visits.map((day) => day.day)).toEqual(['2026-10-19'])
   })
 
   test('versions split the newest stable release from the rest and mark its first day', async () => {

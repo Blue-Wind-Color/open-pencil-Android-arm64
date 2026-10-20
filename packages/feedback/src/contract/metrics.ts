@@ -69,6 +69,8 @@ export type MetricsUsage = v.InferOutput<typeof MetricsUsageSchema>
 export const MetricsSnapshotSchema = v.object({
   asOf: v.pipe(v.string(), v.isoTimestamp()),
   today: IsoDay,
+  /** The first day anything was recorded (pings or visits), or `null` before the first one. */
+  earliest: v.nullable(IsoDay),
   start: IsoDay,
   end: IsoDay,
   /** Installs that pinged each day, by desktop and web. */
@@ -82,7 +84,7 @@ export const MetricsSnapshotSchema = v.object({
   }),
   /** The first day each stable version sent a ping, within the range. */
   releases: v.array(v.object({ day: IsoDay, version: v.string() })),
-  /** Cloudflare visits each day to the website and to the web app. */
+  /** Cloudflare visits each finished day to the website and to the web app; today is not recorded yet. */
   visits: v.array(v.object({ day: IsoDay, site: Count, app: Count })),
   website: v.object({ pages: v.array(RankedCountSchema), countries: v.array(RankedCountSchema) }),
   github: v.object({

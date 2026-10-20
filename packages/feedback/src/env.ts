@@ -1,4 +1,4 @@
-import type { D1Database, RateLimit, SendEmail } from '@cloudflare/workers-types/index'
+import type { D1Database, Fetcher, RateLimit, SendEmail } from '@cloudflare/workers-types/index'
 
 /**
  * The Worker's bindings, from `wrangler.jsonc` and its secrets. They are declared here with
@@ -8,6 +8,8 @@ import type { D1Database, RateLimit, SendEmail } from '@cloudflare/workers-types
  */
 export interface FeedbackBindings {
   DB: D1Database
+  /** The metrics dashboard's built page, served only through the admin routes. */
+  ASSETS: Fetcher
   EMAIL: SendEmail
   PING_LIMITER: RateLimit
   INGEST_LIMITER: RateLimit

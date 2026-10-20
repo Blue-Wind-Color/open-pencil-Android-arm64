@@ -276,6 +276,22 @@ async function waitlist(db: Kysely<FeedbackDatabase>, range: MetricsQuery) {
   }
 }
 
+/** The first day anything was recorded: visits are backfilled, so they can predate the first ping. */
+async function firstDay(db: Kysely<FeedbackDatabase>): Promise<string | null> {
+  const [pinged, visited] = await Promise.all([
+    db
+      .selectFrom('usagePings')
+      .select((eb) => eb.fn.min<string>('day').as('day'))
+      .executeTakeFirst(),
+    db
+      .selectFrom('siteVisits')
+      .select((eb) => eb.fn.min<string>('day').as('day'))
+      .executeTakeFirst()
+  ])
+  const days = [pinged?.day, visited?.day].filter((day) => typeof day === 'string')
+  return days.toSorted().at(0) ?? null
+}
+
 /**
  * The dashboard's data for a range of UTC days: pings, snapshots, and the waitlist from D1, and
  * usage from PostHog. PostHog failing leaves `usage` empty rather than failing the whole page.
@@ -291,9 +307,16 @@ export async function buildSnapshot(
   const range = { start: query.start, end: end.toString() }
   const days = eachDay(parseDate(range.start), end).map(String)
   const db = createFeedbackDatabase(env.DB)
-  const [pinged, visited, repository, signups, usage] = await Promise.all([
+  const [earliest, pinged, visited, repository, signups, usage] = await Promise.all([
+    firstDay(db),
     pings(db, range, days),
-    site(db, env, range, days),
+    // Visits are recorded once a day has ended, so today never has any.
+    site(
+      db,
+      env,
+      range,
+      days.filter((day) => parseDate(day).compare(today) < 0)
+    ),
     github(db, range, days),
     waitlist(db, range),
     fetchUsage(env, services, range).catch((error: unknown) => {
@@ -304,6 +327,7 @@ export async function buildSnapshot(
   return {
     asOf: now.toISOString(),
     today: today.toString(),
+    earliest,
     ...range,
     ...pinged,
     ...visited,

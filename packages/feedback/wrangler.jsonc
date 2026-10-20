@@ -36,6 +36,15 @@
     { "name": "WAITLIST_LIMITER", "namespace_id": "1003", "simple": { "limit": 5, "period": 60 } }
   ],
   "send_email": [{ "name": "EMAIL" }],
+  // The metrics dashboard, built by `vite build --mode metrics` at the repository root. Its page
+  // lives under admin/, which always runs the Worker first so Access is checked; only the
+  // public brand artwork is served directly.
+  "assets": {
+    "directory": "../../dist-metrics",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "run_worker_first": ["/admin", "/admin/*"]
+  },
   // Just after midnight UTC the metrics snapshot records the day that ended; later, retention runs.
   "triggers": { "crons": ["5 0 * * *", "17 3 * * *"] },
   // Set with `wrangler secret put`; locally from `.dev.vars` (see `.dev.vars.example`).

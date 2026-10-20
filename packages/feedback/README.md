@@ -6,6 +6,7 @@ The Cloudflare Worker behind `feedback.openpencil.dev`. It is operated by the Op
 | --- | --- | --- |
 | `POST /ping` | The daily anonymous ping. | One counter per day and build (version, OS, architecture, desktop or web, browser family). Nothing per install, no addresses. |
 | `POST /ingest` | Opt-in usage stats, forwarded to PostHog EU. Refuses any event or property not in `src/contract`. | Nothing. PostHog gets no client address, person profile, or GeoIP. |
+| `GET /admin/` | The team's metrics dashboard, built from the app's `metrics.html` (`bun run build:metrics` writes `dist-metrics/`, which Wrangler uploads as the Worker's assets), behind Cloudflare Access. | Nothing. |
 | `GET /admin/api/snapshot?start&end` | The metrics dashboard's data for a range of UTC days, behind Cloudflare Access. | Nothing; it reads pings, snapshots, and the waitlist from D1 (email domains only) and asks PostHog for usage. |
 | `POST /waitlist` | OpenPencil Cloud waitlist sign-ups from the website and the web app's Settings, checked by Turnstile and confirmed by email. | The address and optional note; unconfirmed sign-ups are removed after seven days. |
 
@@ -20,7 +21,10 @@ cp packages/feedback/.dev.vars.example packages/feedback/.dev.vars
 bun --filter @open-pencil/feedback dev       # wrangler dev with a local D1
 bun run test:feedback                        # typecheck and tests against a local D1
 bun --filter @open-pencil/feedback types     # after changing wrangler.jsonc
+bun run build:metrics                        # the dashboard page in dist-metrics/, for deploys
 ```
+
+The dashboard's components have Storybook stories under `App/Metrics/Dashboard`.
 
 Apply migrations to the local database with `bunx wrangler d1 migrations apply feedback --local` from this folder.
 

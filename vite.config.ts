@@ -32,9 +32,13 @@ export default defineConfig(async ({ command, mode }) => {
   // `--mode cloud-portal` builds only the Cloud server's own pages (`cloud.html`), without the
   // editor, its demo document, CanvasKit, or the PWA.
   const cloudPortal = mode === 'cloud-portal'
+  // `--mode metrics` builds only the metrics dashboard (`metrics.html`) for the feedback Worker,
+  // which serves it under /admin behind Cloudflare Access.
+  const metrics = mode === 'metrics'
+  const standalone = cloudPortal || metrics
   // `VITE_OPENPENCIL_CLOUD=off` builds the editor without OpenPencil Cloud.
   const cloud = loadEnv(mode, __dirname, 'VITE_').VITE_OPENPENCIL_CLOUD !== 'off'
-  await Promise.all([ensureBrandAssets(['web']), cloudPortal ? undefined : ensureDemoDocument()])
+  await Promise.all([ensureBrandAssets(['web']), standalone ? undefined : ensureDemoDocument()])
   return {
     resolve: {
       alias: createOpenPencilAliases(__dirname, { cloud })
@@ -54,25 +58,33 @@ export default defineConfig(async ({ command, mode }) => {
       tailwindcss(),
       Icons({ compiler: 'vue3', customCollections: { ai: aiIconCollection() } }),
       Components({ resolvers: [IconsResolver({ prefix: 'icon', customCollections: ['ai'] })] }),
-      cloudPortal ? undefined : openPencilAutomationPlugin(command, host),
+      standalone ? undefined : openPencilAutomationPlugin(command, host),
       vue(),
-      cloudPortal ? cloudPortalBrandPlugin() : openPencilPwaPlugin()
+      metrics
+        ? cloudPortalBrandPlugin((outDir) => resolve(outDir, '..'))
+        : cloudPortal
+          ? cloudPortalBrandPlugin()
+          : openPencilPwaPlugin()
     ],
     clearScreen: false,
-    publicDir: cloudPortal ? false : 'public',
+    publicDir: standalone ? false : 'public',
+    base: metrics ? '/admin/' : '/',
     build: {
       // Syntax is lowered to the supported browser baseline; APIs are not polyfilled.
       target: viteBuildTarget(),
       chunkSizeWarningLimit: 2500,
-      outDir: cloudPortal ? 'dist-cloud-portal' : 'dist',
+      outDir: metrics ? 'dist-metrics/admin' : cloudPortal ? 'dist-cloud-portal' : 'dist',
       rolldownOptions: {
-        // The desktop Software Update window is its own page; the Cloud portal builds alone.
-        input: cloudPortal
-          ? { cloud: resolve(__dirname, 'cloud.html') }
-          : {
-              main: resolve(__dirname, 'index.html'),
-              updater: resolve(__dirname, 'updater.html')
-            }
+        // The desktop Software Update window is its own page; the Cloud portal and the metrics
+        // dashboard build alone.
+        input: metrics
+          ? { metrics: resolve(__dirname, 'metrics.html') }
+          : cloudPortal
+            ? { cloud: resolve(__dirname, 'cloud.html') }
+            : {
+                main: resolve(__dirname, 'index.html'),
+                updater: resolve(__dirname, 'updater.html')
+              }
       }
     },
     server: createDevServerOptions(host, __dirname)
