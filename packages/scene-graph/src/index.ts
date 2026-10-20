@@ -68,7 +68,8 @@ export {
   createDefaultNode,
   defaultStrokeAlign,
   FITTED_CONTAINER_TYPES,
-  newStrokeGeometry
+  newStrokeGeometry,
+  SIDE_STROKE_TYPES
 } from './node-defaults'
 export {
   copyInstanceComponentProps,

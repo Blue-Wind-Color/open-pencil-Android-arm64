@@ -103,6 +103,7 @@ export const CONNECTOR_KIND: GeneratedFrameKind = {
   text: (graph, frame) => connectorSublayers(graph, frame)?.label,
   rotates: false,
   resizes: false,
+  strokesAndEffects: true,
   namedByText: false
 }
 

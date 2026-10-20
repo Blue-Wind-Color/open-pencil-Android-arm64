@@ -231,6 +231,15 @@ export const FITTED_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
   'BOOLEAN_OPERATION'
 ])
 
+/** Layers whose stroke can take a weight per side, as Figma's `strokeTopWeight` and its siblings. */
+export const SIDE_STROKE_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'RECTANGLE',
+  'FRAME',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
 export const CONTAINER_TYPES = new Set<NodeType>([
   'CANVAS',
   'FRAME',

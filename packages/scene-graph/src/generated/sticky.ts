@@ -145,6 +145,7 @@ export const STICKY_KIND: GeneratedFrameKind = {
   text: (graph, frame) => stickySublayers(graph, frame)?.body,
   rotates: false,
   resizes: false,
+  strokesAndEffects: false,
   namedByText: true
 }
 

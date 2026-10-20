@@ -27,7 +27,16 @@ function handleAlign(
 
 <template>
   <PositionControlsRoot
-    v-slot="{ active, xValue, yValue, rotationValue, inAutoLayout, ignoresAutoLayout, actions }"
+    v-slot="{
+      active,
+      xValue,
+      yValue,
+      rotationValue,
+      rotates,
+      inAutoLayout,
+      ignoresAutoLayout,
+      actions
+    }"
   >
     <PanelSection v-if="active" :label="panels.position">
       <template v-if="inAutoLayout" #actions>
@@ -113,7 +122,7 @@ function handleAlign(
         </Tip>
       </PanelGrid>
 
-      <PanelGrid :columns="2" class="mt-1.5">
+      <PanelGrid v-if="rotates" :columns="2" class="mt-1.5">
         <Tip :label="panels.rotation">
           <NumberField
             suffix="°"

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 import { getNodeEditCapability } from '@open-pencil/core/editor'
-import { layerResizes, readIcon } from '@open-pencil/scene-graph'
+import { layerResizes, layerStrokesAndEffects, readIcon } from '@open-pencil/scene-graph'
 import { useI18n, useSceneComputed, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -87,6 +87,10 @@ const supportsLayoutGuides = useSceneComputed(() => {
   const nodes = store.getSelectedNodes()
   return nodes.length > 0 && nodes.every((selected) => LAYOUT_GUIDE_TYPES.has(selected.type))
 })
+// A sticky note has no strokes or effects, so a selection holding one offers neither.
+const strokesAndEffects = useSceneComputed(() =>
+  store.getSelectedNodes().every((selected) => layerStrokesAndEffects(selected))
+)
 const { panels } = useI18n()
 </script>
 
@@ -124,8 +128,10 @@ const { panels } = useI18n()
     <AppearanceSection />
     <TypographySection />
     <FillSection />
-    <StrokeSection />
-    <EffectsSection />
+    <template v-if="strokesAndEffects">
+      <StrokeSection />
+      <EffectsSection />
+    </template>
     <SelectionColorsSection />
     <LayoutGridSection v-if="supportsLayoutGuides" />
     <ExportSection />
@@ -228,8 +234,10 @@ const { panels } = useI18n()
         <MaskSection />
         <TypographySection v-if="node.type === 'TEXT'" />
         <FillSection />
-        <StrokeSection />
-        <EffectsSection />
+        <template v-if="strokesAndEffects">
+          <StrokeSection />
+          <EffectsSection />
+        </template>
       </template>
       <SelectionColorsSection />
       <LayoutGridSection v-if="supportsLayoutGuides" />
