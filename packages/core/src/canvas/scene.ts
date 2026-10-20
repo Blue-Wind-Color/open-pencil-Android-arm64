@@ -489,7 +489,9 @@ export function renderSection(
     configureStrokePaint(r, node, stroke, color)
 
     if (node.independentStrokeWeights) r.drawIndividualSideStrokes(canvas, node, stroke)
-    else r.drawRRectStrokeWithAlign(canvas, rrect, node, stroke)
+    else if (!drawFigmaDashes(r, canvas, node, stroke)) {
+      r.drawRRectStrokeWithAlign(canvas, rrect, node, stroke)
+    }
   })
 }
 
@@ -502,6 +504,8 @@ export function renderComponentSet(
   const rrect = fillRoundedBounds(r, canvas, node, graph)
   // A set without a stroke gets its dashed editing border from the overlay pass.
   forVisibleStrokes(r, node, graph, (stroke, color) => {
+    configureStrokePaint(r, node, stroke, color)
+    if (drawFigmaDashes(r, canvas, node, stroke)) return
     const dashPhase = stroke.dashPattern?.[1] ?? 0
     if (stroke.dashPattern && stroke.dashPattern.length > 0) {
       drawDashedRRectWithSolidCorners(
@@ -741,6 +745,22 @@ function drawVectorPathStrokes(
   else for (const outline of outlines) outline.delete()
 }
 
+/**
+ * Draws a dashed stroke on a rectangle, frame, section, or component set with Figma's dash
+ * layout, and returns false when the stroke has no dashes or the layout does not apply.
+ */
+function drawFigmaDashes(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  stroke: SceneNode['strokes'][0]
+): boolean {
+  const dash = normalizeDashPattern(stroke.dashPattern)
+  if (dash.length === 0 || !strokeDashesByOutline(node, stroke)) return false
+  drawDashedRectStroke(r, canvas, node, stroke, strokeSideWeights(node, stroke), dash)
+  return true
+}
+
 function drawRegularStroke(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -756,13 +776,7 @@ function drawRegularStroke(
 
   if (node.independentStrokeWeights && r.isRectangularType(node.type)) {
     r.drawIndividualSideStrokes(canvas, node, stroke)
-  } else if (
-    dash.length > 0 &&
-    r.isRectangularType(node.type) &&
-    strokeDashesByOutline(node, stroke)
-  ) {
-    drawDashedRectStroke(r, canvas, node, stroke, strokeSideWeights(node, stroke), dash)
-  } else {
+  } else if (!r.isRectangularType(node.type) || !drawFigmaDashes(r, canvas, node, stroke)) {
     r.drawStrokeWithAlign(canvas, node, rect, hasRadius, stroke.align)
   }
 }

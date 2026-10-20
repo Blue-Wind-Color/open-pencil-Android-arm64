@@ -30,6 +30,11 @@ export function castsFromOwnShape(node: SceneNode): boolean {
   )
 }
 
+/** Whether a layer's drop shadow comes from its own outline alone, which the paths below draw. */
+export function castsOwnShapeDropShadow(node: SceneNode, spread: number): boolean {
+  return regularStrokeOutline(node, spread) !== null || castsFromOwnShape(node)
+}
+
 const OUTLINE_SHAPE_TYPES: ReadonlySet<SceneNode['type']> = new Set<SceneNode['type']>([
   'RECTANGLE',
   'ROUNDED_RECTANGLE',

@@ -10,6 +10,7 @@ import { blurSigma, renderNoiseEffects } from './effects'
 import type { SkiaRenderer } from './renderer'
 import {
   castsFromOwnShape,
+  castsOwnShapeDropShadow,
   clipOutShapeKnockout,
   drawOutlineDropShadow,
   drawRingDropShadow,
@@ -26,7 +27,7 @@ import {
   paintsOverKnockout,
   shadowIncludesChildren,
   silhouetteBounds,
-  soleShadowChild
+  separateShadowChildren
 } from './shadows/silhouette'
 import { nodeHasRadius } from './shapes'
 function resetEffectLayerPaint(r: SkiaRenderer): void {
@@ -162,6 +163,15 @@ function drawOwnShapeDropShadow(
 }
 
 /**
+ * How far apart a container's children must be for their shadows to reach neither each other nor
+ * another child: the blur's reach from both, any spread, and the offset.
+ */
+function shadowGap(effect: Effect, spread: number): number {
+  const reach = 3 * blurSigma(effect.radius) + Math.abs(spread) + 1
+  return 2 * reach + Math.hypot(effect.offset.x, effect.offset.y)
+}
+
+/**
  * Draws a shadow cast by `child`, in its parent's coordinates. The parent's effect is drawn in the
  * child's own space, so its offset is turned back by the child's rotation and flips; blur and
  * spread are the same in every direction.
@@ -199,14 +209,23 @@ function renderDropShadow(
   const blendMode = figmaBlendModeToSkia(r.ck, effect.blendMode)
   const knockout =
     effect.showShadowBehindNode === false && !paintsOverKnockout(graph, node, includeChildren)
-  const sole = includeChildren ? soleShadowChild(graph, node) : null
-  const drawnAlone = sole
-    ? withChildCoordinates(canvas, sole, effect, (local) =>
-        drawOwnShapeDropShadow(r, canvas, sole, local, spread, blendMode, knockout)
+  const children = includeChildren
+    ? separateShadowChildren(graph, node, shadowGap(effect, spread))
+    : null
+  if (children?.every((child) => castsOwnShapeDropShadow(child, spread))) {
+    for (const child of children) {
+      withChildCoordinates(canvas, child, effect, (local) =>
+        drawOwnShapeDropShadow(r, canvas, child, local, spread, blendMode, knockout)
       )
-    : !includeChildren &&
-      drawOwnShapeDropShadow(r, canvas, node, effect, spread, blendMode, knockout)
-  if (drawnAlone) return
+    }
+    return
+  }
+  if (
+    !includeChildren &&
+    drawOwnShapeDropShadow(r, canvas, node, effect, spread, blendMode, knockout)
+  ) {
+    return
+  }
 
   const bounds = shadowLayerBounds(r, graph, node, effect, spread, includeChildren)
   const isolation = knockout ? new r.ck.Paint() : null
@@ -315,18 +334,22 @@ function renderInnerShadow(
   includeChildren: boolean
 ): void {
   if (!includeChildren && !paintsCastShadow(node)) return
-  const sole = includeChildren ? soleShadowChild(graph, node) : null
-  if (sole && castsFromOwnShape(sole)) {
-    withChildCoordinates(canvas, sole, effect, (local) =>
-      drawShapeInnerShadow(
-        r,
-        canvas,
-        sole,
-        r.ck.LTRBRect(0, 0, sole.width, sole.height),
-        local,
-        nodeHasRadius(sole)
+  const children = includeChildren
+    ? separateShadowChildren(graph, node, shadowGap(effect, 0))
+    : null
+  if (children?.every(castsFromOwnShape)) {
+    for (const child of children) {
+      withChildCoordinates(canvas, child, effect, (local) =>
+        drawShapeInnerShadow(
+          r,
+          canvas,
+          child,
+          r.ck.LTRBRect(0, 0, child.width, child.height),
+          local,
+          nodeHasRadius(child)
+        )
       )
-    )
+    }
     return
   }
   if (!includeChildren && castsFromOwnShape(node)) {

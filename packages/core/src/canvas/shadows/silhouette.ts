@@ -347,20 +347,46 @@ export function shadowIncludesChildren(graph: SceneGraph, node: SceneNode): bool
   return bounds !== null && !shapeContainsBox(node, bounds)
 }
 
+/** Most children `separateShadowChildren` compares pair by pair before it leaves them to the layer. */
+const MAX_SEPARATE_CHILDREN = 32
+
+/** Whether two boxes are more than `gap` apart along either axis. */
+function apart(a: Rect, b: Rect, gap: number): boolean {
+  return (
+    a.x + a.width + gap < b.x ||
+    b.x + b.width + gap < a.x ||
+    a.y + a.height + gap < b.y ||
+    b.y + b.height + gap < a.y
+  )
+}
+
 /**
- * The one child a container's shadows come from when the container paints nothing itself and
- * draws only that child, so the shadow is that child's own, turned with it; null otherwise.
+ * The children a container's shadows come from, each casting on its own, when the container
+ * paints nothing itself and does not clip, no child is a mask or brings children of its own, and
+ * every two children are more than `gap` apart; null otherwise. Shadows that reach neither each
+ * other nor another child draw the same one by one, turned with each child, as from the whole
+ * layer.
  */
-export function soleShadowChild(graph: SceneGraph, node: SceneNode): SceneNode | null {
+export function separateShadowChildren(
+  graph: SceneGraph,
+  node: SceneNode,
+  gap: number
+): SceneNode[] | null {
   if (!isLayerContainer(node) || paintsCastShadow(node) || clipsChildren(node)) return null
-  let sole: SceneNode | null = null
+  const children: SceneNode[] = []
   for (const id of node.childIds) {
     const child = graph.getNode(id)
     if (!child || !drawsSilhouette(child)) continue
-    if (child.isMask || sole) return null
-    sole = child
+    if (child.isMask || children.length === MAX_SEPARATE_CHILDREN) return null
+    if (isLayerContainer(child) && shadowIncludesChildren(graph, child)) return null
+    children.push(child)
   }
-  if (!sole) return null
-  if (isLayerContainer(sole) && shadowIncludesChildren(graph, sole)) return null
-  return sole
+  if (children.length < 2) return children.length === 1 ? children : null
+  const boxes: Rect[] = []
+  for (const child of children) {
+    const box = childBox(graph, child.id)
+    if (!box || boxes.some((other) => !apart(box, other, gap))) return null
+    boxes.push(box)
+  }
+  return children
 }

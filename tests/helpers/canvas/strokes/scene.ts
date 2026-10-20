@@ -47,3 +47,34 @@ export function createSideStrokesScene(graph: SceneGraph, pageId: string): void 
     }
   }
 }
+
+/** A dashed rectangle, section, and component set side by side, each rounded and each sharp. */
+export function createDashedContainersScene(graph: SceneGraph, pageId: string): void {
+  const types = ['RECTANGLE', 'SECTION', 'COMPONENT_SET'] as const
+  for (const [column, type] of types.entries()) {
+    for (const [row, cornerRadius] of [0, 24].entries()) {
+      graph.createNode(type, pageId, {
+        name: `${type.toLowerCase()} ${cornerRadius ? 'rounded' : 'sharp'}`,
+        x: 60 + column * 270,
+        y: 80 + row * 300,
+        width: 200,
+        height: 200,
+        cornerRadius,
+        fills: [],
+        strokes: [
+          {
+            type: 'SOLID',
+            color: { r: 0.6, g: 0.2, b: 0.9, a: 1 },
+            opacity: 1,
+            visible: true,
+            weight: 4,
+            align: 'CENTER',
+            dashPattern: [20, 10]
+          }
+        ],
+        strokeWeight: 4,
+        strokeAlign: 'CENTER'
+      })
+    }
+  }
+}

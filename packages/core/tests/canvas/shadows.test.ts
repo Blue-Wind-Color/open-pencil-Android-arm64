@@ -4,7 +4,7 @@ import { SkiaRenderer } from '@open-pencil/core'
 import { initCanvasKit } from '@open-pencil/core/io'
 import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
 
-import { soleShadowChild } from '#core/canvas/shadows/silhouette'
+import { separateShadowChildren } from '#core/canvas/shadows/silhouette'
 
 import { expectDefined } from '../helpers/assert'
 import { expectFigmaRow, renderRow, type FigmaRowScene } from '../helpers/figma-rows'
@@ -105,6 +105,35 @@ const FIGMA: Record<string, number[]> = {
     0, 0, 0, 0, 0, 0, 7, 36, 87, 154, 208, 242, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 254, 255, 0, 0, 0, 0, 0, 0, 0, 0
+  ],
+  "separate-children-drop": [
+    0, 0, 0, 0, 3, 13, 29, 58, 93, 124, 147, 162, 169, 171, 172, 171, 171, 171, 171, 171, 171,
+    172, 172, 171, 172, 171, 172, 171, 172, 172, 171, 171, 171, 171, 171, 172, 171, 171, 171, 172,
+    171, 171, 167, 156, 136, 109, 75, 43, 20, 7, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 8, 28, 57, 96, 132, 155, 168, 171, 171, 171, 171, 171, 171, 171, 171, 171, 171, 172,
+    172, 172, 172, 172, 172, 171, 171, 171, 172, 171, 172, 171, 171, 171, 172, 172, 171, 171, 171,
+    171, 171, 171, 163, 145, 115, 78, 42, 17, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 3, 11, 22, 37, 57, 79, 101, 121, 138, 151, 159, 164, 165, 162, 156,
+    145, 130, 111, 89, 68, 47, 29, 16, 7, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  ],
+  "separate-children-knockout": [
+    0, 0, 0, 1, 13, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+    128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+    128, 128, 128, 128, 128, 128, 215, 171, 114, 62, 26, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 13, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+    128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+    128, 128, 128, 128, 128, 128, 215, 171, 114, 62, 26, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 12, 36, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+    128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 223, 209, 161, 104, 56,
+    21, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  ],
+  "separate-children-inner": [
+    0, 0, 0, 0, 0, 1, 10, 43, 100, 164, 212, 237, 244, 245, 246, 247, 246, 247, 246, 247, 246,
+    246, 246, 246, 246, 247, 246, 246, 247, 246, 246, 247, 246, 247, 246, 247, 246, 247, 246, 247,
+    246, 246, 246, 245, 242, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 2, 23, 70, 142, 203, 237, 246, 246, 247, 247, 246, 247, 247, 246, 247, 247, 246, 246,
+    246, 246, 246, 247, 246, 247, 246, 246, 246, 246, 246, 246, 247, 246, 246, 246, 246, 246, 246,
+    247, 247, 246, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
   ],
 }
 
@@ -443,7 +472,7 @@ describe('a container with one turned child casts from that child alone, as in F
     const page = graph.getPages()[0].id
     turnedChild(shadow('DROP_SHADOW'), { rotation: 30, flipX: true })(graph, page)
     const frame = expectDefined(graph.getNode(expectDefined(graph.getNode(page)).childIds[0]))
-    expect(soleShadowChild(graph, frame)?.id).toBe(frame.childIds[0])
+    expect(separateShadowChildren(graph, frame, 0)?.map((child) => child.id)).toEqual(frame.childIds)
   })
 
   test('offsets the drop shadow in the container’s space, however the child turns', () => {
@@ -461,5 +490,49 @@ describe('a container with one turned child casts from that child alone, as in F
       row(turnedChild(inner, { rotation: 30 }), 140, 140, 260, 0),
       FIGMA['turned-child-inner']
     )
+  })
+})
+
+describe('a container casts from each of its separate children on its own, as in Figma', () => {
+  const HALF_BLUE = solid(0, 0, 1, 0.5)
+  const separateChildren =
+    (effect: Effect, fills: SceneNode['fills'], gap = 50): FigmaRowScene =>
+    (graph, hostId) => {
+      const frame = graph.createNode('FRAME', hostId, {
+        x: 20,
+        y: 60,
+        width: 360,
+        height: 160,
+        fills: [],
+        clipsContent: false,
+        effects: [effect]
+      })
+      const child = { y: 20, height: 60, fills }
+      graph.createNode('RECTANGLE', frame.id, { ...child, x: 10, width: 80, cornerRadius: 8 })
+      graph.createNode('RECTANGLE', frame.id, { ...child, x: 90 + gap, width: 80 })
+      graph.createNode('ELLIPSE', frame.id, { ...child, x: 170 + 2 * gap, width: 60 })
+    }
+  const drop = shadow('DROP_SHADOW', { offset: { x: 4, y: 8 } })
+
+  test('takes children apart only when their shadows cannot reach each other', () => {
+    for (const [gap, separate] of [[50, true], [10, false]] as const) {
+      const graph = new SceneGraph()
+      const page = graph.getPages()[0].id
+      separateChildren(drop, [RED], gap)(graph, page)
+      const frame = expectDefined(graph.getNode(expectDefined(graph.getNode(page)).childIds[0]))
+      const children = separateShadowChildren(graph, frame, 30)
+      expect(children?.length ?? 0).toBe(separate ? 3 : 0)
+    }
+  })
+
+  test('casts the drop shadow and hides it under each translucent child', () => {
+    const scene = separateChildren(drop, [HALF_BLUE])
+    expectFigmaRow(row(scene, 146, 20, 380), FIGMA['separate-children-drop'])
+    expectFigmaRow(row(scene, 120, 20, 380), FIGMA['separate-children-knockout'])
+  })
+
+  test('puts the inner shadow on each child (red channel)', () => {
+    const inner = shadow('INNER_SHADOW', { radius: 6, offset: { x: 6, y: 6 } })
+    expectFigmaRow(row(separateChildren(inner, [RED]), 90, 20, 290, 0), FIGMA['separate-children-inner'])
   })
 })

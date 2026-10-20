@@ -207,9 +207,15 @@ describe('strokes with sides of their own weights, as in Figma', () => {
 })
 
 describe('dashed rectangles, as in Figma', () => {
-  const dashedRect = (props: Partial<SceneNode>, align: Stroke['align'], dashPattern: number[]) =>
+  const dashedRect =
+    (
+      props: Partial<SceneNode>,
+      align: Stroke['align'],
+      dashPattern: number[],
+      type: 'RECTANGLE' | 'SECTION' | 'COMPONENT_SET' = 'RECTANGLE'
+    ) =>
     (graph: SceneGraph, hostId: string) => {
-      graph.createNode('RECTANGLE', hostId, {
+      graph.createNode(type, hostId, {
         x: 120,
         y: 70,
         fills: [],
@@ -229,6 +235,15 @@ describe('dashed rectangles, as in Figma', () => {
         ...props
       })
     }
+
+  test('dash sections and component sets as rectangles, as Figma exports them', () => {
+    const props = { width: 168, height: 108, cornerRadius: 24 }
+    const rectangle = renderRow(ck, renderer, dashedRect(props, 'CENTER', [20, 10]), 70, 112, 290)
+    for (const type of ['SECTION', 'COMPONENT_SET'] as const) {
+      const scene = dashedRect(props, 'CENTER', [20, 10], type)
+      expect(renderRow(ck, renderer, scene, 70, 112, 290)).toEqual(rectangle)
+    }
+  })
 
   test('dash each side on its own and fill the sharp corners', () => {
     const scene = dashedRect({ width: 150, height: 90 }, 'CENTER', [20, 10])

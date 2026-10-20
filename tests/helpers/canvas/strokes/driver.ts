@@ -18,3 +18,20 @@ export function sideStrokesDriver(page: () => Page) {
     }
   }
 }
+
+/** Builds the dashed containers scene on the open page and leaves it unselected for a snapshot. */
+export function dashedContainersDriver(page: () => Page) {
+  return {
+    show() {
+      return page().evaluate(async () => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const sceneURL = '/tests/helpers/canvas/strokes/scene.ts'
+        const scenes: typeof StrokeScenes = await import(sceneURL)
+        scenes.createDashedContainersScene(store.graph, store.state.currentPageId)
+        store.clearSelection()
+        store.requestRender()
+      })
+    }
+  }
+}
