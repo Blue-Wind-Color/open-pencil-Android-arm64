@@ -130,15 +130,15 @@ test('literal text and colors print as the field reads them back', () => {
 test('the schema takes text and color formulas, and refuses operands that do not fit', () => {
   const formula = (type: VariableType, value: unknown) =>
     v.safeParse(variableFormulaSchema, { expression: 'FORMULA', type, value }).success
-  const ternary = (operands: unknown[]) => ({ operator: 'TERNARY', operands })
+  const ternary = (operands: unknown[]) => ({ operator: 'if', operands })
   const red = { r: 1, g: 0, b: 0, a: 1 }
-  expect(formula('STRING', { operator: 'STRINGIFY', operands: [1.5] })).toBe(true)
+  expect(formula('STRING', { operator: 'text', operands: [1.5] })).toBe(true)
   expect(formula('COLOR', ternary([{ aliasId: 'flag' }, red, { aliasId: 'ink' }]))).toBe(true)
   expect(formula('FLOAT', ternary([true, 1, 2]))).toBe(true)
   expect(formula('FLOAT', ternary([1, 1, 2]))).toBe(false)
   expect(formula('STRING', ternary([true, 1, 2]))).toBe(false)
-  expect(formula('FLOAT', { operator: 'STRINGIFY', operands: [1] })).toBe(false)
-  expect(formula('FLOAT', { operator: 'TERNARY', operands: [true, 1] })).toBe(false)
+  expect(formula('FLOAT', { operator: 'text', operands: [1] })).toBe(false)
+  expect(formula('FLOAT', { operator: 'if', operands: [true, 1] })).toBe(false)
 })
 
 test('the tokenizer reads text, colors, calls and commas, and text still being typed', () => {

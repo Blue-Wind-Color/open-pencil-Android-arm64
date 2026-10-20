@@ -21,7 +21,7 @@ import { isFormulaOperation, isFormulaReference, MAX_FORMULA_DEPTH } from './tre
 const ATOM = FORMULA_PREFIX_PRECEDENCE + 1
 /** A long formula breaks before these: `or`, `and`, and `+` and `-`. */
 const BREAKABLE = new Set(
-  (['OR', 'AND', 'ADDITION'] satisfies VariableFormulaOperator[]).map(formulaPrecedence)
+  (['or', 'and', 'add'] satisfies VariableFormulaOperator[]).map(formulaPrecedence)
 )
 const CONTINUATION = '\n  '
 
@@ -93,7 +93,7 @@ function printBinary(
     isFormulaAssociative(node.operator) &&
     isFormulaOperation(rightNode) &&
     rightNode.operator === node.operator &&
-    (node.operator !== 'ADDITION' || regroups(node))
+    (node.operator !== 'add' || regroups(node))
   // The chain continues through a left operand and an unparenthesized right one of its level.
   const breaking = breakAt === precedence
   const left = print(leftNode, depth + 1, breaking ? breakAt : undefined)
@@ -126,7 +126,7 @@ export function printFormula(
   // Text printed without parentheses reads left to right, so `"a" + (1 + 2)` would read as
   // `"a" + 1 + 2`: regroup only when every operand of the chain gives the sum's type.
   const chain = (of: VariableFormulaNode): VariableFormulaNode[] =>
-    isFormulaOperation(of) && of.operator === 'ADDITION'
+    isFormulaOperation(of) && of.operator === 'add'
       ? [...chain(of.operands[0]), of.operands[1]]
       : [of]
   const regroups: Regroups = (sum) => {

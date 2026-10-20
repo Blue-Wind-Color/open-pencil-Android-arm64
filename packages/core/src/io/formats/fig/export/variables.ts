@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import {
   collectionPluginDataNodeChange,
+  figmaFormulaFunction,
   parseGuidOrNull,
   mapUnsupportedExpressionReferences,
   unsupportedExpressionData,
@@ -222,7 +223,7 @@ function formulaToKiwi(
       resolvedDataType: known(inferFormulaType(operation, typeOf)),
       value: {
         expressionValue: {
-          expressionFunction: operation.operator,
+          expressionFunction: figmaFormulaFunction(operation.operator),
           expressionArguments: operands
         }
       }

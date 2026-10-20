@@ -3,7 +3,6 @@ import * as v from 'valibot'
 import type { NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
-  VARIABLE_FORMULA_OPERATORS,
   variableFormulaSchema,
   variableColorExpressionSchema,
   inferFormulaType,
@@ -15,6 +14,7 @@ import {
 } from '@open-pencil/scene-graph'
 
 import { extractPluginData } from '../node-change/plugin-data'
+import { formulaOperatorOfFigmaFunction } from '../node-change/variable/formula'
 import { readVariableMetadata } from '../node-change/variable/metadata'
 import {
   readModeAttribute,
@@ -68,14 +68,13 @@ function expressionValue(
   if (value.expressionValue?.expressionFunction === 'COMPOSE_COLOR')
     return colorExpression(entry, resolve)
   const expression = value.expressionValue
-  const parsed = v.safeParse(v.picklist(VARIABLE_FORMULA_OPERATORS), expression?.expressionFunction)
-  if (!parsed.success) {
+  const operator = formulaOperatorOfFigmaFunction(expression?.expressionFunction)
+  if (!operator) {
     if (!expression?.expressionFunction) throw new Error('Missing variable expression function')
     throw new UnsupportedExpressionError(
       `Unsupported variable expression ${expression.expressionFunction}`
     )
   }
-  const operator = parsed.output
   const operands = (expression?.expressionArguments ?? []).map((arg) => {
     // A formula needs every variable it uses; one the document lacks keeps the file's tree.
     if ((arg.dataType ?? arg.resolvedDataType) === 'ALIAS' && !resolve(arg.value?.alias))

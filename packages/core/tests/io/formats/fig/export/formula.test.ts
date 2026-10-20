@@ -57,9 +57,9 @@ test('numeric, Boolean and comparison formulas survive fresh and patched .fig sa
 
 
 test.each([
-  { operator: 'ADDITION', operands: [true, 1] },
-  { operator: 'AND', operands: [1, false] },
-  { operator: 'NEGATE', operands: [1, 2] }
+  { operator: 'add', operands: [true, 1] },
+  { operator: 'and', operands: [1, false] },
+  { operator: 'negate', operands: [1, 2] }
 ] as const)('FIG export rejects invalid formula operands instead of coercing them: %j', async (value) => {
   await initCodec()
   const graph = new SceneGraph()

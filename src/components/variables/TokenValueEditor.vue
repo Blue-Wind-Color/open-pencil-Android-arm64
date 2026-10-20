@@ -123,9 +123,9 @@ const referenceItems = computed(() => formula.candidates.map(withValue))
 const functionCompletions = computed(() =>
   (
     [
-      ['TERNARY', variables.value.formulaIf],
-      ['STRINGIFY', variables.value.formulaText],
-      ['IS_TRUTHY', variables.value.formulaTruthy]
+      ['if', variables.value.formulaIf],
+      ['text', variables.value.formulaText],
+      ['truthy', variables.value.formulaTruthy]
     ] as const
   ).map(([operator, detail]) => ({
     label: formulaSymbol(operator),

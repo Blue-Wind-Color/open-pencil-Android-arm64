@@ -12,10 +12,10 @@ type Term =
   | { kind: 'css'; text: string; precedence: number; dimension: boolean }
 
 const OPERATORS = {
-  ADDITION: { symbol: '+', precedence: 1 },
-  SUBTRACTION: { symbol: '-', precedence: 1 },
-  MULTIPLY: { symbol: '*', precedence: 2 },
-  DIVIDE: { symbol: '/', precedence: 2 }
+  add: { symbol: '+', precedence: 1 },
+  subtract: { symbol: '-', precedence: 1 },
+  multiply: { symbol: '*', precedence: 2 },
+  divide: { symbol: '/', precedence: 2 }
 } as const
 type Arithmetic = keyof typeof OPERATORS
 const ATOM = 3
@@ -63,7 +63,7 @@ function convert(node: VariableFormulaNode, context: FormulaContext): Term {
     reference: (id) => reference(id, context),
     operation: ({ operator }, operands) => {
       const [a, b] = operands
-      if (operator === 'NEGATE' && operands.length === 1) return negate(a, context)
+      if (operator === 'negate' && operands.length === 1) return negate(a, context)
       if (operands.length !== 2 || !isArithmetic(operator))
         throw new UnsupportedFormulaError('uses logic that CSS has no form for')
       if (a.kind === 'literal' && b.kind === 'literal')
@@ -86,15 +86,14 @@ function reference(id: string, { variables, names }: FormulaContext): Term {
 
 function negate(term: Term, context: FormulaContext): Term {
   if (term.kind === 'literal') return { kind: 'literal', value: -term.value }
-  const text = `-1 * ${grouped(term, false, OPERATORS.MULTIPLY.precedence, context)}`
-  return { kind: 'css', text, precedence: OPERATORS.MULTIPLY.precedence, dimension: term.dimension }
+  const text = `-1 * ${grouped(term, false, OPERATORS.multiply.precedence, context)}`
+  return { kind: 'css', text, precedence: OPERATORS.multiply.precedence, dimension: term.dimension }
 }
 
 function binary(operator: Arithmetic, a: Term, b: Term, context: FormulaContext): Term {
   const { symbol, precedence } = OPERATORS[operator]
   // The right side of - and / keeps its parentheses even at equal precedence.
-  const rightBelow =
-    operator === 'SUBTRACTION' || operator === 'DIVIDE' ? precedence + 1 : precedence
+  const rightBelow = operator === 'subtract' || operator === 'divide' ? precedence + 1 : precedence
   const aDimension = a.kind === 'css' && a.dimension
   const bDimension = b.kind === 'css' && b.dimension
   if (precedence === 1) {
@@ -105,7 +104,7 @@ function binary(operator: Arithmetic, a: Term, b: Term, context: FormulaContext)
     const right = grouped(b, dimension, rightBelow, context)
     return { kind: 'css', text: `${left} ${symbol} ${right}`, precedence, dimension }
   }
-  if (bDimension && operator === 'DIVIDE') throw new UnsupportedFormulaError('divides by a length')
+  if (bDimension && operator === 'divide') throw new UnsupportedFormulaError('divides by a length')
   if (aDimension && bDimension) throw new UnsupportedFormulaError('multiplies two lengths')
   const left = grouped(a, false, precedence, context)
   const right = grouped(b, false, rightBelow, context)
@@ -133,8 +132,8 @@ function isArithmetic(operator: string): operator is Arithmetic {
 }
 
 function fold(operator: Arithmetic, a: number, b: number) {
-  if (operator === 'ADDITION') return a + b
-  if (operator === 'SUBTRACTION') return a - b
-  if (operator === 'MULTIPLY') return a * b
+  if (operator === 'add') return a + b
+  if (operator === 'subtract') return a - b
+  if (operator === 'multiply') return a * b
   return a / b
 }

@@ -133,7 +133,7 @@ export function parseFormulaSyntax(
     if (!operator) throw new VariableFormulaError(`Unexpected ${token.text}`)
     const operand = expression(FORMULA_PREFIX_PRECEDENCE, depth + 1)
     // A negative number is a literal, not the negation of one.
-    if (operator === 'NEGATE' && typeof operand.node === 'number')
+    if (operator === 'negate' && typeof operand.node === 'number')
       return { node: -operand.node, type: 'FLOAT' }
     return operation(operator, [operand])
   }

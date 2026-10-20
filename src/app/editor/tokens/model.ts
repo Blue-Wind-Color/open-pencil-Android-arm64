@@ -38,7 +38,7 @@ export interface TokenModeValue {
   result?: string
   /** A CSS expression written instead of the stored number, such as `clamp(…)`. */
   expression?: string
-  /** A function from the file OpenPencil cannot evaluate, such as `TERNARY`. */
+  /** A function from the file OpenPencil cannot evaluate, such as `VAR_MODE_LOOKUP`. */
   unsupported?: string
 }
 

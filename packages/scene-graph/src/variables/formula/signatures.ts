@@ -46,7 +46,7 @@ const FLOAT_FLOAT = ['FLOAT', 'FLOAT'] as const
 const TEXT_TYPES = ['FLOAT', 'BOOLEAN', 'STRING'] as const
 
 const SIGNATURES: Record<VariableFormulaOperator, OperatorSignature> = {
-  ADDITION: {
+  add: {
     spellings: ['+'],
     arity: 2,
     precedence: 5,
@@ -65,13 +65,13 @@ const SIGNATURES: Record<VariableFormulaOperator, OperatorSignature> = {
         ? a + b
         : `${variableText(a) ?? ''}${variableText(b) ?? ''}`
   },
-  SUBTRACTION: arithmetic('-', 5, (a, b) => a - b),
-  MULTIPLY: { ...arithmetic('*', 6, (a, b) => a * b), associative: true },
-  DIVIDE: arithmetic('/', 6, (a, b) => {
+  subtract: arithmetic('-', 5, (a, b) => a - b),
+  multiply: { ...arithmetic('*', 6, (a, b) => a * b), associative: true },
+  divide: arithmetic('/', 6, (a, b) => {
     if (b === 0) throw new VariableFormulaError('Cannot divide by zero')
     return a / b
   }),
-  NEGATE: {
+  negate: {
     spellings: ['-'],
     arity: 1,
     precedence: FORMULA_PREFIX_PRECEDENCE,
@@ -79,15 +79,15 @@ const SIGNATURES: Record<VariableFormulaOperator, OperatorSignature> = {
     needs: 'needs numbers',
     apply: ([a]) => -Number(a)
   },
-  EQUALS: equality('==', (a, b) => a === b),
-  NOT_EQUAL: equality('!=', (a, b) => a !== b),
-  LESS_THAN: comparison('<', (a, b) => a < b),
-  LESS_THAN_OR_EQUAL: comparison('<=', (a, b) => a <= b),
-  GREATER_THAN: comparison('>', (a, b) => a > b),
-  GREATER_THAN_OR_EQUAL: comparison('>=', (a, b) => a >= b),
-  AND: logic(['and', '&&'], 2, (a, b) => a && b),
-  OR: logic(['or', '||'], 1, (a, b) => a || b),
-  NOT: {
+  equal: equality('==', (a, b) => a === b),
+  notEqual: equality('!=', (a, b) => a !== b),
+  less: comparison('<', (a, b) => a < b),
+  lessOrEqual: comparison('<=', (a, b) => a <= b),
+  greater: comparison('>', (a, b) => a > b),
+  greaterOrEqual: comparison('>=', (a, b) => a >= b),
+  and: logic(['and', '&&'], 2, (a, b) => a && b),
+  or: logic(['or', '||'], 1, (a, b) => a || b),
+  not: {
     spellings: ['not', '!'],
     arity: 1,
     precedence: FORMULA_PREFIX_PRECEDENCE,
@@ -95,7 +95,7 @@ const SIGNATURES: Record<VariableFormulaOperator, OperatorSignature> = {
     needs: 'needs true or false',
     apply: ([a]) => a !== true
   },
-  STRINGIFY: {
+  text: {
     spellings: ['text'],
     call: true,
     arity: 1,
@@ -103,7 +103,7 @@ const SIGNATURES: Record<VariableFormulaOperator, OperatorSignature> = {
     needs: 'needs a number, text, or true or false',
     apply: ([a]) => variableText(a) ?? ''
   },
-  IS_TRUTHY: {
+  truthy: {
     spellings: ['truthy'],
     call: true,
     arity: 1,
@@ -111,7 +111,7 @@ const SIGNATURES: Record<VariableFormulaOperator, OperatorSignature> = {
     needs: 'needs a number, text, or true or false',
     apply: ([a]) => variableTruthy(a) ?? false
   },
-  TERNARY: {
+  if: {
     spellings: ['if'],
     call: true,
     arity: 3,

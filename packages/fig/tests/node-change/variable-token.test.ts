@@ -73,7 +73,7 @@ describe('token plugin data', () => {
     const formula = {
       expression: 'FORMULA' as const,
       type: 'FLOAT' as const,
-      value: { operator: 'MULTIPLY' as const, operands: [{ aliasId: '1:2' }, 2] }
+      value: { operator: 'multiply' as const, operands: [{ aliasId: '1:2' }, 2] }
     }
     // A number now where no number was recorded was edited elsewhere: the expression goes.
     expect(

@@ -848,25 +848,25 @@ export interface VariableColorExpression {
 }
 
 export type VariableLiteral = Color | number | string | boolean
-/** Figma's `ExpressionFunction` names for the arithmetic, comparison, logic and text a formula uses. */
+/** The arithmetic, comparison, logic and conversions a formula combines values with. */
 export const VARIABLE_FORMULA_OPERATORS = [
-  'ADDITION',
-  'SUBTRACTION',
-  'MULTIPLY',
-  'DIVIDE',
-  'NEGATE',
-  'EQUALS',
-  'NOT_EQUAL',
-  'LESS_THAN',
-  'LESS_THAN_OR_EQUAL',
-  'GREATER_THAN',
-  'GREATER_THAN_OR_EQUAL',
-  'AND',
-  'OR',
-  'NOT',
-  'STRINGIFY',
-  'IS_TRUTHY',
-  'TERNARY'
+  'add',
+  'subtract',
+  'multiply',
+  'divide',
+  'negate',
+  'equal',
+  'notEqual',
+  'less',
+  'lessOrEqual',
+  'greater',
+  'greaterOrEqual',
+  'and',
+  'or',
+  'not',
+  'text',
+  'truthy',
+  'if'
 ] as const
 export type VariableFormulaOperator = (typeof VARIABLE_FORMULA_OPERATORS)[number]
 export interface VariableFormulaOperation {
@@ -887,7 +887,7 @@ export interface VariableFormula {
  */
 export interface VariableUnsupportedExpression {
   expression: 'UNSUPPORTED'
-  /** The function name the file gives, such as `TERNARY`. */
+  /** The function name the file gives, such as `VAR_MODE_LOOKUP`. */
   function: string
   value: Record<string, unknown>
   references: (string | null)[]
