@@ -1,0 +1,314 @@
+import type { DailyGrowth, MetricsQuery, MetricsSnapshot, RankedCount } from '#feedback/contract'
+import { eachDay, utcDayOf } from '#feedback/days'
+import { createFeedbackDatabase, type FeedbackDatabase } from '#feedback/db'
+import type { FeedbackBindings, FeedbackServices } from '#feedback/env'
+import { minDate, parseDate, toZoned } from '@internationalized/date'
+import { groupBy, maxBy, sumBy } from 'es-toolkit'
+import type { Kysely } from 'kysely'
+
+import { fetchUsage } from './posthog'
+
+/** How many entries a ranking keeps. */
+const TOP = 10
+/** How many recent sign-ups the waitlist list shows. */
+const RECENT_SIGNUPS = 50
+/** The kinds of release file that are installers rather than updates or update checks. */
+const INSTALLER_KINDS = new Set(['macos-installer', 'windows-installer', 'linux-installer'])
+
+const STABLE_VERSION = /^(\d+)\.(\d+)\.(\d+)$/
+
+/** A released version's parts, or `undefined` for betas, development builds, and anything else. */
+function stableParts(version: string): [number, number, number] | undefined {
+  const match = STABLE_VERSION.exec(version)
+  return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : undefined
+}
+
+function newestStable(versions: string[]): string | undefined {
+  return maxBy(
+    versions.filter((version) => stableParts(version)),
+    (version) => {
+      const [major = 0, minor = 0, patch = 0] = stableParts(version) ?? []
+      return major * 1e12 + minor * 1e6 + patch
+    }
+  )
+}
+
+/** Each day's increase in a running total, from the day before the range on. */
+function dailyGrowth(days: string[], totals: Map<string, number>): DailyGrowth[] {
+  return days.flatMap((day) => {
+    const total = totals.get(day)
+    const before = totals.get(parseDate(day).subtract({ days: 1 }).toString())
+    return total === undefined || before === undefined ? [] : [{ day, added: total - before }]
+  })
+}
+
+const ranking = (rows: { name: string; value: number | string | bigint | null }[]): RankedCount[] =>
+  rows.map((row) => ({ name: row.name, value: Number(row.value ?? 0) }))
+
+async function pings(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: string[]) {
+  const inRange = db
+    .selectFrom('usagePings')
+    .where('day', '>=', range.start)
+    .where('day', '<=', range.end)
+  const [byApp, byPlatform, byVersion, versions] = await Promise.all([
+    inRange
+      .select(['day', 'app', (eb) => eb.fn.sum<number>('count').as('pings')])
+      .groupBy(['day', 'app'])
+      .execute(),
+    inRange
+      .select(['platform', 'app', (eb) => eb.fn.sum<number>('count').as('pings')])
+      .groupBy(['platform', 'app'])
+      .execute(),
+    inRange
+      .select(['day', 'version', (eb) => eb.fn.sum<number>('count').as('pings')])
+      .groupBy(['day', 'version'])
+      .execute(),
+    db
+      .selectFrom('usagePings')
+      .select(['version', (eb) => eb.fn.min<string>('day').as('firstDay')])
+      .groupBy('version')
+      .execute()
+  ])
+  const latest = newestStable(versions.map((row) => row.version)) ?? null
+  const pingsOn = (rows: typeof byApp, day: string, app: string) =>
+    Number(rows.find((row) => row.day === day && row.app === app)?.pings ?? 0)
+  const platforms = Object.entries(groupBy(byPlatform, (row) => row.platform)).map(
+    ([os, rows]) => ({
+      os,
+      desktop: Number(rows.find((row) => row.app === 'desktop')?.pings ?? 0),
+      web: Number(rows.find((row) => row.app === 'web')?.pings ?? 0)
+    })
+  )
+  return {
+    dailyActive: days.map((day) => ({
+      day,
+      desktop: pingsOn(byApp, day, 'desktop'),
+      web: pingsOn(byApp, day, 'web')
+    })),
+    platforms: platforms.toSorted((a, b) => b.desktop + b.web - (a.desktop + a.web)),
+    versions: {
+      latest,
+      daily: days.map((day) => {
+        const onDay = byVersion.filter((row) => row.day === day)
+        const latestPings = Number(onDay.find((row) => row.version === latest)?.pings ?? 0)
+        return {
+          day,
+          latest: latestPings,
+          other: sumBy(onDay, (row) => Number(row.pings)) - latestPings
+        }
+      })
+    },
+    releases: versions
+      .filter(
+        (row) =>
+          stableParts(row.version) && row.firstDay >= range.start && row.firstDay <= range.end
+      )
+      .map((row) => ({ day: row.firstDay, version: row.version }))
+      .toSorted((a, b) => a.day.localeCompare(b.day))
+  }
+}
+
+async function site(
+  db: Kysely<FeedbackDatabase>,
+  env: FeedbackBindings,
+  range: MetricsQuery,
+  days: string[]
+) {
+  const [website, app] = env.SITE_HOSTS.split(',').map((host) => host.trim())
+  const [visits, pages, countries] = await Promise.all([
+    db
+      .selectFrom('siteVisits')
+      .selectAll()
+      .where('day', '>=', range.start)
+      .where('day', '<=', range.end)
+      .execute(),
+    db
+      .selectFrom('sitePages')
+      .select(['path as name', (eb) => eb.fn.sum<number>('visits').as('value')])
+      .where('day', '>=', range.start)
+      .where('day', '<=', range.end)
+      .groupBy('path')
+      .orderBy('value', 'desc')
+      .limit(TOP)
+      .execute(),
+    db
+      .selectFrom('siteCountries')
+      .select(['country as name', (eb) => eb.fn.sum<number>('visits').as('value')])
+      .where('day', '>=', range.start)
+      .where('day', '<=', range.end)
+      .groupBy('country')
+      .orderBy('value', 'desc')
+      .limit(TOP)
+      .execute()
+  ])
+  const visitsOn = (day: string, host: string | undefined) =>
+    visits.find((row) => row.day === day && row.host === host)?.visits ?? 0
+  return {
+    visits: days.map((day) => ({ day, site: visitsOn(day, website), app: visitsOn(day, app) })),
+    website: { pages: ranking(pages), countries: ranking(countries) }
+  }
+}
+
+async function github(db: Kysely<FeedbackDatabase>, range: MetricsQuery, days: string[]) {
+  // One day earlier than the range, so its first day has something to grow from.
+  const from = parseDate(range.start).subtract({ days: 1 }).toString()
+  const [stars, downloads, traffic, lastReferrerDay] = await Promise.all([
+    db
+      .selectFrom('githubStars')
+      .selectAll()
+      .where('day', '>=', from)
+      .where('day', '<=', range.end)
+      .execute(),
+    db
+      .selectFrom('releaseDownloads')
+      .selectAll()
+      .where('day', '>=', from)
+      .where('day', '<=', range.end)
+      .execute(),
+    db
+      .selectFrom('repoTraffic')
+      .selectAll()
+      .where('day', '>=', range.start)
+      .where('day', '<=', range.end)
+      .orderBy('day')
+      .execute(),
+    db
+      .selectFrom('repoReferrers')
+      .select((eb) => eb.fn.max('day').as('day'))
+      .where('day', '<=', range.end)
+      .executeTakeFirst()
+  ])
+  const referrers = lastReferrerDay?.day
+    ? await db
+        .selectFrom('repoReferrers')
+        .select(['referrer as name', 'views as value'])
+        .where('day', '=', lastReferrerDay.day)
+        .orderBy('views', 'desc')
+        .limit(TOP)
+        .execute()
+    : []
+
+  const installers = downloads.filter((row) => INSTALLER_KINDS.has(row.kind))
+  const totalsByDay = (rows: typeof downloads) =>
+    new Map(
+      Object.entries(groupBy(rows, (row) => row.day)).map(([day, onDay]) => [
+        day,
+        sumBy(onDay, (row) => row.downloads)
+      ])
+    )
+  const installerTotals = totalsByDay(installers)
+  // ISO dates sort in calendar order, as D1 compares them too.
+  const lastDay = [...installerTotals.keys()].toSorted().at(-1)
+  const latestTag = newestStable(installers.map((row) => row.tag.replace(/^v/, '')))
+  const starTotals = new Map(stars.map((row) => [row.day, row.stars]))
+  const lastStars = stars.toSorted((a, b) => a.day.localeCompare(b.day)).at(-1)
+  return {
+    stars: { total: lastStars?.stars ?? null, daily: dailyGrowth(days, starTotals) },
+    downloads: {
+      total: lastDay ? (installerTotals.get(lastDay) ?? null) : null,
+      latestTag: latestTag ? `v${latestTag}` : null,
+      latestTotal:
+        lastDay && latestTag
+          ? sumBy(
+              installers.filter((row) => row.day === lastDay && row.tag === `v${latestTag}`),
+              (row) => row.downloads
+            )
+          : null,
+      daily: dailyGrowth(days, installerTotals),
+      updateChecks: dailyGrowth(
+        days,
+        totalsByDay(downloads.filter((row) => row.kind === 'update-check'))
+      )
+    },
+    traffic: traffic.map((row) => ({
+      day: row.day,
+      views: row.views,
+      uniqueViews: row.uniqueViews,
+      clones: row.clones
+    })),
+    referrers: ranking(referrers)
+  }
+}
+
+/** The range as sign-up timestamps: from the start day's UTC midnight up to the day after the end. */
+function timestampRange(range: MetricsQuery) {
+  const midnight = (day: string) => toZoned(parseDate(day), 'UTC').toDate().toISOString()
+  return {
+    from: midnight(range.start),
+    until: midnight(parseDate(range.end).add({ days: 1 }).toString())
+  }
+}
+
+async function waitlist(db: Kysely<FeedbackDatabase>, range: MetricsQuery) {
+  const { from, until } = timestampRange(range)
+  const [totals, recent] = await Promise.all([
+    db
+      .selectFrom('waitlist')
+      .select((eb) => [
+        eb.fn.countAll<number>().as('total'),
+        eb.fn.count<number>('confirmedAt').as('confirmed'),
+        eb.fn
+          .countAll<number>()
+          .filterWhere('createdAt', '>=', from)
+          .filterWhere('createdAt', '<', until)
+          .as('added')
+      ])
+      .executeTakeFirst(),
+    db
+      .selectFrom('waitlist')
+      .select(['email', 'createdAt', 'confirmedAt'])
+      .where('createdAt', '>=', from)
+      .where('createdAt', '<', until)
+      .orderBy('createdAt', 'desc')
+      .limit(RECENT_SIGNUPS)
+      .execute()
+  ])
+  return {
+    total: Number(totals?.total ?? 0),
+    confirmed: Number(totals?.confirmed ?? 0),
+    added: Number(totals?.added ?? 0),
+    // Only the domain leaves the database; the address itself never reaches the dashboard.
+    recent: recent.map((row) => ({
+      domain: row.email.slice(row.email.lastIndexOf('@') + 1).toLowerCase(),
+      signedUpAt: row.createdAt,
+      confirmed: row.confirmedAt !== null
+    }))
+  }
+}
+
+/**
+ * The dashboard's data for a range of UTC days: pings, snapshots, and the waitlist from D1, and
+ * usage from PostHog. PostHog failing leaves `usage` empty rather than failing the whole page.
+ */
+export async function buildSnapshot(
+  env: FeedbackBindings,
+  services: FeedbackServices,
+  query: MetricsQuery
+): Promise<MetricsSnapshot> {
+  const now = services.now()
+  const today = utcDayOf(now)
+  const end = minDate(parseDate(query.end), today) ?? today
+  const range = { start: query.start, end: end.toString() }
+  const days = eachDay(parseDate(range.start), end).map(String)
+  const db = createFeedbackDatabase(env.DB)
+  const [pinged, visited, repository, signups, usage] = await Promise.all([
+    pings(db, range, days),
+    site(db, env, range, days),
+    github(db, range, days),
+    waitlist(db, range),
+    fetchUsage(env, services, range).catch((error: unknown) => {
+      console.warn('PostHog usage unavailable', { error: String(error) })
+      return null
+    })
+  ])
+  return {
+    asOf: now.toISOString(),
+    today: today.toString(),
+    ...range,
+    ...pinged,
+    ...visited,
+    github: repository,
+    waitlist: signups,
+    usage
+  }
+}

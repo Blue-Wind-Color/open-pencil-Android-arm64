@@ -28,6 +28,7 @@
     "@vue-email/render": "^0.0.9",
     "es-toolkit": "^1.52.0",
     "hono": "^4.13.13",
+    "jose": "^6.2.8",
     "kysely": "^0.29.6",
     "kysely-d1": "0.4.0",
     "valibot": "^1.5.0",

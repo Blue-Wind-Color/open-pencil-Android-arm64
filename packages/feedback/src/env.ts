@@ -28,6 +28,15 @@ export interface FeedbackBindings {
   SITE_HOSTS: string
   /** A Cloudflare API token that can read the zone's analytics. */
   CLOUDFLARE_ANALYTICS_TOKEN: string
+  /** The Zero Trust team domain that issues Access tokens, `https://<team>.cloudflareaccess.com`. */
+  ACCESS_TEAM_DOMAIN: string
+  /** The Access application's audience tag; a token for any other application is refused. */
+  ACCESS_AUD: string
+  /** PostHog's app host for its query API, which is not the ingestion host. */
+  POSTHOG_APP_HOST: string
+  POSTHOG_PROJECT_ID: string
+  /** A PostHog personal API key limited to reading queries in that project. */
+  POSTHOG_PERSONAL_KEY: string
 }
 
 export type FeedbackEnv = { Bindings: FeedbackBindings }
