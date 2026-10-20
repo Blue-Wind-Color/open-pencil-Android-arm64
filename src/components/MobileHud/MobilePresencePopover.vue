@@ -40,7 +40,12 @@ const styles = presencePopover()
           @follow="hud.follow"
           @rename="hud.renameAgent"
         />
-        <AppButton variant="outline" class="mt-3 w-full" @click="hud.disconnect">
+        <AppButton
+          v-if="hud.collabState.canLeave"
+          variant="outline"
+          class="mt-3 w-full"
+          @click="hud.disconnect"
+        >
           {{ hud.messages.disconnect }}
         </AppButton>
       </PopoverContent>

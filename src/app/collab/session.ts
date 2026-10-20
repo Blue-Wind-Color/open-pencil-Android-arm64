@@ -51,6 +51,8 @@ export interface RoomSession {
   readonly voice: RoomVoice
   /** Who this tab is in the room. */
   readonly identity: RoomIdentity
+  /** Whether the person may leave; a stored document's room stays open while its tab does. */
+  readonly leavable: boolean
   updateCursor(x: number, y: number, pageId: string): void
   updateSelection(ids: string[]): void
   /** Writes the tab's whole document into the room and makes its root the room's. */
@@ -96,6 +98,8 @@ export interface RoomSessionOptions {
    * it counts as having the document until the room says it holds another.
    */
   holdsDocument?: boolean
+  /** False for a room the tab's document lives in, which the person never leaves by hand. */
+  leavable?: boolean
 }
 
 function openIndexedDBCopy(roomId: string, ydoc: Y.Doc): RoomSavedCopy {
@@ -113,7 +117,8 @@ export function openRoomSession({
   openSavedCopy = openIndexedDBCopy,
   unreachableMs = ROOM_UNREACHABLE_MS,
   tickMs = ROOM_STATUS_TICK_MS,
-  holdsDocument = false
+  holdsDocument = false,
+  leavable = true
 }: RoomSessionOptions): RoomSession {
   const ydoc = new Y.Doc()
   const awareness = new awarenessProtocol.Awareness(ydoc)
@@ -264,6 +269,7 @@ export function openRoomSession({
     hasDocument,
     voice,
     identity,
+    leavable,
     updateCursor(x, y, pageId) {
       awareness.setLocalStateField('cursor', { x, y, pageId, zoom: store.state.zoom })
     },

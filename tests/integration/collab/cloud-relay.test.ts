@@ -14,6 +14,7 @@ import { openCloudDocumentRoom } from '@/app/cloud/rooms/live'
 import { versionListRevision } from '@/app/cloud/versions/history'
 import { useCollabIdentity } from '@/app/collab/identity'
 import { connectCollabRoom } from '@/app/collab/room/connection'
+import { openDocumentRoom, roomById, roomForStore } from '@/app/collab/rooms'
 import { createEditorStore } from '@/app/editor/session'
 
 import { startTestRelay } from '#tests/helpers/collab/relay-server'
@@ -281,6 +282,32 @@ describe('Cloud document rooms, version history', () => {
   })
 })
 
+describe('Cloud document rooms, another room first', () => {
+  test('a tab already in another room moves to its document’s own room', async () => {
+    const relay = await startRelay()
+    const documentId = crypto.randomUUID()
+    const [grace] = await openedTwice()
+    // Shared into a room by hand while the document's own was still being asked for.
+    const elsewhere = openDocumentRoom(
+      grace,
+      `cloud:${crypto.randomUUID()}:0`,
+      relay.join(documentId, 'Grace', 'edit', 'user')
+    )
+    const room = openCloudDocumentRoom(grace, {
+      roomId: `cloud:${documentId}:0`,
+      transport: relay.join(documentId, 'Grace', 'edit', 'user'),
+      permission: 'edit'
+    })
+    cleanups.push(() => {
+      room.stop()
+      room.session.dispose()
+    })
+    expect(room.session).not.toBe(elsewhere)
+    expect(roomForStore(grace)?.roomId).toBe(`cloud:${documentId}:0`)
+    expect(roomById(elsewhere.roomId)).toBeUndefined()
+  })
+})
+
 /** Tabs that each opened the same stored file, which gives each its own root. */
 async function openedTwice() {
   await initCodec()
@@ -329,6 +356,8 @@ describe('Cloud document rooms', () => {
     await until(() => grace.graph.getNode('from:ada') !== undefined)
     await until(() => first.session.peers.value.length > 0)
     expect(compact([grace.state.autosaveEnabled, ada.state.autosaveEnabled])).toHaveLength(1)
+    // The document lives in its room, so neither tab offers leaving it.
+    expect([first.session.leavable, second.session.leavable]).toEqual([false, false])
   })
 
   test('a tab that does not save has the saver upload its latest edit', async () => {

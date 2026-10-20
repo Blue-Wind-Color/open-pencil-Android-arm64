@@ -31,6 +31,7 @@ export function useCollab() {
     const room = activeRoom.value
     return {
       inRoom: room !== undefined,
+      canLeave: room?.leavable ?? false,
       roomId: room?.roomId ?? null,
       status: room?.status.value ?? null,
       peers: room?.peers.value ?? [],
