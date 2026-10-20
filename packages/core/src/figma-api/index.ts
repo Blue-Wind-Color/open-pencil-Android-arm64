@@ -47,6 +47,7 @@ import type {
   FigmaPolygonNode,
   FigmaRectangleNode,
   FigmaSectionNode,
+  FigmaShapeWithTextNode,
   FigmaStarNode,
   FigmaTextNode,
   FigmaVectorNode
@@ -60,6 +61,7 @@ import {
   type FigmaFontName,
   type NodeProxyHost
 } from './proxy'
+import { newShapeWithText } from './shape-with-text'
 import type { ExportImageOptions } from './types'
 
 const noop = () => undefined
@@ -82,6 +84,7 @@ export type {
   FigmaPolygonNode,
   FigmaRectangleNode,
   FigmaSectionNode,
+  FigmaShapeWithTextNode,
   FigmaSlotNode,
   FigmaStarNode,
   FigmaTextNode,
@@ -217,6 +220,10 @@ export class FigmaAPI implements NodeProxyHost {
 
   createStar(): FigmaStarNode {
     return this._createNode('STAR') as FigmaStarNode
+  }
+
+  createShapeWithText(): FigmaShapeWithTextNode {
+    return this.wrapNode(newShapeWithText(this).id) as FigmaShapeWithTextNode
   }
 
   createVector(): FigmaVectorNode {

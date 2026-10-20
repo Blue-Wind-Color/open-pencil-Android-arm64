@@ -1,6 +1,6 @@
 import { DEFAULT_TEXT_HEIGHT, DEFAULT_TEXT_WIDTH } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
-import { generatedFrameText, SHAPE_WITH_TEXT_TOOL_SIZE } from '@open-pencil/scene-graph'
+import { generatedFrameText, SHAPE_WITH_TEXT_SIZE } from '@open-pencil/scene-graph'
 import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -108,7 +108,7 @@ function settleDrawnSize(preview: ReturnType<Editor['beginNodePreview']>, node: 
     preview.update(node.id, { width: 100, height: 0, rotation: 0 })
     return true
   } else if (clicked && node.type === 'SHAPE_WITH_TEXT') {
-    preview.update(node.id, { width: SHAPE_WITH_TEXT_TOOL_SIZE, height: SHAPE_WITH_TEXT_TOOL_SIZE })
+    preview.update(node.id, { width: SHAPE_WITH_TEXT_SIZE, height: SHAPE_WITH_TEXT_SIZE })
   } else if (clicked) {
     preview.update(node.id, { width: 100, height: 100 })
   }

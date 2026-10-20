@@ -3,7 +3,7 @@ import {
   DEFAULT_STROKE_WEIGHT,
   figJamColor,
   figJamPairedStroke,
-  SHAPE_WITH_TEXT_TOOL_SIZE
+  SHAPE_WITH_TEXT_SIZE
 } from '@open-pencil/scene-graph'
 import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 
@@ -71,8 +71,8 @@ export function newLayerDefaults(
       return {
         fills: copyFills([SHAPE_WITH_TEXT_FILL]),
         strokes: copyStrokes([SHAPE_WITH_TEXT_STROKE]),
-        width: SHAPE_WITH_TEXT_TOOL_SIZE,
-        height: SHAPE_WITH_TEXT_TOOL_SIZE,
+        width: SHAPE_WITH_TEXT_SIZE,
+        height: SHAPE_WITH_TEXT_SIZE,
         shapeWithTextType: 'SQUARE'
       }
     default:

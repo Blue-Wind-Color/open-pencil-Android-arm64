@@ -22,8 +22,8 @@ describe('shapes with text in design JSX', () => {
       shapeWithTextType: 'SQUARE',
       name: 'Start',
       autoRename: true,
-      width: 208,
-      height: 208,
+      width: 176,
+      height: 176,
       cornerRadius: 6
     })
     expect(shapeWithTextLabel(graph, square)?.text).toBe('Start')
@@ -72,7 +72,7 @@ describe('shapes with text in design JSX', () => {
     ])
     expect(getNodeOrThrow(graph, result.id)).toMatchObject({
       shapeWithTextType: 'SQUARE',
-      width: 208
+      width: 176
     })
   })
 

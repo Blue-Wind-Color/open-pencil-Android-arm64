@@ -6,10 +6,8 @@ import type { ShapeWithTextType } from '../shape-with-text/kinds'
 import type { Fill, SceneNode } from '../types'
 import type { GeneratedFrameKind } from './kind'
 
-/** FigJam's plugin API makes a shape with text 208 px square. */
-export const SHAPE_WITH_TEXT_SIZE = 208
-/** FigJam's shape tool places a shape 176 px square where it is clicked. */
-export const SHAPE_WITH_TEXT_TOOL_SIZE = 176
+/** FigJam makes a shape with text 176 px square, from its tool and from its plugin API. */
+export const SHAPE_WITH_TEXT_SIZE = 176
 /** FigJam rounds every corner of a shape by 6 px. */
 export const SHAPE_WITH_TEXT_CORNER_RADIUS = 6
 
