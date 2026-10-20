@@ -26,9 +26,10 @@ import IconType from '~icons/lucide/type'
 
 import { readIcon, slotPropertyId, type SceneNode } from '@open-pencil/scene-graph'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import type { Tool } from '@open-pencil/vue'
+import type { LayerVectorIcon, Tool } from '@open-pencil/vue'
 
 import { SHAPE_KIND_ICONS } from './shapes'
+import { vectorIcon } from './vectors'
 
 export const toolIcons: Record<Tool, Component> = {
   SELECT: IconMousePointer,
@@ -76,8 +77,8 @@ export const COMPONENT_TYPES = new Set(['COMPONENT', 'COMPONENT_SET', 'INSTANCE'
 export { IconFrame, IconSquare }
 
 /**
- * The glyph for a layer: its kind, or a slot or icon frame. A component keeps its own glyph, and
- * a shape with text shows its outline.
+ * The glyph for a layer: its kind, or a slot or icon frame. A component keeps its own glyph, a
+ * shape with text shows its outline, and a layer row's vector shows its own shape.
  */
 export function nodeIcon(node: {
   type: string
@@ -85,10 +86,15 @@ export function nodeIcon(node: {
   slot?: boolean
   icon?: boolean
   shapeWithTextType?: ShapeWithTextType
+  vector?: LayerVectorIcon
 }) {
   if (node.slot) return IconSlot
   if (node.type === 'SHAPE_WITH_TEXT' && node.shapeWithTextType) {
     return SHAPE_KIND_ICONS[node.shapeWithTextType]
+  }
+  if (node.vector) {
+    const icon = vectorIcon(node.vector)
+    if (icon) return icon
   }
   if (node.icon && node.type === 'FRAME') return IconSmile
   if (node.type === 'FRAME' && node.layoutMode !== 'NONE')

@@ -253,7 +253,8 @@ export type {
   LayerRow,
   LayerSelectionMode,
   LayerTreeContext,
-  LayerTreeVirtualizer
+  LayerTreeVirtualizer,
+  LayerVectorIcon
 } from '#vue/primitives/LayerTree'
 export { LayoutControlsRoot, useLayoutControlsContext } from '#vue/primitives/LayoutControls'
 export type {

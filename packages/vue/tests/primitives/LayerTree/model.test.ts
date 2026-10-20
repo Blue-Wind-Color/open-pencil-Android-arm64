@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { reactive } from 'vue'
+
 import { createShapeWithText, SceneGraph, withIcon } from '@open-pencil/scene-graph'
 import { buildLayerTreeModel, patchLayerNode } from '@open-pencil/vue'
 
@@ -53,6 +55,37 @@ describe('layer tree model', () => {
     graph.updateNode(shape.id, { shapeWithTextType: 'ELLIPSE' })
     expect(patchLayerNode(row, shape)).toBe(true)
     expect(row.shapeWithTextType).toBe('ELLIPSE')
+  })
+
+  test("carries a vector's network and placement, so its row draws the shape", () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const line = (x: number) => ({
+      vertices: [
+        { x: 0, y: 0 },
+        { x, y: 10 }
+      ],
+      segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+      regions: []
+    })
+    const vector = graph.createNode('VECTOR', pageId, { vectorNetwork: line(10) })
+    const rect = graph.createNode('RECTANGLE', pageId)
+
+    const model = buildLayerTreeModel(graph, pageId)
+    const row = model.byId.get(vector.id)
+    if (!row) throw new Error('Expected the vector in the model')
+    expect(row.vector?.network).toBe(vector.vectorNetwork ?? undefined)
+    expect(model.byId.get(rect.id)?.vector).toBeUndefined()
+
+    // The layer tree patches its rows through their reactive proxies.
+    expect(patchLayerNode(reactive(row), vector)).toBe(false)
+    graph.updateNode(vector.id, { vectorNetwork: line(20) })
+    expect(patchLayerNode(reactive(row), vector)).toBe(true)
+    expect(row.vector?.network).toBe(vector.vectorNetwork ?? undefined)
+
+    graph.updateNode(vector.id, { rotation: 30, flipX: true })
+    expect(patchLayerNode(reactive(row), vector)).toBe(true)
+    expect(row.vector).toMatchObject({ rotation: 30, flipX: true })
   })
 })
 
