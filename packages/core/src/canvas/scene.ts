@@ -50,6 +50,7 @@ import {
   getStrokeJoinEntity,
   normalizeDashPattern
 } from './strokes'
+import { drawOutlinedDashes } from './strokes/outlined-dashes'
 import { drawDashedRectStroke, strokeDashesByOutline, strokeSideWeights } from './strokes/sides'
 import { textVerticalOffset, withTextParagraph } from './text'
 import { drawTextLayout } from './text/decorations'
@@ -747,7 +748,8 @@ function drawVectorPathStrokes(
 
 /**
  * Draws a dashed stroke on a rectangle, frame, section, or component set with Figma's dash
- * layout, and returns false when the stroke has no dashes or the layout does not apply.
+ * layout, and returns false when the stroke has no dashes or has round or square dash ends on
+ * sides of their own weights, which that layout does not cover.
  */
 function drawFigmaDashes(
   r: SkiaRenderer,
@@ -756,8 +758,14 @@ function drawFigmaDashes(
   stroke: SceneNode['strokes'][0]
 ): boolean {
   const dash = normalizeDashPattern(stroke.dashPattern)
-  if (dash.length === 0 || !strokeDashesByOutline(node, stroke)) return false
-  drawDashedRectStroke(r, canvas, node, stroke, strokeSideWeights(node, stroke), dash)
+  if (dash.length === 0) return false
+  if (strokeDashesByOutline(node, stroke)) {
+    drawDashedRectStroke(r, canvas, node, stroke, strokeSideWeights(node, stroke), dash)
+  } else if (node.independentStrokeWeights) {
+    return false
+  } else {
+    drawOutlinedDashes(r, canvas, node, stroke, dash)
+  }
   return true
 }
 

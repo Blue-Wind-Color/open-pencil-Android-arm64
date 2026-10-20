@@ -1,8 +1,8 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
-import { dashedContainersDriver } from '#tests/helpers/canvas/strokes/driver'
+import { strokeSceneDriver } from '#tests/helpers/canvas/strokes/driver'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
-const scene = dashedContainersDriver(() => editor.page)
+const scene = strokeSceneDriver(() => editor.page, 'createDashedContainersScene')
 
 // The dash layout is checked against Figma in packages/core/tests/canvas/strokes/sides.test.ts.
 test('sections and component sets dash their strokes as rectangles do', async () => {

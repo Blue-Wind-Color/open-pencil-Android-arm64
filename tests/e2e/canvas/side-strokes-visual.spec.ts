@@ -1,8 +1,8 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
-import { sideStrokesDriver } from '#tests/helpers/canvas/strokes/driver'
+import { strokeSceneDriver } from '#tests/helpers/canvas/strokes/driver'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
-const scene = sideStrokesDriver(() => editor.page)
+const scene = strokeSceneDriver(() => editor.page, 'createSideStrokesScene')
 
 // The ring, corner radii, and dashes are checked against Figma in packages/core/tests/canvas/strokes/sides.test.ts.
 test('strokes with sides of their own weights', async () => {
