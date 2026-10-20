@@ -32,6 +32,9 @@ export function isVersionHistoryOpen(): boolean {
   return false
 }
 
+export function openCloudShare(): boolean {
+  return false
+}
 export const openVersionDialog = noop
 export const openVersionHistory = noop
 

@@ -30,6 +30,7 @@ const {
   canManage = true,
   inviting = false,
   copied = false,
+  sendsLink = false,
   links = { allowed: true, edit: true }
 } = defineProps<{
   documentName: string
@@ -40,6 +41,8 @@ const {
   canManage?: boolean
   inviting?: boolean
   copied?: boolean
+  /** Whether the link goes out through the system share sheet rather than the clipboard. */
+  sendsLink?: boolean
   /** What the workspace's plan allows for links: any link at all, and links that can edit. */
   links?: { allowed: boolean; edit: boolean }
 }>()
@@ -246,10 +249,11 @@ function submitInvite() {
       </template>
       <AppButton v-else-if="link.access === 'link'" variant="outline" @click="emit('copyLink')">
         <template #leading>
-          <icon-lucide-check v-if="copied" class="size-3.5" />
+          <icon-lucide-share-2 v-if="sendsLink" class="size-3.5" />
+          <icon-lucide-check v-else-if="copied" class="size-3.5" />
           <icon-lucide-link v-else class="size-3.5" />
         </template>
-        {{ copied ? t.shareLinkCopied : t.shareCopyLink }}
+        {{ sendsLink ? t.shareSendLink : copied ? t.shareLinkCopied : t.shareCopyLink }}
       </AppButton>
       <span v-else />
       <AppButton color="primary" variant="solid" @click="open = false">{{ common.done }}</AppButton>

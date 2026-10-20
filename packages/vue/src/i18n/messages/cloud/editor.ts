@@ -156,6 +156,7 @@ export const cloudMessageDefaults = {
   shareResetLink: 'Reset link',
   shareLinkCopied: 'Link copied',
   shareCopyLink: 'Copy link',
+  shareSendLink: 'Share link',
   shareLoadFailed: 'Couldn’t load who has access. Check your connection and try again.',
   shareChangeFailed: 'That change didn’t go through. Try again in a moment.',
 

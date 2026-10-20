@@ -9,6 +9,7 @@ type Args = {
   link: ShareLinkState
   canManage: boolean
   copied: boolean
+  sendsLink: boolean
   onInvite: (email: string, permission: string) => void
 }
 
@@ -39,6 +40,7 @@ const meta = {
     link: { access: 'restricted' },
     canManage: true,
     copied: false,
+    sendsLink: false,
     onInvite: fn()
   },
   render: (args) => ({
@@ -54,6 +56,7 @@ const meta = {
           :link="args.link"
           :can-manage="args.canManage"
           :copied="args.copied"
+          :sends-link="args.sendsLink"
           @invite="args.onInvite"
         />
       </div>`
@@ -71,6 +74,11 @@ export const AnyoneWithTheLink: Story = {
 
 export const LinkCopied: Story = {
   args: { link: { access: 'link', permission: 'view', copyable: true }, copied: true }
+}
+
+/** On a phone the link goes out through the system share sheet instead of the clipboard. */
+export const LinkSentFromPhone: Story = {
+  args: { link: { access: 'link', permission: 'view', copyable: true }, sendsLink: true }
 }
 
 export const LinkMadeOnAnotherDevice: Story = {

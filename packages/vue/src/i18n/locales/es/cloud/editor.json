@@ -114,6 +114,7 @@
   "shareResetLink": "Restablecer enlace",
   "shareLinkCopied": "Enlace copiado",
   "shareCopyLink": "Copiar enlace",
+  "shareSendLink": "Compartir enlace",
   "shareLoadFailed": "No se pudo cargar quién tiene acceso. Comprueba tu conexión y vuelve a intentarlo.",
   "shareChangeFailed": "Ese cambio no se ha aplicado. Inténtalo de nuevo en un momento.",
   "conflictKeepBoth": "Conservar ambas",
