@@ -10,12 +10,12 @@ import {
 } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { toolIcons } from '@/app/editor/icons'
 import { readOnlyToolbarLayout, toolbarItems } from '@/app/editor/toolbar/layout'
 import { toolShortcutLabels } from '@/app/editor/toolbar/shortcuts'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { useActionToast } from '@/app/shell/toast/action'
 import InsertIconButton from '@/components/icon-picker/InsertIconButton.vue'
+import { toolIcons } from '@/components/icons'
 import { useToolbarActions } from '@/components/toolbar/actions'
 import DesktopToolbar from '@/components/toolbar/DesktopToolbar.vue'
 import { useToolLabels } from '@/components/toolbar/labels'

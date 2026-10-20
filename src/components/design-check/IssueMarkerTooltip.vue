@@ -15,7 +15,7 @@ import { useDesignCheckMessages } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { issueDetail, ruleTitle } from '@/app/editor/design-check/format'
 import { compareIssueSeverity, type DesignIssue } from '@/app/editor/design-check/issues'
-import { sceneNodeIcon } from '@/app/editor/icons'
+import { sceneNodeIcon } from '@/components/icons'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
 import { issueTooltip } from '@/theme/design-check'
 

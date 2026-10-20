@@ -4,7 +4,7 @@ import { ref } from 'vue'
 
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
-import { SHAPE_KIND_ICONS } from '@/app/editor/shape-icons'
+import { SHAPE_KIND_ICONS } from '@/components/icons/shapes'
 
 import ShapeKindPicker from './ShapeKindPicker.vue'
 

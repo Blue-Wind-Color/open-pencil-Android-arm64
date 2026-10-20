@@ -10,7 +10,56 @@ import type { ConnectorEndpoint, Fill, SceneNode, Stroke, VectorNetwork } from '
  */
 export const CONNECTOR_COLOR: Color = { r: 117 / 255, g: 117 / 255, b: 117 / 255, a: 1 }
 export const CONNECTOR_STROKE_WEIGHT = 4
+/** FigJam's line menu draws a connector Thin, at its default weight, or Thick, at twice it. */
+export const CONNECTOR_THICK_STROKE_WEIGHT = 8
 export const CONNECTOR_CORNER_RADIUS = 24
+
+/** The dash FigJam's line menu draws a connector with, longer for a thick line. Measured in FigJam. */
+export function connectorDash(weight: number): number[] {
+  return weight >= CONNECTOR_THICK_STROKE_WEIGHT ? [40, 24] : [16, 10]
+}
+
+/** How a connector's line is drawn: its colour, weight, and whether it is dashed. */
+export interface ConnectorLineStyle {
+  color: Color
+  weight: number
+  dashed: boolean
+}
+
+/** The style a connector's line is drawn in. */
+export function connectorLineStyle(line: Pick<SceneNode, 'strokes'>): ConnectorLineStyle {
+  const stroke = line.strokes.at(0) ?? connectorStroke()
+  return {
+    color: { ...stroke.color },
+    weight: stroke.weight,
+    dashed: (stroke.dashPattern?.length ?? 0) > 0
+  }
+}
+
+/**
+ * A connector's line restyled by `style`, each part left out kept, as FigJam's colour and line
+ * menus set it. A new weight or dash takes FigJam's dash for the weight, while a new colour alone
+ * keeps the dash the line has, even one of its own. The dash goes on the stroke, which draws with
+ * it, and on the line, which files keep.
+ */
+export function connectorLineStyleFields(
+  line: Pick<SceneNode, 'strokes'>,
+  style: Partial<ConnectorLineStyle>
+): Partial<SceneNode> {
+  const current = connectorLineStyle(line)
+  const color = style.color ?? current.color
+  const weight = style.weight ?? current.weight
+  const dashed = style.dashed ?? current.dashed
+  const [stroke = connectorStroke()] = line.strokes
+  const restyled = style.weight !== undefined || style.dashed !== undefined
+  const kept = stroke.dashPattern?.length ? [...stroke.dashPattern] : connectorDash(weight)
+  const dashPattern = dashed ? (restyled ? connectorDash(weight) : kept) : []
+  return {
+    strokes: [{ ...stroke, color: { ...color }, weight, dashPattern: [...dashPattern] }],
+    strokeWeight: weight,
+    dashPattern
+  }
+}
 
 export function connectorStroke(color: Color = CONNECTOR_COLOR): Stroke {
   return {

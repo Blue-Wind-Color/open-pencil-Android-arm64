@@ -90,6 +90,8 @@ const itemUI = computed(() => ({ item: ui?.item, indicator: ui?.indicator }))
       v-bind="$attrs"
       :class="styles.trigger({ class: ui?.trigger })"
     >
+      <!-- An icon before the chosen option, such as the glyph its menu row shows. -->
+      <slot name="leading" />
       <SelectValue :placeholder="placeholder" :class="styles.value({ class: ui?.value })">
         {{ displayLabel ?? selectedLabel ?? placeholder }}
       </SelectValue>

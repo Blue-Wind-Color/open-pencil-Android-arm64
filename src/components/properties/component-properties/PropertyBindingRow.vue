@@ -2,7 +2,7 @@
 import type { ComponentBinding } from '@open-pencil/vue'
 import { usePanelMessages } from '@open-pencil/vue'
 
-import { sceneNodeIcon } from '@/app/editor/icons'
+import { sceneNodeIcon } from '@/components/icons'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 

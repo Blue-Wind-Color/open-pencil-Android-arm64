@@ -9,7 +9,7 @@ import {
   type DesignCheckMessages
 } from '@/app/editor/design-check/format'
 import type { DesignIssue, DesignIssueGroup } from '@/app/editor/design-check/issues'
-import { IconFrame, sceneNodeIcon } from '@/app/editor/icons'
+import { IconFrame, sceneNodeIcon } from '@/components/icons'
 
 import type { IssueGroupView, IssueRowView } from './types'
 

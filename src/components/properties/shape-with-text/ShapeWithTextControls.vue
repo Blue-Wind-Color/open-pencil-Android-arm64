@@ -12,16 +12,16 @@ import type {
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 import { useFigJamMessages, useShapeMessages } from '@open-pencil/vue'
 
-import { SHAPE_KIND_ICONS } from '@/app/editor/shape-icons'
 import FigJamPalette from '@/components/figjam/FigJamPalette.vue'
 import { typefaceModel, useFigJamTextOptions } from '@/components/figjam/text-options'
+import { SHAPE_KIND_ICONS } from '@/components/icons/shapes'
 import { useShapeKindLabels } from '@/components/shapes/labels'
 import ShapeKindPicker from '@/components/shapes/ShapeKindPicker.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
+import theme from '@/theme/figjam/controls'
 import selectTheme from '@/theme/select/app'
-import theme from '@/theme/shape-with-text-controls'
 
 /**
  * A shape with text's kind, colour, outline and text, as FigJam's selection toolbar sets them:

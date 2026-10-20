@@ -1,6 +1,13 @@
 import {
+  CONNECTOR_STROKE_WEIGHT,
+  CONNECTOR_THICK_STROKE_WEIGHT,
+  connectorLineStyleFields,
+  connectorSublayers,
+  figJamColor,
   layoutConnector,
   type ConnectorEndpoint,
+  type ConnectorLineStyle,
+  type FigJamColorName,
   type ConnectorLineType,
   type SceneNode,
   type StrokeCap
@@ -16,7 +23,8 @@ function straightEnd(endpoint: ConnectorEndpoint | null): ConnectorEndpoint | nu
 }
 
 /**
- * Connector commands from the Design panel: line type and caps. Each change records the
+ * Connector commands from the Design panel: line type, caps, and the line's colour, weight and
+ * dash, as FigJam's selection toolbar sets them. Each change records the
  * connectors' whole subtrees as one step, and the connectors route again.
  */
 export function createConnectorStyleActions(ctx: EditorContext) {
@@ -61,5 +69,35 @@ export function createConnectorStyleActions(ctx: EditorContext) {
     )
   }
 
-  return { setConnectorLineType, setConnectorCap }
+  function restyleLine(label: string, ids: Iterable<string>, style: Partial<ConnectorLineStyle>) {
+    edit(label, ids, (connector) => {
+      const line = connectorSublayers(ctx.graph, connector)?.line
+      if (line) ctx.graph.updateNode(line.id, connectorLineStyleFields(line, style))
+    })
+  }
+
+  /** Draws the connectors' lines in palette colour `name`. */
+  function setConnectorColor(ids: Iterable<string>, name: FigJamColorName) {
+    restyleLine('Change connector color', ids, { color: figJamColor(name) })
+  }
+
+  /** Draws the connectors' lines Thick or Thin, as FigJam's line menu does. */
+  function setConnectorThick(ids: Iterable<string>, thick: boolean) {
+    restyleLine('Change connector weight', ids, {
+      weight: thick ? CONNECTOR_THICK_STROKE_WEIGHT : CONNECTOR_STROKE_WEIGHT
+    })
+  }
+
+  /** Dashes the connectors' lines or draws them solid. */
+  function setConnectorDashed(ids: Iterable<string>, dashed: boolean) {
+    restyleLine(dashed ? 'Dash connector' : 'Draw connector solid', ids, { dashed })
+  }
+
+  return {
+    setConnectorLineType,
+    setConnectorCap,
+    setConnectorColor,
+    setConnectorThick,
+    setConnectorDashed
+  }
 }

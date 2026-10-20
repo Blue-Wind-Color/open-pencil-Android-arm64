@@ -7,7 +7,7 @@ import {
   type ComponentBindingGroup
 } from '@open-pencil/vue'
 
-import { sceneNodeIcon } from '@/app/editor/icons'
+import { sceneNodeIcon } from '@/components/icons'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 

@@ -104,10 +104,12 @@ function styleLine(graph: SceneGraph, line: SceneNode, props: ConnectorPropValue
   const [stroke = connectorStroke()] = line.strokes
   const color = props.stroke ?? stroke.color
   const weight = props.strokeWidth ?? stroke.weight
+  const dashPattern = props.dashPattern ?? line.dashPattern
   graph.updateNode(line.id, {
-    strokes: [{ ...stroke, color, weight }],
+    // The stroke draws with its own dash, and files keep the line's.
+    strokes: [{ ...stroke, color, weight, dashPattern: [...dashPattern] }],
     strokeWeight: weight,
-    dashPattern: props.dashPattern ?? line.dashPattern
+    dashPattern
   })
 }
 

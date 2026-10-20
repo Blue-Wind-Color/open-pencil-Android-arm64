@@ -137,3 +137,28 @@ test('the Connector section sets the line type and end caps', async () => {
     endCap: 'CIRCLE_FILLED'
   })
 })
+
+test("the Connector section draws the line in FigJam's palette, thick, and dashed", async () => {
+  await connectors.showTool()
+  await connectors.pickTool()
+  await drag([100, 100], [600, 200])
+  await editor.page.keyboard.press('v')
+  const connector = await lastConnector()
+  await connectors.select(connector.id)
+  const section = editor.page.getByRole('region', { name: 'Connector' })
+  await section
+    .getByRole('radiogroup', { name: 'Color' })
+    .getByRole('radio', { name: 'Blue', exact: true })
+    .click()
+  await section.locator('[data-property="connector-dashed"]').click()
+  await section.locator('[data-property="connector-thick"]').click()
+  await expect(section.locator('[data-property="connector-thick"]')).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  expect(await connectors.lineStroke(connector.id)).toEqual({
+    color: '#3dadff',
+    weight: 8,
+    dash: [40, 24]
+  })
+})

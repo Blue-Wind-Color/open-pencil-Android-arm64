@@ -893,7 +893,7 @@ function paintNodeStrokes(
       node.type === 'VECTOR' &&
       node.vectorNetwork
     ) {
-      const centerline = vectorNetworkToCenterlinePath(r.ck, node.vectorNetwork)
+      const centerline = vectorNetworkToCenterlinePath(r.ck, node.vectorNetwork, node.cornerRadius)
       drawVectorPathStrokes(r, canvas, [centerline], stroke, color, node.strokeMiterLimit)
       centerline.delete()
       drawNodeArrowHeads(r, canvas, node, stroke, color)

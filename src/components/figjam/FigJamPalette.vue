@@ -7,13 +7,21 @@ import { useFigJamMessages } from '@open-pencil/vue'
 
 import Swatches from './Swatches.vue'
 
-/** FigJam's board palette in its menus' order, closed by a swatch for no colour at all. */
-const { label, selected, noneLabel, none } = defineProps<{
+/**
+ * FigJam's board palette in its menus' order, closed, when `noneLabel` is given, by a swatch for
+ * no colour at all.
+ */
+const {
+  label,
+  selected,
+  noneLabel,
+  none = false
+} = defineProps<{
   label: string
   selected: FigJamColorName | null
-  noneLabel: string
+  noneLabel?: string
   /** Whether no colour is shown, which the none swatch marks. */
-  none: boolean
+  none?: boolean
 }>()
 const emit = defineEmits<{ select: [name: FigJamColorName]; none: [] }>()
 const figjam = useFigJamMessages()
@@ -58,7 +66,7 @@ const swatches = computed(() =>
     :label="label"
     :swatches="swatches"
     :selected="selected"
-    :none="{ label: noneLabel, active: none }"
+    :none="noneLabel ? { label: noneLabel, active: none } : undefined"
     @select="emit('select', $event)"
     @none="emit('none')"
   />

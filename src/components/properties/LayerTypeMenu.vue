@@ -15,7 +15,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { useI18n, useRetainedPopup } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { NODE_ICONS } from '@/app/editor/icons'
+import { NODE_ICONS } from '@/components/icons'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'

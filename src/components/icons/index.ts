@@ -26,9 +26,9 @@ import IconType from '~icons/lucide/type'
 
 import { readIcon, slotPropertyId, type SceneNode } from '@open-pencil/scene-graph'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+import type { Tool } from '@open-pencil/vue'
 
-import type { Tool } from '@/app/editor/session'
-import { SHAPE_KIND_ICONS } from '@/app/editor/shape-icons'
+import { SHAPE_KIND_ICONS } from './shapes'
 
 export const toolIcons: Record<Tool, Component> = {
   SELECT: IconMousePointer,

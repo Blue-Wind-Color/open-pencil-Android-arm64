@@ -447,6 +447,7 @@ it:settings.cloud
 es:cloud.productName
 es:cloud.roleEditor
 es:cloud.homeCloudOnHost
+es:panels.connectorColor
 it:cloud.productName
 it:cloud.server
 it:cloud.roleEditor

@@ -159,6 +159,58 @@ export function connectorDriver(page: () => Page) {
     },
 
     /**
+     * Setup: three elbowed connectors at 100%, styled as FigJam's line menu styles them: thin and
+     * dashed, thick and dashed, and thick and solid, each in a palette colour.
+     */
+    showLineStyles() {
+      return page().evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const page = store.state.currentPageId
+        const box = (x: number, y: number) =>
+          store.graph.createNode('RECTANGLE', page, {
+            x,
+            y,
+            width: 120,
+            height: 80,
+            fills: [
+              {
+                type: 'SOLID',
+                color: { r: 0.85, g: 0.88, b: 0.95, a: 1 },
+                opacity: 1,
+                visible: true
+              }
+            ]
+          })
+        const styles = [
+          { color: 'violet', thick: false, dashed: true },
+          { color: 'red', thick: true, dashed: true },
+          { color: 'blue', thick: true, dashed: false }
+        ] as const
+        styles.forEach((style, row) => {
+          const from = box(40, 40 + row * 180)
+          const to = box(480, 120 + row * 180)
+          store.setTool('CONNECTOR')
+          store.connectorBegin(from.x + 60, from.y + 40)
+          store.connectorRelease(to.x + 60, to.y + 40, true)
+          const connector = store.graph
+            .getChildren(page)
+            .findLast((node) => node.type === 'CONNECTOR')
+          if (!connector) throw new Error('No connector')
+          store.setConnectorColor([connector.id], style.color)
+          store.setConnectorThick([connector.id], style.thick)
+          store.setConnectorDashed([connector.id], style.dashed)
+        })
+        store.setTool('SELECT')
+        store.clearSelection()
+        store.state.zoom = 1
+        store.state.panX = 0
+        store.state.panY = 0
+        store.requestRender()
+      })
+    },
+
+    /**
      * Setup: a section with connectors drawn into it from boxes left of it, below it, and right
      * of it, dropped away from its outline and centre so each end is pinned where it was dropped.
      */
@@ -217,6 +269,25 @@ export function connectorDriver(page: () => Page) {
           startCap: node.connectorStartCap,
           endCap: node.connectorEndCap
         }
+      }, id)
+    },
+
+    /** Probe: how a connector's line is stroked: its colour as `#rrggbb`, weight and dash. */
+    lineStroke(id: string) {
+      return page().evaluate((connectorId) => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const [line] = store.graph.getChildren(connectorId)
+        const stroke = line?.strokes[0]
+        if (!stroke) throw new Error(`No line stroke on ${connectorId}`)
+        const hex = [stroke.color.r, stroke.color.g, stroke.color.b]
+          .map((value) =>
+            Math.round(value * 255)
+              .toString(16)
+              .padStart(2, '0')
+          )
+          .join('')
+        return { color: `#${hex}`, weight: stroke.weight, dash: stroke.dashPattern ?? [] }
       }, id)
     },
 

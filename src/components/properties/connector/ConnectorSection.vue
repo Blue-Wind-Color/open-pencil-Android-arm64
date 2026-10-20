@@ -6,7 +6,21 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import ConnectorControls from './ConnectorControls.vue'
 
 const { panels } = useI18n()
-const { active, lineType, startCap, endCap, setLineType, setStartCap, setEndCap } = useConnector()
+const {
+  active,
+  lineType,
+  startCap,
+  endCap,
+  color,
+  thick,
+  dashed,
+  setLineType,
+  setStartCap,
+  setEndCap,
+  setColor,
+  setThick,
+  setDashed
+} = useConnector()
 </script>
 
 <template>
@@ -15,9 +29,15 @@ const { active, lineType, startCap, endCap, setLineType, setStartCap, setEndCap 
       :line-type="lineType"
       :start-cap="startCap"
       :end-cap="endCap"
+      :color="color"
+      :thick="thick"
+      :dashed="dashed"
       @update:line-type="setLineType"
       @update:start-cap="setStartCap"
       @update:end-cap="setEndCap"
+      @update:color="setColor"
+      @update:thick="setThick"
+      @update:dashed="setDashed"
     />
   </PanelSection>
 </template>

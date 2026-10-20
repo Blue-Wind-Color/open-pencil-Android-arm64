@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 import { toolbarToolTestId, useShapeWithText, useToolMessages } from '@open-pencil/vue'
 
-import { SHAPE_KIND_ICONS } from '@/app/editor/shape-icons'
+import { SHAPE_KIND_ICONS } from '@/components/icons/shapes'
 import ShapeKindPicker from '@/components/shapes/ShapeKindPicker.vue'
 import ToolButton from '@/components/toolbar/ToolButton.vue'
 import type { ToolbarUI } from '@/components/toolbar/types'
