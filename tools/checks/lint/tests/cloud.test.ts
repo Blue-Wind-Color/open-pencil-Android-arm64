@@ -6,22 +6,6 @@ async function diagnostics(rule: string, source: string) {
   return ruleDiagnostics(await lint(source, { [`open-pencil/${rule}`]: 'error' }), rule)
 }
 
-describe('no-cloud-raw-sql', () => {
-  test.each(['sql`select 1`', 'sql.raw`drop table x`', 'sql<number>`count(*)`'])(
-    'rejects %s',
-    async (source) => {
-      expect(await diagnostics('no-cloud-raw-sql', source)).toHaveLength(1)
-    }
-  )
-
-  test.each(["db.selectFrom('documents').selectAll()", 'html`<p></p>`'])(
-    'accepts %s',
-    async (source) => {
-      expect(await diagnostics('no-cloud-raw-sql', source)).toHaveLength(0)
-    }
-  )
-})
-
 describe('no-cloud-dynamic-html', () => {
   test.each(['c.html(page)', 'c.html(`<p>` + name + `</p>`)', "c.html('<p>' + name + '</p>')"])(
     'rejects %s',

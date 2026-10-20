@@ -22,8 +22,61 @@ export interface WaitlistTable {
   confirmedAt: string | null
 }
 
+export interface GithubStarsTable {
+  day: string
+  stars: number
+  forks: number
+}
+
+export interface ReleaseDownloadsTable {
+  day: string
+  tag: string
+  kind: string
+  downloads: number
+}
+
+export interface RepoTrafficTable {
+  day: string
+  views: number
+  uniqueViews: number
+  clones: number
+  uniqueClones: number
+}
+
+export interface RepoReferrersTable {
+  day: string
+  referrer: string
+  views: number
+  uniqueViews: number
+}
+
+export interface SiteVisitsTable {
+  day: string
+  host: string
+  visits: number
+}
+
+export interface SitePagesTable {
+  day: string
+  path: string
+  visits: number
+}
+
+export interface SiteCountriesTable {
+  day: string
+  country: string
+  visits: number
+}
+
 /** The D1 tables `migrations/` creates, in Kysely's camelCase. */
 export interface FeedbackDatabase {
   usagePings: UsagePingTable
   waitlist: WaitlistTable
+  githubStars: GithubStarsTable
+  releaseDownloads: ReleaseDownloadsTable
+  repoTraffic: RepoTrafficTable
+  repoReferrers: RepoReferrersTable
+  siteVisits: SiteVisitsTable
+  sitePages: SitePagesTable
+  siteCountries: SiteCountriesTable
 }

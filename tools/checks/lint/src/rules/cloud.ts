@@ -64,30 +64,6 @@ function loggedNames(node: ESTree.Node | null): string[] {
   }
 }
 
-/** Kysely's typed builder everywhere; raw `sql` templates only in migrations and reviewed helpers. */
-export const noCloudRawSQLRule = defineRule({
-  meta: {
-    type: 'problem',
-    docs: { description: 'Disallow raw sql templates in the Cloud server.' },
-    messages: {
-      raw: "Use Kysely's typed query builder; raw SQL belongs in migrations and the reviewed helpers in db/expressions.ts."
-    }
-  },
-  createOnce(context) {
-    return {
-      TaggedTemplateExpression(node) {
-        const { tag } = node
-        const named =
-          (tag.type === 'Identifier' && tag.name === 'sql') ||
-          (tag.type === 'MemberExpression' &&
-            tag.object.type === 'Identifier' &&
-            tag.object.name === 'sql')
-        if (named) context.report({ node, messageId: 'raw' })
-      }
-    }
-  }
-})
-
 /** Cloud APIs answer with typed JSON or a constant body, never HTML assembled from values. */
 export const noCloudDynamicHTMLRule = defineRule({
   meta: {

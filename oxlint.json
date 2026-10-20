@@ -452,8 +452,14 @@
     {
       "files": ["packages/cloud/src/server/**/*.ts"],
       "rules": {
-        "open-pencil/no-cloud-raw-sql": "error",
+        "open-pencil/no-raw-sql": "error",
         "open-pencil/no-cloud-dynamic-html": "error"
+      }
+    },
+    {
+      "files": ["packages/feedback/src/**/*.ts"],
+      "rules": {
+        "open-pencil/no-raw-sql": "error"
       }
     },
     {
@@ -463,7 +469,7 @@
         "packages/cloud/src/server/db/migrations/**/*.ts"
       ],
       "rules": {
-        "open-pencil/no-cloud-raw-sql": "off"
+        "open-pencil/no-raw-sql": "off"
       }
     },
     {

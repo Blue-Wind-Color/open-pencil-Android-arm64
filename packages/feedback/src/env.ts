@@ -18,6 +18,16 @@ export interface FeedbackBindings {
   /** The sites whose Turnstile passes a sign-up accepts, separated by commas. */
   TURNSTILE_HOSTNAMES: string
   TURNSTILE_SECRET: string
+  /** `owner/name` of the repository whose stars, downloads, and traffic are recorded. */
+  GITHUB_REPOSITORY: string
+  /** A fine-grained token that can read the repository's traffic (Administration: read). */
+  GITHUB_TOKEN: string
+  /** The Cloudflare zone holding `SITE_HOSTS`, for its visit analytics. */
+  SITE_ZONE_ID: string
+  /** The hostnames whose visits are recorded, separated by commas; the first is the website. */
+  SITE_HOSTS: string
+  /** A Cloudflare API token that can read the zone's analytics. */
+  CLOUDFLARE_ANALYTICS_TOKEN: string
 }
 
 export type FeedbackEnv = { Bindings: FeedbackBindings }

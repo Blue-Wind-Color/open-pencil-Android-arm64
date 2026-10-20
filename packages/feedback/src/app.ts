@@ -11,7 +11,8 @@ export type { FeedbackBindings, FeedbackEnv, FeedbackServices } from './env'
 
 const MAX_BODY_BYTES = 16 * 1024
 
-const defaultServices: FeedbackServices = {
+/** The real outside world; tests pass their own. */
+export const defaultServices: FeedbackServices = {
   fetch: (input, init) => fetch(input, init),
   now: () => new Date()
 }
