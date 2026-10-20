@@ -73,8 +73,8 @@ function requiredFacesReadiness(r: FontReadinessRenderer, node: SceneNode): Node
     const state = fontResolver.state(demand).state
     demandFace(r, node, family, style)
     if (state === 'failed' || state === 'exhausted') {
-      // CanvasKit can synthesize a missing slant or weight from another loaded face in the same
-      // family. Keep the text visible when an exact face (for example, Italic) is unavailable.
+      // A missing face is drawn in another loaded face of the family, as Figma draws it, and
+      // reported missing; the text stays visible when an exact face (Italic) is unavailable.
       if (fontManager.isLoaded(family)) continue
       exhausted = true
     } else {
