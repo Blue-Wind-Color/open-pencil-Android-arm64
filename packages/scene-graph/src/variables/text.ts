@@ -35,3 +35,17 @@ function numberText(input: number): string {
   const sign = value < 0 ? '-' : ''
   return `${sign}${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, '0')}`
 }
+
+/** Text Figma reads as false besides the empty string, ignoring case and surrounding spaces. */
+const FALSE_WORDS = new Set(['false', 'no', 'off'])
+
+/**
+ * Whether Figma reads a value as true, as a formula's `truthy()` and a visibility binding do: a
+ * number other than 0, and text other than "", "false", "no" or "off".
+ */
+export function variableTruthy(value: VariableValue | undefined): boolean | undefined {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'number') return value !== 0
+  if (typeof value === 'string') return value !== '' && !FALSE_WORDS.has(value.trim().toLowerCase())
+  return undefined
+}

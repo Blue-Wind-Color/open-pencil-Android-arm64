@@ -5,7 +5,7 @@ import type { Color } from '../primitives'
 import type { Fill, SceneNode, Stroke, StyleRun } from '../types'
 import type { VariableModeFallback } from '../variables'
 import { NUMERIC_FIELDS, isNumericVariableBindingField } from './fields'
-import { variableText } from './text'
+import { variableText, variableTruthy } from './text'
 import { variableValueReferences } from './value'
 export { isNumericVariableBindingField } from './fields'
 
@@ -79,8 +79,9 @@ export function resolvedValueBindings(
   }
   const text = node.type === 'TEXT' ? variableText(resolve('text')) : undefined
   if (text !== undefined && text !== node.text) updates.text = text
-  const visible = resolve('visible')
-  if (typeof visible === 'boolean' && visible !== node.visible) updates.visible = visible
+  // Figma binds visibility to text too, and shows the layer when the text reads as true.
+  const visible = variableTruthy(resolve('visible'))
+  if (visible !== undefined && visible !== node.visible) updates.visible = visible
   return updates
 }
 

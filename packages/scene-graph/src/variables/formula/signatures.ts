@@ -4,7 +4,7 @@ import type {
   VariableType
 } from '@open-pencil/scene-graph'
 
-import { variableText } from '../text'
+import { variableText, variableTruthy } from '../text'
 import { VariableFormulaError } from './tree'
 
 export type FormulaValueType = VariableType
@@ -109,7 +109,7 @@ const SIGNATURES: Record<VariableFormulaOperator, OperatorSignature> = {
     arity: 1,
     overloads: TEXT_TYPES.map((type) => ({ operands: [type], result: 'BOOLEAN' })),
     needs: 'needs a number, text, or true or false',
-    apply: ([a]) => isTruthy(a)
+    apply: ([a]) => variableTruthy(a) ?? false
   },
   TERNARY: {
     spellings: ['if'],
@@ -180,17 +180,6 @@ function logic(
     needs: 'needs true or false',
     apply: ([a, b]) => apply(a === true, b === true)
   }
-}
-
-/** Text Figma reads as false besides the empty string, ignoring case and surrounding spaces. */
-const FALSE_WORDS = new Set(['false', 'no', 'off'])
-
-/** Figma's truth: a number other than 0, and text other than "", "false", "no" or "off". */
-function isTruthy(value: VariableLiteral): boolean {
-  if (typeof value === 'boolean') return value
-  if (typeof value === 'number') return value !== 0
-  if (typeof value === 'string') return value !== '' && !FALSE_WORDS.has(value.trim().toLowerCase())
-  return false
 }
 
 const OPERATORS = Object.keys(SIGNATURES) as VariableFormulaOperator[]
