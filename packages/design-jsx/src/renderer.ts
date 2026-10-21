@@ -20,7 +20,7 @@ import {
 } from './component-properties'
 import { CONNECTOR_ELEMENT, resolveConnectorEnds } from './connectors'
 import { elementNodeType, elementOwnLayer, type OwnLayerRenderer } from './elements'
-import { applySizeOverrides, propsToOverrides } from './props-overrides'
+import { applySizeOverrides, propsToOverrides, shapeOverrides } from './props-overrides'
 import { LayerRefs } from './refs'
 import { prepareScalarBindings } from './scalar-bindings'
 import type { DesignJSXServices } from './services'
@@ -484,6 +484,7 @@ export function elementOverrides(
   const { props, bindings } = preparePropsForRender(graph, tree.props, isText, parentId)
   const overrides = {
     ...propsToOverrides(props, isText, parentLayout),
+    ...shapeOverrides(nodeType, props),
     ...componentMetadata(props, nodeType, componentPropertyScope(graph, parentId))
   }
 

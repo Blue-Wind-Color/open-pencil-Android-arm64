@@ -243,6 +243,13 @@ export const PROPERTY_CASES: RoundTripCase[] = [
   leafCase('mask', 'RECTANGLE', { isMask: true, maskType: 'LUMINANCE' }),
   leafCase('clipping', 'FRAME', { clipsContent: true }),
   leafCase('star geometry', 'STAR', { pointCount: 7, starInnerRadius: 0.5 }),
+  leafCase('ellipse arc with a hole', 'ELLIPSE', {
+    arcData: { startingAngle: Math.PI / 2, endingAngle: Math.PI * 2, innerRadius: 0.5 }
+  }),
+  leafCase('ellipse arc from the default start', 'ELLIPSE', {
+    arcData: { startingAngle: 0, endingAngle: Math.PI, innerRadius: 0 }
+  }),
+  leafCase('flipped and turned layer', 'RECTANGLE', { flipX: true, flipY: true, rotation: 30 }),
   leafCase('text style', 'TEXT', {
     text: 'Hello',
     fontSize: 20,

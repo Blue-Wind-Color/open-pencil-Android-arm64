@@ -1,6 +1,7 @@
 import {
   node,
   type BaseProps,
+  type EllipseProps,
   type ComponentProps,
   type InstanceProps,
   type ParagraphProps,
@@ -38,7 +39,7 @@ export function Rectangle(props: BaseProps, ...children: Child[]): TreeNode {
   return withChildren('rectangle', props, children)
 }
 
-export function Ellipse(props: BaseProps, ...children: Child[]): TreeNode {
+export function Ellipse(props: BaseProps & EllipseProps, ...children: Child[]): TreeNode {
   return withChildren('ellipse', props, children)
 }
 
