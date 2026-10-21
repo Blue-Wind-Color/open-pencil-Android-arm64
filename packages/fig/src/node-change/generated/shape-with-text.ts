@@ -1,4 +1,4 @@
-import { pick } from 'es-toolkit'
+import { omit, pick } from 'es-toolkit'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import {
@@ -47,6 +47,9 @@ const SHAPE_WITH_TEXT_RECORD_FIELDS = [
   'pluginData',
   'pluginRelaunchData'
 ] as const
+
+/** The label's sizing, which layout sets from the shape and FigJam's label record leaves out. */
+const LABEL_LAYOUT_FIELDS = ['textAutoResize', 'textTruncation', 'maxLines'] as const
 
 /** What a shape with text's background keeps: the shape's own paint, corners and effects. */
 const SHAPE_WITH_TEXT_BACKGROUND_FIELDS = [
@@ -113,7 +116,6 @@ function readShapeWithText(
   const overrides = generationOverridesOf(record)
   graph.updateNode(shape.id, {
     ...backgroundProps(overrides.get(background), blobs),
-    shapeUserWidth: shape.shapeUserWidth > 0 ? shape.shapeUserWidth : shape.width,
     shapeUserHeight: shape.shapeUserHeight > 0 ? shape.shapeUserHeight : shape.height,
     ...shapeWithTextFrameFields(shape.shapeWithTextType, shape.width, shape.height)
   })
@@ -135,6 +137,7 @@ function writeShapeWithText(
   const record: KiwiNodeChange = pick(nc, SHAPE_WITH_TEXT_RECORD_FIELDS)
   record.shapeWithTextType = node.shapeWithTextType
   if (node.shapeUserHeight > 0) record.shapeUserHeight = node.shapeUserHeight
+  if (node.shapeTruncates) record.shapeTruncates = true
   const slots = SHAPE_WITH_TEXT_SLOTS
   const background: GeneratedEntry = {
     guidPath: generatedSlotPath(slots.background),
@@ -143,7 +146,8 @@ function writeShapeWithText(
   }
   const text = textSublayer(context, slots.label, label)
   record.nodeGenerationData = {
-    overrides: [background, text.entry],
+    // FigJam sizes and truncates the label from the shape itself, so its own sizing stays out.
+    overrides: [background, omit(text.entry, LABEL_LAYOUT_FIELDS)],
     useFineGrainedSyncing: false,
     diffOnlyRemovals: []
   }

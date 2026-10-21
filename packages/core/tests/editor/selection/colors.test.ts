@@ -6,6 +6,7 @@ import {
   selectionColors,
   selectionColorsShown
 } from '@open-pencil/core/editor'
+import { createSticky, stickySublayers } from '@open-pencil/scene-graph'
 import type { Color, Fill } from '@open-pencil/scene-graph'
 
 const RED = { r: 1, g: 0.3, b: 0.2, a: 1 }
@@ -91,5 +92,21 @@ describe('selection colors', () => {
     expect(selectionColorsShown(graph, [rectA, rectB])).toBe(false)
     expect(selectionColorsShown(graph, [rectA, ellipse])).toBe(true)
     expect(selectionColorsShown(graph, [frame])).toBe(true)
+  })
+
+  test("a sticky note lists its body and colour, not its author line, as in Figma", () => {
+    const editor = createEditor()
+    const { graph } = editor
+    const note = createSticky(graph, graph.getPages()[0].id, { text: 'Hi' })
+    const author = stickySublayers(graph, note)?.author
+    expect(author?.fills.length).toBeGreaterThan(0)
+    const listed = selectionColors(graph, [note.id]).map(({ opacity }) => opacity)
+    // The body's black at 80% and the note colour; the author's black at 50% is left out.
+    expect(listed).toHaveLength(2)
+    expect(listed).toContain(0.8)
+    // The author line listed on its own, before or after its note, is walked all the same.
+    const authorId = author?.id ?? ''
+    expect(selectionColors(graph, [authorId, note.id])).toHaveLength(3)
+    expect(selectionColors(graph, [note.id, authorId])).toHaveLength(3)
   })
 })

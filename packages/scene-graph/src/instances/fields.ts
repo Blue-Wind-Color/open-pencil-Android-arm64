@@ -48,7 +48,7 @@ export const INSTANCE_FOLLOWED_FIELDS = [
   'starInnerRadius',
   'shapeWithTextType',
   'shapeUserHeight',
-  'shapeUserWidth'
+  'shapeTruncates'
 ] as const
 
 /** Fields a component's layer gives its copies unless an instance overrides them. */

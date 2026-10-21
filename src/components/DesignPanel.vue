@@ -233,7 +233,8 @@ const { panels } = useI18n()
       <AppearanceSection />
       <template v-if="node.type !== 'CONNECTOR'">
         <MaskSection />
-        <TypographySection v-if="node.type === 'TEXT'" />
+        <!-- A shape with text's typography is its label's, as in Figma. -->
+        <TypographySection v-if="node.type === 'TEXT' || node.type === 'SHAPE_WITH_TEXT'" />
         <FillSection />
         <template v-if="strokesAndEffects">
           <StrokeSection />

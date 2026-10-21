@@ -33,8 +33,8 @@ describe('shapes with text in design JSX', () => {
       autoRename: false,
       width: 240,
       height: 160,
-      shapeUserWidth: 240,
       shapeUserHeight: 160,
+      shapeTruncates: false,
       cornerRadius: 0
     })
   })
@@ -57,8 +57,22 @@ describe('shapes with text in design JSX', () => {
     const label = 'A label long enough to need more lines than a small square holds'
     const [result] = await renderJSX(graph, `<Shape w={120} h={120}>${label}</Shape>`)
     const shape = getNodeOrThrow(graph, result.id)
+    expect([shape.width, shape.height]).toEqual([120, expect.any(Number)])
     expect(shape.height).toBeGreaterThan(120)
     expect(sceneNodeToJSX(result.id, graph)).toContain('w={120} h={120}')
+  })
+
+  test('truncate keeps the height and cuts the label off, and writes back', async () => {
+    const graph = new SceneGraph()
+    const label = 'A label long enough to need more lines than a small square holds'
+    const [result] = await renderJSX(graph, `<Shape w={120} h={120} truncate>${label}</Shape>`)
+    const shape = getNodeOrThrow(graph, result.id)
+    expect(shape).toMatchObject({ height: 120, shapeTruncates: true })
+    expect(shapeWithTextLabel(graph, shape)?.textTruncation).toBe('ENDING')
+    expect(sceneNodeToJSX(result.id, graph)).toContain('w={120} h={120} truncate')
+    // The height it keeps is written, even where the height it was given differs, as a file can.
+    graph.updateNode(shape.id, { shapeUserHeight: 90 })
+    expect(sceneNodeToJSX(result.id, graph)).toContain('w={120} h={120} truncate')
   })
 
   test('a prop of the wrong kind warns and is left out', async () => {

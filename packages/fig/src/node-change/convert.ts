@@ -416,18 +416,18 @@ function givenSize(value: unknown): number {
 }
 
 /**
- * A FigJam shape with text's kind and the size it was given; its label is read as a sublayer.
- * FigJam keeps the given height; OpenPencil keeps the given width too, in its plugin data.
+ * A FigJam shape with text's kind, the height it was given and whether it keeps that height; its
+ * label is read as a sublayer.
  */
 function convertShapeWithTextProps(
   nc: NodeChange
-): Partial<Pick<SceneNode, 'shapeWithTextType' | 'shapeUserHeight' | 'shapeUserWidth'>> {
+): Partial<Pick<SceneNode, 'shapeWithTextType' | 'shapeUserHeight' | 'shapeTruncates'>> {
   if (nc.type !== 'SHAPE_WITH_TEXT') return {}
   const kind = isShapeWithTextType(nc.shapeWithTextType) ? nc.shapeWithTextType : 'SQUARE'
   return {
     shapeWithTextType: kind,
     shapeUserHeight: givenSize(nc.shapeUserHeight),
-    shapeUserWidth: givenSize(readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.shapeUserWidth))
+    shapeTruncates: nc.shapeTruncates === true
   }
 }
 

@@ -14,6 +14,7 @@ import { ResourceCache } from '#core/cache/resource'
 import { resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
 import { DEFAULT_FONT_FAMILY, SECTION_TITLE_FONT_FAMILY } from '#core/constants'
 import { textHasFallbackScript } from '#core/text/coverage'
+import { ELLIPSIS } from '#core/text/ellipsis'
 import { weightToStyle } from '#core/text/fonts'
 import { missingGlyphOccurrences, type MissingGlyphOccurrence } from '#core/text/resolver'
 
@@ -71,7 +72,7 @@ function buildEntry(
 ): LabelParagraphEntry {
   const style = new ck.ParagraphStyle({
     maxLines: 1,
-    ellipsis: '…',
+    ellipsis: ELLIPSIS,
     textDirection:
       detectTextDirection(text) === 'RTL' ? ck.TextDirection.RTL : ck.TextDirection.LTR,
     textAlign: ck.TextAlign.Left,

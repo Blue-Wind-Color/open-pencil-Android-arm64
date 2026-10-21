@@ -8,6 +8,7 @@ import {
   nearestFamilyFace,
   weightToStyle
 } from '@open-pencil/core/text'
+import { shapeWithTextLabel } from '@open-pencil/scene-graph'
 import type {
   SceneNode,
   TextDecoration,
@@ -50,14 +51,21 @@ function sharedFormatting(nodes: readonly SceneNode[]) {
   return result
 }
 
+/** The text a selected layer's typography edits: its own, or a shape with text's label. */
+function typographyTargets(editor: Editor): SceneNode[] {
+  return selectedNodesAsShown(editor).flatMap((n) => {
+    if (n.type === 'TEXT') return [n]
+    const label = shapeWithTextLabel(editor.graph, n)
+    return label ? [label] : []
+  })
+}
+
 /**
- * Typography of the selected text layers. With other layers selected too, Figma shows the text's
- * typography and edits only the text, so `nodes` holds just the text layers.
+ * Typography of the selected text layers and shapes' labels. With other layers selected too,
+ * Figma shows the text's typography and edits only the text, so `nodes` holds just the text.
  */
 export function createTypographyState(editor: Editor) {
-  const nodes = useSceneComputed<SceneNode[]>(() =>
-    selectedNodesAsShown(editor).filter((n) => n.type === 'TEXT')
-  )
+  const nodes = useSceneComputed<SceneNode[]>(() => typographyTargets(editor))
   const node = computed<SceneNode | null>(() => nodes.value.at(0) ?? null)
   const { missingFonts, hasMissingFonts } = useNodeFontStatus(() => node.value)
   const fontFamily = computed(() => node.value?.fontFamily ?? '')

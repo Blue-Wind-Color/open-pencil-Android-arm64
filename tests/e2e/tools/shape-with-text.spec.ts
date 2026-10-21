@@ -2,6 +2,7 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { shapeWithTextDriver } from '#tests/helpers/canvas/shape-with-text-driver'
+import { propertyField, propertySection } from '#tests/helpers/properties'
 import { toolbarToolTestId } from '#tests/helpers/test-ids'
 
 const editor = useEditorSetupWithClear()
@@ -141,4 +142,46 @@ test("the properties panel paints a shape with FigJam's palette and sizes its te
   const huge = await lastShape()
   expect(huge.label?.fontSize).toBe(96)
   expect(huge.height).toBeGreaterThan(176)
+})
+
+test("a shape's panel styles its label and rounds its corners, as Figma's does", async () => {
+  await shapes.showTool()
+  await shapes.pickKind('Square')
+  await clickAt(200, 200)
+  await editor.page.keyboard.type('Ship it')
+  await editor.page.keyboard.press('Escape')
+
+  await expect(propertySection(editor.page, 'Typography')).toBeVisible()
+  await expect(propertyField(editor.page, 'cornerRadius')).toBeVisible()
+  const size = propertySection(editor.page, 'Typography').getByRole('spinbutton', {
+    name: 'Font size'
+  })
+  await size.click()
+  await editor.page.keyboard.press('ControlOrMeta+a')
+  await editor.page.keyboard.type('24')
+  await size.press('Enter')
+  await editor.canvas.waitForRender()
+  expect((await lastShape()).label?.fontSize).toBe(24)
+})
+
+test('a shape whose height was set keeps it, and cuts a long label off with "…"', async () => {
+  await shapes.showTool()
+  await shapes.pickKind('Square')
+  await clickAt(200, 200)
+  await editor.page.keyboard.press('Escape')
+
+  const heightField = propertyField(editor.page, 'height')
+  await heightField.click()
+  const height = heightField.getByRole('spinbutton', { name: 'Height' })
+  await height.fill('100')
+  await height.press('Enter')
+  expect(await lastShape()).toMatchObject({ height: 100, truncates: true })
+
+  await editor.page.keyboard.press('Enter')
+  await editor.page.keyboard.type('A label far too long for a shape only one hundred pixels tall')
+  await editor.page.keyboard.press('Escape')
+  await editor.canvas.waitForRender()
+  const shape = await lastShape()
+  expect(shape).toMatchObject({ width: 176, height: 100 })
+  expect(shape.label?.truncation).toBe('ENDING')
 })

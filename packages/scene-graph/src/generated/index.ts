@@ -53,12 +53,12 @@ export function generatedFrameText(graph: SceneGraph, node: SceneNode): SceneNod
  * (`GeneratedFrameKind.sized`); fields `changes` sets itself, such as an undo restoring them, win.
  */
 export function withGeneratedFrameSize(
-  node: Pick<SceneNode, 'type'>,
+  node: SceneNode,
   changes: Partial<SceneNode>
 ): Partial<SceneNode> {
   const kind = generatedFrameKind(node)
   if (!kind?.sized || (changes.width === undefined && changes.height === undefined)) return changes
-  return { ...kind.sized(changes), ...changes }
+  return { ...kind.sized(changes, node), ...changes }
 }
 
 /** Whether a layer turns: any layer but a generated frame that stays upright. */

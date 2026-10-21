@@ -9,6 +9,7 @@ import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
 import { textFontVariations } from '#core/canvas/text/paragraph'
 import { utf16IndicesByUtf8 } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
+import { ELLIPSIS } from '#core/text/ellipsis'
 import { fontManager, weightToStyle } from '#core/text/fonts'
 import { glyphOutlineSourceSync, type GlyphOutlineSource } from '#core/text/opentype'
 
@@ -163,9 +164,6 @@ function runOutlineSource(
   }
   return null
 }
-
-/** What truncated text ends in, as the paragraph builds it. */
-const ELLIPSIS = '…'
 
 /**
  * The font of the ellipsis that ends truncated text, when the run is that ellipsis: the

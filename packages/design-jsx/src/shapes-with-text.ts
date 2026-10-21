@@ -57,9 +57,13 @@ export const ShapeLayerProps = v.object({
   dashPattern: v.optional(Dash)
 })
 
-/** The props `<Shape>` takes: its kind, and the layer props a shape has. */
+/**
+ * The props `<Shape>` takes: its kind, whether it keeps its height and truncates its label as a
+ * resized FigJam shape does, and the layer props a shape has.
+ */
 export const ShapeProps = v.object({
   kind: v.optional(enumProp(SHAPE_KIND)),
+  truncate: v.optional(v.boolean()),
   textSize: v.optional(enumProp(FIGJAM_TEXT_SIZE)),
   typeface: v.optional(enumProp(FIGJAM_TYPEFACE)),
   ...ShapeLayerProps.entries
@@ -84,7 +88,8 @@ export function renderShapeNode(
       ...layer,
       name: layer.name ?? (text.trim() || 'Shape with text'),
       autoRename: !layer.name,
-      shapeWithTextType: props.kind ?? 'SQUARE'
+      shapeWithTextType: props.kind ?? 'SQUARE',
+      shapeTruncates: props.truncate ?? false
     },
     { text }
   )
@@ -94,8 +99,8 @@ export function renderShapeNode(
 }
 
 /**
- * A shape's own props as `<Shape>` writes them, after its name and position: the size it was
- * given rather than the size its label grew it to, so it grows the same way when read back.
+ * A shape's own props as `<Shape>` writes them, after its name and position: the height it was
+ * given rather than the height its label grew it to, so it grows the same way when read back.
  */
 export function shapeWithTextProps(graph: SceneGraph, node: SceneNode): JSXProp[] {
   const props: JSXProp[] = []
@@ -104,10 +109,12 @@ export function shapeWithTextProps(graph: SceneGraph, node: SceneNode): JSXProp[
   }
   const label = shapeWithTextLabel(graph, node)
   if (label) props.push(...figJamTextProps(label))
-  const width = node.shapeUserWidth > 0 ? node.shapeUserWidth : node.width
-  const height = node.shapeUserHeight > 0 ? node.shapeUserHeight : node.height
-  if (width !== SHAPE_WITH_TEXT_SIZE) props.push(['w', width])
+  // A truncating shape keeps the height it has; any other grows from the height it was given.
+  const height =
+    !node.shapeTruncates && node.shapeUserHeight > 0 ? node.shapeUserHeight : node.height
+  if (node.width !== SHAPE_WITH_TEXT_SIZE) props.push(['w', node.width])
   if (height !== SHAPE_WITH_TEXT_SIZE) props.push(['h', height])
+  if (node.shapeTruncates) props.push(['truncate', true])
   if (node.rotation !== 0) props.push(['rotate', Math.round(node.rotation * 100) / 100])
   collectFillProps(node, props)
   collectStrokeProps(node, props)

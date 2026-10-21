@@ -24,6 +24,7 @@ import {
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownTextSlice } from '#core/text/case'
+import { ELLIPSIS } from '#core/text/ellipsis'
 import { fontManager, weightToStyle } from '#core/text/fonts'
 
 import type { ParagraphNode } from './inputs'
@@ -40,7 +41,7 @@ export function buildTruncateOpts(
 ): { maxLines?: number; ellipsis?: string } {
   if (node.textTruncation !== 'ENDING') return {}
 
-  const opts: { maxLines?: number; ellipsis: string } = { ellipsis: '…' }
+  const opts: { maxLines?: number; ellipsis: string } = { ellipsis: ELLIPSIS }
   if (node.maxLines != null && node.maxLines > 0) {
     opts.maxLines = node.maxLines
   } else if (node.height > 0) {

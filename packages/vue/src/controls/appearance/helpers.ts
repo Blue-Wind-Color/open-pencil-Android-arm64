@@ -15,11 +15,17 @@ const CORNER_RADIUS_TYPES = new Set([
   'COMPONENT',
   'INSTANCE',
   'POLYGON',
-  'STAR'
+  'STAR',
+  'SHAPE_WITH_TEXT'
 ])
 
-/** A polygon's or star's corners share one radius, so Figma offers no per-corner radii for them. */
-const SHARED_RADIUS_TYPES = new Set(['POLYGON', 'STAR'])
+/**
+ * A polygon's, star's or shape with text's corners share one radius, so Figma offers no
+ * per-corner radii for them.
+ */
+const SHARED_RADIUS_TYPES = new Set(['POLYGON', 'STAR', 'SHAPE_WITH_TEXT'])
+
+const POINT_COUNT_TYPES = new Set(['POLYGON', 'STAR'])
 
 const CORNER_PATHS: CornerRadiusKey[] = [
   'topLeftRadius',
@@ -139,7 +145,7 @@ export function createAppearanceState({
   const hasPointCount = computed(
     () =>
       selectedNodes.value.length > 0 &&
-      selectedNodes.value.every((target) => SHARED_RADIUS_TYPES.has(target.type))
+      selectedNodes.value.every((target) => POINT_COUNT_TYPES.has(target.type))
   )
   const hasStarRatio = computed(
     () =>

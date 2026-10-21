@@ -21,18 +21,19 @@ describe('generated frame kinds', () => {
     expect(generatedFrameKind(sticky)?.complete(graph, sticky)).toBe(true)
   })
 
-  test("a size set outside layout is a shape's given size, which layout's own writes leave", () => {
+  test("a height set outside layout is a shape's given height, and it then keeps it", () => {
     const graph = new SceneGraph()
     const shape = createShapeWithText(graph, graph.getPages()[0].id, { width: 200, height: 100 })
-    graph.updateNode(shape.id, { width: 320 })
-    expect(graph.getNode(shape.id)).toMatchObject({ shapeUserWidth: 320, shapeUserHeight: 100 })
+    // A width, or the height it already has, leaves it growing, as in FigJam.
+    graph.updateNode(shape.id, { width: 320, height: 100 })
+    expect(graph.getNode(shape.id)).toMatchObject({ shapeUserHeight: 100, shapeTruncates: false })
     graph.updateNodePreview(shape.id, { height: 140 })
-    expect(graph.getNode(shape.id)?.shapeUserHeight).toBe(140)
-    // A write that carries the given size itself, as an undo does, keeps it.
-    graph.updateNode(shape.id, { width: 400, shapeUserWidth: 320 })
-    expect(graph.getNode(shape.id)?.shapeUserWidth).toBe(320)
-    graph.withLayoutMutations(() => graph.updateNode(shape.id, { width: 500 }))
-    expect(graph.getNode(shape.id)?.shapeUserWidth).toBe(320)
+    expect(graph.getNode(shape.id)).toMatchObject({ shapeUserHeight: 140, shapeTruncates: true })
+    // A write that carries the given height itself, as an undo does, keeps it.
+    graph.updateNode(shape.id, { height: 180, shapeUserHeight: 120, shapeTruncates: false })
+    expect(graph.getNode(shape.id)).toMatchObject({ shapeUserHeight: 120, shapeTruncates: false })
+    graph.withLayoutMutations(() => graph.updateNode(shape.id, { height: 500 }))
+    expect(graph.getNode(shape.id)).toMatchObject({ shapeUserHeight: 120, shapeTruncates: false })
   })
 
   test('any other layer has no kind and turns and resizes freely', () => {

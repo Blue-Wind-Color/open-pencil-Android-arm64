@@ -107,8 +107,12 @@ function settleDrawnSize(preview: ReturnType<Editor['beginNodePreview']>, node: 
   } else if (node.type === 'LINE' && node.width < 2) {
     preview.update(node.id, { width: 100, height: 0, rotation: 0 })
     return true
-  } else if (clicked && node.type === 'SHAPE_WITH_TEXT') {
-    preview.update(node.id, { width: SHAPE_WITH_TEXT_SIZE, height: SHAPE_WITH_TEXT_SIZE })
+  } else if (node.type === 'SHAPE_WITH_TEXT') {
+    // Drawing sizes a new shape rather than resizing it, so it grows to fit its label.
+    preview.update(node.id, {
+      ...(clicked && { width: SHAPE_WITH_TEXT_SIZE, height: SHAPE_WITH_TEXT_SIZE }),
+      shapeTruncates: false
+    })
   } else if (clicked) {
     preview.update(node.id, { width: 100, height: 100 })
   }
