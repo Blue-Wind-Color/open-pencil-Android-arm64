@@ -213,7 +213,8 @@ describe('Cloud document rooms, reopening', () => {
     const relay = await startRelay()
     const documentId = crypto.randomUUID()
     const roomId = `cloud:${documentId}:0`
-    const [grace, earlier] = await openedTwice()
+    const [grace, earlier, reopened] = await openedCopies(3)
+    if (!grace || !earlier || !reopened) throw new Error('Expected three tabs')
     const first = openCloudDocumentRoom(grace, {
       roomId,
       transport: relay.join(documentId, 'Grace', 'edit', 'user'),
@@ -234,7 +235,6 @@ describe('Cloud document rooms, reopening', () => {
     visit.stop()
     visit.session.dispose()
 
-    const [reopened] = await openedTwice()
     await until(() => reopened.state.preparation === null)
     // A page the room never had, as the file's own copy of a page can be.
     const stray = reopened.graph.addPage('Stray')
@@ -356,17 +356,27 @@ describe('Cloud document rooms, opening', () => {
 })
 
 /** Tabs that each opened the same stored file, which gives each its own root. */
-async function openedTwice() {
+/** Tabs that each opened the same stored file. */
+async function openedCopies(count: number) {
   await initCodec()
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
   if (!page) throw new Error('Expected a page')
   graph.createNode('RECTANGLE', page.id, { name: 'Card' })
   const bytes = await exportFigFile(graph)
-  const open = async () => createEditorStore(await parseFigFile(Uint8Array.from(bytes).buffer))
-  const stores = [await open(), await open()] as const
-  for (const store of stores) cleanups.push(() => store.preparationController.dispose())
+  const stores = []
+  for (let index = 0; index < count; index++) {
+    const store = createEditorStore(await parseFigFile(Uint8Array.from(bytes).buffer))
+    cleanups.push(() => store.preparationController.dispose())
+    stores.push(store)
+  }
   return stores
+}
+
+async function openedTwice() {
+  const [first, second] = await openedCopies(2)
+  if (!first || !second) throw new Error('Expected two tabs')
+  return [first, second] as const
 }
 
 describe('Cloud document rooms', () => {

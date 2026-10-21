@@ -82,6 +82,11 @@ export interface MaterializeInstanceOptions {
   sourceChildren?: ReadonlyMap<InstanceOccurrence, string>
   /** Nodes to update in place rather than create, keyed by occurrence. */
   existingNodes?: ReadonlyMap<InstanceOccurrence, SceneNode>
+  /**
+   * The id to create a layer under that is a record of its own, not a copy inside an instance:
+   * its saved GUID, so it keeps one id across loads. Undefined creates it under a fresh id.
+   */
+  recordId?: (occurrence: InstanceOccurrence) => string | undefined
 }
 
 /** A document or a variable is a resource record, never a node in an expansion. */
@@ -100,7 +105,7 @@ export function materializeInstance(
   components: ReadonlyMap<string, string>,
   options: MaterializeInstanceOptions = {}
 ): MaterializedInstance {
-  const { blobs = [], sourceChildren = new Map(), existingNodes = new Map() } = options
+  const { blobs = [], sourceChildren = new Map(), existingNodes = new Map(), recordId } = options
   if (!graph.getNode(parentId)) throw new Error('Missing materialization parent')
   const prepared = new Map<InstanceOccurrence, ReturnType<typeof nodeChangeToProps>>()
   const validate = (current: InstanceOccurrence): void => {
@@ -144,6 +149,19 @@ export function materializeInstance(
       }
     }
   }
+  /** A record of its own takes its saved GUID, and a copy inside an instance a fresh id. */
+  const createLayer = (
+    current: InstanceOccurrence,
+    nodeType: SceneNode['type'],
+    parent: string,
+    props: Partial<SceneNode>,
+    owner: SceneNode | undefined
+  ): SceneNode => {
+    const id = owner ? undefined : recordId?.(current)
+    return id
+      ? graph.createNodeWithId(id, nodeType, parent, props)
+      : graph.createNode(nodeType, parent, props)
+  }
   const create = (current: InstanceOccurrence, parent: string, owner?: SceneNode): SceneNode => {
     const converted = prepared.get(current)
     if (!converted) throw new Error('Missing prepared occurrence')
@@ -169,7 +187,7 @@ export function materializeInstance(
     if (existing && existing.parentId !== parent) {
       throw new Error(`Preallocated occurrence has wrong parent ${current.sourceId}`)
     }
-    const node = existing ?? graph.createNode(nodeType, parent, propsWithIdentity)
+    const node = existing ?? createLayer(current, nodeType, parent, propsWithIdentity, owner)
     if (existing) graph.updateNode(existing.id, propsWithIdentity)
     const sharedSource = graph.getNode(sourceChildren.get(current) ?? '')
     if (sharedSource) shareUnchanged(node, sharedSource)

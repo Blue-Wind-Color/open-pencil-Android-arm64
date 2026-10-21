@@ -203,6 +203,15 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   textPathBox: jsonPluginDataField('textPathBox', 'format', textPathBox),
   /** The library asset a node was inserted from. */
   librarySource: jsonPluginDataField('librarySource', 'bookkeeping', librarySource),
+  /**
+   * The document root's id, on the DOCUMENT node, whose own GUID is always Figma's `0:0`; the
+   * root keeps it across a save as every layer keeps its GUID.
+   */
+  documentId: jsonPluginDataField(
+    'documentId',
+    'bookkeeping',
+    v.pipe(v.string(), v.nonEmpty(), v.maxLength(64))
+  ),
   /** Libraries enabled for the document, on the DOCUMENT node. */
   enabledLibraries: jsonPluginDataField('enabledLibraries', 'bookkeeping', enabledLibraries),
   /** The library this document publishes as, on the DOCUMENT node. */

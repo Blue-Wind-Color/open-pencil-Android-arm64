@@ -526,7 +526,8 @@ export class SceneGraph {
     for (const collection of this.variableCollections.values()) count += collection.modes.length
     return count
   }
-  private isEntityIdTaken(id: string): boolean {
+  /** Whether a node, variable, collection, or mode has this id. */
+  isEntityIdTaken(id: string): boolean {
     if (this.nodes.has(id) || this.variables.has(id) || this.variableCollections.has(id))
       return true
     // Callers replace collection maps and edit `modes` in place (history snapshots, transfer,

@@ -1,6 +1,8 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   generateId,
+  OPEN_PENCIL_PLUGIN_DATA,
   remapStyleRunReferences,
   SceneGraph,
   type SceneNode
@@ -23,6 +25,7 @@ import {
 } from '../instance-overrides/source-children'
 import { nodeChangeToProps } from '../node-change'
 import { generatedFrameCodec } from '../node-change/generated/codecs'
+import { readNodeChangePluginData } from '../node-change/plugin-data'
 import { figArchiveRecordInfo, type FigArchiveRecordInfo } from '../record-patch'
 import { applyDocumentLayoutBindings } from './bindings/layout'
 import { applyDocumentPaintBindings } from './bindings/paint'
@@ -75,6 +78,8 @@ export function materializeFigArchive(
 export interface AssemblyState {
   graph: SceneGraph
   nextImportedId: number
+  /** Every GUID the archive's records keep, on pages loaded or not; minted ids skip them. */
+  recordIds: ReadonlySet<string>
   sources: Map<string, string>
   components: Map<string, MaterializedComponentOccurrence>
   componentIds: Map<string, string>
@@ -84,7 +89,7 @@ export interface AssemblyState {
 }
 
 export interface FigSessionCheckpoint {
-  /** Continuation of imported runtime handles, including handles consumed then deleted. */
+  /** Continuation of the import's counter ids, including ids consumed then deleted. */
   nextImportedId?: number
   sources: Array<[string, string]>
   componentIds: Array<[string, string]>
@@ -135,6 +140,7 @@ function restoreAssemblyState(
   return {
     graph,
     nextImportedId: checkpoint.nextImportedId ?? inferNextImportedId(graph),
+    recordIds: reader.recordIds,
     components,
     sources: new Map(checkpoint.sources),
     componentIds: new Map(checkpoint.componentIds),
@@ -237,28 +243,71 @@ function seedDefinitionTypes(graph: SceneGraph): Map<string, string> {
 }
 
 /**
- * A graph whose own root and first page take imported ids, and every later entity the production
- * allocator's. The graph keeps its generator for life, and a closure keeps every variable its
- * scope shares with other closures, so the generator lives here, away from the archive reader.
+ * The next id the import mints for a layer with no record of its own, such as a copy inside an
+ * instance. It skips every GUID the archive's records keep, so a page loaded later still finds
+ * its layers' GUIDs free.
  */
-function createImportedGraph(): { graph: SceneGraph; nextImportedId: number } {
+function mintImportedId(state: Pick<AssemblyState, 'nextImportedId' | 'recordIds'>): string {
+  let id: string
+  do id = `0:${state.nextImportedId++}`
+  while (state.recordIds.has(id))
+  return id
+}
+
+/**
+ * A graph whose root takes the document record's GUID and whose first page an imported id, and
+ * every later entity the production allocator's. The graph keeps its generator for life, and a
+ * closure keeps every variable its scope shares with other closures, so the generator lives
+ * here, away from the archive reader.
+ */
+function createImportedGraph(
+  rootId: string | undefined,
+  recordIds: ReadonlySet<string>
+): { graph: SceneGraph; nextImportedId: number } {
   let initializing = true
-  let nextImportedId = 1
-  const graph = new SceneGraph(() => (initializing ? `0:${nextImportedId++}` : generateId()))
+  let root = rootId
+  const counter = { nextImportedId: 1, recordIds }
+  const graph = new SceneGraph(() => {
+    if (!initializing) return generateId()
+    const id = root ?? mintImportedId(counter)
+    root = undefined
+    return id
+  })
   initializing = false
-  return { graph, nextImportedId }
+  return { graph, nextImportedId: counter.nextImportedId }
+}
+
+/**
+ * The root's id: the one OpenPencil saved it under, or else the document record's GUID, which
+ * Figma always saves as `0:0`.
+ */
+function documentRootId(document: NodeChange, recordIds: ReadonlySet<string>): string | undefined {
+  const saved = readNodeChangePluginData(document, OPEN_PENCIL_PLUGIN_DATA.documentId)
+  if (saved && !recordIds.has(saved)) return saved
+  return document.guid && guidToString(document.guid)
 }
 
 function createAssemblyState(
   reader: ReturnType<typeof createDocumentReader>,
   options: DocumentAssemblyOptions
 ): AssemblyState {
-  // Imported runtime handles remain reproducible for CLI inspection and patches. Authored
-  // entities use the production allocator even when created in a previously imported graph.
-  const imported = createImportedGraph()
+  // Layers take their records' GUIDs and the rest counter ids, the same on every run, for CLI
+  // inspection, patches, and rooms. Authored entities use the production allocator even when
+  // created in a previously imported graph.
+  const document = reader.documentRecord
+  const { recordIds } = reader
+  const imported = createImportedGraph(document && documentRootId(document, recordIds), recordIds)
   const { graph } = imported
-  let { nextImportedId } = imported
-  applyDocumentMetadata(graph, reader.documentRecord)
+  const state: AssemblyState = {
+    graph,
+    nextImportedId: imported.nextImportedId,
+    recordIds,
+    sources: new Map(),
+    components: new Map(),
+    componentIds: new Map(),
+    savedSizeNodes: new Set()
+  }
+  applyDocumentMetadata(graph, document)
   for (const [hash, bytes] of options.images ?? []) graph.images.set(hash, bytes.slice())
   graph.applyImportedStateDuring(
     () =>
@@ -268,17 +317,10 @@ function createAssemblyState(
         options.onUnsupportedResource,
         options.onUnsupportedVariableExpression
       ),
-    () => `0:${nextImportedId++}`
+    () => mintImportedId(state)
   )
   for (const page of graph.getPages()) graph.deleteNode(page.id)
-  return {
-    graph,
-    nextImportedId,
-    sources: new Map(),
-    components: new Map(),
-    componentIds: new Map(),
-    savedSizeNodes: new Set()
-  }
+  return state
 }
 
 /** Compatibility with checkpoints saved before they carried the import counter. */
@@ -350,7 +392,7 @@ function materializeReader(
   const plan = reader.planComponents(pages, readOptions, (id) => state.components.has(id))
   return state.graph.applyImportedStateDuring(
     () => materializeReaderInto(pages, plan, blobs, state, load),
-    () => `0:${state.nextImportedId++}`
+    () => mintImportedId(state)
   )
 }
 
@@ -375,6 +417,9 @@ function materializeReaderInto(
       if (occurrence.layoutScale !== undefined) layoutScales.set(node.id, occurrence.layoutScale)
     }
   }
+  /** A record's layer keeps the record's GUID, unless a layer has it already: a repeated record. */
+  const recordId = ({ sourceId }: InstanceOccurrence): string | undefined =>
+    graph.isEntityIdTaken(sourceId) ? undefined : sourceId
   /** Generated frames whose records name other layers, linked once the pass has made them. */
   const linked: Array<{ node: SceneNode; record: NodeChange }> = []
   const createShells = (occurrence: InstanceOccurrence, parentId: string): void => {
@@ -387,7 +432,10 @@ function materializeReaderInto(
     const { nodeType, ...props } = nodeChangeToProps(occurrence.properties, blobs)
     if (nodeType === 'DOCUMENT' || nodeType === 'VARIABLE')
       throw new Error(`Unsupported scene type ${nodeType}`)
-    const node = graph.createNode(nodeType, parentId, props)
+    const id = recordId(occurrence)
+    const node = id
+      ? graph.createNodeWithId(id, nodeType, parentId, props)
+      : graph.createNode(nodeType, parentId, props)
     sources.set(occurrence.sourceId, node.id)
     if (node.type === 'COMPONENT') componentIds.set(occurrence.sourceId, node.id)
     const codec = generatedFrameCodec(node.type)
@@ -412,7 +460,8 @@ function materializeReaderInto(
     const materialized = materializeInstance(graph, parentId, item.occurrence, componentIds, {
       blobs,
       sourceChildren: mapInstanceSourceChildren(item.occurrence, components),
-      existingNodes
+      existingNodes,
+      recordId
     })
     rememberDerivedSizes(materialized.nodes)
     linkInstanceSourceChildren(item.occurrence, materialized, components)
@@ -437,7 +486,8 @@ function materializeReaderInto(
         onProgress?.()
         const materialized = materializeInstance(graph, parentId, child, componentIds, {
           blobs,
-          sourceChildren: mapInstanceSourceChildren(child, components)
+          sourceChildren: mapInstanceSourceChildren(child, components),
+          recordId
         })
         rememberDerivedSizes(materialized.nodes)
         linkInstanceSourceChildren(child, materialized, components)
