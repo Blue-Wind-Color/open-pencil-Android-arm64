@@ -29,14 +29,7 @@ import MetricsRangePicker from './MetricsRangePicker.vue'
 import MetricsTile from './MetricsTile.vue'
 import PlatformsChart from './PlatformsChart.vue'
 import RetentionChart from './RetentionChart.vue'
-import type {
-  DailyActiveDay,
-  DailyIssues,
-  DailyPulls,
-  DailyTraffic,
-  DailyVersions,
-  DailyVisits
-} from './types'
+import type { DailyActiveDay, DailyPulls, DailyTraffic, DailyVersions, DailyVisits } from './types'
 import WaitlistList from './WaitlistList.vue'
 
 /**
@@ -116,9 +109,13 @@ const OPEN_SERIES: DailySeries<'openCommunity' | 'openTeam'>[] = [
   { key: 'openCommunity', name: 'Community', color: 'var(--color-chart-1)' },
   { key: 'openTeam', name: 'Team', color: 'var(--color-chart-3)' }
 ]
-const OPENED_SERIES: DailySeries<keyof DailyIssues & string>[] = [
+const OPENED_SERIES: DailySeries<'openedCommunity' | 'openedTeam'>[] = [
   { key: 'openedCommunity', name: 'Community', color: 'var(--color-chart-1)' },
   { key: 'openedTeam', name: 'Team', color: 'var(--color-chart-3)' }
+]
+const CLOSED_SERIES: DailySeries<'closedCommunity' | 'closedTeam'>[] = [
+  { key: 'closedCommunity', name: 'Community', color: 'var(--color-chart-1)' },
+  { key: 'closedTeam', name: 'Team', color: 'var(--color-chart-3)' }
 ]
 const MERGED_SERIES: DailySeries<keyof DailyPulls & string>[] = [
   { key: 'mergedCommunity', name: 'Community', color: 'var(--color-chart-1)' },
@@ -390,7 +387,7 @@ const sharingNote = computed(() => {
           <div v-if="activity.issues.length" :class="ui.row()">
             <MetricsCard
               heading="Issues"
-              note="Open at the end of each day, and opened per day. Team: the repository's members and collaborators."
+              note="Open at the end of each day, and opened and closed per day. Team: the repository's members and collaborators."
             >
               <template v-if="openNow(activity.issues)" #aside>{{
                 openNow(activity.issues)
@@ -410,10 +407,19 @@ const sharingNote = computed(() => {
                 :height="160"
                 stacked
               />
+              <h4 :class="ui.sectionLabel()">Closed per day</h4>
+              <DailyChart
+                label="Issues closed per day, by who opened them"
+                :days="activity.issues"
+                :series="CLOSED_SERIES"
+                :today="snapshot.today"
+                :height="160"
+                stacked
+              />
             </MetricsCard>
             <MetricsCard
               heading="Pull requests"
-              note="Open at the end of each day, and merged per day"
+              note="Open at the end of each day, and opened and merged per day"
             >
               <template v-if="openNow(activity.pulls)" #aside>{{
                 openNow(activity.pulls)
@@ -423,6 +429,15 @@ const sharingNote = computed(() => {
                 label="Open pull requests by the community and the team"
                 :days="activity.pulls"
                 :series="OPEN_SERIES"
+              />
+              <h4 :class="ui.sectionLabel()">Opened per day</h4>
+              <DailyChart
+                label="Pull requests opened per day by the community and the team"
+                :days="activity.pulls"
+                :series="OPENED_SERIES"
+                :today="snapshot.today"
+                :height="160"
+                stacked
               />
               <h4 :class="ui.sectionLabel()">Merged per day</h4>
               <DailyChart

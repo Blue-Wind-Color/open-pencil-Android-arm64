@@ -14,7 +14,8 @@ import type { WaitlistSignup } from './types'
 const { signups } = defineProps<{ signups: WaitlistSignup[] }>()
 const ui = metricsWaitlist()
 
-const COLLAPSED_ROWS = 6
+// About as many as fit beside the GitHub card, so the row has no empty space below the list.
+const COLLAPSED_ROWS = 12
 const expanded = ref(false)
 const shown = computed(() => (expanded.value ? signups : signups.slice(0, COLLAPSED_ROWS)))
 const hidden = computed(() => signups.length - shown.value.length)
