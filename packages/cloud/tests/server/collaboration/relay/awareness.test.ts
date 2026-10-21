@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { guest, user } from '#cloud-tests/helpers/relay'
+import { MAX_PRESENCE_NAME_LENGTH } from '#cloud/contract'
 import { stampAwareness } from '#cloud/server'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
@@ -34,6 +35,22 @@ describe('relay presence stamping', () => {
       user: { name: 'Alice', color: '#f00' },
       cursor: { x: 1 },
       cloud: { kind: 'user', id: 'alice', name: 'Alice', permission: 'view' }
+    })
+  })
+
+  test('cuts a long verified name to what peers accept, so the member still shows', () => {
+    const long = `  ${'Bartholomew '.repeat(5)}  `
+    const source = presence({ user: { name: 'x', color: '#f00' } })
+    const stamped = stampAwareness(
+      source.update,
+      { principal: user('bart', long), permission: 'edit' },
+      () => false
+    )
+    if (!stamped.update) throw new Error('Expected a forwarded update')
+    const state = received(stamped.update).getStates().get(source.awareness.clientID)
+    expect(state?.user).toEqual({
+      name: long.trim().slice(0, MAX_PRESENCE_NAME_LENGTH),
+      color: '#f00'
     })
   })
 

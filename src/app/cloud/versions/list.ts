@@ -44,7 +44,11 @@ function createVersionList(document: EditorStore) {
     }
   }
 
-  watch(versionListRevision, () => void load(), { immediate: true })
+  watch(
+    () => versionListRevision(document),
+    () => void load(),
+    { immediate: true }
+  )
 
   const accountId = computed(() => versionHistoryAccountId(document))
   const byId = computed(() => new Map(versions.value.map((version) => [version.id, version])))

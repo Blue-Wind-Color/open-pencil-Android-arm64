@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { ref } from 'vue'
+
 import { accountRoomIdentity } from '@/app/cloud/rooms/identity'
 
 describe('a member’s identity in rooms', () => {
@@ -9,6 +11,18 @@ describe('a member’s identity in rooms', () => {
     const second = accountRoomIdentity(account)
     expect(first.name.value).toBe('Alice')
     expect(second.color).toEqual(first.color)
+  })
+
+  test('follows a rename of the account', () => {
+    const account = ref({ id: 'alice', name: 'Alice' })
+    const identity = accountRoomIdentity(account)
+    account.value = { id: 'alice', name: 'Alice Liddell' }
+    expect(identity.name.value).toBe('Alice Liddell')
+  })
+
+  test('cuts a long name as the relay does, so this tab shows what everyone else sees', () => {
+    const identity = accountRoomIdentity({ id: 'bart', name: `  ${'Bartholomew '.repeat(5)}` })
+    expect(identity.name.value).toBe('Bartholomew Bartholomew Bartholomew Bart')
   })
 
   test('picks its color from the account, so people tell each other apart', () => {

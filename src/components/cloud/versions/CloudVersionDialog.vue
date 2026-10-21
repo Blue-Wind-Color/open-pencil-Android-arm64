@@ -8,7 +8,7 @@ import {
 import { useCloudMessages, useCommonMessages } from '@open-pencil/vue'
 
 import { editVersion, saveVersion } from '@/app/cloud/versions/actions'
-import { versionDialog, versionListRevision } from '@/app/cloud/versions/history'
+import { versionDialog, versionsChanged } from '@/app/cloud/versions/history'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
 import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
@@ -55,7 +55,7 @@ async function submit() {
   try {
     if (dialog.version) await editVersion(dialog.store, dialog.version, input)
     else await saveVersion(dialog.store, input)
-    versionListRevision.value++
+    versionsChanged(dialog.store)
     versionDialog.value = null
   } catch (error) {
     console.warn('[Cloud] Saving to the version history failed:', error)

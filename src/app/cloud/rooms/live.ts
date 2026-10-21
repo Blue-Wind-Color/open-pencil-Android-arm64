@@ -1,4 +1,4 @@
-import { shallowRef, watch } from 'vue'
+import { effectScope, onScopeDispose, shallowRef, watch } from 'vue'
 
 import { RELAY_SERVER_PEER, type CollaborationTicket } from '@open-pencil/cloud/contract'
 
@@ -19,9 +19,9 @@ import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 import { allTabs, getTabForStore, getTabsSnapshot, reloadStorageDocumentInTab } from '@/app/tabs'
 
 import { isCloudBinding } from '../documents/status'
-import { cloudConnection, cloudConnections } from '../sessions/connection'
+import { cloudConnection, cloudConnections, type CloudSessionState } from '../sessions/connection'
 import { cloudShareTarget } from '../sharing/document'
-import { versionListRevision } from '../versions/history'
+import { versionsChanged } from '../versions/history'
 import { accountRoomIdentity } from './identity'
 import { shareRoomUploads, uploadStoredDocument } from './upload'
 
@@ -68,17 +68,18 @@ async function catchUpWithServer(store: EditorStore): Promise<void> {
 }
 
 /**
- * Keeps this tab saving only while it is the room's saver. A tab that stops drops its queued
- * uploads, since the room holds those edits; the saver overwrites a revision it conflicts with,
- * since the room's document already has every edit in it, unless that revision is a restore,
- * which moves the room on instead.
+ * Keeps this tab saving only while it is the room's saver, for as long as the current effect
+ * scope runs. A tab that stops drops its queued uploads, since the room holds those edits; the
+ * saver overwrites a revision it conflicts with, since the room's document already has every edit
+ * in it, unless that revision is a restore, which moves the room on instead. Returns whether this
+ * tab saves now.
  */
 function followSaver(
   store: EditorStore,
   session: RoomSession,
   canSave: boolean,
   roomIsCurrent: () => Promise<boolean>
-): { stop: () => void; saving: () => boolean } {
+): () => boolean {
   let saving: boolean | null = null
   const documentId = () => store.getStorageBinding()?.documentId ?? null
 
@@ -108,27 +109,22 @@ function followSaver(
     await kickSyncEngine()
   }
 
-  const stopPeers = watch(session.peers, () => void decide(), { immediate: true })
+  watch(session.peers, () => void decide(), { immediate: true })
   // Edits in a tab that does not save are kept by the room and uploaded by the saver, so the
   // tab neither calls them unsaved nor asks about them on closing.
-  const stopDirty = watch(
+  watch(
     () => store.hasUnsavedChanges(),
     (dirty) => {
       if (dirty && saving === false) store.markDocumentSaved()
     }
   )
-  const stopEvents = onStorageWorkspaceEvent((event) => {
-    const id = documentId()
-    if (id && event.documentId === id) void settleConflict(id)
-  })
-  return {
-    stop() {
-      stopPeers()
-      stopDirty()
-      stopEvents()
-    },
-    saving: () => saving === true
-  }
+  onScopeDispose(
+    onStorageWorkspaceEvent((event) => {
+      const id = documentId()
+      if (id && event.documentId === id) void settleConflict(id)
+    })
+  )
+  return () => saving === true
 }
 
 /**
@@ -158,47 +154,50 @@ export function openCloudDocumentRoom(
   const canEdit = options.permission === 'edit'
   const canSave = canEdit && !options.guest
   const session = openDocumentRoom(store, options.roomId, options.transport, options.identity)
-  setPermission(store, options.permission)
-  // A viewer sees the room's edits and makes none, as Figma's view-only files do.
-  store.setReadOnly(!canEdit)
-  if (!canSave) store.state.autosaveEnabled = false
-  // Someone named, renamed, or saved a checkpoint anywhere: an open history loads it again.
-  const stopVersions = session.onVersionsChanged(() => {
-    versionListRevision.value++
+  // Everything the room follows lives in one scope, so stopping it leaves nothing behind.
+  const scope = effectScope(true)
+  const uploads = scope.run(() => {
+    setPermission(store, options.permission)
+    // A viewer sees the room's edits and makes none, as Figma's view-only files do.
+    store.setReadOnly(!canEdit)
+    if (!canSave) store.state.autosaveEnabled = false
+    onScopeDispose(() => {
+      setPermission(store, null)
+      store.setReadOnly(false)
+    })
+    // Someone named, renamed, or saved a checkpoint anywhere: an open history loads it again.
+    onScopeDispose(session.onVersionsChanged(() => versionsChanged(store)))
+    const stopSynced = session.onSynced((peerId) => {
+      if (peerId !== RELAY_SERVER_PEER) return
+      stopSynced()
+      if (canEdit && !session.roomHasDocument()) session.shareDocument()
+    })
+    onScopeDispose(stopSynced)
+    // Unsure whether the document moved on, the saver waits rather than overwrite a restore.
+    const saving = followSaver(store, session, canSave, async () => {
+      const current = options.roomIsCurrent ? await options.roomIsCurrent().catch(() => null) : true
+      if (current === false) options.onRestored?.()
+      return current === true
+    })
+    const shared = shareRoomUploads(session.upload, {
+      saving,
+      saverPeer: () => {
+        const elected = electCloudSaver(session.presence(), { clientId: session.clientId, canSave })
+        return elected === null || elected === session.clientId
+          ? null
+          : (session.peerForClient(elected) ?? null)
+      },
+      upload: options.uploadNow ?? (() => uploadStoredDocument(store))
+    })
+    onScopeDispose(() => shared.stop())
+    return shared
   })
-  const stopSynced = session.onSynced((peerId) => {
-    if (peerId !== RELAY_SERVER_PEER) return
-    stopSynced()
-    if (canEdit && !session.roomHasDocument()) session.shareDocument()
-  })
-  // Unsure whether the document moved on, the saver waits rather than overwrite a restore.
-  const saver = followSaver(store, session, canSave, async () => {
-    const current = options.roomIsCurrent ? await options.roomIsCurrent().catch(() => null) : true
-    if (current === false) options.onRestored?.()
-    return current === true
-  })
-  const uploads = shareRoomUploads(session.upload, {
-    saving: saver.saving,
-    saverPeer: () => {
-      const elected = electCloudSaver(session.presence(), { clientId: session.clientId, canSave })
-      return elected === null || elected === session.clientId
-        ? null
-        : (session.peerForClient(elected) ?? null)
-    },
-    upload: options.uploadNow ?? (() => uploadStoredDocument(store))
-  })
+  if (!uploads) throw new Error('The room could not start')
   return {
     session,
     /** Whether the server now holds the room's document with every edit this tab has seen. */
     upload: uploads.upload,
-    stop() {
-      stopVersions()
-      stopSynced()
-      saver.stop()
-      uploads.stop()
-      setPermission(store, null)
-      store.setReadOnly(false)
-    }
+    stop: () => scope.stop()
   }
 }
 
@@ -228,20 +227,26 @@ export function cloudRelayTransport(
 
 type LiveRoom = Pick<ReturnType<typeof openCloudDocumentRoom>, 'stop' | 'upload'>
 
-/** Each tab's live Cloud room, stopped when the tab closes or the room starts over. */
-const liveRooms = new Map<EditorStore, LiveRoom>()
+/**
+ * Each tab's live Cloud room, stopped when the tab closes or the room starts over, with the
+ * watcher that notices the tab closing, which leaving the room stops as well.
+ */
+const liveRooms = new Map<EditorStore, { room: LiveRoom; stopWatching: () => void }>()
+/** The server and account each tab joined its room as, so a change of account joins again. */
+const joinedAs = new WeakMap<EditorStore, { serverId: string; accountId: string | null }>()
 
 /** Leaves the room's saving and status behind once its tab closes. */
 export function stopWithTab(store: EditorStore, room: LiveRoom): void {
-  liveRooms.set(store, room)
-  const stopLeaving = watch(allTabs, () => {
+  liveRooms.get(store)?.stopWatching()
+  const stopWatching = watch(allTabs, () => {
     if (roomForStore(store)) return
-    if (liveRooms.get(store) === room) {
+    if (liveRooms.get(store)?.room === room) {
       liveRooms.delete(store)
       room.stop()
     }
-    stopLeaving()
+    stopWatching()
   })
+  liveRooms.set(store, { room, stopWatching })
 }
 
 /**
@@ -263,8 +268,12 @@ export async function startCloudRoom(store: EditorStore): Promise<void> {
     const nextTicket = () => target.client.getCollaborationTicket(binding.documentId)
     const restart = () => void restartCloudRoom(store)
     const account = cloudConnection(target.server.id).account
+    joinedAs.set(store, { serverId: target.server.id, accountId: account?.id ?? null })
     const room = openCloudDocumentRoom(store, {
-      identity: account ? accountRoomIdentity(account) : undefined,
+      // The account as the connection knows it now, so a new name reaches the room.
+      identity: account
+        ? accountRoomIdentity(() => cloudConnection(target.server.id).account ?? account)
+        : undefined,
       roomId: first.roomId,
       transport: cloudRelayTransport(first.serverURL, first, nextTicket, restart),
       permission: first.permission,
@@ -282,10 +291,52 @@ export async function startCloudRoom(store: EditorStore): Promise<void> {
  * while the tab is in a room, or by uploading it itself. Whether it got there.
  */
 export function uploadCloudDocument(store: EditorStore): Promise<boolean> {
-  return liveRooms.get(store)?.upload() ?? uploadStoredDocument(store)
+  return liveRooms.get(store)?.room.upload() ?? uploadStoredDocument(store)
 }
 
 const restarting = new WeakSet<EditorStore>()
+
+/** Takes the tab out of its room, leaving the document it shows as it is. */
+function leaveCloudRoom(store: EditorStore): void {
+  const live = liveRooms.get(store)
+  live?.stopWatching()
+  live?.room.stop()
+  liveRooms.delete(store)
+  joinedAs.delete(store)
+  const session = roomForStore(store)
+  if (session) leaveRoom(session)
+}
+
+/**
+ * Joins the room again as whoever is signed in now, after signing in as another account or out.
+ * The relay knows a peer by the account on its ticket, so the old connection cannot carry on.
+ */
+async function rejoinCloudRoom(store: EditorStore): Promise<void> {
+  if (restarting.has(store)) return
+  restarting.add(store)
+  try {
+    leaveCloudRoom(store)
+    await startCloudRoom(store)
+  } finally {
+    restarting.delete(store)
+  }
+}
+
+/** Sessions that ended for good, unlike a check in progress or a server out of reach for now. */
+const ENDED: ReadonlySet<CloudSessionState> = new Set(['signed-out', 'expired', 'closed'])
+
+/**
+ * Whether the tab's room was joined as someone the server no longer has signed in here: a session
+ * that ended, which can keep its account, or another account or none, as signing out leaves. A
+ * check in progress or an outage keeps the account, so it changes nothing.
+ */
+function accountChanged(store: EditorStore): boolean {
+  const joined = joinedAs.get(store)
+  if (!joined) return false
+  const connection = cloudConnection(joined.serverId)
+  if (ENDED.has(connection.state)) return true
+  return (connection.account?.id ?? null) !== joined.accountId
+}
 
 /**
  * Moves a tab to its document's new room after the document was restored to a version: the old
@@ -296,14 +347,11 @@ export async function restartCloudRoom(store: EditorStore): Promise<void> {
   if (!binding || restarting.has(store)) return
   restarting.add(store)
   try {
-    liveRooms.get(store)?.stop()
-    liveRooms.delete(store)
-    const session = roomForStore(store)
-    if (session) leaveRoom(session)
+    leaveCloudRoom(store)
     // The tab shows what it downloaded: another tab of the document may still write the local copy.
     await reloadStorageDocumentInTab(store, await adoptStoredVersion(binding.documentId))
     // The restore is in the history now; the old room closed before it could say so.
-    versionListRevision.value++
+    versionsChanged(store)
     await startCloudRoom(store)
   } finally {
     restarting.delete(store)
@@ -320,7 +368,10 @@ export function watchCloudRooms(): () => void {
       return getTabsSnapshot().map((tab) => [tab.store, tab.store.getStorageBinding()] as const)
     },
     (entries) => {
-      for (const [store] of entries) void startCloudRoom(store).catch(() => undefined)
+      for (const [store] of entries) {
+        const joining = accountChanged(store) ? rejoinCloudRoom(store) : startCloudRoom(store)
+        void joining.catch(() => undefined)
+      }
     },
     { immediate: true }
   )

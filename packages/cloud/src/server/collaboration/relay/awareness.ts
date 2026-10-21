@@ -1,4 +1,4 @@
-import type { CollaborationPrincipal, DocumentPermission } from '#cloud/contract'
+import { presenceName, type CollaborationPrincipal, type DocumentPermission } from '#cloud/contract'
 import * as decoding from 'lib0/decoding'
 import * as encoding from 'lib0/encoding'
 import * as v from 'valibot'
@@ -88,7 +88,8 @@ export function stampAwareness(
     if (!parsed.success) continue
     const state = {
       ...parsed.output,
-      user: { ...parsed.output.user, name: identity.name },
+      // The ticket's name, cut to what peers accept, so a long one cannot hide the member.
+      user: { ...parsed.output.user, name: presenceName(identity.name) },
       cloud: identity
     }
     claimed.push(entry.clientId)

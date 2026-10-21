@@ -10,7 +10,7 @@ import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { accountRoomIdentity } from '@/app/cloud/rooms/identity'
-import { openCloudDocumentRoom } from '@/app/cloud/rooms/live'
+import { cloudRoomPermissions, openCloudDocumentRoom } from '@/app/cloud/rooms/live'
 import { versionListRevision } from '@/app/cloud/versions/history'
 import { useCollabIdentity } from '@/app/collab/identity'
 import { connectCollabRoom } from '@/app/collab/room/connection'
@@ -276,9 +276,14 @@ describe('Cloud document rooms, version history', () => {
       joined = true
     })
     await until(() => joined)
-    const before = versionListRevision.value
+    const before = versionListRevision(grace)
     relay.announceVersions(documentId)
-    await until(() => versionListRevision.value > before)
+    await until(() => versionListRevision(grace) > before)
+
+    // Stopping the room leaves the tab as it was before it joined.
+    expect([grace.state.readOnly, cloudRoomPermissions.value.get(grace)]).toEqual([true, 'view'])
+    room.stop()
+    expect([grace.state.readOnly, cloudRoomPermissions.value.has(grace)]).toEqual([false, false])
   })
 })
 
