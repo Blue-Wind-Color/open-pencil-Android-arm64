@@ -7,16 +7,51 @@ pub struct ImageEntry {
     data: Vec<u8>,
 }
 
+/// The zstd level Figma itself saves with.
+const DEFAULT_COMPRESSION_LEVEL: i32 = 3;
+
+/// Writes the `.fig` archive on a blocking thread: high zstd levels take seconds on large
+/// documents, which would otherwise stall the window.
 #[tauri::command]
-pub fn build_fig_file(
+pub async fn build_fig_file(
     schema_deflated: Vec<u8>,
     kiwi_data: Vec<u8>,
     thumbnail_png: Vec<u8>,
     meta_json: String,
     images: Option<Vec<ImageEntry>>,
     fig_kiwi_version: Option<u32>,
+    compression_level: Option<i32>,
 ) -> Result<tauri::ipc::Response, String> {
-    let mut encoder = zstd::Encoder::new(Vec::new(), 3).map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        write_fig_file(
+            schema_deflated,
+            kiwi_data,
+            thumbnail_png,
+            meta_json,
+            images,
+            fig_kiwi_version,
+            compression_level,
+        )
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+fn write_fig_file(
+    schema_deflated: Vec<u8>,
+    kiwi_data: Vec<u8>,
+    thumbnail_png: Vec<u8>,
+    meta_json: String,
+    images: Option<Vec<ImageEntry>>,
+    fig_kiwi_version: Option<u32>,
+    compression_level: Option<i32>,
+) -> Result<tauri::ipc::Response, String> {
+    let levels = zstd::compression_level_range();
+    let level = compression_level
+        .unwrap_or(DEFAULT_COMPRESSION_LEVEL)
+        .clamp(*levels.start(), *levels.end());
+    // Figma rejects zstd frames that do not declare their decompressed size.
+    let mut encoder = zstd::Encoder::new(Vec::new(), level).map_err(|e| e.to_string())?;
     encoder
         .include_contentsize(true)
         .map_err(|e| e.to_string())?;

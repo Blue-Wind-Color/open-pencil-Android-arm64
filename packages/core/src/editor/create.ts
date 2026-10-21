@@ -39,6 +39,7 @@ import { createConnectorDrawActions, createConnectorEndpointActions } from './co
 import { createConnectorRouting } from './connectors/routing'
 import { createConnectorStyleActions } from './connectors/style'
 import { createDesignTokenActions } from './design-tokens'
+import { createFigCompressionActions } from './fig-compression'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
 import { createGuideActions } from './guides'
@@ -303,6 +304,7 @@ export function createEditor(options?: EditorOptions) {
   const shapesWithText = createShapeWithTextActions(ctx)
   const generatedText = createGeneratedTextActions(ctx)
   const statuses = createStatusActions(ctx)
+  const figCompression = createFigCompressionActions(ctx)
   createConnectorRouting(ctx)
   const connectorDrawing = createConnectorDrawActions(ctx)
   const connectorEndpoints = createConnectorEndpointActions(
@@ -517,6 +519,8 @@ export function createEditor(options?: EditorOptions) {
     redoAction: () => text.runTextEditStep(undoBridge.redoAction),
 
     setDocumentColorSpace: colorSpace.setDocumentColorSpace,
+    figCompression: figCompression.figCompression,
+    setFigCompression: figCompression.setFigCompression,
 
     // Clipboard — bridge functions that need selectedNodes
     ...clipboardBridge,

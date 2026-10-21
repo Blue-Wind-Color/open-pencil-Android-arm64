@@ -5,6 +5,7 @@ import {
   type FigPatchedArchiveInput,
   type FigRecordPatch
 } from '@open-pencil/fig'
+import { loadFigDataCompressor } from '@open-pencil/kiwi/fig/container'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
@@ -50,8 +51,8 @@ export function createFigArchiveOperations(bytes: ArrayBuffer, info: () => FigAr
     original: () => new Uint8Array(bytes.slice(0)),
     info,
     componentPages: (componentIds: string[]) => figArchiveComponentUsePages(bytes, componentIds),
-    patch: (patch: FigRecordPatch, input: FigPatchedArchiveInput) =>
-      patchFigArchive(bytes, patch, input)
+    patch: async (patch: FigRecordPatch, input: FigPatchedArchiveInput) =>
+      patchFigArchive(bytes, patch, input, await loadFigDataCompressor(input.compressionLevel))
   }
 }
 
@@ -64,7 +65,7 @@ export function localFigArchive(
     original: async () => operations.original(),
     info: async () => operations.info(),
     componentPages: async (componentIds) => operations.componentPages(componentIds),
-    patch: async (patch, input) => operations.patch(patch, input),
+    patch: (patch, input) => operations.patch(patch, input),
     close: () => undefined
   }
 }

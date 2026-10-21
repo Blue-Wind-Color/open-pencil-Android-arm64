@@ -3,7 +3,11 @@ import * as v from 'valibot'
 
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { buildFigKiwi, parseFigKiwiChunks } from '@open-pencil/kiwi/fig/container'
+import {
+  buildFigKiwi,
+  parseFigKiwiChunks,
+  type FigDataCompressor
+} from '@open-pencil/kiwi/fig/container'
 import { decodeFigKiwiCanvas, parseFigKiwiContainer } from '@open-pencil/kiwi/fig/parse'
 import type { HeaderFields } from '@open-pencil/kiwi/schema-runtime'
 import type { Color, Rect, Size } from '@open-pencil/scene-graph/primitives'
@@ -22,6 +26,8 @@ export interface WriteFigArchiveInput {
   metaJSON: string
   images?: FigImageEntry[]
   figKiwiVersion?: number
+  /** Compresses the document data; Bun's zstd or deflate when omitted. */
+  compress?: FigDataCompressor
 }
 
 export interface FigParseResult {
@@ -258,7 +264,12 @@ export function renameFigArchive(bytes: Uint8Array, fileName: string): Uint8Arra
 
 /** Assemble a complete zipped `.fig` archive from an encoded Kiwi message and resources. */
 export function writeFigArchive(input: WriteFigArchiveInput): Uint8Array {
-  const canvasData = buildFigKiwi(input.schemaDeflated, input.kiwiData, input.figKiwiVersion)
+  const canvasData = buildFigKiwi(
+    input.schemaDeflated,
+    input.kiwiData,
+    input.figKiwiVersion,
+    input.compress
+  )
   const entries: Zippable = {
     'canvas.fig': [canvasData, { level: 0 }],
     'thumbnail.png': [input.thumbnailPNG, { level: 0 }],
@@ -275,7 +286,8 @@ export function compressFigDataSync(
   thumbnailPNG: Uint8Array,
   metaJSON: string,
   imageEntries: FigImageEntry[],
-  figKiwiVersion?: number
+  figKiwiVersion?: number,
+  compress?: FigDataCompressor
 ): Uint8Array {
   return writeFigArchive({
     schemaDeflated,
@@ -283,6 +295,7 @@ export function compressFigDataSync(
     thumbnailPNG,
     metaJSON,
     images: imageEntries,
-    figKiwiVersion
+    figKiwiVersion,
+    compress
   })
 }

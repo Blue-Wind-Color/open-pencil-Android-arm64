@@ -16,6 +16,7 @@ import {
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
+import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import {
   figExportRecordOptions,
   figFileExtras,
@@ -434,6 +435,7 @@ export async function writePatchedFigFile(
   return archive.patch(built.patch, {
     thumbnailPNG: extras.thumbnailPNG,
     metaJSON: extras.metaJSON,
-    images: extras.images.filter((image) => !archivedImages.has(image.name))
+    images: extras.images.filter((image) => !archivedImages.has(image.name)),
+    compressionLevel: figCompressionLevel(source)
   })
 }

@@ -4,6 +4,7 @@ import { behaviourSchema } from '../behaviours/schema'
 import type { OkHCLPayload } from '../color/okhcl'
 import { isExportFormatId, type ExportFormatId } from '../export-format'
 import { clampExportScale } from '../export-scale'
+import { FIG_COMPRESSIONS } from '../fig-compression'
 import { iconSchema, iconTintSchema } from '../icons/schema'
 import type { Rect } from '../primitives'
 import { shaderPaintSchema } from '../shaders/schema'
@@ -214,6 +215,8 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   comments: jsonPluginDataField('comments', 'bookkeeping', comments),
   /** The statuses layers can be in, on the DOCUMENT node. */
   statuses: jsonPluginDataField('statuses', 'bookkeeping', statusWorkflowSchema),
+  /** How tightly the document's `.fig` data is compressed, on the DOCUMENT node. */
+  figCompression: textPluginDataField('figCompression', 'bookkeeping', FIG_COMPRESSIONS),
   /** A layer's status, any state of the workflow; Figma's `sectionStatusInfo` knows only two. */
   status: jsonPluginDataField('status', 'format', nodeStatusSchema),
   /** Unit and CSS expressions, on each VARIABLE. */

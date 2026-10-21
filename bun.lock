@@ -477,6 +477,7 @@
       "name": "@open-pencil/kiwi",
       "version": "0.16.0",
       "dependencies": {
+        "@hpcc-js/wasm-zstd": "^1.16.2",
         "fflate": "^0.8.3",
         "fzstd": "^0.1.1",
       },
@@ -1319,6 +1320,8 @@
     "@hexagon/base64": ["@hexagon/base64@1.1.28", "", {}, "sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw=="],
 
     "@hono/node-server": ["@hono/node-server@1.19.17", "", { "peerDependencies": { "hono": "^4" } }, "sha512-dSneS5qhiauZWGDCeK4o695Xd9nUNjviSZCMQrj10eetr8Uln1ucn6bbphOM6UynAMMtNIzZNSpL9vnASJwrPQ=="],
+
+    "@hpcc-js/wasm-zstd": ["@hpcc-js/wasm-zstd@1.16.2", "", {}, "sha512-owm3y0AfdgVfft82RaF4aEPHdk1odK8V1RqryjAhYx3s1oaaHG0gBDC+PJ5P7sFEoayBHSWS5zuXLt9hmOgEvQ=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.2", "", { "dependencies": { "@humanfs/types": "^0.15.0" } }, "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA=="],
 

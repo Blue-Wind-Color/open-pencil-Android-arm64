@@ -74,6 +74,7 @@
     "typecheck": "bunx tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
+    "@hpcc-js/wasm-zstd": "^1.16.2",
     "fflate": "^0.8.3",
     "fzstd": "^0.1.1"
   },

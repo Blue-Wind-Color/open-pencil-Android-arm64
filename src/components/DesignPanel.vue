@@ -25,6 +25,7 @@ import { usePropertyBinding } from './properties/component-properties/usePropert
 import VariantAuthoringSection from './properties/component-properties/variant/VariantAuthoringSection.vue'
 import ConnectorSection from './properties/connector/ConnectorSection.vue'
 import ConstraintsSection from './properties/constraints/ConstraintsSection.vue'
+import DocumentSection from './properties/DocumentSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'
 import ExportSection from './properties/ExportSection.vue'
 import FillSection from './properties/FillSection.vue'
@@ -254,6 +255,7 @@ const { panels } = useI18n()
     <PageSection />
     <VariablesSection @open-dialog="openVariablesDialog(store)" />
     <StatusesSection />
+    <DocumentSection />
     <ExportSection />
   </div>
 </template>

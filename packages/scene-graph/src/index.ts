@@ -93,6 +93,7 @@ export {
 export * from './snap'
 export * from './export-format'
 export * from './export-scale'
+export * from './fig-compression'
 export * from './coordinate'
 export * from './layout'
 export * from './text'

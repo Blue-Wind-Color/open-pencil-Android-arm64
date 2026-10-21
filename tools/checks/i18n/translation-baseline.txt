@@ -150,10 +150,12 @@ fr:panels.colorFormatHsb
 fr:panels.colorFormatHsl
 fr:panels.colorFormatOkhcl
 fr:panels.colorFormatRgb
+fr:panels.compression
 fr:panels.description
 fr:panels.design
 fr:panels.dimensions
 fr:panels.direction
+fr:panels.document
 fr:panels.documentation
 fr:panels.export
 fr:panels.framePresetCategoryFigmaCommunity

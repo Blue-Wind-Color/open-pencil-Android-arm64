@@ -1,6 +1,7 @@
 import { inflateSync } from 'fflate'
 
 import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { FigDataCompressor } from '@open-pencil/kiwi/fig/container'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   ByteBuffer,
@@ -56,6 +57,8 @@ export interface FigPatchedArchiveInput {
   metaJSON: string
   /** Images the archive does not hold yet. */
   images: FigImageEntry[]
+  /** The zstd level the document data is written at; the archive is read whatever it used. */
+  compressionLevel?: number
 }
 
 const VARIABLE_TYPES = new Set(['VARIABLE', 'VARIABLE_SET'])
@@ -478,7 +481,8 @@ export function patchFigMessage(
 export function patchFigArchive(
   bytes: ArrayBuffer,
   patch: FigRecordPatch,
-  input: FigPatchedArchiveInput
+  input: FigPatchedArchiveInput,
+  compress?: FigDataCompressor
 ): Uint8Array {
   const parts = readFigArchiveParts(bytes)
   const kiwiData = patchFigMessage(parts.schemaDeflated, parts.dataRaw, patch)
@@ -492,7 +496,8 @@ export function patchFigArchive(
       ...parts.images.map(([name, data]) => ({ name: `images/${name}`, data })),
       ...input.images.filter((image) => !archiveImages.has(image.name.replace(/^images\//, '')))
     ],
-    figKiwiVersion: parts.figKiwiVersion
+    figKiwiVersion: parts.figKiwiVersion,
+    compress
   })
 }
 

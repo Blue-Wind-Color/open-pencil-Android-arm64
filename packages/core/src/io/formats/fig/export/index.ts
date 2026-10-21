@@ -6,12 +6,14 @@ import {
 } from '@open-pencil/fig/node-change'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { loadFigDataCompressor } from '@open-pencil/kiwi/fig/container'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { IS_BROWSER, IS_TAURI } from '#core/constants'
+import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
 import {
@@ -32,6 +34,7 @@ import {
   type KiwiNodeChange
 } from './setup'
 import { appendVariableNodeChanges, sequentialPositions, assignSharedStyleGuids } from './variables'
+import type { CompressResult } from './worker'
 
 type InternalResourceContext = FigExportSetup & { nodeChanges: KiwiNodeChange[] }
 
@@ -191,6 +194,7 @@ async function writeFigFile(
   const extras = await figFileExtras(graph, imageNames, options)
 
   const version = graph.figKiwiVersion ?? undefined
+  const compressionLevel = figCompressionLevel(sourceGraph)
 
   if (IS_TAURI) {
     const { invoke } = await import('@tauri-apps/api/core')
@@ -201,7 +205,8 @@ async function writeFigFile(
         thumbnailPng: Array.from(extras.thumbnailPNG),
         metaJson: extras.metaJSON,
         images: extras.images.map((e) => ({ name: e.name, data: Array.from(e.data) })),
-        figKiwiVersion: version
+        figKiwiVersion: version,
+        compressionLevel
       })
     )
   }
@@ -212,7 +217,8 @@ async function writeFigFile(
     extras.thumbnailPNG,
     extras.metaJSON,
     extras.images,
-    version
+    version,
+    compressionLevel
   )
 }
 
@@ -229,15 +235,17 @@ function compressViaWorker(
   thumbnailPNG: Uint8Array,
   metaJSON: string,
   imageEntries: Array<{ name: string; data: Uint8Array }>,
-  figKiwiVersion?: number
+  figKiwiVersion?: number,
+  compressionLevel?: number
 ): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL('./worker.ts', import.meta.url), {
       type: 'module'
     })
 
-    worker.onmessage = (e: MessageEvent<Uint8Array>) => {
-      resolve(e.data)
+    worker.onmessage = (e: MessageEvent<CompressResult>) => {
+      if (e.data instanceof Uint8Array) resolve(e.data)
+      else reject(new Error(e.data.error))
       worker.terminate()
     }
     worker.onerror = (err) => {
@@ -255,18 +263,21 @@ function compressViaWorker(
       thumbnailPNG,
       metaJSON,
       images: imageEntries,
-      figKiwiVersion
+      figKiwiVersion,
+      compressionLevel
     })
   })
 }
 
-export function compressFigData(
+/** Assemble a `.fig` archive with its document data compressed at `compressionLevel` (zstd). */
+export async function compressFigData(
   schemaDeflated: Uint8Array,
   kiwiData: Uint8Array,
   thumbnailPNG: Uint8Array,
   metaJSON: string,
   imageEntries: Array<{ name: string; data: Uint8Array }>,
-  figKiwiVersion?: number
+  figKiwiVersion?: number,
+  compressionLevel?: number
 ): Promise<Uint8Array> {
   if (canUseWorker()) {
     return compressViaWorker(
@@ -275,17 +286,17 @@ export function compressFigData(
       thumbnailPNG,
       metaJSON,
       imageEntries,
-      figKiwiVersion
+      figKiwiVersion,
+      compressionLevel
     )
   }
-  return Promise.resolve(
-    compressFigDataSync(
-      schemaDeflated,
-      kiwiData,
-      thumbnailPNG,
-      metaJSON,
-      imageEntries,
-      figKiwiVersion
-    )
+  return compressFigDataSync(
+    schemaDeflated,
+    kiwiData,
+    thumbnailPNG,
+    metaJSON,
+    imageEntries,
+    figKiwiVersion,
+    await loadFigDataCompressor(compressionLevel)
   )
 }

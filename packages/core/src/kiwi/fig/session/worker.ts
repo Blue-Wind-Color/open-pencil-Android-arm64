@@ -41,7 +41,7 @@ type ArchiveRequest = Extract<
   { type: 'original-archive' | 'archive-info' | 'component-pages' | 'patch-archive' }
 >
 
-function answerArchiveRequest(request: ArchiveRequest): void {
+async function answerArchiveRequest(request: ArchiveRequest): Promise<void> {
   const { requestId } = request
   try {
     if (!archive) throw new Error('FIG session has no original archive')
@@ -54,7 +54,7 @@ function answerArchiveRequest(request: ArchiveRequest): void {
       const pageIds = archive.componentPages(request.componentIds)
       respond({ type: 'component-pages-result', requestId, pageIds })
     } else {
-      const bytes = archive.patch(request.patch, request.input)
+      const bytes = await archive.patch(request.patch, request.input)
       port?.postMessage({ type: 'patch-archive-result', requestId, bytes }, [bytes.buffer])
     }
   } catch (error) {
@@ -74,7 +74,7 @@ function handleRequest(request: FigSessionRequest): void {
       request.type === 'component-pages' ||
       request.type === 'patch-archive'
     ) {
-      answerArchiveRequest(request)
+      void answerArchiveRequest(request)
       return
     }
     if (request.type === 'dispose') {

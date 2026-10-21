@@ -369,6 +369,11 @@ export const panelMessageDefaults = {
   maskTypeAlpha: 'Alpha',
   maskTypeVector: 'Vector',
   maskTypeLuminance: 'Luminance',
+  document: 'Document',
+  compression: 'Compression',
+  compressionFast: 'Fast',
+  compressionSmaller: 'Smaller',
+  compressionSmallest: 'Smallest',
 
   sticky: 'Sticky note',
   stickyColor: 'Color',
