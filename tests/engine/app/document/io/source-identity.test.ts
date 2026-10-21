@@ -38,6 +38,7 @@ function createSaveHarness(handle: FileSystemFileHandle) {
     setDownloadName: vi.fn(),
     getStorageBinding: () => null,
     setStorageBinding: vi.fn(),
+    hasWritableSource: () => true,
     setSourceIdentity,
     setSavedVersion: vi.fn(),
     setLastWriteTime: vi.fn(),
@@ -61,6 +62,26 @@ describe('saved document identity', () => {
       providerId: 's3-compatible',
       documentId: 'remote-1'
     })
+  })
+
+  test('a browser document opened from a URL saves by download, not in place', () => {
+    const source = createDocumentSourceState()
+    source.setFilePath('https://example.com/design.fig')
+    expect(source.hasWritableSource()).toBe(false)
+
+    source.setFileHandle(makeWritableHandle('design.fig'))
+    expect(source.hasWritableSource()).toBe(true)
+  })
+
+  test('a desktop document saves to its path in place', () => {
+    const source = createDocumentSourceState()
+    source.setFilePath('/Users/me/design.fig')
+    Reflect.set(globalThis, 'window', { __TAURI_INTERNALS__: {} })
+    try {
+      expect(source.hasWritableSource()).toBe(true)
+    } finally {
+      Reflect.deleteProperty(globalThis, 'window')
+    }
   })
 
   test('a file the browser will not write to is downloaded under its name and forgotten', async () => {

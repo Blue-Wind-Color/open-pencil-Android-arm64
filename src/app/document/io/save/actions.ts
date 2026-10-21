@@ -33,6 +33,7 @@ export function createSaveActions({
   setDownloadName,
   getStorageBinding,
   setStorageBinding,
+  hasWritableSource,
   setSourceIdentity,
   setSavedVersion,
   setLastWriteTime,
@@ -60,7 +61,7 @@ export function createSaveActions({
     const fileHandle = getFileHandle()
     const storageBinding = getStorageBinding()
     const downloadName = getDownloadName()
-    if (storageBinding || filePath || fileHandle) {
+    if (hasWritableSource()) {
       const { data, version } = await buildVersionedFigFile()
       const wrote = await writeFile(data, version)
       if (wrote && !storageBinding) setSourceIdentity({ handle: fileHandle, path: filePath })

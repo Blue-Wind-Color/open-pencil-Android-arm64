@@ -16,6 +16,7 @@ import { recoveryEnabled } from '@/app/document/recovery/preferences'
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
 import { createCanvasId } from '@/app/storage/id'
+import { isTauri } from '@/app/tauri/env'
 import { trackDocumentFormat } from '@/app/telemetry'
 
 type DocumentSourceState = EditorState & {
@@ -46,6 +47,7 @@ export function createDocumentSourceActions({
   setDownloadName,
   getStorageBinding,
   setStorageBinding,
+  hasWritableSource,
   setSourceIdentity,
   getSavedVersion,
   setSavedVersion,
@@ -83,7 +85,7 @@ export function createDocumentSourceActions({
     version: changes.capture,
     isEnabled: () => recoveryEnabled.value,
     buildFigFile: buildRecoveryFigFile,
-    hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding()
+    hasWritableSource
   })
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
@@ -98,6 +100,7 @@ export function createDocumentSourceActions({
     setDownloadName,
     getStorageBinding,
     setStorageBinding,
+    hasWritableSource,
     setSourceIdentity,
     setSavedVersion,
     setLastWriteTime,
@@ -112,7 +115,7 @@ export function createDocumentSourceActions({
     state,
     version: changes.capture,
     getSavedVersion,
-    hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding(),
+    hasWritableSource,
     saveCurrentDocument: async (version) => {
       const revision = changes.capture()
       const data = await buildFigFile()
@@ -207,6 +210,8 @@ export function createDocumentSourceActions({
   }
 
   async function saveFigFileToPath(path: string): Promise<boolean> {
+    // Only the desktop app writes paths; a browser would fall back to a download.
+    if (!isTauri()) return false
     const saved = await saveToNewTarget(() => setPlannedFilePath(path))
     if (saved) void startWatchingFile()
     return saved
