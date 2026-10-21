@@ -68,6 +68,16 @@ export interface SiteCountriesTable {
   visits: number
 }
 
+export interface RepoItemTable {
+  number: number
+  kind: 'issue' | 'pull'
+  authorAssociation: string
+  createdAt: string
+  closedAt: string | null
+  mergedAt: string | null
+  updatedAt: string
+}
+
 /** The D1 tables `migrations/` creates, in Kysely's camelCase. */
 export interface FeedbackDatabase {
   usagePings: UsagePingTable
@@ -79,4 +89,5 @@ export interface FeedbackDatabase {
   siteVisits: SiteVisitsTable
   sitePages: SitePagesTable
   siteCountries: SiteCountriesTable
+  repoItems: RepoItemTable
 }

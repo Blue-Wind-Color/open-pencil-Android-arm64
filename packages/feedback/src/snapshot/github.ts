@@ -8,8 +8,8 @@ import { releaseFileKind } from './assets'
 
 const API = 'https://api.github.com'
 const REQUEST_TIMEOUT_MS = 15_000
-// GitHub's maximum page size; a repository with more releases takes several pages.
-const RELEASES_PER_PAGE = 100
+// GitHub's maximum page size; a repository with more releases or issues takes several pages.
+const PER_PAGE = 100
 
 const RepositorySchema = v.object({ stargazers_count: v.number(), forks_count: v.number() })
 const ReleasesSchema = v.array(
@@ -21,6 +21,17 @@ const ReleasesSchema = v.array(
 const TrafficDaySchema = v.object({ timestamp: v.string(), count: v.number(), uniques: v.number() })
 const ViewsSchema = v.object({ views: v.array(TrafficDaySchema) })
 const ClonesSchema = v.object({ clones: v.array(TrafficDaySchema) })
+const IssuesSchema = v.array(
+  v.object({
+    number: v.number(),
+    author_association: v.string(),
+    created_at: v.string(),
+    updated_at: v.string(),
+    closed_at: v.nullable(v.string()),
+    // Present on pull requests only; `/issues` lists both.
+    pull_request: v.optional(v.object({ merged_at: v.nullable(v.string()) }))
+  })
+)
 const ReferrersSchema = v.array(
   v.object({ referrer: v.string(), count: v.number(), uniques: v.number() })
 )
@@ -42,6 +53,20 @@ export interface GithubTraffic {
   }[]
   referrers: { referrer: string; views: number; uniqueViews: number }[]
 }
+
+export interface RepoItem {
+  number: number
+  kind: 'issue' | 'pull'
+  /** How the author relates to the repository, as GitHub names it: `MEMBER`, `CONTRIBUTOR`... */
+  authorAssociation: string
+  createdAt: string
+  closedAt: string | null
+  mergedAt: string | null
+  updatedAt: string
+}
+
+/** GitHub's timestamps in the `toISOString()` form the other tables use, so they compare as strings. */
+const timestamp = (value: string) => new Date(value).toISOString()
 
 /** Reads the repository's GitHub API with the snapshot's token; a failed or unexpected answer throws. */
 export function githubClient(
@@ -73,12 +98,9 @@ export function githubClient(
   async function releases() {
     const all: v.InferOutput<typeof ReleasesSchema> = []
     for (let page = 1; ; page++) {
-      const batch = await get(
-        `/releases?per_page=${RELEASES_PER_PAGE}&page=${page}`,
-        ReleasesSchema
-      )
+      const batch = await get(`/releases?per_page=${PER_PAGE}&page=${page}`, ReleasesSchema)
       all.push(...batch)
-      if (batch.length < RELEASES_PER_PAGE) return all
+      if (batch.length < PER_PAGE) return all
     }
   }
 
@@ -105,6 +127,33 @@ export function githubClient(
           : []
       )
       return { stars: repository.stargazers_count, forks: repository.forks_count, downloads }
+    },
+
+    /**
+     * One page of issues and pull requests, least recently updated first, from those updated
+     * at `since` or later; without it, from the oldest. `full` says another page may follow.
+     */
+    async itemsUpdatedSince(
+      since: string | undefined
+    ): Promise<{ items: RepoItem[]; full: boolean }> {
+      const query = new URLSearchParams({
+        state: 'all',
+        sort: 'updated',
+        direction: 'asc',
+        per_page: String(PER_PAGE)
+      })
+      if (since) query.set('since', since)
+      const page = await get(`/issues?${query.toString()}`, IssuesSchema)
+      const items = page.map((item): RepoItem => ({
+        number: item.number,
+        kind: item.pull_request ? 'pull' : 'issue',
+        authorAssociation: item.author_association,
+        createdAt: timestamp(item.created_at),
+        closedAt: item.closed_at ? timestamp(item.closed_at) : null,
+        mergedAt: item.pull_request?.merged_at ? timestamp(item.pull_request.merged_at) : null,
+        updatedAt: timestamp(item.updated_at)
+      }))
+      return { items, full: page.length === PER_PAGE }
     },
 
     /** The last 14 days of views and clones, and the referrers over that window. */

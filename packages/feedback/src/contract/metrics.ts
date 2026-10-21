@@ -49,6 +49,21 @@ export type RankedCount = v.InferOutput<typeof RankedCountSchema>
 const DailyGrowthSchema = v.object({ day: IsoDay, added: v.number() })
 export type DailyGrowth = v.InferOutput<typeof DailyGrowthSchema>
 
+/**
+ * A day of issues or pull requests, split between the team (the repository's owners, members,
+ * and collaborators) and the community: how many were open at the end of the day, and how many
+ * were opened and closed that day.
+ */
+const IssueDaySchema = v.object({
+  day: IsoDay,
+  openTeam: Count,
+  openCommunity: Count,
+  openedTeam: Count,
+  openedCommunity: Count,
+  closedTeam: Count,
+  closedCommunity: Count
+})
+
 /** What PostHog knows about the installs that share usage stats; `null` when it could not be asked. */
 const MetricsUsageSchema = v.object({
   /** Different installs that opened the app in the range. */
@@ -98,7 +113,14 @@ export const MetricsSnapshotSchema = v.object({
       updateChecks: v.array(DailyGrowthSchema)
     }),
     traffic: v.array(v.object({ day: IsoDay, views: Count, uniqueViews: Count, clones: Count })),
-    referrers: v.array(RankedCountSchema)
+    referrers: v.array(RankedCountSchema),
+    /** Issues and pull requests per finished day, by the team and by everyone else; empty until the first sync. */
+    activity: v.object({
+      issues: v.array(IssueDaySchema),
+      pulls: v.array(
+        v.object({ ...IssueDaySchema.entries, mergedTeam: Count, mergedCommunity: Count })
+      )
+    })
   }),
   waitlist: v.object({
     total: Count,
