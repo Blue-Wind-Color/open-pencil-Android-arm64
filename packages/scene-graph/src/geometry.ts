@@ -402,14 +402,18 @@ export function nodeVisualBounds(
     bounds = unionVisualBounds(bounds, transformedLocalBounds(node, localGeometry, abs)) ?? bounds
   }
 
-  if (node.type === 'TEXT' && node.textDecoration && node.textDecoration !== 'NONE') {
-    const fontSize = node.fontSize ?? 14
-    const underlineOffset = node.textUnderlineOffset ?? fontSize * 0.18
-    const thickness = node.textDecorationThickness ?? Math.max(1, fontSize / 16)
-    bounds.maxY += underlineOffset + thickness + fontSize * 0.35
-  }
+  bounds.maxY += textDecorationOverflow(node)
 
   return bounds
+}
+
+/** How far a text node's underline or strikethrough reaches below its box. */
+export function textDecorationOverflow(node: VisualBoundsNode): number {
+  if (node.type !== 'TEXT' || !node.textDecoration || node.textDecoration === 'NONE') return 0
+  const fontSize = node.fontSize ?? 14
+  const underlineOffset = node.textUnderlineOffset ?? fontSize * 0.18
+  const thickness = node.textDecorationThickness ?? Math.max(1, fontSize / 16)
+  return underlineOffset + thickness + fontSize * 0.35
 }
 
 function collectDescendantVisualBounds(
