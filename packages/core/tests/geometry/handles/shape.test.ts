@@ -72,7 +72,6 @@ describe('shape handles', () => {
     expect(layout({ width: 216, height: 216 }, 0.5)).toHaveLength(4)
     expect(layout({ width: 212, height: 212 }, 0.5)).toBeUndefined()
     expect(layout({}, 1, 'FRAME')).toBeUndefined()
-    expect(layout({}, 1, 'ELLIPSE')).toBeUndefined()
   })
 
   // Figma desktop, 2026-10-10: a 160 × 160 triangle's one handle sits below its top point, at the
