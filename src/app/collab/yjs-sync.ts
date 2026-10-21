@@ -1,3 +1,4 @@
+import { isEmptyObject, isEqual, pickBy } from 'es-toolkit'
 import * as Y from 'yjs'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
@@ -321,8 +322,14 @@ export function createYjsGraphSync({
   /** Applies a layer's own fields; `applySharedTree` places it in the tree afterwards. */
   function applyYnodeToGraph(graph: SceneGraph, nodeId: string, ynode: Y.Map<unknown>) {
     const props = decodeNodeFromYjs(ynode)
-    if (graph.getNode(nodeId)) {
-      graph.updateNode(nodeId, props)
+    const node = graph.getNode(nodeId)
+    if (node) {
+      // Only what differs: joining a room replays every layer, and a layer that already reads the
+      // same is no change, so it neither marks the document unsaved nor costs a redraw. The text
+      // picture is a cache the decoder clears, so it goes along only with a real change.
+      const { textPicture, ...fields } = props
+      const changes = pickBy(fields, (value, key) => !isEqual(Reflect.get(node, key), value))
+      if (!isEmptyObject(changes)) graph.updateNode(nodeId, { ...changes, textPicture })
       return
     }
     const type = props.type
