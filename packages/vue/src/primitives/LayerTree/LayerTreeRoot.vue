@@ -92,7 +92,9 @@ const PATCHABLE_NODE_KEYS = new Set<keyof SceneNode>([
 ])
 
 function patchTreeNode(id: string, changes: Partial<SceneNode>) {
-  if ('childIds' in changes || 'parentId' in changes) {
+  // A layout mode turns a layer's rows between front-most first and flow order.
+  const reordersRows = 'layoutMode' in changes && !!nodesById.get(id)?.children?.length
+  if ('childIds' in changes || 'parentId' in changes || reordersRows) {
     rebuildTree()
     return
   }

@@ -98,6 +98,29 @@ describe('layer tree model', () => {
   })
 })
 
+describe('layer row order', () => {
+  test('lists an auto layout in flow order and other layers front-most first, as Figma does', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const rowsOf = (layoutMode: 'NONE' | 'HORIZONTAL' | 'VERTICAL' | 'GRID') => {
+      const frame = graph.createNode('FRAME', pageId, { layoutMode })
+      const ids = ['a', 'b', 'c'].map(
+        (name) => graph.createNode('RECTANGLE', frame.id, { name }).id
+      )
+      const rows = buildLayerTreeModel(graph, pageId).byId.get(frame.id)?.children ?? []
+      return { ids, rows: rows.map((row) => row.id) }
+    }
+    for (const mode of ['HORIZONTAL', 'VERTICAL'] as const) {
+      const { ids, rows } = rowsOf(mode)
+      expect(rows).toEqual(ids)
+    }
+    for (const mode of ['NONE', 'GRID'] as const) {
+      const { ids, rows } = rowsOf(mode)
+      expect(rows).toEqual(ids.toReversed())
+    }
+  })
+})
+
 describe('layer marks', () => {
   test('marks a layer that masks or shows an image, whose row shows that in place of its shape', () => {
     const graph = new SceneGraph()
