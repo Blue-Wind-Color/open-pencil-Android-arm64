@@ -6,6 +6,7 @@ import { useDocumentWorkspace, useI18n, useViewportKind } from '@open-pencil/vue
 
 import { CLOUD_INCLUDED, CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/integration'
 import { useHomeLocations } from '@/app/home/locations'
+import { useDateFormat } from '@/app/i18n/date'
 import {
   activeStorageProviderID,
   createStorageAdapter,
@@ -218,10 +219,10 @@ async function openStorageDocument(document: StorageDocument): Promise<void> {
   }
 }
 
+const dates = useDateFormat()
+/** A file's last change; a file that never reported one shows nothing. */
 function formattedDate(updatedAt: string): string {
-  const date = new Date(updatedAt)
-  if (date.getTime() === 0) return ''
-  return date.toLocaleString(locale.value)
+  return Date.parse(updatedAt) === 0 ? '' : dates.format(updatedAt, 'dateTime')
 }
 </script>
 

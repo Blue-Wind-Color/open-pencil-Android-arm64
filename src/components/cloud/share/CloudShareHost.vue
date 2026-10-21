@@ -2,13 +2,14 @@
 import { computed, watch } from 'vue'
 
 import type { DocumentPermission } from '@open-pencil/cloud/contract'
-import { useCloudMessages, useI18n } from '@open-pencil/vue'
+import { useCloudMessages } from '@open-pencil/vue'
 
 import { cloudConnection } from '@/app/cloud/sessions/connection'
 import { cloudShareOpen } from '@/app/cloud/sharing/dialog'
 import { cloudShareTarget, type CloudShareLink } from '@/app/cloud/sharing/document'
 import { useCloudSharing } from '@/app/cloud/sharing/use'
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
+import { useDateFormat } from '@/app/i18n/date'
 import { useSendLink } from '@/app/shell/share/link'
 import { toast } from '@/app/shell/ui'
 
@@ -19,7 +20,6 @@ import CloudShareDialog from './CloudShareDialog.vue'
  * One for the app, so the header's Share button and the mobile one open the same dialog.
  */
 const storeRef = useActiveEditorStoreRef()
-const { locale } = useI18n()
 const t = useCloudMessages()
 
 const target = computed(() => {
@@ -38,12 +38,11 @@ const workspace = computed(() => {
   )
   return found ? { name: found.name, permission: 'edit' as const } : null
 })
-const expires = (iso: string) =>
-  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'short' }).format(new Date(iso))
+const dates = useDateFormat()
 const members = computed(() =>
   (sharing.value?.members ?? []).map((member) => ({
     ...member,
-    pendingUntil: member.pendingUntil ? expires(member.pendingUntil) : undefined
+    pendingUntil: member.pendingUntil ? dates.format(member.pendingUntil, 'day') : undefined
   }))
 )
 

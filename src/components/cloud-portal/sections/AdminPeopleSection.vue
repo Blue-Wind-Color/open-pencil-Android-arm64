@@ -5,8 +5,8 @@ import { computed, ref, watch } from 'vue'
 import { useCloudPortalMessages, useI18n } from '@open-pencil/vue'
 
 import { usePortal } from '@/app/cloud-portal/context'
-import { portalDate } from '@/app/cloud-portal/format'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
+import { formatDate } from '@/app/i18n/date'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 import PortalPeople from '../console/PortalPeople.vue'
@@ -32,7 +32,7 @@ const {
     email: user.email,
     admin: user.role === 'admin',
     suspended: user.banned === true,
-    joinedOn: portalDate(user.createdAt, locale.value),
+    joinedOn: formatDate(user.createdAt, 'date', locale.value),
     you: user.id === you
   }))
   return { people, total }

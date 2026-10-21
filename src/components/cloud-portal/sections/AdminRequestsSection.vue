@@ -4,8 +4,8 @@ import { computed, ref, watch } from 'vue'
 import { useCloudPortalMessages, useI18n } from '@open-pencil/vue'
 
 import { usePortal } from '@/app/cloud-portal/context'
-import { portalDate } from '@/app/cloud-portal/format'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
+import { formatDate } from '@/app/i18n/date'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 import PortalAccessRequests from '../console/PortalAccessRequests.vue'
@@ -28,7 +28,7 @@ const {
     name: enrollment.name,
     email: enrollment.email,
     reason: enrollment.reason,
-    requestedOn: portalDate(enrollment.requestedAt, locale.value),
+    requestedOn: formatDate(enrollment.requestedAt, 'date', locale.value),
     status: enrollment.status,
     reviewedBy: enrollment.reviewedBy
   }))

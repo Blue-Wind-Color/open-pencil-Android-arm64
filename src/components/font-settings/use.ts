@@ -18,6 +18,7 @@ import {
   type FontProviderSettings
 } from '@/app/editor/fonts'
 import type { DownloadedFontCacheSummary } from '@/app/editor/fonts/cache'
+import { useDateFormat } from '@/app/i18n/date'
 
 type FontCacheSummary = DownloadedFontCacheSummary
 
@@ -45,6 +46,7 @@ const defaultActions: FontSettingsActions = {
 
 export function useFontSettings(actions: FontSettingsActions = defaultActions) {
   const { common, fonts } = useI18n()
+  const dates = useDateFormat()
   const cacheCount = ref(0)
   const cacheByteLength = ref(0)
   const cacheUpdatedAt = ref<number | null>(null)
@@ -68,7 +70,7 @@ export function useFontSettings(actions: FontSettingsActions = defaultActions) {
 
   const cacheUpdatedLabel = computed(() => {
     if (cacheUpdatedAt.value === null) return common.value.never
-    return new Date(cacheUpdatedAt.value).toLocaleDateString()
+    return dates.format(cacheUpdatedAt.value, 'date')
   })
 
   const canRequestLocalFonts = computed(

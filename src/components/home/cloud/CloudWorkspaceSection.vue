@@ -9,7 +9,7 @@ import { findCloudServer } from '@/app/cloud/servers/store'
 import { cloudAPIClient, cloudConnection } from '@/app/cloud/sessions/connection'
 import { CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/sessions/token'
 import { openWorkspaceMembers } from '@/app/cloud/workspaces/manage'
-import { formatCommentTime, useCommentClock } from '@/app/comments/time'
+import { useDateFormat } from '@/app/i18n/date'
 import {
   sameStorageLocation,
   storageLocationOf,
@@ -39,7 +39,7 @@ const {
 
 const { locale } = useI18n()
 const t = useCloudMessages()
-const now = useCommentClock()
+const dates = useDateFormat()
 const online = useOnline()
 const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
 const location = computed<StorageLocation>(() => ({
@@ -107,7 +107,7 @@ const rows = computed<CloudDocumentRow[]>(() =>
     id: document.id,
     name: document.name,
     previewURL: files.previewURL(document.id),
-    editedAt: formatCommentTime(document.updatedAt, now.value.getTime(), locale.value),
+    editedAt: dates.relative(document.updatedAt),
     sync: cloudSyncState(
       metas.value.get(document.id) ?? null,
       uploadProgressByCanvas.value.has(document.id),

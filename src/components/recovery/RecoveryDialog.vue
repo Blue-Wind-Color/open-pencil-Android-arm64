@@ -7,6 +7,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import type { RecoverySnapshotMeta } from '@/app/document/recovery'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
+import { useDateFormat } from '@/app/i18n/date'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import { formatStorageBytes } from '@/app/storage/format-bytes'
@@ -20,12 +21,9 @@ const snapshots = ref<RecoverySnapshotMeta[]>([])
 const busyId = ref<string | null>(null)
 const open = ref(false)
 
-function updatedLabel(snapshot: RecoverySnapshotMeta): string {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  }).format(new Date(snapshot.updatedAt))
-}
+const dates = useDateFormat()
+const updatedLabel = (snapshot: RecoverySnapshotMeta) =>
+  dates.format(snapshot.updatedAt, 'dateTime')
 
 async function restore(snapshot: RecoverySnapshotMeta): Promise<void> {
   busyId.value = snapshot.id

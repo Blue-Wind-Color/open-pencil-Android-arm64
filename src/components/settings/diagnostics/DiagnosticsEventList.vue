@@ -6,6 +6,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { summarizeDiagnosticEvent, type DiagnosticCategory } from '@/app/diagnostics'
 import { useRecentDiagnostics } from '@/app/diagnostics/settings/recent'
+import { useDateFormat } from '@/app/i18n/date'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
@@ -14,6 +15,7 @@ import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
 const { refreshStats } = defineProps<{ refreshStats: () => Promise<void> }>()
 const { diagnostics: messages } = useI18n()
+const dates = useDateFormat()
 
 const { visible, total, hasMore, showMore, level, category, categories } = useRecentDiagnostics(
   (event) => summarizeDiagnosticEvent(event, messages.value),
@@ -92,9 +94,7 @@ const categoryOptions = computed(() => [
               }}</span>
             </span>
           </span>
-          <span class="shrink-0 text-muted">{{
-            new Date(event.timestamp).toLocaleTimeString()
-          }}</span>
+          <span class="shrink-0 text-muted">{{ dates.format(event.timestamp, 'clock') }}</span>
         </CollapsibleTrigger>
         <CollapsibleContent :class="collapsibleContentMotion">
           <div class="space-y-1.5 px-3 pb-2.5 pl-8.5 font-mono text-[10px] text-muted">

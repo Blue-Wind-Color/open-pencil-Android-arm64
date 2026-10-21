@@ -2,8 +2,8 @@
 import { useCloudPortalMessages, useI18n } from '@open-pencil/vue'
 
 import { usePortal } from '@/app/cloud-portal/context'
-import { portalDate } from '@/app/cloud-portal/format'
 import { usePortalLoad } from '@/app/cloud-portal/state'
+import { formatDate } from '@/app/i18n/date'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 import PortalActivity from '../console/PortalActivity.vue'
@@ -30,7 +30,7 @@ const { data: entries, error } = usePortalLoad(async (): Promise<PortalActivityE
     },
     action: event.action,
     target: names.get(event.subjectId) ?? requesters.get(event.subjectId) ?? event.subjectId,
-    when: portalDate(event.createdAt, locale.value)
+    when: formatDate(event.createdAt, 'date', locale.value)
   }))
 }, [])
 </script>

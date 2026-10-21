@@ -4,8 +4,8 @@ import { computed } from 'vue'
 import { useCloudPortalMessages, useI18n } from '@open-pencil/vue'
 
 import { usePortal } from '@/app/cloud-portal/context'
-import { portalDate } from '@/app/cloud-portal/format'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
+import { formatDate } from '@/app/i18n/date'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 import PortalEmailDelivery from '../console/PortalEmailDelivery.vue'
@@ -34,7 +34,7 @@ const {
     recipient: row.recipientEmailNormalized,
     status: deliveryStatus(row.status),
     attempts: row.attemptCount,
-    when: portalDate(row.nextAttemptAt, locale.value),
+    when: formatDate(row.nextAttemptAt, 'date', locale.value),
     error: row.lastErrorCode
   }))
 }, [])
