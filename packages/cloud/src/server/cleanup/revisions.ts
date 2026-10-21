@@ -1,4 +1,5 @@
 import type { CloudDatabase } from '#cloud/server/db'
+import { IMAGE_RELEASE_GRACE_MS, releaseUnusedImages } from '#cloud/server/documents/images'
 import { historyStart, LIMITED_HISTORY_DAYS } from '#cloud/server/documents/versions/history'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { CloudPolicyContext } from '#cloud/server/policy/keys'
@@ -20,6 +21,8 @@ export type RevisionCompactionOptions = {
 
 export type RevisionCompactionResult = {
   versionsPruned: number
+  /** Images no revision used any more, released after their grace period. */
+  imagesReleased: number
   revisionsDeleted: number
   objectsDeleted: number
   bytesReclaimed: number
@@ -184,6 +187,7 @@ export function createRevisionCompactionService(
       const before = new Date(now.getTime() - input.graceMs)
       const result: RevisionCompactionResult = {
         versionsPruned: await pruneVersions(now, input.batchSize),
+        imagesReleased: 0,
         revisionsDeleted: 0,
         objectsDeleted: 0,
         bytesReclaimed: 0,
@@ -207,6 +211,19 @@ export function createRevisionCompactionService(
         } catch {
           result.failed++
         }
+      }
+      // Compaction just freed the images of the saves it deleted; the release lets their grace pass.
+      // A release that raced a save referring to an image fails whole and is tried next time.
+      try {
+        const images = await releaseUnusedImages(
+          database,
+          new Date(now.getTime() - IMAGE_RELEASE_GRACE_MS),
+          input.batchSize
+        )
+        result.imagesReleased = images.released
+        result.bytesReclaimed += images.bytes
+      } catch {
+        result.failed++
       }
       await sweepObjects(input.batchSize, result)
       return result

@@ -46,6 +46,12 @@ function services() {
       createUpload: async () => {
         throw new Error('not used')
       },
+      requestImageUploads: async () => {
+        throw new Error('not used')
+      },
+      commitImageUploads: async () => {
+        throw new Error('not used')
+      },
       commitUpload: async () => {
         throw new Error('not used')
       }

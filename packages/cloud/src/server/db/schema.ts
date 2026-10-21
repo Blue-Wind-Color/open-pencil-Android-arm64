@@ -108,6 +108,24 @@ export interface DocumentRevisionTable {
   createdAt: TimestampColumn
 }
 
+/** An image a workspace's documents use, stored once; see migration 023. */
+export interface WorkspaceImageTable {
+  workspaceId: string
+  /** The SHA-256 of the bytes, which the object store verified. */
+  checksum: string
+  storageObjectId: string
+  /** When a save last asked for it; an image no revision uses is released a while after. */
+  touchedAt: TimestampColumn
+}
+
+/** An image a stored revision uses, under the name its file gives it. */
+export interface RevisionImageTable {
+  revisionId: string
+  name: string
+  workspaceId: string
+  checksum: string
+}
+
 /** A revision kept in the document's history; see migration 021. */
 export interface DocumentVersionTable {
   id: string
@@ -121,9 +139,13 @@ export interface DocumentVersionTable {
   createdAt: TimestampColumn
 }
 
+export type UploadKind = 'revision' | 'image'
+
 export interface UploadTable {
   id: string
+  /** An image upload names the document it was asked for, which decides who may make it. */
   documentId: string
+  kind: Generated<UploadKind>
   baseRevisionId: string | null
   objectKey: string
   checksum: string
@@ -307,6 +329,8 @@ export interface CloudDatabase {
   document: DocumentTable
   storageObject: StorageObjectTable
   documentRevision: DocumentRevisionTable
+  revisionImage: RevisionImageTable
+  workspaceImage: WorkspaceImageTable
   documentVersion: DocumentVersionTable
   documentShare: DocumentShareTable
   documentGrant: DocumentGrantTable

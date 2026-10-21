@@ -5,7 +5,7 @@ import { createCloudAPIClient } from '@open-pencil/cloud/client'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { useCollabIdentity } from '@/app/collab/identity'
-import { downloadCloudRevision } from '@/app/integrations/storage/cloud/download'
+import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 import { getTabForStore, openFileInNewTab } from '@/app/tabs'
 import { IS_BROWSER } from '@/constants'
@@ -37,7 +37,7 @@ export async function openCloudShareLink(link: CloudShareLink): Promise<void> {
     guestId: guestId.value
   }
   const { document } = await client.getSharedDocument(link.shareId, input)
-  const bytes = await downloadCloudRevision(document, (input, init) => storageFetch(input, init))
+  const bytes = await downloadCloudDocument(document, (input, init) => storageFetch(input, init))
   const name = document.document.name
   const store = await openFileInNewTab(
     new File([Uint8Array.from(bytes)], `${name}.fig`, { type: 'application/octet-stream' })

@@ -1,7 +1,7 @@
 import type { WorkspaceEntitlements } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
+import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { workspaceRole } from '#cloud/server/documents/repository'
-import { DocumentNotFoundError } from '#cloud/server/documents/service'
 import { createStorageQuotaService } from '#cloud/server/quota'
 import type { Kysely } from 'kysely'
 

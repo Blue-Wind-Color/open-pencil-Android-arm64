@@ -46,6 +46,17 @@ revision has its own object key.
   replace it.
 - Deleting a document is immediate for users; the cleanup worker removes revisions and objects once
   the retention period passes.
+- Images are stored once per workspace, keyed by the SHA-256 the object store verifies, and a stored
+  revision leaves them out of its file: it lists the images it uses under the names the file gives
+  them, and a download returns a link for each. Before a save the client asks which of its images
+  the workspace lacks and uploads only those, each as an upload of its own kind with its own
+  reservation, committed together in one request; asking renews the images the workspace holds.
+  An image under a name Cloud does not accept stays inside the file. A save that names an image
+  the workspace does not hold is refused. Keying by the verified checksum, with names kept per
+  revision, means bytes uploaded under the wrong name can only reach the revision that named them.
+- Restoring or duplicating a version gives the new revision the same images. Compaction releases an
+  image no kept revision uses once a day has passed since a save last asked for it: its bytes return
+  to the workspace's usage and the object sweep deletes its file.
 
 ### Version history
 

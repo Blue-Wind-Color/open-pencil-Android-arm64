@@ -12,11 +12,17 @@ import {
 import { StorageRevisionConflictError, StorageUnavailableError } from '../errors'
 import { storageFetch } from '../s3/fetch'
 import type { StorageAdapter, StorageProviderRuntime } from '../types'
-import { cloudChecksum, downloadCloudRevision, readCloudRevisionRange } from './download'
+import { cloudChecksum, downloadCloudDocument, readCloudRevisionRange } from './download'
+import { splitCloudDocument, uploadCloudImages } from './images'
 import { uploadCloudObject } from './upload'
 
 function revisionConflict(error: unknown): boolean {
   return error instanceof CloudAPIError && error.code === 'revision_conflict'
+}
+
+/** The server refused the save as declared, as when an image it named was released meanwhile. */
+function invalidUpload(error: unknown): boolean {
+  return error instanceof CloudAPIError && error.code === 'invalid_upload'
 }
 
 export type CloudStorageDependencies = {
@@ -91,7 +97,7 @@ export function createCloudStorageAdapter(
 
     async getDocument(id, onProgress, signal) {
       const download = await (await client()).getDocument(id)
-      const bytes = await downloadCloudRevision(
+      const bytes = await downloadCloudDocument(
         download,
         (input, init) => dependencies.objectFetch(input, init),
         { signal, onProgress }
@@ -106,22 +112,38 @@ export function createCloudStorageAdapter(
       if (!baseRevision && !(await listed(id))) {
         await cloud.createDocument(workspaceId(), { id, name: metadata.name })
       }
-      const checksum = await cloudChecksum(bytes)
-      try {
+      // The workspace keeps images once; the stored file names them and uploads only those it lacks.
+      const { lean, images } = splitCloudDocument(bytes)
+      const named = await Promise.all(
+        images.map(async (image) => ({ ...image, checksum: await cloudChecksum(image.bytes) }))
+      )
+      const checksum = await cloudChecksum(lean)
+      const objectFetch = (input: string, init: RequestInit) =>
+        dependencies.objectFetch(input, init)
+      const save = async () => {
+        await uploadCloudImages({ cloud, documentId: id, images: named, objectFetch })
         const upload = await uploadCloudObject({
           cloud,
           documentId: id,
-          bytes,
+          bytes: lean,
           checksum,
           baseRevision,
-          objectFetch: (input, init) => dependencies.objectFetch(input, init),
+          objectFetch,
           onProgress
         })
         const committed = await cloud.commitUpload(upload.uploadId, {
           checksum,
-          multipart: upload.multipart
+          multipart: upload.multipart,
+          images: named.map((image) => ({ name: image.name, checksum: image.checksum }))
         })
         return { revision: committed.currentRevisionId }
+      }
+      try {
+        // An image released between asking and committing is uploaded again by a second try.
+        return await save().catch((error: unknown) => {
+          if (invalidUpload(error)) return save()
+          throw error
+        })
       } catch (error) {
         if (revisionConflict(error)) {
           throw new StorageRevisionConflictError((await listed(id))?.currentRevisionId ?? null)

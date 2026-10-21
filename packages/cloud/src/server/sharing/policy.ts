@@ -1,6 +1,6 @@
 import type { DocumentPermission } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
-import { DocumentForbiddenError } from '#cloud/server/documents/service'
+import { DocumentForbiddenError } from '#cloud/server/documents/errors'
 import { CLOUD_FEATURE_KEYS, type CloudPolicy, type CloudPolicyContext } from '#cloud/server/policy'
 import type { Kysely } from 'kysely'
 

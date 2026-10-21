@@ -10,7 +10,7 @@ import type {
 import { cloudInvitationURL } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
-import { DocumentNotFoundError } from '#cloud/server/documents/service'
+import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { Kysely } from 'kysely'
 
