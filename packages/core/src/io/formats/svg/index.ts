@@ -1,4 +1,10 @@
-export { renderNodesToSVG, geometryBlobToSVGPath, vectorNetworkToSVGPaths } from './export'
+export {
+  renderNodesToSVG,
+  geometryBlobToSVGPath,
+  nodeOutlinePath,
+  vectorNetworkToSVGPaths,
+  type OutlineNode
+} from './export'
 export {
   createSVGNodes,
   createSVGNodesFromImport,

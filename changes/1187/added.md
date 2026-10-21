@@ -1,1 +1,1 @@
-- Each vector's row in the layers panel shows the vector's own shape as its icon, as in Figma.
+- Rows in the layers panel show each vector, rectangle, ellipse, line, polygon, and star as its own outline, turned and reflected as the layer is, as in Figma.

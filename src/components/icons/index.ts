@@ -7,6 +7,7 @@ import IconFrame from '~icons/lucide/frame'
 import IconGrid from '~icons/lucide/grid-3x3'
 import IconGroup from '~icons/lucide/group'
 import IconHand from '~icons/lucide/hand'
+import IconImage from '~icons/lucide/image'
 import IconSection from '~icons/lucide/layout-grid'
 import IconMessageCircle from '~icons/lucide/message-circle'
 import IconMinus from '~icons/lucide/minus'
@@ -19,6 +20,7 @@ import IconSmile from '~icons/lucide/smile'
 import IconSpline from '~icons/lucide/spline'
 import IconSquare from '~icons/lucide/square'
 import IconSlot from '~icons/lucide/square-dashed'
+import IconMask from '~icons/lucide/squares-intersect'
 import IconStar from '~icons/lucide/star'
 import IconStickyNote from '~icons/lucide/sticky-note'
 import IconTriangle from '~icons/lucide/triangle'
@@ -26,10 +28,10 @@ import IconType from '~icons/lucide/type'
 
 import { readIcon, slotPropertyId, type SceneNode } from '@open-pencil/scene-graph'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
-import type { LayerVectorIcon, Tool } from '@open-pencil/vue'
+import type { LayerOutline, Tool } from '@open-pencil/vue'
 
+import { outlineIcon } from './outlines'
 import { SHAPE_KIND_ICONS } from './shapes'
-import { vectorIcon } from './vectors'
 
 export const toolIcons: Record<Tool, Component> = {
   SELECT: IconMousePointer,
@@ -78,7 +80,8 @@ export { IconFrame, IconSquare }
 
 /**
  * The glyph for a layer: its kind, or a slot or icon frame. A component keeps its own glyph, a
- * shape with text shows its outline, and a layer row's vector shows its own shape.
+ * shape with text shows its kind, a layer that masks shows the mask glyph, and a layer row's shape
+ * or vector shows its own outline, or the image glyph when it shows an image, as in Figma.
  */
 export function nodeIcon(node: {
   type: string
@@ -86,14 +89,19 @@ export function nodeIcon(node: {
   slot?: boolean
   icon?: boolean
   shapeWithTextType?: ShapeWithTextType
-  vector?: LayerVectorIcon
+  outline?: LayerOutline
+  image?: boolean
+  mask?: boolean
 }) {
   if (node.slot) return IconSlot
+  // Figma marks any masking layer, frames and text too, but marks images on shapes only.
+  if (node.mask) return IconMask
   if (node.type === 'SHAPE_WITH_TEXT' && node.shapeWithTextType) {
     return SHAPE_KIND_ICONS[node.shapeWithTextType]
   }
-  if (node.vector) {
-    const icon = vectorIcon(node.vector)
+  if (node.outline) {
+    if (node.image) return IconImage
+    const icon = outlineIcon(node.outline)
     if (icon) return icon
   }
   if (node.icon && node.type === 'FRAME') return IconSmile

@@ -1,15 +1,16 @@
-import { isEqual } from 'es-toolkit'
+import { isEqual, pick } from 'es-toolkit'
 import { toRaw } from 'vue'
 
 import { isGeneratedFrame, readIcon, slotPropertyId } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
+import { LAYER_OUTLINE_FIELDS } from '#vue/primitives/LayerTree/context'
 import type {
   LayerNode,
+  LayerOutline,
   LayerRow,
-  LayerSelectionMode,
-  LayerVectorIcon
+  LayerSelectionMode
 } from '#vue/primitives/LayerTree/context'
 
 function explicitModeIds(node: SceneNode): string[] | undefined {
@@ -21,24 +22,27 @@ function shapeWithTextTypeOf(node: SceneNode): ShapeWithTextType | undefined {
   return node.type === 'SHAPE_WITH_TEXT' ? node.shapeWithTextType : undefined
 }
 
-/** A vector's row draws its own shape in its box, turned and reflected, as Figma's does. */
-function vectorIconOf(node: SceneNode): LayerVectorIcon | undefined {
-  if (node.type !== 'VECTOR' || !node.vectorNetwork) return undefined
-  const { vectorNetwork: network, width, height, rotation, flipX, flipY } = node
-  return { network, width, height, rotation, flipX, flipY }
+/** The layers whose rows draw their own outline, as Figma's do; others keep their kind's glyph. */
+const OUTLINE_TYPES = new Set(['RECTANGLE', 'ELLIPSE', 'LINE', 'POLYGON', 'STAR', 'VECTOR'])
+
+function outlineOf(node: SceneNode): LayerOutline | undefined {
+  if (!OUTLINE_TYPES.has(node.type) || (node.type === 'VECTOR' && !node.vectorNetwork)) {
+    return undefined
+  }
+  return pick(node, LAYER_OUTLINE_FIELDS)
 }
 
-function sameVectorIcon(target: LayerVectorIcon | undefined, source: LayerVectorIcon | undefined) {
-  if (!target || !source) return target === source
-  // The target may be a reactive row, which hands back a proxy of the network it holds.
-  return (
-    toRaw(target.network) === source.network &&
-    target.width === source.width &&
-    target.height === source.height &&
-    target.rotation === source.rotation &&
-    target.flipX === source.flipX &&
-    target.flipY === source.flipY
+/** A visible image paint, in fills or strokes, which Figma marks a layer's row with. */
+function showsImage(node: SceneNode): boolean {
+  return [...node.fills, ...node.strokes].some(
+    (paint) => paint.type === 'IMAGE' && paint.visible && paint.opacity > 0
   )
+}
+
+function sameOutline(target: LayerOutline | undefined, source: LayerOutline | undefined) {
+  if (!target || !source) return target === source
+  // The target may be a reactive row, which hands back proxies of the objects it holds.
+  return LAYER_OUTLINE_FIELDS.every((field) => toRaw(target[field]) === source[field])
 }
 
 function nodeToLayerNode(node: SceneNode): LayerNode {
@@ -50,7 +54,9 @@ function nodeToLayerNode(node: SceneNode): LayerNode {
     slot: !!slotPropertyId(node),
     icon: !!readIcon(node),
     shapeWithTextType: shapeWithTextTypeOf(node),
-    vector: vectorIconOf(node),
+    outline: outlineOf(node),
+    image: showsImage(node),
+    mask: node.isMask,
     visible: node.visible,
     locked: node.locked,
     modeIds: explicitModeIds(node)
@@ -99,7 +105,7 @@ export function indexLayerNodes(items: readonly LayerNode[]): Map<string, LayerN
 }
 
 export function patchLayerNode(target: LayerNode, source: SceneNode): boolean {
-  const vector = vectorIconOf(source)
+  const outline = outlineOf(source)
   const changed =
     target.name !== source.name ||
     target.type !== source.type ||
@@ -107,7 +113,9 @@ export function patchLayerNode(target: LayerNode, source: SceneNode): boolean {
     target.slot !== !!slotPropertyId(source) ||
     target.icon !== !!readIcon(source) ||
     target.shapeWithTextType !== shapeWithTextTypeOf(source) ||
-    !sameVectorIcon(target.vector, vector) ||
+    !sameOutline(target.outline, outline) ||
+    target.image !== showsImage(source) ||
+    target.mask !== source.isMask ||
     target.visible !== source.visible ||
     target.locked !== source.locked ||
     !isEqual(target.modeIds, explicitModeIds(source))
@@ -118,7 +126,9 @@ export function patchLayerNode(target: LayerNode, source: SceneNode): boolean {
   target.slot = !!slotPropertyId(source)
   target.icon = !!readIcon(source)
   target.shapeWithTextType = shapeWithTextTypeOf(source)
-  target.vector = vector
+  target.outline = outline
+  target.image = showsImage(source)
+  target.mask = source.isMask
   target.visible = source.visible
   target.locked = source.locked
   target.modeIds = explicitModeIds(source)

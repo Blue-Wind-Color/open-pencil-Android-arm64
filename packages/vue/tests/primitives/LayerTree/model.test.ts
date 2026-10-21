@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { reactive } from 'vue'
 
 import { createShapeWithText, SceneGraph, withIcon } from '@open-pencil/scene-graph'
+import { colorToFill } from '@open-pencil/scene-graph/color'
 import { buildLayerTreeModel, patchLayerNode } from '@open-pencil/vue'
 
 import { dropIndex } from '#vue/primitives/LayerTree/model'
@@ -57,7 +58,7 @@ describe('layer tree model', () => {
     expect(row.shapeWithTextType).toBe('ELLIPSE')
   })
 
-  test("carries a vector's network and placement, so its row draws the shape", () => {
+  test("carries a shape's outline and placement, so its row draws the shape", () => {
     const graph = new SceneGraph()
     const pageId = graph.getPages()[0].id
     const line = (x: number) => ({
@@ -70,22 +71,52 @@ describe('layer tree model', () => {
     })
     const vector = graph.createNode('VECTOR', pageId, { vectorNetwork: line(10) })
     const rect = graph.createNode('RECTANGLE', pageId)
+    const frame = graph.createNode('FRAME', pageId)
 
     const model = buildLayerTreeModel(graph, pageId)
     const row = model.byId.get(vector.id)
     if (!row) throw new Error('Expected the vector in the model')
-    expect(row.vector?.network).toBe(vector.vectorNetwork ?? undefined)
-    expect(model.byId.get(rect.id)?.vector).toBeUndefined()
+    expect(row.outline?.vectorNetwork).toBe(vector.vectorNetwork)
+    expect(model.byId.get(rect.id)?.outline).toMatchObject({ type: 'RECTANGLE' })
+    expect(model.byId.get(frame.id)?.outline).toBeUndefined()
 
     // The layer tree patches its rows through their reactive proxies.
     expect(patchLayerNode(reactive(row), vector)).toBe(false)
     graph.updateNode(vector.id, { vectorNetwork: line(20) })
     expect(patchLayerNode(reactive(row), vector)).toBe(true)
-    expect(row.vector?.network).toBe(vector.vectorNetwork ?? undefined)
+    expect(row.outline?.vectorNetwork).toBe(vector.vectorNetwork)
 
     graph.updateNode(vector.id, { rotation: 30, flipX: true })
     expect(patchLayerNode(reactive(row), vector)).toBe(true)
-    expect(row.vector).toMatchObject({ rotation: 30, flipX: true })
+    expect(row.outline).toMatchObject({ rotation: 30, flipX: true })
+
+    const rectRow = model.byId.get(rect.id)
+    if (!rectRow) throw new Error('Expected the rectangle in the model')
+    graph.updateNode(rect.id, { cornerRadius: 8 })
+    expect(patchLayerNode(reactive(rectRow), rect)).toBe(true)
+    expect(rectRow.outline?.cornerRadius).toBe(8)
+  })
+})
+
+describe('layer marks', () => {
+  test('marks a layer that masks or shows an image, whose row shows that in place of its shape', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const image = { ...colorToFill('#000000'), type: 'IMAGE' as const, imageHash: 'hash' }
+    const rect = graph.createNode('RECTANGLE', pageId, { fills: [image] })
+    const hidden = graph.createNode('RECTANGLE', pageId, { fills: [{ ...image, visible: false }] })
+    const mask = graph.createNode('ELLIPSE', pageId, { isMask: true })
+
+    const model = buildLayerTreeModel(graph, pageId)
+    expect(model.byId.get(rect.id)).toMatchObject({ image: true, mask: false })
+    expect(model.byId.get(hidden.id)?.image).toBe(false)
+    expect(model.byId.get(mask.id)?.mask).toBe(true)
+
+    const row = model.byId.get(rect.id)
+    if (!row) throw new Error('Expected the rectangle in the model')
+    graph.updateNode(rect.id, { fills: [] })
+    expect(patchLayerNode(reactive(row), rect)).toBe(true)
+    expect(row.image).toBe(false)
   })
 })
 

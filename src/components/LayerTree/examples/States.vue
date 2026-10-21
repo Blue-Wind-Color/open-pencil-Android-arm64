@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import type { VectorNetwork } from '@open-pencil/scene-graph'
-import type { LayerNode, LayerVectorIcon } from '@open-pencil/vue'
+import {
+  createDefaultNode,
+  type NodeType,
+  type SceneNode,
+  type VectorNetwork
+} from '@open-pencil/scene-graph'
+import type { LayerNode, LayerOutline } from '@open-pencil/vue'
 
 import type { LayerIssueMark } from '@/app/editor/design-check/layers'
 import LayerTreeNodeRow from '@/components/LayerTree/LayerTreeNodeRow.vue'
@@ -71,9 +76,12 @@ const curveNetwork: VectorNetwork = {
   segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: -100 }, tangentEnd: { x: 0, y: -100 } }],
   regions: []
 }
-const placed = { rotation: 0, flipX: false, flipY: false }
-const triangle: LayerVectorIcon = { network: triangleNetwork, width: 100, height: 100, ...placed }
-const curve: LayerVectorIcon = { network: curveNetwork, width: 100, height: 75, ...placed }
+/** A shape layer's outline, which its row draws as its icon. */
+function outline(type: NodeType, overrides: Partial<SceneNode> = {}): LayerOutline {
+  return createDefaultNode(() => type, type, { width: 100, height: 100, ...overrides })
+}
+const triangle = outline('VECTOR', { vectorNetwork: triangleNetwork })
+const curve = outline('VECTOR', { vectorNetwork: curveNetwork, height: 75 })
 
 function chrome(overrides: Partial<LayerTreeChrome> = {}): LayerTreeChrome {
   return {
@@ -150,25 +158,66 @@ const states: Array<{
   },
   {
     label: 'Vector',
-    node: node('Vector', { type: 'VECTOR', vector: triangle }),
+    node: node('Vector', { type: 'VECTOR', outline: triangle }),
     selected: false,
     chrome: chrome()
   },
   {
     label: 'Selected vector',
-    node: node('Selected vector', { type: 'VECTOR', vector: curve }),
+    node: node('Selected vector', { type: 'VECTOR', outline: curve }),
     selected: true,
     chrome: chrome({ focused: true })
   },
   {
     label: 'Hidden vector',
-    node: node('Hidden vector', { type: 'VECTOR', vector: triangle, visible: false }),
+    node: node('Hidden vector', { type: 'VECTOR', outline: triangle, visible: false }),
     selected: false,
     chrome: chrome()
   },
   {
     label: 'Turned vector',
-    node: node('Turned vector', { type: 'VECTOR', vector: { ...triangle, rotation: -45 } }),
+    node: node('Turned vector', { type: 'VECTOR', outline: { ...triangle, rotation: -45 } }),
+    selected: false,
+    chrome: chrome()
+  },
+  {
+    label: 'Rounded rectangle',
+    node: node('Rounded rectangle', {
+      outline: outline('RECTANGLE', { width: 200, height: 100, cornerRadius: 24 })
+    }),
+    selected: false,
+    chrome: chrome()
+  },
+  {
+    label: 'Ellipse',
+    node: node('Ellipse', { type: 'ELLIPSE', outline: outline('ELLIPSE', { height: 60 }) }),
+    selected: false,
+    chrome: chrome()
+  },
+  {
+    label: 'Star',
+    node: node('Star', { type: 'STAR', outline: outline('STAR', { pointCount: 5 }) }),
+    selected: false,
+    chrome: chrome()
+  },
+  {
+    label: 'Image',
+    node: node('Image', { outline: outline('RECTANGLE'), image: true }),
+    selected: false,
+    chrome: chrome()
+  },
+  {
+    label: 'Mask',
+    node: node('Mask', { type: 'ELLIPSE', outline: outline('ELLIPSE'), mask: true }),
+    selected: false,
+    chrome: chrome()
+  },
+  {
+    label: 'Turned line',
+    node: node('Turned line', {
+      type: 'LINE',
+      outline: outline('LINE', { height: 0, rotation: -30 })
+    }),
     selected: false,
     chrome: chrome()
   },

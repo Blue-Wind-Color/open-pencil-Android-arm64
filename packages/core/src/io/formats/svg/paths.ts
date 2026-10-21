@@ -9,6 +9,7 @@ import type {
 import { polygonVertices } from '@open-pencil/scene-graph/geometry'
 import { outlineSVGPath, polygonOutline } from '@open-pencil/scene-graph/polygon'
 
+import { traceSmoothRect, type SmoothCornerSink } from '#core/canvas/paths/smooth-corners'
 import { nodeHasRadius } from '#core/canvas/shapes'
 
 const CMD_CLOSE = 0
@@ -247,7 +248,19 @@ export function makePolygonPoints(node: SceneNode): string {
 
 export const hasRadius = nodeHasRadius
 
-export function roundedRectPath(node: SceneNode): string {
+type RectOutlineNode = Pick<
+  SceneNode,
+  | 'width'
+  | 'height'
+  | 'cornerRadius'
+  | 'independentCorners'
+  | 'topLeftRadius'
+  | 'topRightRadius'
+  | 'bottomRightRadius'
+  | 'bottomLeftRadius'
+>
+
+export function roundedRectPath(node: RectOutlineNode): string {
   const w = node.width
   const h = node.height
   let tl: number, tr: number, br: number, bl: number
@@ -279,7 +292,7 @@ export function roundedRectPath(node: SceneNode): string {
   ]).join('')
 }
 
-export function arcPath(node: SceneNode): string {
+export function arcPath(node: Pick<SceneNode, 'width' | 'height' | 'arcData'>): string {
   if (!node.arcData) return ''
   const { startingAngle, endingAngle, innerRadius } = node.arcData
   const cx = node.width / 2
@@ -288,8 +301,13 @@ export function arcPath(node: SceneNode): string {
   const ry = node.height / 2
 
   const fullCircle = Math.abs(endingAngle - startingAngle) >= Math.PI * 2 - 0.001
-  if (fullCircle && innerRadius <= 0) {
-    return `M${round(cx - rx)} ${round(cy)}A${round(rx)} ${round(ry)} 0 1 1 ${round(cx + rx)} ${round(cy)}A${round(rx)} ${round(ry)} 0 1 1 ${round(cx - rx)} ${round(cy)}Z`
+  const ring = (rx: number, ry: number, sweep: 0 | 1) =>
+    `M${round(cx - rx)} ${round(cy)}A${round(rx)} ${round(ry)} 0 1 ${sweep} ${round(cx + rx)} ${round(cy)}A${round(rx)} ${round(ry)} 0 1 ${sweep} ${round(cx - rx)} ${round(cy)}Z`
+  // A whole ring has no ends to join: it is its outer edge and, for a donut, its hole, wound
+  // the other way so the default nonzero fill leaves the hole empty.
+  if (fullCircle) {
+    const outer = ring(rx, ry, 1)
+    return innerRadius > 0 ? outer + ring(rx * innerRadius, ry * innerRadius, 0) : outer
   }
 
   const x1 = round(cx + rx * Math.cos(startingAngle))
@@ -316,4 +334,54 @@ export function arcPath(node: SceneNode): string {
   }
 
   return parts.join('')
+}
+
+/** A rectangle with smoothed corners as path data, traced as the canvas draws it. */
+function smoothRectPath(node: RectOutlineNode & Pick<SceneNode, 'cornerSmoothing'>): string {
+  const parts: string[] = []
+  const point = (x: number, y: number) => `${round(x)} ${round(y)}`
+  const sink: SmoothCornerSink = {
+    moveTo: (x, y) => parts.push(`M${point(x, y)}`),
+    lineTo: (x, y) => parts.push(`L${point(x, y)}`),
+    cubicTo: (x1, y1, x2, y2, x, y) =>
+      parts.push(`C${point(x1, y1)} ${point(x2, y2)} ${point(x, y)}`),
+    arcToRotated: (rx, ry, rotation, useSmallArc, isCCW, x, y) =>
+      parts.push(
+        `A${round(rx)} ${round(ry)} ${rotation} ${useSmallArc ? 0 : 1} ${isCCW ? 0 : 1} ${point(x, y)}`
+      ),
+    close: () => parts.push('Z')
+  }
+  const box = { left: 0, top: 0, right: node.width, bottom: node.height }
+  return traceSmoothRect(sink, node, box) ? parts.join('') : roundedRectPath(node)
+}
+
+/** What a layer's outline is drawn from. */
+export type OutlineNode = RectOutlineNode &
+  Pick<
+    SceneNode,
+    'type' | 'arcData' | 'pointCount' | 'starInnerRadius' | 'cornerSmoothing' | 'vectorNetwork'
+  >
+
+const FULL_ELLIPSE = { startingAngle: 0, endingAngle: Math.PI * 2, innerRadius: 0 }
+
+/**
+ * A shape layer's outline in its own box as path data: a rectangle with its corners, an ellipse
+ * or arc, a line, a polygon or star, or a vector's network. Null for other layers.
+ */
+export function nodeOutlinePath(node: OutlineNode): string | null {
+  switch (node.type) {
+    case 'RECTANGLE':
+      return node.cornerSmoothing > 0 ? smoothRectPath(node) : roundedRectPath(node)
+    case 'ELLIPSE':
+      return arcPath({ ...node, arcData: node.arcData ?? FULL_ELLIPSE })
+    case 'LINE':
+      return `M0 0L${round(node.width)} ${round(node.height)}`
+    case 'POLYGON':
+    case 'STAR':
+      return outlineSVGPath(polygonOutline(node), (value) => round(value))
+    case 'VECTOR':
+      return node.vectorNetwork ? vectorNetworkToSVGPaths(node.vectorNetwork).join('') : null
+    default:
+      return null
+  }
 }

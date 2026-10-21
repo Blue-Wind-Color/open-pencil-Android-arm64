@@ -7,8 +7,8 @@ export type {
   LayerRow,
   LayerSelectionMode,
   LayerTreeContext,
-  LayerTreeVirtualizer,
-  LayerVectorIcon
+  LayerOutline,
+  LayerTreeVirtualizer
 } from '#vue/primitives/LayerTree/context'
 export {
   buildLayerTreeModel,

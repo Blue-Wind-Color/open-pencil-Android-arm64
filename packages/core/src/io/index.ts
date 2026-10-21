@@ -38,7 +38,9 @@ export {
   prepareSVGImport,
   renderNodesToSVG,
   geometryBlobToSVGPath,
+  nodeOutlinePath,
   vectorNetworkToSVGPaths,
+  type OutlineNode,
   type SVGImportData,
   type SVGImportOptions
 } from './formats/svg'

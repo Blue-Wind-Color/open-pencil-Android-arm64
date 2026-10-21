@@ -23,7 +23,12 @@ import {
   arcPath
 } from './paths'
 
-export { geometryBlobToSVGPath, vectorNetworkToSVGPaths } from './paths'
+export {
+  geometryBlobToSVGPath,
+  nodeOutlinePath,
+  vectorNetworkToSVGPaths,
+  type OutlineNode
+} from './paths'
 
 import type {
   SceneGraph,
