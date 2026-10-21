@@ -143,6 +143,25 @@ describe('room sessions', () => {
     })
   })
 
+  test('a tab that holds the room’s document keeps showing it while its saved copy loads', async () => {
+    await withRooms(async (open) => {
+      let loaded: () => void = () => undefined
+      const whenSynced = new Promise<void>((resolve) => {
+        loaded = resolve
+      })
+      const session = open({
+        roomId: ROOM_A,
+        store: newStore('Poster'),
+        origin: 'shared',
+        holdsDocument: true,
+        openSavedCopy: () => ({ whenSynced, destroy: () => undefined })
+      })
+      expect(session.hasDocument.value).toBe(true)
+      expect(session.status.value).toBe('alone')
+      loaded()
+    })
+  })
+
   test('a room someone shared or joined can be left', async () => {
     await withRooms(async (open) => {
       const shared = open({ roomId: ROOM_A, store: newStore('Poster'), origin: 'shared' })

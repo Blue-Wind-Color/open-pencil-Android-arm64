@@ -28,6 +28,8 @@ export function createDocumentChanges(editor: Editor) {
   let savedHistory: UndoEntry | undefined = editor.undo.peekUndo()
   /** The history at each captured revision, for a save that finishes after later edits. */
   const capturedHistory = new Map<number, UndoEntry | undefined>()
+  /** How many changes the document already had elsewhere are being applied. */
+  let adopting = 0
 
   const dirty = computed(() => {
     if (revision.value === savedRevision.value) return false
@@ -42,7 +44,7 @@ export function createDocumentChanges(editor: Editor) {
     outsideRevision = revision.value
   }
   const contentChanged = () => {
-    if (editor.graph.isApplyingImportedState) return
+    if (editor.graph.isApplyingImportedState || adopting > 0) return
     revision.value++
     contentRevision = revision.value
     const at = contentRevision
@@ -88,6 +90,15 @@ export function createDocumentChanges(editor: Editor) {
       savedRevision.value = version
     },
     markChanged: changed,
+    /** Applies changes the document already has elsewhere, such as its room's, as no edit. */
+    adopt: <T>(apply: () => T): T => {
+      adopting++
+      try {
+        return apply()
+      } finally {
+        adopting--
+      }
+    },
     dispose: () => {
       for (const unsubscribe of unsubscribers) unsubscribe()
     }

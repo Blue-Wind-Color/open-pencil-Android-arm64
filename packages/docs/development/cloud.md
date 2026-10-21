@@ -187,6 +187,13 @@ layers new IDs. One signed-in editor, the one with the lowest presence client, s
 the others drop their queued uploads and count their edits as saved. Guests who open a link join
 the room with the link's permission and never save.
 
+The room says what is unsaved, not the tab. Each peer counts its own edits to the room's document
+under its Yjs client in the `edits` map, and the saver copies the counts its upload held into
+`saved` once the server has that upload. What a tab takes from the room, including the replay when
+it opens the stored file, is no edit of its own. The saver saves whenever any client has more edits
+than `saved` records, so a tab that becomes the saver also saves edits an earlier saver left, and
+opening a document nobody edited uploads nothing.
+
 ## Configuration
 
 Operators author one schema-versioned TOML file. It owns URLs, trusted origins and proxies,
@@ -278,6 +285,12 @@ needs a headless `.fig` writer on the server, which is a later step.
 **2026-10 · A tab takes the room's copy when the room has one.** Reading a `.fig` gives layers new
 IDs, so two tabs that read the same file cannot merge their Yjs states. The first editor seeds an
 empty room only after the relay answers, and later tabs adopt the room root.
+
+**2026-10 · The room records what its revisions hold.** A tab compared with its own copy saw the
+room's values as edits wherever a `.fig` round trip changes them, such as defaults it writes, so
+every open uploaded a revision. Matching the round trip field by field breaks again with each new
+field. Per-client edit counts in the room are what Yjs already merges, so no server change is
+needed.
 
 **2026-10 · Redirect sign-in only on the server's own editor address.** There the session cookie is
 first-party and the server can send the person back to the same tab. The desktop app and editors on

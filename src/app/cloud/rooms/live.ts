@@ -1,3 +1,4 @@
+import { isEqual } from 'es-toolkit'
 import { effectScope, onScopeDispose, shallowRef, watch } from 'vue'
 
 import { RELAY_SERVER_PEER, type CollaborationTicket } from '@open-pencil/cloud/contract'
@@ -71,8 +72,9 @@ async function catchUpWithServer(store: EditorStore): Promise<void> {
  * Keeps this tab saving only while it is the room's saver, for as long as the current effect
  * scope runs. A tab that stops drops its queued uploads, since the room holds those edits; the
  * saver overwrites a revision it conflicts with, since the room's document already has every edit
- * in it, unless that revision is a restore, which moves the room on instead. Returns whether this
- * tab saves now.
+ * in it, unless that revision is a restore, which moves the room on instead. The saver saves
+ * whatever edits the room holds unsaved, its own or anyone's, and once the server has them tells
+ * the room so. Returns whether this tab saves now.
  */
 function followSaver(
   store: EditorStore,
@@ -89,6 +91,8 @@ function followSaver(
     if (next === saving) return
     saving = next
     store.state.autosaveEnabled = next
+    // Edits an earlier saver left without uploading, or made where nobody saved, are this tab's now.
+    if (next && session.saves.unsaved()) store.markDocumentChanged()
     const id = documentId()
     if (!id) return
     if (!next) {
@@ -99,6 +103,18 @@ function followSaver(
     await catchUpWithServer(store).catch(() => undefined)
     // Only a stored document saves without asking where; the room never adds a file prompt.
     if (store.getStorageBinding() && store.hasUnsavedChanges()) await store.saveFigFile()
+  }
+
+  /** Tells the room its edits are saved once this tab's upload of all of them is on the server. */
+  async function markUploaded(id: string) {
+    const clean = () => saving === true && !store.hasUnsavedChanges()
+    if (!clean() || !session.saves.unsaved()) return
+    const counts = session.saves.counts()
+    const meta = await getLocalCanvasStore().getMeta(id)
+    // An edit that arrived meanwhile is in a later save, and so is not saved yet.
+    if (meta?.syncStatus !== 'synced' || !clean() || !isEqual(counts, session.saves.counts()))
+      return
+    session.saves.markSaved(counts)
   }
 
   async function settleConflict(id: string) {
@@ -116,12 +132,25 @@ function followSaver(
     () => store.hasUnsavedChanges(),
     (dirty) => {
       if (dirty && saving === false) store.markDocumentSaved()
+      const id = documentId()
+      if (!dirty && id) void markUploaded(id)
     }
+  )
+  // What the tab takes from the room is no edit of its own; the room says what is unsaved. It
+  // says so after the task, once a tab that seeded the room has called its document saved.
+  onScopeDispose(
+    session.saves.onChange(() =>
+      queueMicrotask(() => {
+        if (saving === true && session.saves.unsaved()) store.markDocumentChanged()
+      })
+    )
   )
   onScopeDispose(
     onStorageWorkspaceEvent((event) => {
       const id = documentId()
-      if (id && event.documentId === id) void settleConflict(id)
+      if (!id || event.documentId !== id) return
+      void settleConflict(id)
+      void markUploaded(id)
     })
   )
   return () => saving === true
@@ -170,7 +199,10 @@ export function openCloudDocumentRoom(
     const stopSynced = session.onSynced((peerId) => {
       if (peerId !== RELAY_SERVER_PEER) return
       stopSynced()
-      if (canEdit && !session.roomHasDocument()) session.shareDocument()
+      if (!canEdit || session.roomHasDocument()) return
+      session.shareDocument()
+      // The tab's document is the stored revision unless it was edited first.
+      if (!store.hasUnsavedChanges()) session.saves.markSaved(session.saves.counts())
     })
     onScopeDispose(stopSynced)
     // Unsure whether the document moved on, the saver waits rather than overwrite a restore.

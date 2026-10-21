@@ -94,6 +94,8 @@ export function createDocumentIOActions(
     importDOMText,
     hasUnsavedChanges: sourceActions.hasUnsavedChanges,
     markDocumentSaved: () => sourceActions.markDocumentSaved(),
+    markDocumentChanged: sourceActions.markDocumentChanged,
+    adoptChanges: sourceActions.adoptChanges,
     saveFigFile: sourceActions.saveFigFile,
     saveFigFileAs: sourceActions.saveFigFileAs
   }

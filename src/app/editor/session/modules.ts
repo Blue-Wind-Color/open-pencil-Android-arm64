@@ -86,6 +86,10 @@ export function createEditorStoreModules(
     hasUnsavedChanges: documentIO.hasUnsavedChanges,
     /** Takes the document as it is now as its saved state, so closing it asks nothing. */
     markDocumentSaved: documentIO.markDocumentSaved,
+    /** Counts the document changed by something outside its history, so it gets saved. */
+    markDocumentChanged: documentIO.markDocumentChanged,
+    /** Applies changes the document already has elsewhere, such as its room's, as no edit. */
+    adoptChanges: documentIO.adoptChanges,
     saveFigFile: documentIO.saveFigFile,
     saveFigFileAs: documentIO.saveFigFileAs,
     getDocumentFilePath: documentIO.getDocumentFilePath,
