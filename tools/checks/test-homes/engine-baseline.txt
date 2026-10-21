@@ -144,7 +144,6 @@ tests/engine/figma/api/components.test.ts
 tests/engine/figma/api/corner/radius.test.ts
 tests/engine/figma/api/create/combine-as-variants.test.ts
 tests/engine/figma/api/create/component-from-node.test.ts
-tests/engine/figma/api/create/expose-instance-swap.test.ts
 tests/engine/figma/api/create/instance-fill-override.test.ts
 tests/engine/figma/api/document/pages.test.ts
 tests/engine/figma/api/expanded.test.ts

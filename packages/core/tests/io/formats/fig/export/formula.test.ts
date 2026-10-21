@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test'
 
+import { expectDefined } from '#core-tests/helpers/assert'
+
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
@@ -49,8 +51,8 @@ test('numeric, Boolean and comparison formulas survive fresh and patched .fig sa
     const api = new FigmaAPI(current)
     for (const variable of current.variables.values()) {
       const active = current.getActiveModeId(variable.collectionId)
-      if (variable.name === base.name) api.setVariableValue(variable.id, active, 10)
-      if (variable.name === enabled.name) api.setVariableValue(variable.id, active, false)
+      if (variable.name === base.name) expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(active, 10)
+      if (variable.name === enabled.name) expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(active, false)
     }
   }
 })

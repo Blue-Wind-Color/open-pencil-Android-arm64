@@ -14,9 +14,10 @@ import {
 import { copyFills } from '@open-pencil/scene-graph/copy'
 
 import { styleNameToWeight } from '#core/figma-api/fonts'
+import { variableAlias, type FigmaVariableAlias } from '#core/figma-api/variables/values'
 import { styleRunsWithPatch } from '#core/text/character-style'
 
-import { getStyledTextSegments, variableAlias, type FigmaVariableAlias } from './style'
+import { getStyledTextSegments } from './style'
 
 /** Fields a string variable binds; the rest take numbers. */
 const STRING_FIELDS: ReadonlySet<TextBindableField> = new Set(['fontFamily', 'fontStyle'])

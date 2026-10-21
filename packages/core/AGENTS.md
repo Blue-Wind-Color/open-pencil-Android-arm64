@@ -54,7 +54,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 
 `OpenPencilAPI` (`packages/core/src/openpencil-api/`) is what OpenPencil adds to the Plugin API, exposed to scripts as the `openpencil` global next to `figma`.
 
-- Keep `figma` Figma-shaped and put OpenPencil-only features on `openpencil`, in the same style: methods and node-like handles with getters and setters, not parallel helper functions. Never add non-Figma members to `FigmaAPI` (`compatibility.ts`).
+- Put OpenPencil-only features on `openpencil`, in the same style as `figma`: methods and node-like handles with getters and setters, not parallel helper functions. `figma` stays Figma's (Figma API, Shape follows Figma).
 - Script runners get both globals only through `compileScript` (`packages/core/src/tools/analyze/eval/wrap.ts`); the `eval` tool, `openpencil eval`, and app automation must not build their own `AsyncFunction`.
 - Members take names, not internal ids, and write through the same scene-graph functions the editor's actions use, such as `behaviourFromSpec`; errors name what exists. Tools for the same feature wrap the `openpencil` API rather than reimplementing it (`packages/core/src/tools/create/behaviours.ts`).
 - A new member updates `packages/docs/programmable/cli/scripting.md` and the agent skill in the same change; tests drive it as scripts do, through `compileScript` (`packages/core/tests/openpencil-api/`).
@@ -108,7 +108,7 @@ Pixel-affecting features need committed visual coverage, not only mock or geomet
 
 `FigmaAPI` mimics Figma's Plugin API over the SceneGraph. `openpencil eval`, the AI and MCP tools, and the app bind to it. Tests live under `tests/engine/figma/api/` and mirror the API surface.
 
-- **Shape follows Figma.** Match `@figma/plugin-typings` at the version pinned in the root `package.json`. `packages/core/src/figma-api/compatibility.ts` type-checks the supported surface against `PluginAPI`; add every new member to `SupportedPluginAPI` there. Model unsupported members explicitly rather than approximating them.
+- **Shape follows Figma.** Match `@figma/plugin-typings` at the version pinned in the root `package.json`, and add every new member to `SupportedPluginAPI`. `compatibility.ts` fails the typecheck on a member Figma's types lack or type differently, and `packages/core/tests/figma-api/surface.test.ts` on one a script can reach; the lists in `packages/core/src/figma-api/surface.ts` only shrink.
 - **Behavior follows Figma.** Read the Plugin API documentation for the member, and for anything observable (geometry, ordering, defaults, errors) run the same script in live Figma and record the observed result in the test. `figma-use` and `tests/figma/` are the live oracle; `tests/fixtures/figma-oracles/` holds recorded values.
 - **User actions are shared code.** When an editor command does the same thing (group, ungroup, boolean, flatten, instance creation, component sync), call the implementation under `packages/core/src/editor/` or its shared helper. Do not reimplement geometry, placement, or propagation here; new geometry helpers belong in Scene Graph.
 - Geometry getters lay out what the graph's edits touched since the last read, as Figma does, through `flushPendingLayout` in `packages/core/src/figma-api/pending-layout.ts`; a new geometry getter calls it first (`packages/core/tests/figma-api/pending-layout.test.ts`).

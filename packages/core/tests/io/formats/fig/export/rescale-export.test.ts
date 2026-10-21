@@ -86,11 +86,7 @@ for (const scale of [0.5, 2]) {
       expect(restored.componentScale).toBe(scale * 0.5)
       expect(child.variableBindingScales.paddingLeft).toBe(scale * 0.5)
       const variable = expectDefined(reopened.variables.get(child.boundVariables.paddingLeft))
-      new FigmaAPI(reopened).setVariableValue(
-        variable.id,
-        reopened.getNodeVariableModeId(child.id, variable.collectionId),
-        16
-      )
+      expectDefined(new FigmaAPI(reopened).variables.getVariableById(variable.id)).setValueForMode(reopened.getNodeVariableModeId(child.id, variable.collectionId), 16)
       expect(child.paddingLeft).toBe(8 * scale)
       expect(restored.width).toBe((literalClaim ? 41 : 39) * scale)
     })

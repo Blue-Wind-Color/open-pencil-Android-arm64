@@ -11,6 +11,7 @@ import {
 import { copyFills } from '@open-pencil/scene-graph/copy'
 
 import { weightToStyleName } from '#core/figma-api/fonts'
+import { variableAlias } from '#core/figma-api/variables/values'
 import { characterStyles, nodeStyle, type CharacterStyle } from '#core/text/character-style'
 
 /** The fields `getStyledTextSegments` takes, in the order Figma lists them. */
@@ -75,16 +76,6 @@ function whenUnderlined(read: (style: CharacterStyle) => unknown) {
 
 function spacing(field: 'paragraphSpacing' | 'listSpacing' | 'paragraphIndent') {
   return ({ node, paragraph }: FieldContext) => paragraphSpacingAt(node, paragraph, field)
-}
-
-/** Figma's reference to a variable, as bound fields read it. */
-export function variableAlias(id: string): FigmaVariableAlias {
-  return { type: 'VARIABLE_ALIAS', id }
-}
-
-export interface FigmaVariableAlias {
-  type: 'VARIABLE_ALIAS'
-  id: string
 }
 
 /**

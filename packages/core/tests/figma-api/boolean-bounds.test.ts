@@ -12,7 +12,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 // Recorded with the same script in Figma desktop 126: a boolean operation takes the box of its
 // result, and an empty result keeps its operands' box. Measuring needs a renderer.
 
-type Operation = 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE'
+type Operation = 'union' | 'subtract' | 'intersect' | 'exclude'
 
 let renderer: SkiaRenderer
 let surface: Surface
@@ -47,27 +47,24 @@ describe('boolean operation bounds', () => {
   test('from scripts, a boolean takes the box of its result', () => {
     const { figma, square } = api()
     const combine = (operation: Operation, ...nodes: FigmaNodeProxy[]) =>
-      figma.booleanOperation(
-        operation,
-        nodes.map((node) => node.id)
-      )
-    expect(box(combine('UNION', square(0, 0), square(20, 20)))).toEqual([0, 0, 70, 70])
-    expect(box(combine('SUBTRACT', square(0, 0), square(20, 20)))).toEqual([0, 0, 50, 50])
-    const intersect = combine('INTERSECT', square(0, 0), square(20, 20))
+      figma[operation](nodes, figma.currentPage)
+    expect(box(combine('union', square(0, 0), square(20, 20)))).toEqual([0, 0, 70, 70])
+    expect(box(combine('subtract', square(0, 0), square(20, 20)))).toEqual([0, 0, 50, 50])
+    const intersect = combine('intersect', square(0, 0), square(20, 20))
     expect(box(intersect)).toEqual([20, 20, 30, 30])
     // The operands keep their places in the container's space.
     expect(intersect.children.map((child) => [child.x, child.y])).toEqual([
       [0, 0],
       [20, 20]
     ])
-    expect(box(combine('SUBTRACT', square(0, 0), square(25, -10, 50, 70)))).toEqual([0, 0, 25, 50])
-    expect(box(combine('INTERSECT', square(0, 0), square(100, 0)))).toEqual([0, 0, 150, 50])
+    expect(box(combine('subtract', square(0, 0), square(25, -10, 50, 70)))).toEqual([0, 0, 25, 50])
+    expect(box(combine('intersect', square(0, 0), square(100, 0)))).toEqual([0, 0, 150, 50])
   })
 
   test('moving an operand refits the boolean to its new result', () => {
     const { figma, square } = api()
     const moving = square(20, 20)
-    const intersect = figma.booleanOperation('INTERSECT', [square(0, 0).id, moving.id])
+    const intersect = figma.intersect([square(0, 0), moving], figma.currentPage)
     moving.x = 40
     expect(box(intersect)).toEqual([40, 20, 10, 30])
   })

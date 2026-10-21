@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
+import { OpenPencilAPI } from '#core/openpencil-api'
 import { toolNumber, nodeIdInput } from '#core/tools/input'
 import { defineTool, nodeNotFound, toolFailure } from '#core/tools/schema'
 
@@ -169,7 +169,7 @@ export const setTextProperties = defineTool({
       updated.push('textAutoResize')
     }
     if (args.direction !== undefined) {
-      node.textDirection = args.direction as SceneNode['textDirection']
+      new OpenPencilAPI(figma).setTextDirection(node, args.direction)
       updated.push('textDirection')
     }
     if (args.text_decoration !== undefined) {

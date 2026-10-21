@@ -80,15 +80,6 @@ export function installLayoutNodeProxyAccessors(
         updateNode(this, internals, { layoutGrids: grids })
       }
     },
-    layoutDirection: {
-      get(this: ProxyThis): string {
-        const node = raw(this, internals)
-        return Object.hasOwn(node, 'layoutDirection') ? node.layoutDirection : 'AUTO'
-      },
-      set(this: ProxyThis, value: string) {
-        updateNode(this, internals, { layoutDirection: value as SceneNode['layoutDirection'] })
-      }
-    },
     primaryAxisAlignItems: mappedAccessor(internals, 'primaryAxisAlign'),
     counterAxisAlignItems: mappedAccessor(internals, 'counterAxisAlign'),
     itemSpacing: simpleAccessor(internals, 'itemSpacing'),

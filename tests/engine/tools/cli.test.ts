@@ -206,8 +206,8 @@ heavy('CLI tool operations via eval', () => {
 
   test('list variables from fixture', async () => {
     const { stdout, exitCode } = await evalCode(`
-      const vars = figma.getLocalVariables()
-      const cols = figma.getLocalVariableCollections()
+      const vars = figma.variables.getLocalVariables()
+      const cols = figma.variables.getLocalVariableCollections()
       return { variables: vars.length, collections: cols.length }
     `)
     expect(exitCode).toBe(0)

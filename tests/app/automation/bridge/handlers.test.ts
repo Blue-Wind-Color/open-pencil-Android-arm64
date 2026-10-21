@@ -238,8 +238,8 @@ describe('undo and redo', () => {
         other.findOne((node) => node.name === 'Card').name = 'Renamed'
         other.name = 'Renamed page'
         figma.createPage().name = 'Added'
-        const colors = figma.createVariableCollection('Colors')
-        figma.createVariable('Brand', 'COLOR', colors.id)
+        const colors = figma.variables.createVariableCollection('Colors')
+        figma.variables.createVariable('Brand', colors, 'COLOR')
       `
     })
     expect(graph.getNode(card.id)?.name).toBe('Renamed')

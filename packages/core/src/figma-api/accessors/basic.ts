@@ -43,6 +43,7 @@ import {
   withOrigin
 } from '#core/figma-api/transform'
 import type { FigmaTransform } from '#core/figma-api/types'
+import { syncVariantName } from '#core/figma-api/variants'
 import { figmaRotation } from '#core/geometry/figma'
 
 const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
@@ -116,6 +117,8 @@ export function installBasicNodeProxyAccessors(
       },
       set(this: ProxyThis, value: string) {
         updateNode(this, internals, { name: value })
+        // A variant's name holds its values, which the set's value lists follow.
+        syncVariantName(graph(this, internals), raw(this, internals))
       }
     },
     removed: {

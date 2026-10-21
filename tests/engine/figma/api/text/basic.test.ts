@@ -41,13 +41,6 @@ describe('text', () => {
     expect(text.textAlignHorizontal).toBe('CENTER')
   })
 
-  test('textDirection', () => {
-    const api = createAPI()
-    const text = api.createText()
-    text.textDirection = 'RTL'
-    expect(text.textDirection).toBe('RTL')
-  })
-
   test('textAutoResize', () => {
     const api = createAPI()
     const text = api.createText()

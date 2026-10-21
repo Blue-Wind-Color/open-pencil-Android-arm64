@@ -66,13 +66,9 @@ describe('atomic agent tools', () => {
 
   test('variable values and bound nodes are undoable across pages', () => {
     const { figma, editor, undo, rectangle, tool } = setup()
-    const collection = figma.createVariableCollection('Colors')
-    const variable = figma.createVariable('Brand', 'COLOR', collection.id, {
-      r: 1,
-      g: 0,
-      b: 0,
-      a: 1
-    })
+    const collection = figma.variables.createVariableCollection('Colors')
+    const variable = figma.variables.createVariable('Brand', collection, 'COLOR')
+    variable.setValueForMode(collection.defaultModeId, { r: 1, g: 0, b: 0, a: 1 })
     tool('set_fill').execute(figma, { id: rectangle.id, color: '#ff0000' })
     new OpenPencilAPI(figma).bindVariable(rectangle.id, 'fills/0/color', variable)
     const page = figma.createPage()
@@ -83,15 +79,15 @@ describe('atomic agent tools', () => {
       value: '#00ff00'
     })
     expect(
-      figma.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
+      figma.variables.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
     ).toMatchObject({ g: 1 })
     undo.undo()
     expect(
-      figma.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
+      figma.variables.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
     ).toMatchObject({ r: 1, g: 0 })
     undo.redo()
     expect(
-      figma.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
+      figma.variables.getVariableById(variable.id)?.valuesByMode[collection.defaultModeId]
     ).toMatchObject({ r: 0, g: 1 })
   })
 

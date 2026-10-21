@@ -19,20 +19,11 @@ import {
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
 import { becomesComponent, componentWrapProps } from '#core/editor/components/create'
-import {
-  measurePropertyText,
-  reapplyInstanceComponentProperties
-} from '#core/editor/components/properties'
-import { applyVariantProperties, variantSetProps } from '#core/editor/components/variant-set'
-import {
-  findExactVariant,
-  getComponentSet,
-  variantValues
-} from '#core/editor/components/variants/model'
+import { measurePropertyText } from '#core/editor/components/properties'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 
 import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
-import { graph, raw, updateNode } from './accessor-utils'
+import { assertProxyEditable, graph, raw, updateNode } from './accessor-utils'
 import type { FigmaNodeProxy } from './proxy'
 import {
   assertSlotSettings,
@@ -40,6 +31,9 @@ import {
   mergeSlotSettings,
   type FigmaSlotSettings
 } from './slots'
+import { addVariantAxis, editVariantAxis, switchVariant, variantPropertiesOf } from './variants'
+
+export { combineComponentsAsVariants } from './variants'
 
 type InstanceSwapPreferredValue = { type: 'COMPONENT' | 'COMPONENT_SET'; key: string }
 
@@ -129,19 +123,6 @@ function findPropertyHost(graph: SceneGraph, nodeId: string | null): SceneNode |
     current = current.parentId ? graph.getNode(current.parentId) : null
   }
   return fallback
-}
-
-function requireDistinctComponents(graph: SceneGraph, nodeIds: ReadonlyArray<string>): SceneNode[] {
-  if (nodeIds.length === 0) throw new Error('Need at least 1 component to combine as variants')
-  if (new Set(nodeIds).size !== nodeIds.length) {
-    throw new Error('combineAsVariants requires distinct COMPONENT nodes')
-  }
-
-  const nodes = nodeIds.map((id) => graph.getNode(id))
-  if (!nodes.every((node): node is SceneNode => node?.type === 'COMPONENT')) {
-    throw new Error('combineAsVariants requires COMPONENT nodes')
-  }
-  return nodes
 }
 
 function propertyName(definition: ComponentPropertyDefinition): string {
@@ -257,7 +238,13 @@ function editPropertyDefinitions(
   if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET')
     throw new Error('editComponentProperty() can only be called on components')
   const definition = findDefinition(target, internals, propertyNameValue)
+  if (!definition && node.type === 'COMPONENT_SET')
+    throw new Error('in editComponentProperty: Invalid variant property name')
   if (!definition) throw new Error(`Unknown component property: ${propertyNameValue}`)
+  if (definition.type === 'VARIANT') {
+    assertProxyEditable(target, internals)
+    return editVariantAxis(graph(target, internals), node, definition, changes)
+  }
   if (
     changes.defaultValue !== undefined &&
     !['BOOLEAN', 'TEXT', 'INSTANCE_SWAP'].includes(definition.type)
@@ -320,34 +307,6 @@ function propertyReferenceName(field: ComponentPropertyReferenceField): string {
   if (field === 'SLOT_CONTENT') return 'slotContentId'
   return field === 'TEXT' ? 'characters' : 'visible'
 }
-interface PropertyValue {
-  definition: ComponentPropertyDefinition
-  value: string | boolean
-}
-
-/**
- * Switches an instance to the variant with the given values, the rest kept, as Figma's
- * `setProperties` does; a combination no variant has fails without changing anything.
- */
-function switchVariant(scene: SceneGraph, instance: SceneNode, values: PropertyValue[]): void {
-  const component = instance.componentId ? scene.getNode(instance.componentId) : undefined
-  const setId = component?.parentId
-  const target =
-    component && setId && getComponentSet(scene, setId)
-      ? findExactVariant(scene, setId, {
-          ...variantValues(scene, setId, component),
-          ...Object.fromEntries(
-            values.map(({ definition, value }) => [definition.name, String(value)])
-          )
-        })
-      : undefined
-  if (!target)
-    throw new Error('in setProperties: Unable to find a variant with those property values')
-  if (target.id === instance.componentId) return
-  scene.swapInstanceComponent(instance.id, target.id)
-  reapplyInstanceComponentProperties({ graph: scene }, instance.id)
-}
-
 function applyProperty(
   target: ProxyThis,
   internals: NodeProxyInternals,
@@ -410,6 +369,11 @@ export function installComponentPropertyAccessors(
     componentProperties: {
       get(this: ProxyThis) {
         return componentProperties(this, internals)
+      }
+    },
+    variantProperties: {
+      get(this: ProxyThis) {
+        return variantPropertiesOf(graph(this, internals), raw(this, internals))
       }
     },
     isExposedInstance: {
@@ -491,6 +455,11 @@ export function installComponentPropertyAccessors(
         }
       ) {
         const node = raw(this, internals)
+        if (type === 'VARIANT') {
+          assertProxyEditable(this, internals)
+          return addVariantAxis(graph(this, internals), node, name.trim(), String(defaultValue))
+            .name
+        }
         if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET')
           throw new Error('addComponentProperty() can only be called on components')
         const definition: ComponentPropertyDefinition = {
@@ -538,36 +507,14 @@ export function installComponentPropertyAccessors(
         if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET')
           throw new Error('deleteComponentProperty() can only be called on components')
         const definition = findDefinition(this, internals, name)
-        if (!definition) throw new Error(`Unknown component property: ${name}`)
+        // Figma keeps a variant axis: deleting one reads as a name it does not know.
+        if (!definition || definition.type === 'VARIANT')
+          throw new Error('in deleteComponentProperty: Invalid component property name')
         removeComponentProperty(graph(this, internals), node.id, definition.id)
       }
     }
   })
 }
-export function combineComponentsAsVariants(
-  graph: SceneGraph,
-  nodeIds: ReadonlyArray<string>,
-  parentId: string,
-  index?: number
-): SceneNode {
-  const components = requireDistinctComponents(graph, nodeIds)
-  const parent = graph.getNode(parentId)
-  if (!parent) throw new Error('Parent node not found')
-
-  // The plugin API wraps the variants exactly; see `variantSetProps`.
-  const componentSet = wrapNodes(
-    graph,
-    'COMPONENT_SET',
-    components,
-    parentId,
-    index,
-    variantSetProps(graph, components, parentId, 'script')
-  )
-  applyVariantProperties(graph, components, componentSet.id)
-
-  return componentSet
-}
-
 /**
  * Makes a component from a layer as Figma's `createComponentFromNode` does: a frame or group
  * becomes a new component with its look and children in its place in the stack, and any other

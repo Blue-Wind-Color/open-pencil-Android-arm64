@@ -70,9 +70,9 @@ test('definition rescale preserves an explicit placed binding in its declaring u
   expect(nested.variableBindingScales.paddingLeft).toBe(0.25)
   const variable = expectDefined(graph.variables.get('293742:7'))
   const mode = graph.getNodeVariableModeId(nested.id, variable.collectionId)
-  api.setVariableValue(variable.id, mode, 16)
+  expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(mode, 16)
   expect([root.width, nested.width, nested.paddingLeft]).toEqual([29, 19, 4])
-  api.setVariableValue(variable.id, mode, 12)
+  expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(mode, 12)
   graph.updateNode(root.id, { name: 'Protected rescale acceptance' })
   await initCodec()
   const bytes = await exportFigFile(graph)
@@ -119,23 +119,15 @@ test('definition rescale propagates occurrence units through editor sync and exp
     nested.paddingRight
   ]).toEqual([22.5, 7, 12.5, 7, 5, 2.5])
   expect(nested.variableBindingScales.paddingLeft).toBe(0.25)
-  api.setVariableValue(
-    '293733:7',
-    graph.getNodeVariableModeId(
+  expectDefined(api.variables.getVariableById('293733:7')).setValueForMode(graph.getNodeVariableModeId(
       nested.id,
       expectDefined(graph.variables.get('293733:7')).collectionId
-    ),
-    40
-  )
+    ), 40)
   expect([root.width, nested.width, nested.paddingLeft]).toEqual([27.5, 17.5, 10])
-  api.setVariableValue(
-    '293733:7',
-    graph.getNodeVariableModeId(
+  expectDefined(api.variables.getVariableById('293733:7')).setValueForMode(graph.getNodeVariableModeId(
       nested.id,
       expectDefined(graph.variables.get('293733:7')).collectionId
-    ),
-    20
-  )
+    ), 20)
   graph.updateNode(root.id, { name: 'Definition rescale acceptance' })
   await initCodec()
   const bytes = await exportFigFile(graph)

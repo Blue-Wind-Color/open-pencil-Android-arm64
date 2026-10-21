@@ -27,8 +27,9 @@ describe('createComponentFromNode', () => {
 
   test('preserves root variable bindings and explicit modes', () => {
     const api = createAPI()
-    const collection = api.createVariableCollection('Radii')
-    const variable = api.createVariable('radius/md', 'FLOAT', collection.id, 8)
+    const collection = api.variables.createVariableCollection('Radii')
+    const variable = api.variables.createVariable('radius/md', collection, 'FLOAT')
+    variable.setValueForMode(collection.defaultModeId, 8)
 
     const frame = api.createFrame()
     frame.name = 'Card'

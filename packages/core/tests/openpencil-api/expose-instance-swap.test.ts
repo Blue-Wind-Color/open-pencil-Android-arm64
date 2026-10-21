@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from '../helpers'
+import { OpenPencilAPI } from '@open-pencil/core'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { SceneGraph } from '@open-pencil/scene-graph'
+
+function createAPI() {
+  return new FigmaAPI(new SceneGraph())
+}
 
 describe('exposeInstanceSwap', () => {
   test('adds an INSTANCE_SWAP property to the host component and tags the slot', () => {
@@ -19,7 +25,7 @@ describe('exposeInstanceSwap', () => {
     const slot = iconA.createInstance()
     host.appendChild(slot)
 
-    const result = api.exposeInstanceSwap([slot], [iconA, iconB], 'Icon')
+    const result = new OpenPencilAPI(api).exposeInstanceSwap([slot], [iconA, iconB], 'Icon')
     const raw = api.graph.getNode(result.id)
 
     expect(result.id).toBe(host.id)
@@ -55,7 +61,7 @@ describe('exposeInstanceSwap', () => {
     const set = api.graph.createNode('COMPONENT_SET', api.currentPageId, { name: 'Button' })
     api.graph.reparentNode(a.id, set.id)
     api.graph.reparentNode(b.id, set.id)
-    const result = api.exposeInstanceSwap([slotA, slotB], [icon], 'Icon')
+    const result = new OpenPencilAPI(api).exposeInstanceSwap([slotA, slotB], [icon], 'Icon')
 
     expect(result.id).toBe(set.id)
     const raw = api.graph.getNode(set.id)
@@ -68,7 +74,7 @@ describe('exposeInstanceSwap', () => {
     const icon = api.createComponent()
     const frame = api.createFrame()
     host.appendChild(frame)
-    expect(() => api.exposeInstanceSwap([frame], [icon])).toThrow()
+    expect(() => new OpenPencilAPI(api).exposeInstanceSwap([frame], [icon])).toThrow()
   })
 
   test('rejects non-component candidates', () => {
@@ -78,7 +84,7 @@ describe('exposeInstanceSwap', () => {
     const slot = icon.createInstance()
     host.appendChild(slot)
     const notAComponent = api.createFrame()
-    expect(() => api.exposeInstanceSwap([slot], [notAComponent])).toThrow()
+    expect(() => new OpenPencilAPI(api).exposeInstanceSwap([slot], [notAComponent])).toThrow()
   })
 
   test('rejects slots from unrelated hosts', () => {
@@ -93,6 +99,6 @@ describe('exposeInstanceSwap', () => {
     hostA.appendChild(slotA)
     const slotB = icon.createInstance()
     hostB.appendChild(slotB)
-    expect(() => api.exposeInstanceSwap([slotA, slotB], [icon])).toThrow()
+    expect(() => new OpenPencilAPI(api).exposeInstanceSwap([slotA, slotB], [icon])).toThrow()
   })
 })

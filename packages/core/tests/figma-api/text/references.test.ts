@@ -194,14 +194,16 @@ describe('style ranges', () => {
 describe('bound variable ranges', () => {
   function sized() {
     const { api, text } = styledText()
-    const collection = api.createVariableCollection('Type')
-    const size = api.createVariable('size/lg', 'FLOAT', collection.id, 28)
-    const family = api.createVariable('font/body', 'STRING', collection.id, 'Roboto')
+    const collection = api.variables.createVariableCollection('Type')
+    const size = api.variables.createVariable('size/lg', collection, 'FLOAT')
+    size.setValueForMode(collection.defaultModeId, 28)
+    const family = api.variables.createVariable('font/body', collection, 'STRING')
+    family.setValueForMode(collection.defaultModeId, 'Roboto')
     return { api, text, collection, size, family }
   }
 
   test('bind a range, show the variable value there, and follow it when it changes', () => {
-    const { api, text, collection, size } = sized()
+    const { text, collection, size } = sized()
     text.setRangeBoundVariable(0, 5, 'fontSize', size)
 
     expect(text.getRangeBoundVariable(0, 5, 'fontSize')).toEqual({
@@ -220,7 +222,7 @@ describe('bound variable ranges', () => {
       }
     ])
 
-    api.setVariableValue(size.id, collection.defaultModeId, 40)
+    size.setValueForMode(collection.defaultModeId, 40)
     expect(text.getRangeFontSize(0, 5)).toBe(40)
 
     text.setRangeBoundVariable(0, 5, 'fontSize', null)
@@ -246,8 +248,9 @@ describe('bound variable ranges', () => {
 
   test('bind paragraph spacing for the paragraphs of the range', () => {
     const { api, text } = styledText('One\nTwo')
-    const collection = api.createVariableCollection('Space')
-    const gap = api.createVariable('gap', 'FLOAT', collection.id, 12)
+    const collection = api.variables.createVariableCollection('Space')
+    const gap = api.variables.createVariable('gap', collection, 'FLOAT')
+    gap.setValueForMode(collection.defaultModeId, 12)
     text.setRangeBoundVariable(0, 2, 'paragraphSpacing', gap)
     expect(text.getRangeParagraphSpacing(0, 2)).toBe(12)
     expect(text.getRangeParagraphSpacing(5, 6)).toBe(0)

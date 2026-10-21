@@ -8,6 +8,12 @@ import type {
   FigmaSlotNode
 } from './node-types'
 import type { FigmaNodeProxy } from './proxy'
+import type {
+  FIGMA_API_HOST_MEMBERS,
+  FIGMA_API_INCOMPLETE_MEMBERS,
+  SERIALIZATION_MEMBERS
+} from './surface'
+import type { FigmaVariable, FigmaVariableCollection, FigmaVariablesAPI } from './variables'
 
 type Expect<T extends true> = T
 
@@ -186,3 +192,106 @@ type TextMixedMatch = Expect<
   >
 >
 const _textMixedMatch: TextMixedMatch = true
+
+type SupportedVariableKeys =
+  | 'id'
+  | 'name'
+  | 'description'
+  | 'hiddenFromPublishing'
+  | 'remote'
+  | 'variableCollectionId'
+  | 'key'
+  | 'resolvedType'
+  | 'valuesByMode'
+  | 'scopes'
+  | 'codeSyntax'
+  | 'setVariableCodeSyntax'
+  | 'removeVariableCodeSyntax'
+  | 'setValueForMode'
+  | 'remove'
+type VariableMatch = Expect<
+  Extends<Pick<FigmaVariable, SupportedVariableKeys>, Pick<Variable, SupportedVariableKeys>>
+>
+const _variableMatch: VariableMatch = true
+
+type SupportedCollectionKeys =
+  | 'id'
+  | 'name'
+  | 'hiddenFromPublishing'
+  | 'remote'
+  | 'isExtension'
+  | 'modes'
+  | 'variableIds'
+  | 'defaultModeId'
+  | 'key'
+  | 'remove'
+  | 'removeMode'
+  | 'addMode'
+  | 'renameMode'
+type CollectionMatch = Expect<
+  Extends<
+    Pick<FigmaVariableCollection, SupportedCollectionKeys>,
+    Pick<VariableCollection, SupportedCollectionKeys>
+  >
+>
+const _collectionMatch: CollectionMatch = true
+
+/** Every `figma.variables` member is Figma's, and takes what Figma's takes. */
+type VariablesAPIArguments = {
+  [K in keyof FigmaVariablesAPI]: K extends keyof VariablesAPI
+    ? Parameters<VariablesAPI[K]> extends Parameters<FigmaVariablesAPI[K]>
+      ? true
+      : K
+    : K
+}[keyof FigmaVariablesAPI]
+type VariablesAPIMatch = Expect<VariablesAPIArguments extends true ? true : false>
+const _variablesAPIMatch: VariablesAPIMatch = true
+
+type NodeBindingMatch = Expect<
+  Extends<
+    Parameters<SceneNodeMixin['setBoundVariable']>,
+    Parameters<FigmaNodeProxy['setBoundVariable']>
+  >
+>
+const _nodeBindingMatch: NodeBindingMatch = true
+
+// --- Surface: nothing beyond Figma's Plugin API except what `surface.ts` lists ---
+// Each check is a `Record` of the offending names, so a failure names them: "Property 'x' is
+// missing". Add a Figma member as Figma types it; put an OpenPencil feature on `openpencil`.
+
+type HostMembers = (typeof FIGMA_API_HOST_MEMBERS)[number]
+type IncompleteMembers = (typeof FIGMA_API_INCOMPLETE_MEMBERS)[number]
+type SerializationMembers = (typeof SERIALIZATION_MEMBERS)[number]
+type KeysOfUnion<T> = T extends unknown ? keyof T : never
+type None<Names extends PropertyKey> = Record<Names, never>
+
+/** `figma` members Figma's Plugin API does not have. */
+const _figmaExtras: None<Exclude<keyof FigmaAPI, keyof PluginAPI | HostMembers>> = {}
+/** Listed host members that no longer exist. */
+const _figmaGoneListings: None<Exclude<HostMembers, keyof FigmaAPI>> = {}
+/** Listed host members that are Figma's after all. */
+const _figmaFigmaListings: None<Extract<HostMembers, keyof PluginAPI>> = {}
+
+type SharedKeys = keyof FigmaAPI & keyof PluginAPI
+type DriftedKeys = {
+  [K in SharedKeys]: FigmaAPI[K] extends PluginAPI[K] ? never : K
+}[SharedKeys]
+/** Members named as in Figma whose types differ from Figma's. */
+const _figmaDrifted: None<Exclude<DriftedKeys, IncompleteMembers>> = {}
+/** Members listed as incomplete that now match Figma's types. */
+const _figmaNowComplete: None<Exclude<IncompleteMembers, DriftedKeys>> = {}
+
+type FigmaNodeKeys = KeysOfUnion<SceneNode | PageNode | DocumentNode>
+/** Node proxy members no Figma node type has. */
+const _nodeExtras: None<
+  Exclude<Extract<keyof FigmaNodeProxy, string>, FigmaNodeKeys | SerializationMembers>
+> = {}
+/** Variable members Figma's do not have. */
+const _variableExtras: None<Exclude<keyof FigmaVariable, keyof Variable | SerializationMembers>> =
+  {}
+/** Collection members Figma's do not have. */
+const _collectionExtras: None<
+  Exclude<keyof FigmaVariableCollection, keyof VariableCollection | SerializationMembers>
+> = {}
+/** `figma.variables` members Figma's do not have. */
+const _variablesAPIExtras: None<Exclude<keyof FigmaVariablesAPI, keyof VariablesAPI>> = {}

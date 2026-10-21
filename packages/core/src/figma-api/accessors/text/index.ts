@@ -118,7 +118,6 @@ export function installTextNodeProxyAccessors(
     })),
     textAlignHorizontal: field(internals, 'textAlignHorizontal'),
     textAlignVertical: field(internals, 'textAlignVertical'),
-    textDirection: field(internals, 'textDirection'),
     textAutoResize: field(internals, 'textAutoResize'),
     // Figma's plugin API reads and writes these as { unit, value }; a bare object stored on the
     // node instead of pixels would leave the text unmeasurable.

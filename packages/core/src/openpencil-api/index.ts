@@ -6,12 +6,17 @@ import {
   type BehaviourSpec,
   type VariableLiteral
 } from '@open-pencil/scene-graph'
+import type { OkHCLColor, OkHCLPayload } from '@open-pencil/scene-graph/color'
 
-import type { FigmaAPI } from '#core/figma-api/index'
+import { exposeInstanceSwap } from '#core/figma-api/components'
+import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api/index'
+import { writeVariableValue } from '#core/figma-api/variables'
+import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
 
 import {
   getBehaviour,
   makeSlot,
+  nodeOf,
   setBehaviour,
   type BehaviourHandle,
   type NodeRef
@@ -24,6 +29,16 @@ import {
   type CommentHandle,
   type NewComment
 } from './comments'
+import {
+  readFillOkHCL,
+  readLayoutDirection,
+  readStrokeOkHCL,
+  readTextDirection,
+  writeFillOkHCL,
+  writeLayoutDirection,
+  writeStrokeOkHCL,
+  writeTextDirection
+} from './nodes'
 import { getStatus, listStatuses, setStatus, type StatusInfo } from './statuses'
 import { bindVariable, unbindVariable, type VariableRef } from './variables'
 
@@ -77,12 +92,12 @@ export class OpenPencilAPI {
     const mode = modes.at(0)
     if (!mode || modes.length !== 1) throw new Error(`Unknown or ambiguous mode: ${modeName}`)
     const { value, resolved } = parseVariableFormula(graph, variable.id, mode.modeId, source)
-    this.figma.setVariableValue(variable.id, mode.modeId, value)
+    writeVariableValue(graph, variable, mode.modeId, value)
     return resolved
   }
 
   /**
-   * Bind a layer field to a variable from `figma.getLocalVariables()`, as the layer panel does:
+   * Bind a layer field to a variable from `figma.variables`, as the layer panel does:
    * fields by OpenPencil's names, such as `'text'`, `'visible'`, `'opacity'` or `'fills/0/color'`.
    * Text content takes a text or number variable, a number shown as text; visibility takes a
    * boolean, or text that shows the layer unless it is empty or reads false, no or off.
@@ -159,5 +174,69 @@ export class OpenPencilAPI {
    */
   setStatus(node: NodeRef, status: string | null): void {
     setStatus(this.figma.graph, node, status)
+  }
+
+  /**
+   * Expose a swap on instances as one INSTANCE_SWAP property, offering the candidate components;
+   * returns the layer that holds the property.
+   */
+  exposeInstanceSwap(
+    instances: readonly NodeRef[],
+    candidates: readonly NodeRef[],
+    propertyName = 'Instance'
+  ): FigmaNodeProxy {
+    const proxies = (refs: readonly NodeRef[]) =>
+      refs.map((ref) => this.figma.wrapNode(nodeOf(this.figma.graph, ref).id))
+    const host = exposeInstanceSwap(
+      this.figma.graph,
+      proxies(instances),
+      proxies(candidates),
+      propertyName
+    )
+    return this.figma.wrapNode(host.id)
+  }
+
+  /**
+   * Whether the current page's fonts are faithfully available: requested faces, where each
+   * loaded from, substitutions, why an installed face could not load, and the layers affected.
+   */
+  getFontStatus(): DocumentFontStatus {
+    return documentFontStatus(this.figma.graph, this.figma.currentPageId)
+  }
+
+  /** A fill's OkHCL color, which the color picker keeps beside its RGB, or null. */
+  getFillOkHCL(node: NodeRef, index = 0): OkHCLPayload | null {
+    return readFillOkHCL(this.figma.graph, node, index)
+  }
+
+  /** Set a fill's color in OkHCL; its RGB follows in the document's color space. */
+  setFillOkHCL(node: NodeRef, color: OkHCLColor, index = 0): void {
+    writeFillOkHCL(this.figma.graph, node, color, index)
+  }
+
+  getStrokeOkHCL(node: NodeRef, index = 0): OkHCLPayload | null {
+    return readStrokeOkHCL(this.figma.graph, node, index)
+  }
+
+  setStrokeOkHCL(node: NodeRef, color: OkHCLColor, index = 0): void {
+    writeStrokeOkHCL(this.figma.graph, node, color, index)
+  }
+
+  /** Which way a frame's auto layout runs: `AUTO`, `LTR` or `RTL`. */
+  getLayoutDirection(node: NodeRef): string {
+    return readLayoutDirection(this.figma.graph, node)
+  }
+
+  setLayoutDirection(node: NodeRef, direction: string): void {
+    writeLayoutDirection(this.figma.graph, node, direction)
+  }
+
+  /** Which way a text runs: `AUTO`, `LTR` or `RTL`. */
+  getTextDirection(node: NodeRef): string {
+    return readTextDirection(this.figma.graph, node)
+  }
+
+  setTextDirection(node: NodeRef, direction: string): void {
+    writeTextDirection(this.figma.graph, node, direction)
   }
 }

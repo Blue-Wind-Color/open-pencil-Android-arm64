@@ -31,7 +31,7 @@ export const bindVariable = defineTool({
   execute: (figma, args) => {
     const node = figma.getNodeById(args.node_id)
     if (!node) return { error: `Node "${args.node_id}" not found` }
-    const variable = figma.getVariableById(args.variable_id)
+    const variable = figma.variables.getVariableById(args.variable_id)
     if (!variable) return { error: `Variable "${args.variable_id}" not found` }
     try {
       new OpenPencilAPI(figma).bindVariable(args.node_id, args.field, variable)

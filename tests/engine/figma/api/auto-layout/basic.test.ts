@@ -10,24 +10,6 @@ describe('auto-layout', () => {
     expect(frame.layoutMode).toBe('VERTICAL')
   })
 
-  test('layoutDirection', () => {
-    const api = createAPI()
-    const frame = api.createFrame()
-    expect(frame.layoutDirection).toBe('AUTO')
-    frame.layoutDirection = 'RTL'
-    expect(frame.layoutDirection).toBe('RTL')
-  })
-
-  test('layoutDirection falls back to AUTO for legacy nodes with no stored value', () => {
-    const api = createAPI()
-    const frame = api.createFrame()
-    const raw = api.graph.getNode(frame.id)
-    expect(raw).toBeDefined()
-    if (!raw) return
-    Reflect.deleteProperty(raw as object, 'layoutDirection')
-    expect(frame.layoutDirection).toBe('AUTO')
-  })
-
   test('itemSpacing', () => {
     const api = createAPI()
     const frame = api.createFrame()

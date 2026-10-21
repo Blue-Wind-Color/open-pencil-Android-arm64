@@ -112,17 +112,17 @@ API намеренно близок к Figma Plugin API, но работает �
 
 ### Переменные
 
-- `figma.getLocalVariables(type?)`
-- `figma.getVariableById(id)`
-- `figma.getLocalVariableCollections()`
-- `figma.getVariableCollectionById(id)`
-- `figma.createVariable(name, type, collectionId, value?)`
-- `figma.setVariableValue(variableId, modeId, value)`
-- `figma.deleteVariable(id)`
-- `figma.createVariableCollection(name)`
-- `figma.deleteVariableCollection(id)`
+- `figma.variables.getLocalVariables(type?)`, `getVariableById(id)`, `getLocalVariableCollections()`, `getVariableCollectionById(id)` и их варианты `…Async`
+- `figma.variables.createVariableCollection(name)` и `createVariable(name, collection, resolvedType)` — каждый режим получает значение Figma по умолчанию
+- `figma.variables.createVariableAlias(variable)` и `setBoundVariableForPaint(paint, 'color', variable)`
+- `variable.setValueForMode(modeId, value)`, `valuesByMode`, `resolveForConsumer(node)`, `name`, `description`, `scopes`, `codeSyntax` и `remove()`
+- `collection.addMode(name)`, `renameMode(modeId, name)`, `removeMode(modeId)`, `modes`, `defaultModeId`, `variableIds` и `remove()`
+- `node.boundVariables`, `node.setBoundVariable(field, variable)` — поля и типы как в Figma, `node.setExplicitVariableModeForCollection(collection, modeId)` и `node.clearExplicitVariableModeForCollection(collection)`
 - `openpencil.bindVariable(node, field, variable)` — привязки как в панели слоя: текст принимает текстовую или числовую переменную, видимость — логическую или текстовую
 - `openpencil.unbindVariable(node, field)`
+- `openpencil.getLayoutDirection(node)` / `setLayoutDirection(node, direction)` и `getTextDirection(node)` / `setTextDirection(node, direction)` — направление автолейаута и текста: `AUTO`, `LTR` или `RTL`
+- `openpencil.getFillOkHCL(node, index?)` / `setFillOkHCL(node, color, index?)` и пара для обводки — цвет заливки или обводки в OkHCL
+- `openpencil.exposeInstanceSwap(instances, candidates, name?)` и `openpencil.getFontStatus()`
 
 ### Свойства
 
@@ -150,8 +150,7 @@ API намеренно близок к Figma Plugin API, но работает �
 Следующие API пока не предоставляются в совместимом виде:
 
 - `node.exportAsync()`
-- `node.setBoundVariable(field, variable)`
-- `figma.combineAsVariants(components, parent)`
+- переменные из библиотек, расширенные коллекции и привязки переменных к эффектам и сеткам
 - API стилей Figma, например `figma.createPaintStyle()` и `figma.createTextStyle()`
 - полная совместимость логических операций над векторами
 

@@ -7,6 +7,7 @@ import {
   getFillOkHCL,
   getStrokeOkHCL,
   initCodec,
+  OpenPencilAPI,
   okhclToRGBA,
   parseFigFile,
   rgbaToOkHCL,
@@ -21,13 +22,14 @@ describe('OkHCL metadata', () => {
   test('applies rgba rendering color while preserving fill metadata', () => {
     const graph = new SceneGraph()
     const api = new FigmaAPI(graph)
+    const openpencil = new OpenPencilAPI(api)
     const frame = api.createFrame()
     frame.fills = [solidFill({ r: 0, g: 0, b: 0, a: 1 })]
 
-    frame.setFillOkHCL({ h: 240, c: 0.12, l: 0.7, a: 0.8 })
+    openpencil.setFillOkHCL(frame, { h: 240, c: 0.12, l: 0.7, a: 0.8 })
 
     expect(frame.fills[0]?.color).toEqual(okhclToRGBA({ h: 240, c: 0.12, l: 0.7, a: 0.8 }))
-    expect(frame.getFillOkHCL()).toMatchObject({
+    expect(openpencil.getFillOkHCL(frame)).toMatchObject({
       version: 1,
       kind: 'fill',
       index: 0,
@@ -38,13 +40,14 @@ describe('OkHCL metadata', () => {
   test('applies rgba rendering color while preserving stroke metadata', () => {
     const graph = new SceneGraph()
     const api = new FigmaAPI(graph)
+    const openpencil = new OpenPencilAPI(api)
     const frame = api.createFrame()
     frame.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 1, align: 'INSIDE' })]
 
-    frame.setStrokeOkHCL({ h: 20, c: 0.08, l: 0.6 })
+    openpencil.setStrokeOkHCL(frame, { h: 20, c: 0.08, l: 0.6 })
 
     expect(frame.strokes[0]?.color).toEqual(okhclToRGBA({ h: 20, c: 0.08, l: 0.6 }))
-    expect(frame.getStrokeOkHCL()).toMatchObject({
+    expect(openpencil.getStrokeOkHCL(frame)).toMatchObject({
       version: 1,
       kind: 'stroke',
       index: 0,
@@ -66,12 +69,13 @@ describe('OkHCL metadata', () => {
 
     const graph = new SceneGraph()
     const api = new FigmaAPI(graph)
+    const openpencil = new OpenPencilAPI(api)
     const frame = api.createFrame()
     frame.name = 'OKHCL frame'
     frame.fills = [solidFill({ r: 0, g: 0, b: 0, a: 1 })]
     frame.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 1, align: 'INSIDE' })]
-    frame.setFillOkHCL({ h: 210, c: 0.1, l: 0.65 })
-    frame.setStrokeOkHCL({ h: 320, c: 0.09, l: 0.55, a: 0.9 })
+    openpencil.setFillOkHCL(frame, { h: 210, c: 0.1, l: 0.65 })
+    openpencil.setStrokeOkHCL(frame, { h: 320, c: 0.09, l: 0.55, a: 0.9 })
 
     const bytes = await exportFigFile(graph)
     const parsed = await parseFigFile(uint8ArrayToArrayBuffer(bytes))
