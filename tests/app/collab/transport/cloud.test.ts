@@ -1,9 +1,11 @@
 import { describe, expect, jest, test } from 'bun:test'
 
 import {
+  createRelayClientAssembler,
   decodeRelayClientFrame,
-  encodeRelayServerFrame,
   RELAY_CLOSE,
+  RELAY_FRAGMENT_BYTES,
+  relayServerMessages,
   type RelayClientFrame,
   type RelayServerFrame
 } from '@open-pencil/cloud/contract'
@@ -17,9 +19,14 @@ class FakeSocket extends EventTarget {
   readyState: number = WebSocket.CONNECTING
   binaryType = 'blob'
   readonly sent: RelayClientFrame[] = []
+  /** Socket messages sent, which outnumber frames once a frame travels in fragments. */
+  messages = 0
+  private readonly assembler = createRelayClientAssembler(() => Infinity)
 
   send(data: Uint8Array) {
-    const frame = decodeRelayClientFrame(data)
+    this.messages++
+    const assembled = this.assembler.push(data)
+    const frame = assembled.type === 'frame' ? decodeRelayClientFrame(assembled.data) : null
     if (frame) this.sent.push(frame)
   }
 
@@ -29,7 +36,13 @@ class FakeSocket extends EventTarget {
   }
 
   receive(frame: RelayServerFrame) {
-    const data = encodeRelayServerFrame(frame)
+    for (const data of relayServerMessages(frame)) {
+      this.dispatchEvent(new MessageEvent('message', { data: data.slice().buffer }))
+    }
+  }
+
+  /** Delivers bytes as one socket message, whatever they hold. */
+  receiveMessage(data: Uint8Array) {
     this.dispatchEvent(new MessageEvent('message', { data: data.slice().buffer }))
   }
 
@@ -136,6 +149,48 @@ describe('Cloud relay transport', () => {
     ])
     expect(received).toEqual([[[3], 'alice']])
     await transport.leave()
+  })
+
+  test('sends and receives frames larger than one message in fragments', async () => {
+    const { transport, sockets } = room()
+    const [send, receive] = transport.makeAction('yjs-update')
+    const received: Uint8Array[] = []
+    receive((data) => received.push(data))
+    await settle()
+    const socket = sockets[0]
+    if (!socket) throw new Error('Expected a socket')
+    socket.open()
+    socket.receive({ type: 'welcome', peerId: 'me', peers: ['server'] })
+    const payload = crypto.getRandomValues(new Uint8Array(RELAY_FRAGMENT_BYTES * 3))
+    const before = socket.messages
+    send(payload)
+    expect(socket.messages - before).toBeGreaterThan(1)
+    expect(socket.sent.at(-1)).toEqual({
+      type: 'message',
+      namespace: 'yjs-update',
+      target: null,
+      payload
+    })
+    socket.receive({ type: 'message', namespace: 'yjs-update', from: 'alice', payload })
+    expect(received).toEqual([payload])
+  })
+
+  test('connects again after a frame it cannot read, to sync what it missed', async () => {
+    const { sockets, errors } = room()
+    await settle()
+    const socket = sockets[0]
+    if (!socket) throw new Error('Expected a socket')
+    socket.open()
+    socket.receive({ type: 'welcome', peerId: 'me', peers: ['server'] })
+    // A fragment that says more follows, then a whole frame in the middle of it.
+    socket.receiveMessage(new Uint8Array([4, 1, 1, 0]))
+    socket.receive({ type: 'join', peerId: 'alice' })
+    expect(errors).toHaveLength(1)
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0)
+    })
+    await settle()
+    expect(sockets).toHaveLength(2)
   })
 
   test('reconnects with a fresh ticket after losing the relay, saying its peers left', async () => {

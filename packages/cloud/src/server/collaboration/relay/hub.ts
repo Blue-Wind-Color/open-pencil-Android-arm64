@@ -1,12 +1,13 @@
 import {
   COLLAB_ACTIONS,
+  createRelayClientAssembler,
   encodeSyncReply,
   decodeRelayClientFrame,
   decodeRoomUpdate,
-  encodeRelayServerFrame,
   MAX_COLLAB_MESSAGE_BYTES,
   RELAY_CLOSE,
   RELAY_SERVER_PEER,
+  relayServerMessages,
   type RelayServerFrame
 } from '#cloud/contract'
 import * as Y from 'yjs'
@@ -30,6 +31,10 @@ export type RelayConnection = {
 export type CollaborationRelayOptions = {
   authSecret: string
   store: CollaborationStateStore
+  /**
+   * The most one socket message may carry. An editor's larger frames arrive as fragments joined
+   * up to `MAX_COLLAB_MESSAGE_BYTES`; anyone else's frame must fit in one message.
+   */
   maximumMessageBytes: number
   maximumConnectionsPerRoom: number
   /** The participant limit policy sets for a document, or null for none. */
@@ -87,7 +92,12 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   const report = options.onError ?? ((message, error) => console.error(`[Cloud] ${message}`, error))
 
   function send(socket: RelaySocket, frame: RelayServerFrame) {
-    socket.send(encodeRelayServerFrame(frame))
+    for (const message of relayServerMessages(frame)) socket.send(message)
+  }
+
+  function sendAll(sockets: Iterable<RelaySocket>, frame: RelayServerFrame) {
+    const messages = relayServerMessages(frame)
+    for (const socket of sockets) for (const message of messages) socket.send(message)
   }
 
   async function openRoom(authorization: RelayAuthorization): Promise<Room> {
@@ -170,12 +180,14 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     target: string | null,
     payload: Uint8Array
   ) {
-    const frame = encodeRelayServerFrame({ type: 'message', namespace, from: from.id, payload })
-    if (target) {
-      room.peers.get(target)?.socket.send(frame)
-      return
-    }
-    for (const peer of room.peers.values()) if (peer !== from) peer.socket.send(frame)
+    const frame: RelayServerFrame = { type: 'message', namespace, from: from.id, payload }
+    const recipients = target
+      ? [room.peers.get(target)]
+      : [...room.peers.values()].filter((peer) => peer !== from)
+    sendAll(
+      recipients.flatMap((peer) => (peer ? [peer.socket] : [])),
+      frame
+    )
   }
 
   function handleServerMessage(room: Room, peer: Peer, namespace: string, payload: Uint8Array) {
@@ -334,6 +346,13 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
       const isClosed = () => state.closed
       const queued: Uint8Array[] = []
       let queuedBytes = 0
+      // Only an editor's writes can be large: a viewer's frames, and a peer's before it is
+      // admitted, fit in one message, so nobody else can make the relay hold more.
+      const assembler = createRelayClientAssembler(() =>
+        peer?.authorization.permission === 'edit'
+          ? MAX_COLLAB_MESSAGE_BYTES
+          : options.maximumMessageBytes
+      )
       const authTimer = setTimeout(
         () => socket.close(RELAY_CLOSE.unauthorized, 'Expected a collaboration ticket'),
         authTimeoutMs
@@ -375,7 +394,13 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
           socket.close(RELAY_CLOSE.messageTooLarge, 'Collaboration message is too large')
           return
         }
-        const frame = decodeRelayClientFrame(data)
+        const assembled = assembler.push(data)
+        if (assembled.type === 'partial') return
+        if (assembled.type === 'too-large') {
+          socket.close(RELAY_CLOSE.messageTooLarge, 'Collaboration message is too large')
+          return
+        }
+        const frame = assembled.type === 'frame' ? decodeRelayClientFrame(assembled.data) : null
         if (!frame) {
           socket.close(RELAY_CLOSE.protocol, 'Malformed collaboration frame')
           return
@@ -456,16 +481,18 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
 
     /** Tells everyone in a document's rooms that its version history changed. */
     announceVersions(documentId: string) {
-      const frame = encodeRelayServerFrame({
+      const frame: RelayServerFrame = {
         type: 'message',
         namespace: COLLAB_ACTIONS.versions,
         from: RELAY_SERVER_PEER,
         payload: new Uint8Array()
-      })
-      for (const room of rooms.values()) {
-        if (room.identity.documentId !== documentId) continue
-        for (const peer of room.peers.values()) peer.socket.send(frame)
       }
+      sendAll(
+        [...rooms.values()]
+          .filter((room) => room.identity.documentId === documentId)
+          .flatMap((room) => [...room.peers.values()].map((peer) => peer.socket)),
+        frame
+      )
     },
 
     /** Saves every open room and closes its sockets, as the runtime shuts down. */

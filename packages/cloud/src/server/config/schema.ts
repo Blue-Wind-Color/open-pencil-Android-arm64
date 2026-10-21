@@ -1,4 +1,8 @@
-import { CLOUD_PROTOCOL_MAX_UPLOAD_BYTES, cloudEditorVersionSchema } from '#cloud/contract'
+import {
+  CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
+  cloudEditorVersionSchema,
+  RELAY_MINIMUM_MESSAGE_BYTES
+} from '#cloud/contract'
 import { staticEntitlementsSchema } from '#cloud/server/policy/static'
 import * as v from 'valibot'
 
@@ -40,7 +44,7 @@ const rawCloudServerConfigSchema = v.object({
         CLOUD_PROTOCOL_MAX_UPLOAD_BYTES
       ),
       maximumCollaborationMessageBytes: v.optional(
-        v.pipe(v.number(), v.integer(), v.minValue(1024)),
+        v.pipe(v.number(), v.integer(), v.minValue(RELAY_MINIMUM_MESSAGE_BYTES)),
         CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES
       ),
       maximumConnectionsPerRoom: v.optional(

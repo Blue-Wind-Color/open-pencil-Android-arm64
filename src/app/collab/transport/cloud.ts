@@ -1,7 +1,10 @@
 import {
+  createRelayServerAssembler,
   decodeRelayServerFrame,
-  encodeRelayClientFrame,
+  MAX_COLLAB_MESSAGE_BYTES,
   RELAY_CLOSE,
+  RELAY_FORWARDING_BYTES,
+  relayClientMessages,
   type RelayClientFrame
 } from '@open-pencil/cloud/contract'
 
@@ -28,6 +31,11 @@ export type CloudRelayOptions = {
   ticket: (roomId: string) => Promise<CloudRelayTicket | null>
   /** The document was restored to a version and its room started over; this one is done. */
   onRestored?: () => void
+  /**
+   * The relay turned this peer away for good, and reconnecting cannot help: its ticket or the
+   * room refused it, or it sent what the relay will not take.
+   */
+  onRefused?: () => void
   createSocket?: (url: string) => WebSocket
   /** How long to wait before reconnection attempt `attempt`, counting from zero. */
   reconnectDelayMs?: (attempt: number) => number
@@ -77,7 +85,10 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
 
   function send(frame: RelayClientFrame) {
-    if (socket?.readyState === WebSocket.OPEN) socket.send(encodeRelayClientFrame(frame))
+    const current = socket
+    if (current?.readyState !== WebSocket.OPEN) return
+    // A large frame goes as fragments in a row, which the relay joins before reading it.
+    for (const message of relayClientMessages(frame)) current.send(message)
   }
 
   async function refresh() {
@@ -122,8 +133,8 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
     joinHandler?.(peerId)
   }
 
-  function handleFrame(data: ArrayBuffer) {
-    const frame = decodeRelayServerFrame(new Uint8Array(data))
+  function handleFrame(data: Uint8Array) {
+    const frame = decodeRelayServerFrame(data)
     if (!frame) return
     switch (frame.type) {
       case 'welcome':
@@ -186,8 +197,19 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
       send({ type: 'auth', token: issued.token })
       scheduleRefresh(issued)
     })
+    const assembler = createRelayServerAssembler(
+      () => MAX_COLLAB_MESSAGE_BYTES + RELAY_FORWARDING_BYTES
+    )
     next.addEventListener('message', (event: MessageEvent<ArrayBuffer>) => {
-      if (socket === next) handleFrame(event.data)
+      if (socket !== next) return
+      const assembled = assembler.push(new Uint8Array(event.data))
+      if (assembled.type === 'frame') handleFrame(assembled.data)
+      else if (assembled.type !== 'partial') {
+        // A frame this peer could not read leaves it behind the room, so it connects again and
+        // syncs what it missed.
+        report('The collaboration relay sent a frame this peer cannot read:', assembled.type)
+        next.close(1000, 'Unreadable collaboration frame')
+      }
     })
     next.addEventListener('close', (event) => {
       if (socket !== next) return
@@ -200,6 +222,7 @@ function joinCloudRelayRoom(roomId: string, options: CloudRelayOptions): CollabR
       }
       if (FINAL_CLOSE_CODES.has(event.code)) {
         report('The collaboration relay refused this peer:', event.reason || event.code)
+        options.onRefused?.()
         return
       }
       reconnect()

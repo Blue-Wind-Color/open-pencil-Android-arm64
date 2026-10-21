@@ -138,5 +138,6 @@ enabled = false
 
 [technical_limits]
 maximum_upload_bytes = 1073741824
+# One WebSocket message on the relay, at least 262160. Larger edits arrive as 256 KiB fragments.
 maximum_collaboration_message_bytes = 1048576
 maximum_connections_per_room = 1000

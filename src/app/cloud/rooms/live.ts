@@ -28,6 +28,8 @@ import { onceOnServer, shareRoomUploads, uploadStoredDocument } from './upload'
 
 /** Each Cloud tab's permission in its room, for the status beside the name. */
 export const cloudRoomPermissions = shallowRef<ReadonlyMap<EditorStore, 'edit' | 'view'>>(new Map())
+/** Tabs the relay turned away for good, for the status beside the name; they do not rejoin on their own. */
+export const cloudRoomsRefused = shallowRef<ReadonlySet<EditorStore>>(new Set())
 const starting = new WeakSet<EditorStore>()
 
 function setPermission(store: EditorStore, permission: 'edit' | 'view' | null) {
@@ -241,7 +243,7 @@ export function cloudRelayTransport(
   url: string,
   first: CollaborationTicket,
   next: () => Promise<CollaborationTicket>,
-  onRestored?: () => void
+  events: { onRestored?: () => void; onRefused?: () => void } = {}
 ): JoinCollabRoom {
   let unused: CollaborationTicket | null = first
   return createCloudRelayJoin({
@@ -253,7 +255,8 @@ export function cloudRelayTransport(
       if (ticket.roomId !== first.roomId) return null
       return { token: ticket.token, expiresAt: ticket.expiresAt }
     },
-    onRestored
+    onRestored: events.onRestored,
+    onRefused: events.onRefused
   })
 }
 
@@ -266,6 +269,59 @@ type LiveRoom = Pick<ReturnType<typeof openCloudDocumentRoom>, 'stop' | 'upload'
 const liveRooms = new Map<EditorStore, { room: LiveRoom; stopWatching: () => void }>()
 /** The server and account each tab joined its room as, so a change of account joins again. */
 const joinedAs = new WeakMap<EditorStore, { serverId: string; accountId: string | null }>()
+
+/** Each refused tab's watch for its closing, which forgets the refusal with the tab. */
+const refusalWatches = new Map<EditorStore, () => void>()
+
+function setRefused(store: EditorStore, refused: boolean) {
+  refusalWatches.get(store)?.()
+  refusalWatches.delete(store)
+  const next = new Set(cloudRoomsRefused.value)
+  if (refused) {
+    next.add(store)
+    refusalWatches.set(
+      store,
+      watch(allTabs, () => {
+        if (!getTabForStore(store)) setRefused(store, false)
+      })
+    )
+  } else next.delete(store)
+  cloudRoomsRefused.value = next
+}
+
+/**
+ * The relay turned the tab away for good, so it leaves the room and nothing waits on it. A viewer
+ * stays read-only. An editor that can save takes its saving back: a tab that was not the room's
+ * saver had its edits counted as saved by the room, so it uploads the document as it stands, and
+ * a newer save from someone else comes back as a conflict to resolve rather than being lost.
+ */
+export function leaveRefusedRoom(
+  store: EditorStore,
+  room: { permission: 'edit' | 'view'; canSave: boolean }
+): void {
+  setRefused(store, true)
+  leaveCloudRoom(store)
+  if (room.permission === 'view') {
+    store.setReadOnly(true)
+    return
+  }
+  if (!room.canSave || !store.getStorageBinding()) return
+  store.state.autosaveEnabled = true
+  void store.saveFigFile().catch(() => undefined)
+}
+
+/**
+ * Joins a refused tab's room again, showing the document as the server holds it. A rejoin that
+ * fails, or ends without a room, leaves the tab refused, so it can try again.
+ */
+export async function rejoinRefusedRoom(store: EditorStore): Promise<void> {
+  setRefused(store, false)
+  try {
+    await restartCloudRoom(store)
+  } finally {
+    if (!roomForStore(store) && getTabForStore(store)) setRefused(store, true)
+  }
+}
 
 /** Leaves the room's saving and status behind once its tab closes. */
 export function stopWithTab(store: EditorStore, room: LiveRoom): void {
@@ -288,7 +344,15 @@ export function stopWithTab(store: EditorStore, room: LiveRoom): void {
  */
 export async function startCloudRoom(store: EditorStore): Promise<void> {
   const binding = store.getStorageBinding()
-  if (!binding || !isCloudBinding(binding) || roomForStore(store) || starting.has(store)) return
+  if (
+    !binding ||
+    !isCloudBinding(binding) ||
+    roomForStore(store) ||
+    starting.has(store) ||
+    cloudRoomsRefused.value.has(store)
+  ) {
+    return
+  }
   const target = cloudShareTarget(binding)
   if (!target?.discovery.capabilities.collaboration) return
   starting.add(store)
@@ -317,7 +381,10 @@ export async function startCloudRoom(store: EditorStore): Promise<void> {
         ? accountRoomIdentity(() => cloudConnection(target.server.id).account ?? account)
         : undefined,
       roomId: first.roomId,
-      transport: cloudRelayTransport(first.serverURL, first, nextTicket, restart),
+      transport: cloudRelayTransport(first.serverURL, first, nextTicket, {
+        onRestored: restart,
+        onRefused: () => leaveRefusedRoom(store, { permission: first.permission, canSave: true })
+      }),
       permission: first.permission,
       roomIsCurrent: async () => (await nextTicket()).roomId === first.roomId,
       onRestored: restart

@@ -10,7 +10,12 @@ import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 import { getTabForStore, openFileInNewTab } from '@/app/tabs'
 import { IS_BROWSER } from '@/constants'
 
-import { cloudRelayTransport, openCloudDocumentRoom, stopWithTab } from '../rooms/live'
+import {
+  cloudRelayTransport,
+  leaveRefusedRoom,
+  openCloudDocumentRoom,
+  stopWithTab
+} from '../rooms/live'
 import { normalizeCloudServerURL } from '../servers/address'
 import { cloudFetch, discoverCloudServer } from '../sessions/connection'
 
@@ -48,8 +53,12 @@ export async function openCloudShareLink(link: CloudShareLink): Promise<void> {
   if (first.provider !== 'relay' || !first.serverURL || !getTabForStore(store)) return
   const room = openCloudDocumentRoom(store, {
     roomId: first.roomId,
-    transport: cloudRelayTransport(first.serverURL, first, () =>
-      client.getSharedCollaborationTicket(link.shareId, input)
+    transport: cloudRelayTransport(
+      first.serverURL,
+      first,
+      () => client.getSharedCollaborationTicket(link.shareId, input),
+      // A guest has no account to save with, so leaving is all a refusal changes.
+      { onRefused: () => leaveRefusedRoom(store, { permission: first.permission, canSave: false }) }
     ),
     permission: first.permission,
     guest: true
