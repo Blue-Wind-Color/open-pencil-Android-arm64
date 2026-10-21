@@ -29,7 +29,7 @@ const targets = ref([first, first, second].map((node) => ({ nodeId: node.id, pat
 const provider = createOpenPencilBindingProvider(
   editor,
   {
-    type: 'FLOAT',
+    types: ['FLOAT'],
     resolve: (e, id, target) =>
       target
         ? e.graph.resolveNumberVariableForNode(target.nodeId, id)

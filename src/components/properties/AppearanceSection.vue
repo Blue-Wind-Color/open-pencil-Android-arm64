@@ -12,10 +12,11 @@ import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
-import PropertyBindButton from './component-properties/PropertyBindButton.vue'
 import PropertyBoundField from './component-properties/PropertyBoundField.vue'
 import VariableModeMenu from './variable-modes/VariableModeMenu.vue'
 import VariableModeRows from './variable-modes/VariableModeRows.vue'
+import VisibilityBindingRow from './visibility/VisibilityBindingRow.vue'
+import VisibilityControl from './visibility/VisibilityControl.vue'
 
 const { panels } = useI18n()
 const variableModes = useVariableModes()
@@ -59,18 +60,14 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
     <PanelSection v-if="active" :label="panels.appearance">
       <template #actions>
         <VariableModeMenu :choices="variableModes.choices.value" @set="variableModes.setMode" />
-        <PropertyBindButton field="VISIBLE" />
-        <IconButton
-          :label="panels.toggleVisibility"
-          :active="visibilityState === 'hidden'"
-          @click="actions.toggleVisibility"
-        >
-          <icon-lucide-eye v-if="visibilityState === 'visible'" class="size-3.5" />
-          <icon-lucide-eye-off v-else-if="visibilityState === 'hidden'" class="size-3.5" />
-          <icon-lucide-eye v-else class="size-3.5 opacity-50" />
-        </IconButton>
+        <VisibilityControl
+          :node-id="node && !isMulti ? node.id : undefined"
+          :visibility="visibilityState"
+          @toggle="actions.toggleVisibility"
+        />
       </template>
       <PropertyBoundField field="VISIBLE" />
+      <VisibilityBindingRow v-if="node && !isMulti" :node-id="node.id" />
 
       <PanelGrid :columns="2" distribution="wide-first">
         <PanelFieldGroup :label="panels.blendMode">

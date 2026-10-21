@@ -395,6 +395,8 @@
   "componentPropertySwap": "实例切换",
   "createComponentProperty": "创建属性…",
   "applyComponentProperty": "将组件属性应用到{field}",
+  "applyVariableOrProperty": "应用变量/属性",
+  "propertiesInComponent": "{name}中的属性",
   "goToComponentProperty": "转到属性",
   "detachComponentProperty": "分离属性",
   "deleteComponentProperty": "删除属性",

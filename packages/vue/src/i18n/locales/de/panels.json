@@ -401,6 +401,8 @@
   "componentPropertySwap": "Instanz austauschen",
   "createComponentProperty": "Eigenschaft erstellen…",
   "applyComponentProperty": "Komponenteneigenschaft auf {field} anwenden",
+  "applyVariableOrProperty": "Variable/Eigenschaft anwenden",
+  "propertiesInComponent": "Eigenschaften in {name}",
   "goToComponentProperty": "Zur Eigenschaft",
   "detachComponentProperty": "Eigenschaft trennen",
   "deleteComponentProperty": "Eigenschaft löschen",

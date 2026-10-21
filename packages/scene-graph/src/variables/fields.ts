@@ -1,3 +1,5 @@
+import type { VariableType } from '../types'
+
 export const NUMERIC_FIELDS = new Set([
   'opacity',
   'width',
@@ -41,3 +43,12 @@ export const STRING_BINDING_FIELDS: ReadonlySet<string> = new Set(['text', 'font
 
 /** Visibility is the only boolean-valued binding a node accepts. */
 export const BOOLEAN_BINDING_FIELDS: ReadonlySet<string> = new Set(['visible'])
+
+/**
+ * The variable types visibility binds to: a boolean, or text that shows the layer unless it reads
+ * as false, as Figma's layer panel offers. Figma's plugin API takes booleans alone.
+ */
+export const VISIBILITY_VARIABLE_TYPES = [
+  'BOOLEAN',
+  'STRING'
+] as const satisfies readonly VariableType[]

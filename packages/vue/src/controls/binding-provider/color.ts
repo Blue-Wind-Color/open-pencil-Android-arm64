@@ -61,7 +61,7 @@ function resolveColor(editor: Editor, id: string, target?: BindingTarget) {
 
 export function useColorBindingProvider() {
   return useOpenPencilBindingProvider<Color>({
-    type: 'COLOR',
+    types: ['COLOR'],
     resolve: resolveColor,
     prepareEdit: (editor, id, target) =>
       prepareModeEdit(editor, id, target, () => resolveColor(editor, id, target)),

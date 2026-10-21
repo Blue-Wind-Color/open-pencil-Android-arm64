@@ -47,7 +47,12 @@ export interface AppPickerProps {
 
 export interface AppPickerSlots {
   /** The control that opens the picker; rendered as the popover trigger. */
-  trigger(): VNode[]
+  trigger?(): VNode[]
+  /**
+   * What the list opens beside when the owner opens it through `v-model:open` instead of a
+   * trigger, such as from a context menu; used when there is no `trigger`.
+   */
+  anchor?(): VNode[]
   /** Thumbnail or icon before an item's label. */
   leading?(props: { item: AppPickerItem }): VNode[]
   /** A control at the end of the search field that narrows the list, such as a category. */
@@ -67,6 +72,7 @@ import {
   ListboxGroupLabel,
   ListboxItem,
   ListboxRoot,
+  PopoverAnchor,
   PopoverClose,
   PopoverContent,
   PopoverPortal,
@@ -184,11 +190,14 @@ function select(value: AcceptableValue) {
 
 <template>
   <PopoverRoot v-model:open="open">
-    <Tip as-child :label="tooltip" :disabled="!tooltip">
+    <Tip v-if="slots.trigger" as-child :label="tooltip" :disabled="!tooltip">
       <PopoverTrigger as-child>
         <slot name="trigger" />
       </PopoverTrigger>
     </Tip>
+    <PopoverAnchor v-else as-child>
+      <slot name="anchor" />
+    </PopoverAnchor>
     <PopoverPortal v-if="portalActive">
       <PopoverContent
         :side="side"

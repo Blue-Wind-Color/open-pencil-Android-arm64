@@ -401,6 +401,8 @@
   "componentPropertySwap": "Permutation d’instance",
   "createComponentProperty": "Créer une propriété…",
   "applyComponentProperty": "Appliquer une propriété de composant à {field}",
+  "applyVariableOrProperty": "Appliquer une variable/propriété",
+  "propertiesInComponent": "Propriétés de {name}",
   "goToComponentProperty": "Aller à la propriété",
   "detachComponentProperty": "Dissocier la propriété",
   "deleteComponentProperty": "Supprimer la propriété",

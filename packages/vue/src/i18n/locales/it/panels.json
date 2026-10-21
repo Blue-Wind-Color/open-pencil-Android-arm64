@@ -401,6 +401,8 @@
   "componentPropertySwap": "Scambio di istanza",
   "createComponentProperty": "Crea proprietà…",
   "applyComponentProperty": "Applica proprietà del componente a {field}",
+  "applyVariableOrProperty": "Applica variabile/proprietà",
+  "propertiesInComponent": "Proprietà di {name}",
   "goToComponentProperty": "Vai alla proprietà",
   "detachComponentProperty": "Scollega proprietà",
   "deleteComponentProperty": "Elimina proprietà",

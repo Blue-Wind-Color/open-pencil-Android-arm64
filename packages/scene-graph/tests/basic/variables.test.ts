@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { resolvedValueBindings, SceneGraph } from '@open-pencil/scene-graph'
 
 describe('Variables', () => {
   function pageId(graph: SceneGraph): string {
@@ -254,6 +254,26 @@ describe('Variables', () => {
 
     graph.unbindVariable(node.id, 'fills/0/color')
     expect(node.boundVariables['fills/0/color']).toBeUndefined()
+  })
+
+  test('visibility binds a boolean or text variable and follows its truth', () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Visibility')
+    const mode = collection.defaultModeId
+    const flag = graph.createVariable('flag', 'BOOLEAN', collection.id, true)
+    const state = graph.createVariable('state', 'STRING', collection.id, 'off')
+    const size = graph.createVariable('size', 'FLOAT', collection.id, 1)
+    const node = graph.createNode('RECTANGLE', graph.getPages()[0].id)
+
+    graph.bindVariable(node.id, 'visible', state.id)
+    expect(resolvedValueBindings(graph, node)).toEqual({ visible: false })
+    state.valuesByMode[mode] = 'yes'
+    expect(resolvedValueBindings(graph, node)).toEqual({})
+    graph.bindVariable(node.id, 'visible', flag.id)
+    expect(node.boundVariables.visible).toBe(flag.id)
+    expect(() => graph.bindVariable(node.id, 'visible', size.id)).toThrow(
+      'Cannot bind FLOAT variable to boolean field "visible"'
+    )
   })
 
   test('removing variable cleans up bindings', () => {

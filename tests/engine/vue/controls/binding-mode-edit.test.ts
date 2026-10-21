@@ -48,7 +48,7 @@ test('prepared edits retain modes after targets change and undo atomically', () 
     variableModes: { [collection.id]: 'alternate' }
   })
   const provider = createOpenPencilBindingProvider(editor, {
-    type: 'FLOAT',
+    types: ['FLOAT'],
     resolve: (e, id, target) =>
       target
         ? e.graph.resolveNumberVariableForNode(target.nodeId, id)

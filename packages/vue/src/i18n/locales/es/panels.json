@@ -419,6 +419,8 @@
   "componentPropertySwap": "Intercambio de instancia",
   "createComponentProperty": "Crear propiedad…",
   "applyComponentProperty": "Aplicar propiedad de componente a {field}",
+  "applyVariableOrProperty": "Aplicar variable/propiedad",
+  "propertiesInComponent": "Propiedades de {name}",
   "goToComponentProperty": "Ir a la propiedad",
   "detachComponentProperty": "Separar propiedad",
   "deleteComponentProperty": "Eliminar propiedad",

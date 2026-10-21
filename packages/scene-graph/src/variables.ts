@@ -17,7 +17,11 @@ import {
   variableBindingOwner,
   assignVariableBindingUnits
 } from './variables/bindings'
-import { BOOLEAN_BINDING_FIELDS, STRING_BINDING_FIELDS } from './variables/fields'
+import {
+  BOOLEAN_BINDING_FIELDS,
+  STRING_BINDING_FIELDS,
+  VISIBILITY_VARIABLE_TYPES
+} from './variables/fields'
 
 export * from './variables/resolution'
 
@@ -265,7 +269,10 @@ export function bindVariable(
     throw new Error(`Cannot bind ${variable.type} variable to string field "${field}"`)
   }
 
-  if (BOOLEAN_BINDING_FIELDS.has(field) && variable.type !== 'BOOLEAN') {
+  if (
+    BOOLEAN_BINDING_FIELDS.has(field) &&
+    !VISIBILITY_VARIABLE_TYPES.some((type) => type === variable.type)
+  ) {
     throw new Error(`Cannot bind ${variable.type} variable to boolean field "${field}"`)
   }
 

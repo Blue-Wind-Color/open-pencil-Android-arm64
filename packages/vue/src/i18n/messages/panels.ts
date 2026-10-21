@@ -101,6 +101,8 @@ export const panelMessageDefaults = {
   componentPropertySwap: 'Instance swap',
   createComponentProperty: 'Create property…',
   applyComponentProperty: params('Apply component property to {field}'),
+  applyVariableOrProperty: 'Apply variable/property',
+  propertiesInComponent: params('Properties in {name}'),
   goToComponentProperty: 'Go to property',
   detachComponentProperty: 'Detach property',
   deleteComponentProperty: 'Delete property',

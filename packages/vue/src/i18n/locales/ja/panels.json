@@ -413,6 +413,8 @@
   "componentPropertySwap": "インスタンスの入れ替え",
   "createComponentProperty": "プロパティを作成…",
   "applyComponentProperty": "{field}にコンポーネントプロパティを適用",
+  "applyVariableOrProperty": "変数/プロパティを適用",
+  "propertiesInComponent": "{name}のプロパティ",
   "goToComponentProperty": "プロパティに移動",
   "detachComponentProperty": "プロパティを解除",
   "deleteComponentProperty": "プロパティを削除",

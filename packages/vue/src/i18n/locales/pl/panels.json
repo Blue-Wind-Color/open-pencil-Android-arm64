@@ -407,6 +407,8 @@
   "componentPropertySwap": "Zamiana instancji",
   "createComponentProperty": "Utwórz właściwość…",
   "applyComponentProperty": "Zastosuj właściwość komponentu do: {field}",
+  "applyVariableOrProperty": "Zastosuj zmienną/właściwość",
+  "propertiesInComponent": "Właściwości w: {name}",
   "goToComponentProperty": "Przejdź do właściwości",
   "detachComponentProperty": "Odłącz właściwość",
   "deleteComponentProperty": "Usuń właściwość",
