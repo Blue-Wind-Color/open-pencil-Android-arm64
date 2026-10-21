@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { CloudAPIError } from '@open-pencil/cloud/client'
+
 import type { CollabAction } from '@/app/collab/transport/types'
 import type { EditorStore } from '@/app/editor/session'
 import { followUpload, kickSyncEngine } from '@/app/storage/sync'
@@ -38,6 +40,25 @@ export async function uploadStoredDocument(store: EditorStore): Promise<boolean>
     await kickSyncEngine()
   }
   return (await followUpload(documentId)) === 'uploaded'
+}
+
+/**
+ * What `request` gets from the document's server, asking once more after the document's upload
+ * lands when the server does not know it yet, as a new document's tab asks before its first
+ * upload has created it there. Aborting `signal` stops waiting for that upload.
+ */
+export async function onceOnServer<T>(
+  documentId: string,
+  request: () => Promise<T>,
+  signal?: AbortSignal
+): Promise<T> {
+  try {
+    return await request()
+  } catch (error) {
+    const unknown = error instanceof CloudAPIError && error.status === 404
+    if (!unknown || (await followUpload(documentId, { signal })) !== 'uploaded') throw error
+    return request()
+  }
 }
 
 /**
