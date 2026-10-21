@@ -17,7 +17,7 @@ import type { RPCJSONObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
-import { resolveSafePath, writeToolOutput } from '#mcp/tool/output'
+import { resolveSafePath, writeToolOutput, writesFileOutput } from '#mcp/tool/output'
 import { isToolEnabled } from '#mcp/tool/policy'
 import { SELECTION_SCOPE_FILE_OUTPUT_ERROR } from '#mcp/tool/scope'
 
@@ -144,7 +144,9 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       async (args: Record<string, unknown>) => {
         try {
           const { target, args: toolArgs } = splitAutomationTarget(args)
-          if (policy.scope === 'selection' && toolArgs.path !== undefined) {
+          const filePath =
+            writesFileOutput(def.name) && typeof toolArgs.path === 'string' ? toolArgs.path : null
+          if (policy.scope === 'selection' && filePath !== null) {
             return fail(new Error(SELECTION_SCOPE_FILE_OUTPUT_ERROR))
           }
           const result = await sendRPC({
@@ -161,12 +163,17 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           const res = result as { ok?: boolean; result?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
           const r = res.result as RPCJSONObject | undefined
-          const filePath = typeof toolArgs.path === 'string' ? toolArgs.path : null
           if (r && filePath && resolvedRoot) {
             const written = await writeToolOutput(def.name, r, filePath, resolvedRoot)
             if (written) return written
           }
-          if (r && 'base64' in r && 'mimeType' in r) {
+          // Only an image goes back as one; a PDF stays base64 in the JSON result, as described.
+          if (
+            r &&
+            'base64' in r &&
+            typeof r.mimeType === 'string' &&
+            r.mimeType.startsWith('image/')
+          ) {
             const base64 = String(r.base64)
             const bytes = Buffer.byteLength(base64, 'utf8')
             if (bytes > MAX_RESULT_BYTES) {
@@ -185,7 +192,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
                 {
                   type: 'image' as const,
                   data: base64,
-                  mimeType: r.mimeType as string
+                  mimeType: r.mimeType
                 }
               ]
             }

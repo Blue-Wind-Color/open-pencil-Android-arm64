@@ -1,8 +1,9 @@
 import { randomBytes } from 'node:crypto'
 import type { Server as HttpServer } from 'node:http'
+import { resolve } from 'node:path'
 
 import type { McpServer } from '@modelcontextprotocol/server'
-import { Hono } from 'hono'
+import { Hono, type Context, type Next } from 'hono'
 import { cors } from 'hono/cors'
 import { resolveCommand } from 'package-manager-detector/commands'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
@@ -14,6 +15,7 @@ import { bearerToken, isAuthorized, mcpRequestToken } from '#mcp/auth'
 import { createBrowserRPCBridge } from '#mcp/browser-rpc'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/http-options'
 import type { RPCJSONObject } from '#mcp/json'
+import { registerFileRoutes } from '#mcp/server/files'
 import { createMCPSessionManager } from '#mcp/server/sessions'
 import { createToolDescriptors } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolPolicy } from '#mcp/tool/metadata'
@@ -133,16 +135,19 @@ export interface ServerHandle {
   close: () => Promise<void>
 }
 
-/** Set up Hono routes: /health, /rpc, /mcp */
+/** Set up Hono routes: /health, /rpc, /files, /mcp */
 function createHonoApp(options: {
   authToken: string | null
   corsOrigin: string | readonly string[] | null
+  /** The root `/files` reads and writes inside, or null to leave the route out. */
+  fileRoot: string | null
   browserRPC: ReturnType<typeof createBrowserRPCBridge>
   mcpSessions: ReturnType<typeof createMCPSessionManager>
   sendToBrowser: (msg: RPCJSONObject) => Promise<unknown>
   toolDescriptors: ToolDescriptor[]
 }): Hono {
-  const { authToken, corsOrigin, browserRPC, mcpSessions, sendToBrowser, toolDescriptors } = options
+  const { authToken, corsOrigin, fileRoot, browserRPC, mcpSessions, sendToBrowser } = options
+  const { toolDescriptors } = options
 
   const app = new Hono()
 
@@ -170,7 +175,7 @@ function createHonoApp(options: {
     })
   })
 
-  app.use('/rpc', async (c, next) => {
+  const requireToken = async (c: Context, next: Next) => {
     // When authToken is null (operator explicitly disabled auth), skip token check —
     // the Unix socket or localhost TCP already restricts access to local processes.
     if (authToken !== null) {
@@ -180,7 +185,14 @@ function createHonoApp(options: {
       }
     }
     return next()
-  })
+  }
+
+  app.use('/rpc', requireToken)
+
+  if (fileRoot !== null) {
+    app.use('/files/*', requireToken)
+    registerFileRoutes(app, fileRoot)
+  }
 
   // Historical note: before the isConnected() guard was removed, a disconnected
   // app returned 503 here. Now errors from sendToBrowser surface as 502. This
@@ -364,6 +376,8 @@ function buildServerContext(options: ServerOptions) {
   const app = createHonoApp({
     authToken,
     corsOrigin,
+    // A client limited to the selection reaches no files, as the file tools are left out then.
+    fileRoot: mcpRoot !== null && toolPolicy.scope !== 'selection' ? resolve(mcpRoot) : null,
     browserRPC,
     mcpSessions,
     sendToBrowser,

@@ -7,12 +7,14 @@ import * as layoutModule from '@open-pencil/core/layout'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
+import { automationFiles } from '@/app/automation/bridge/server'
 import { recentDocuments } from '@/app/recent-files'
 import { recentFilesLimit } from '@/app/recent-files/preferences'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createTab, getActiveStore, getActiveTabId, getTabById, getTabsSnapshot } from '@/app/tabs'
 
 import { asDouble } from '#tests/helpers/doubles'
+import { testPath } from '#tests/helpers/paths'
 
 function setupGlobals() {
   globalThis.window = asDouble<Window & typeof globalThis>({
@@ -367,6 +369,56 @@ describe('close_file and save_file never prompt', () => {
     expect(tab.store.state.documentName).toBe('Untitled')
     expect(tab.store.getDocumentFilePath()).toBeNull()
     expect(tab.store.hasWritableSource()).toBe(false)
+  })
+})
+
+describe('file paths in a browser go through the MCP server', () => {
+  const { handleRequest: handleThroughServer } = createAutomationCommandHandlers(
+    makeFigmaFromStore,
+    automationFiles('ws://mcp.test', 'token')
+  )
+  const requestThroughServer = (command: string, args: Record<string, unknown>) =>
+    handleThroughServer(getActiveStore(), command, args)
+
+  function dirtyTab() {
+    const tab = createTab()
+    tab.store.createShape('RECTANGLE', 0, 0, 10, 10)
+    return tab
+  }
+
+  test('saving to a path hands the server a copy, saved as a download is', async () => {
+    const tab = dirtyTab()
+    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
+    await requestThroughServer('save_file', { document_id: tab.id, path: '/root/copy.fig' })
+
+    const [url, init] = fetch.mock.calls[0]
+    expect(String(url)).toBe('http://mcp.test/files//root/copy.fig')
+    expect(init?.method).toBe('PUT')
+    expect(new Headers(init?.headers).get('authorization')).toBe('Bearer token')
+    expect(tab.store.hasUnsavedChanges()).toBe(false)
+    // Where the document saves next does not change.
+    expect(tab.store.hasWritableSource()).toBe(false)
+  })
+
+  test('a copy the server refuses leaves the changes unsaved', async () => {
+    const tab = dirtyTab()
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('outside', { status: 400 }))
+    await expect(
+      requestThroughServer('save_file', { document_id: tab.id, path: '/elsewhere/copy.fig' })
+    ).rejects.toThrow('Could not write /elsewhere/copy.fig: outside')
+    expect(tab.store.hasUnsavedChanges()).toBe(true)
+  })
+
+  test('opening a path fetches it from the server with the token', async () => {
+    const bytes = new Uint8Array(await Bun.file(testPath('fixtures', 'slots.fig')).arrayBuffer())
+    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(bytes))
+    await settle(requestThroughServer('open_file', { path: '/root/my #1 slots.fig' }))
+
+    const [url, init] = fetch.mock.calls[0]
+    // A reserved character stays in the path rather than starting a fragment.
+    expect(String(url)).toBe('http://mcp.test/files//root/my%20%231%20slots.fig')
+    expect(new Headers(init?.headers).get('authorization')).toBe('Bearer token')
+    expect(getActiveStore().state.documentName).toBe('my #1 slots')
   })
 })
 

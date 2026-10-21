@@ -217,6 +217,17 @@ export function createDocumentSourceActions({
     return saved
   }
 
+  /**
+   * Hand the document to `write`, such as an MCP server saving it to a path a browser cannot
+   * reach, and count it saved as a download is. Where the document saves next does not change.
+   */
+  async function saveFigFileCopy(write: (data: Uint8Array) => Promise<void>): Promise<boolean> {
+    const version = changes.capture()
+    await write(await buildFigFile())
+    await recovery.markProtectedVersion(version)
+    return true
+  }
+
   /** Upload the document to storage as a new stored document and keep editing it there. */
   async function saveFigFileToStorage(location: StorageLocation): Promise<boolean> {
     const saved = await saveToNewTarget(() => {
@@ -249,6 +260,8 @@ export function createDocumentSourceActions({
     setStorageDocumentSource,
     setPlannedFilePath,
     saveFigFileToPath,
+    saveFigFileCopy: (write: (data: Uint8Array) => Promise<void>) =>
+      saveAndTrack(() => saveFigFileCopy(write)),
     saveFigFileToStorage,
     startWatchingCurrentFile,
     disposeDocumentIO,

@@ -1,7 +1,7 @@
 /* eslint-disable max-lines -- MCP server scenarios share lifecycle and transport fixtures */
 
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
-import { mkdir, stat } from 'node:fs/promises'
+import { mkdir, readFile, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -445,7 +445,7 @@ describe('raw RPC', () => {
 describe('MCP server with mcpRoot', () => {
   async function withMCPRootServer(
     mcpRoot: string | null,
-    fn: (client: Client, browser: MockBrowser, graph: SceneGraph) => Promise<void>
+    fn: (client: Client, browser: MockBrowser, graph: SceneGraph, httpPort: number) => Promise<void>
   ) {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
     if (mcpRoot) await mkdir(mcpRoot, { recursive: true })
@@ -476,13 +476,57 @@ describe('MCP server with mcpRoot', () => {
       )
       await client.connect(transport)
 
-      await fn(client, browser, graph)
+      await fn(client, browser, graph, httpPort)
     } finally {
       await client?.close().catch(() => undefined)
       browser?.close()
       await handle.close()
     }
   }
+
+  test('a browser app reads and writes files inside mcpRoot through /files', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (_client, _browser, _graph, httpPort) => {
+      const path = join(TEST_MCP_ROOT, 'browser', 'saved.fig')
+      const url = (filePath: string) =>
+        `http://127.0.0.1:${httpPort}/files/${filePath.split(/[\\/]/).map(encodeURIComponent).join('/')}`
+      const auth = { authorization: `Bearer ${TEST_AUTH_TOKEN}` }
+      const bytes = new Uint8Array([80, 75, 3, 4, 1, 2, 3])
+
+      const put = await fetch(url(path), { method: 'PUT', headers: auth, body: bytes })
+      expect(put.status).toBe(200)
+      expect(new Uint8Array(await readFile(path))).toEqual(bytes)
+      const get = await fetch(url(path), { headers: auth })
+      expect(new Uint8Array(await get.arrayBuffer())).toEqual(bytes)
+
+      // Larger than one read chunk, so the file is read back across several.
+      const large = Uint8Array.from({ length: 2.5 * 1024 * 1024 }, (_, i) => i % 251)
+      await fetch(url(path), { method: 'PUT', headers: auth, body: large })
+      const back = await fetch(url(path), { headers: auth })
+      expect(new Uint8Array(await back.arrayBuffer())).toEqual(large)
+
+      // A name the URL must carry exactly: a space, a fragment mark, a literal escape, Cyrillic.
+      const awkward = join(TEST_MCP_ROOT, 'browser', 'my #1 %20 файл.fig')
+      expect(
+        (await fetch(url(awkward), { method: 'PUT', headers: auth, body: bytes })).status
+      ).toBe(200)
+      expect(new Uint8Array(await readFile(awkward))).toEqual(bytes)
+
+      expect((await fetch(url(path))).status).toBe(401)
+      const outside = join(TEST_MCP_ROOT, '..', 'outside.fig')
+      expect(
+        (await fetch(url(outside), { method: 'PUT', headers: auth, body: bytes })).status
+      ).toBe(400)
+    })
+  })
+
+  test('has no /files without mcpRoot', async () => {
+    await withMCPRootServer(null, async (_client, _browser, _graph, httpPort) => {
+      const response = await fetch(`http://127.0.0.1:${httpPort}/files/tmp/a.fig`, {
+        headers: { authorization: `Bearer ${TEST_AUTH_TOKEN}` }
+      })
+      expect(response.status).toBe(404)
+    })
+  })
 
   test('registers open_file and new_document tools when mcpRoot is set', async () => {
     await withMCPRootServer(TEST_MCP_ROOT, async (client) => {

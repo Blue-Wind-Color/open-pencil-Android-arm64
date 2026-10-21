@@ -1,5 +1,6 @@
 import { useFileDialog } from '@vueuse/core'
 import { uniq } from 'es-toolkit/array'
+import { decode } from 'ufo'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 
@@ -57,6 +58,14 @@ if (IS_BROWSER && 'window' in globalThis) {
   })
 }
 
+/**
+ * The file name a URL ends in, decoded, so `my%20design.fig` opens as "my design"; a malformed
+ * escape stays as written.
+ */
+function fileNameFromURL(url: URL): string {
+  return decode(url.pathname.split('/').pop() ?? '') || 'file.fig'
+}
+
 /** Fetches a document over HTTP and opens it in a new tab. Browser builds only. */
 export async function openBrowserFileFromURL(url: URL, init?: RequestInit): Promise<void> {
   // The cap needs a controller of its own, so a caller's signal is combined with it
@@ -74,7 +83,7 @@ export async function openBrowserFileFromURL(url: URL, init?: RequestInit): Prom
   if (bytes.byteLength === 0) {
     throw new Error('Failed to fetch file: the response carried no body')
   }
-  const name = url.pathname.split('/').pop() ?? 'file.fig'
+  const name = fileNameFromURL(url)
   assertSupportedDesignFile(name)
   const file = new File([bytes], name, { type: 'application/octet-stream' })
   await openFileInNewTab(file, undefined, url.href)

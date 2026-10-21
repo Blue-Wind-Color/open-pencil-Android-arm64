@@ -11,12 +11,7 @@ import {
 } from '@/app/automation/bridge/app-handlers'
 import { createAutomationEvalHandler } from '@/app/automation/bridge/eval-handler'
 import { handleExport, handleExportJSX } from '@/app/automation/bridge/export-handlers'
-import {
-  handleCloseFile,
-  handleNewDocument,
-  handleOpenFile,
-  handleSaveFile
-} from '@/app/automation/bridge/file-handlers'
+import { createFileHandlers, type AutomationFiles } from '@/app/automation/bridge/file-handlers'
 import { handleRPCFallback } from '@/app/automation/bridge/rpc-handler'
 import { handleSelection } from '@/app/automation/bridge/selection-handler'
 import {
@@ -35,9 +30,11 @@ type FigmaFactory = (store: EditorStore, pageId?: string) => FigmaAPI
 
 type CommandHandler = (target: AutomationTarget, args: unknown) => Promise<unknown>
 
-export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
+export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?: AutomationFiles) {
   const handleEval = createAutomationEvalHandler(makeFigma)
   const handleTool = createAutomationToolHandler(makeFigma)
+  const { handleSaveFile, handleCloseFile, handleNewDocument, handleOpenFile } =
+    createFileHandlers(files)
 
   const commandHandlers: Partial<Record<string, CommandHandler>> = {
     eval: handleEval,
