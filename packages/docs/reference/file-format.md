@@ -62,7 +62,7 @@ Figma's schema uses non-contiguous field IDs (e.g. 1, 2, 5, 10 with gaps). The k
 
 ### Compression
 
-The schema chunk is deflated and the message chunk is Zstd-compressed; Figma also reads a deflated message chunk, as older files have. Decompression uses the `fzstd` library.
+The schema chunk is deflated and the message chunk is Zstd-compressed; Figma also reads a deflated message chunk, as older files have. Decompression uses the same Zstd as export: Bun's own under Bun, the WebAssembly build elsewhere.
 
 Export writes the message chunk with Zstd at a level set per document, stored as `figCompression` in the document node's `open-pencil` plugin data: `fast` (level 3, as Figma saves), `smaller` (9), or `smallest` (19). Figma opens every Zstd level, but only frames that declare their decompressed size, which all three encoders write. Reading costs the same at every level; on a 45 MB message, level 9 takes about five times and level 19 about 150 times as long to write as level 3.
 

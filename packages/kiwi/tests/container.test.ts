@@ -8,7 +8,9 @@ import {
   decompressFigKiwiDataAsync,
   FIG_KIWI_DEFAULT_VERSION,
   loadFigDataCompressor,
+  loadFigDataDecompressor,
   loadWasmFigDataCompressor,
+  loadWasmFigDataDecompressor,
   parseFigKiwiChunks,
   type FigDataCompressor
 } from '../src/fig/container'
@@ -30,6 +32,26 @@ function declaresContentSize(frame: Uint8Array): boolean {
   const descriptor = frame[4]
   const singleSegment = (descriptor >> 5) & 1
   return singleSegment === 1 || descriptor >> 6 !== 0
+}
+
+/**
+ * A zstd frame of one raw block that declares no content size (RFC 8878 §3.1.1): a frame header
+ * descriptor with every flag clear, a window descriptor, and a last raw block of `data`.
+ */
+function rawZstdFrameWithoutContentSize(data: Uint8Array): Uint8Array {
+  const blockHeader = 1 | (0 << 1) | (data.length << 3)
+  return new Uint8Array([
+    0x28,
+    0xb5,
+    0x2f,
+    0xfd,
+    0x00,
+    0x70,
+    blockHeader & 0xff,
+    (blockHeader >> 8) & 0xff,
+    (blockHeader >> 16) & 0xff,
+    ...data
+  ])
 }
 
 describe('Figma FIG Kiwi container helpers', () => {
@@ -99,4 +121,45 @@ describe('Figma FIG Kiwi container helpers', () => {
   test('rejects non fig-kiwi data', () => {
     expect(parseFigKiwiChunks(new TextEncoder().encode('not-fig-kiwi'))).toBeNull()
   })
+
+  // Bun's own zstd where it runs, and the WebAssembly build browsers and webviews read with.
+  for (const [decoder, load] of [
+    ['native', loadFigDataDecompressor],
+    ['WebAssembly', loadWasmFigDataDecompressor]
+  ] as const) {
+    test(`${decoder} zstd decompresses every level, and deflate, synchronously`, async () => {
+      const dataRaw = sampleDocument()
+      const decompress = await load()
+      for (const level of [3, 19]) {
+        const compress = await loadWasmFigDataCompressor(level)
+        expect(decompress(compress(dataRaw))).toEqual(dataRaw)
+      }
+      expect(decompress(deflateSync(dataRaw))).toEqual(dataRaw)
+    })
+
+    // A Node Buffer slices into views of the whole message, which structuredClone then copies in
+    // full for every byte array a record holds; a plain Uint8Array slices by copying.
+    test(`${decoder} zstd returns a plain Uint8Array whose slice is a copy`, async () => {
+      const dataRaw = sampleDocument()
+      const decompress = await load()
+      const compress = await loadWasmFigDataCompressor(3)
+
+      const decompressed = decompress(compress(dataRaw))
+
+      expect(Object.getPrototypeOf(decompressed)).toBe(Uint8Array.prototype)
+      expect(decompressed.slice(0, 8).buffer.byteLength).toBe(8)
+    })
+
+    // Figma writes the size, but a frame from another tool may not; the decoder streams those.
+    test(`${decoder} zstd decompresses a frame that declares no content size`, async () => {
+      const dataRaw = new TextEncoder().encode('payload without a declared size')
+      const frame = rawZstdFrameWithoutContentSize(dataRaw)
+      expect(isZstdCompressed(frame)).toBe(true)
+      expect(declaresContentSize(frame)).toBe(false)
+
+      const decompress = await load()
+
+      expect(decompress(frame)).toEqual(dataRaw)
+    })
+  }
 })

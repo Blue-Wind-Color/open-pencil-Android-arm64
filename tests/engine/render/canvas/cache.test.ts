@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
+import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import {
@@ -15,7 +15,7 @@ import { initCanvasKit } from '#cli/headless'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { repoPath } from '#tests/helpers/paths'
-import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
+import { heavy, HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 import { expectRgbaPixels } from './helpers'
 
@@ -103,7 +103,7 @@ function maskYCenter(
   return (minY + maxY) / 2
 }
 
-describe('render cache regressions', () => {
+heavy('render cache regressions', () => {
   test('badge label is vertically centered in the pill', async () => {
     const surface = expectDefined(ck.MakeSurface(120, 60), 'badge surface')
     const renderer = new SkiaRenderer(ck, surface)

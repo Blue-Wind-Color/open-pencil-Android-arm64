@@ -71,7 +71,6 @@
         "es-toolkit": "^1.52.0",
         "fflate": "^0.8.3",
         "fuse.js": "^7.5.0",
-        "fzstd": "^0.1.1",
         "hast-util-to-html": "^9.0.5",
         "idb": "^8.0.3",
         "js-base64": "^3.9.3",
@@ -273,7 +272,6 @@
         "es-toolkit": "^1.52.0",
         "fflate": "^0.8.3",
         "fontoxpath": "^3.34.0",
-        "fzstd": "^0.1.1",
         "js-base64": "^3.9.3",
         "jsep": "^1.4.0",
         "jsondiffpatch": "^0.7.6",
@@ -479,7 +477,6 @@
       "dependencies": {
         "@hpcc-js/wasm-zstd": "^1.16.2",
         "fflate": "^0.8.3",
-        "fzstd": "^0.1.1",
       },
       "devDependencies": {
         "@types/bun": "^1.3.14",
@@ -3346,8 +3343,6 @@
     "functions-have-names": ["functions-have-names@1.2.3", "", {}, "sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ=="],
 
     "fuse.js": ["fuse.js@7.5.0", "", {}, "sha512-sQtrEfA+ez/3G0cCZecF70oqpCRttCexYUG4mUrtWL49ULUzUyxokt5kyqwtKzj1270RaKih+hcP3qLcumccow=="],
-
-    "fzstd": ["fzstd@0.1.1", "", {}, "sha512-dkuVSOKKwh3eas5VkJy1AW1vFpet8TA/fGmVA5krThl8YcOVE/8ZIoEA1+U1vEn5ckxxhLirSdY837azmbaNHA=="],
 
     "gaxios": ["gaxios@7.3.1", "", { "dependencies": { "extend": "^3.0.2", "https-proxy-agent": "^7.0.1", "node-fetch": "^3.3.2" } }, "sha512-kB3rzJV7d9juLZh8/56QTXCwQfxyhdOMdyYk1HdQKFtF8TJTDTZQJtixWIwXdE9Jji91mC41DUNpjleo4L4eAQ=="],
 

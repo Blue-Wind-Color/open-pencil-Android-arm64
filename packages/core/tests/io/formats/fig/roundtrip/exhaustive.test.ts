@@ -1,9 +1,10 @@
-import { beforeAll, afterAll, describe, expect, test, spyOn, setDefaultTimeout } from 'bun:test'
+import { beforeAll, afterAll, expect, test, spyOn, setDefaultTimeout } from 'bun:test'
 
 import {
   expectSaveLoadedOnlyInternalPages,
   snapshotNodes
 } from '#core-tests/helpers/fig/save-contract'
+import { heavy } from '#core-tests/helpers/test-utils'
 import { unzipSync } from 'fflate'
 
 import {
@@ -406,7 +407,7 @@ function deepCompareRaw(
 function verifyFixture(spec: FixtureSpec): void {
   const name = (spec.file.split('/').pop() ?? '').replace('.fig', '')
 
-  describe(`roundtrip: ${name}`, () => {
+  heavy(`roundtrip: ${name}`, () => {
     let g0!: Map<string, SceneNode>
     let g0Graph!: SceneGraph
     let g0Bytes!: ArrayBuffer

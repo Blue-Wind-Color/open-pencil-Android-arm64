@@ -1,5 +1,5 @@
+import type { Zstd } from '@hpcc-js/wasm-zstd'
 import { deflateSync, inflateSync } from 'fflate'
-import { decompress as fzstdDecompressSync } from 'fzstd'
 
 import { isZstdCompressed } from './protocol'
 
@@ -8,14 +8,23 @@ export const FIG_KIWI_DEFAULT_VERSION = 101
 /** Compresses a fig-kiwi data chunk. */
 export type FigDataCompressor = (data: Uint8Array) => Uint8Array
 
+/** Decompresses a fig-kiwi data chunk, zstd or deflate. */
+export type FigDataDecompressor = (data: Uint8Array) => Uint8Array
+
 /** The zstd level Figma itself saves with. */
 export const FIG_ZSTD_DEFAULT_LEVEL = 3
 
 type BunZstdCompress = (data: Uint8Array, options?: { level?: number }) => Uint8Array
+type BunZstdDecompress = (data: Uint8Array) => Uint8Array
 
 function bunZstdCompress(): BunZstdCompress | undefined {
   const g = globalThis as { Bun?: { zstdCompressSync?: BunZstdCompress } }
   return g.Bun?.zstdCompressSync
+}
+
+function bunZstdDecompress(): BunZstdDecompress | undefined {
+  const g = globalThis as { Bun?: { zstdDecompressSync?: BunZstdDecompress } }
+  return g.Bun?.zstdDecompressSync
 }
 
 /**
@@ -25,24 +34,27 @@ function bunZstdCompress(): BunZstdCompress | undefined {
 export const defaultFigDataCompressor: FigDataCompressor = (data) =>
   bunZstdCompress()?.(data) ?? deflateSync(data)
 
-let wasmZstd: Promise<(data: Uint8Array, level: number) => Uint8Array> | undefined
+let wasmZstd: Zstd | undefined
+let wasmZstdLoading: Promise<Zstd> | undefined
 
-/** The WebAssembly zstd encoder, loaded once; a failed load is retried on the next call. */
+/** The WebAssembly zstd, loaded once; a failed load is retried on the next call. */
+function loadWasmZstd(): Promise<Zstd> {
+  wasmZstdLoading ??= import('@hpcc-js/wasm-zstd')
+    .then(({ Zstd }) => Zstd.load())
+    .then((zstd) => (wasmZstd = zstd))
+    .catch((error: unknown) => {
+      wasmZstdLoading = undefined
+      throw error
+    })
+  return wasmZstdLoading
+}
+
+/** The WebAssembly zstd encoder at `level`. */
 export async function loadWasmFigDataCompressor(
   level = FIG_ZSTD_DEFAULT_LEVEL
 ): Promise<FigDataCompressor> {
-  wasmZstd ??= import('@hpcc-js/wasm-zstd')
-    .then(({ Zstd }) => Zstd.load())
-    .then(
-      (zstd) => (data: Uint8Array, compressionLevel: number) =>
-        zstd.compress(data, compressionLevel)
-    )
-    .catch((error: unknown) => {
-      wasmZstd = undefined
-      throw error
-    })
-  const compress = await wasmZstd
-  return (data) => compress(data, level)
+  const zstd = await loadWasmZstd()
+  return (data) => zstd.compress(data, level)
 }
 
 /**
@@ -57,9 +69,42 @@ export async function loadFigDataCompressor(
   return loadWasmFigDataCompressor(level)
 }
 
-function bunZstdDecompressSync(data: Uint8Array): Uint8Array | undefined {
-  const g = globalThis as { Bun?: { zstdDecompressSync?: (data: Uint8Array) => Uint8Array } }
-  return g.Bun?.zstdDecompressSync?.(data)
+/** The WebAssembly zstd decoder. */
+export async function loadWasmFigDataDecompressor(): Promise<FigDataDecompressor> {
+  const zstd = await loadWasmZstd()
+  return (data) => (isZstdCompressed(data) ? zstd.decompress(data) : inflate(data))
+}
+
+/**
+ * Makes `decompressFigKiwiData` ready for zstd chunks: Bun's own zstd needs nothing, the
+ * WebAssembly build elsewhere loads once. Every path that opens a `.fig` synchronously awaits
+ * this first, so a document session, its worker, and the patches they write never wait.
+ */
+export async function loadFigDataDecompressor(): Promise<FigDataDecompressor> {
+  if (!bunZstdDecompress()) await loadWasmZstd()
+  return decompressFigKiwiData
+}
+
+function inflate(compressed: Uint8Array): Uint8Array {
+  try {
+    return inflateSync(compressed)
+  } catch {
+    throw new Error('Failed to decompress fig-kiwi data')
+  }
+}
+
+function decompressZstd(compressed: Uint8Array): Uint8Array {
+  const native = bunZstdDecompress()
+  if (native) {
+    // Bun returns a Node Buffer, whose `slice` is a view: a reader slicing byte arrays out of
+    // the message would then hand out views of the whole message, which `structuredClone`
+    // copies in full each time. A plain Uint8Array over the same memory slices by copying.
+    const buffer = native(compressed)
+    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+  }
+  if (!wasmZstd)
+    throw new Error('Zstd is not loaded: await loadFigDataDecompressor() before reading')
+  return wasmZstd.decompress(compressed)
 }
 
 export function parseFigKiwiChunks(binary: Uint8Array): Uint8Array[] | null {
@@ -79,31 +124,14 @@ export function parseFigKiwiChunks(binary: Uint8Array): Uint8Array[] | null {
   return chunks.length >= 2 ? chunks : null
 }
 
+/** A data chunk decompressed at once; a zstd chunk needs `loadFigDataDecompressor` first. */
 export function decompressFigKiwiData(compressed: Uint8Array): Uint8Array {
-  if (isZstdCompressed(compressed)) {
-    const decompressed = bunZstdDecompressSync(compressed)
-    if (decompressed) return decompressed
-    return fzstdDecompressSync(compressed)
-  }
-
-  try {
-    return inflateSync(compressed)
-  } catch {
-    throw new Error('Failed to decompress fig-kiwi data')
-  }
+  return isZstdCompressed(compressed) ? decompressZstd(compressed) : inflate(compressed)
 }
 
 export async function decompressFigKiwiDataAsync(compressed: Uint8Array): Promise<Uint8Array> {
-  if (isZstdCompressed(compressed)) {
-    const bunDecompressed = bunZstdDecompressSync(compressed)
-    if (bunDecompressed) return bunDecompressed
-    return fzstdDecompressSync(compressed)
-  }
-  try {
-    return inflateSync(compressed)
-  } catch {
-    throw new Error('Failed to decompress fig-kiwi data')
-  }
+  const decompress = await loadFigDataDecompressor()
+  return decompress(compressed)
 }
 
 export function buildFigKiwi(

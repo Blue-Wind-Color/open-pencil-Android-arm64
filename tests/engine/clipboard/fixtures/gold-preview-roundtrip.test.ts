@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'bun:test'
+import { beforeAll, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import {
@@ -14,9 +14,9 @@ import {
 } from '@open-pencil/core'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
+import { heavy, HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
-describe('gold-preview.fig clipboard roundtrip', () => {
+heavy('gold-preview.fig clipboard roundtrip', () => {
   let graph: SceneGraph
   let pageId: string
   let topLevelNodes: SceneNode[]

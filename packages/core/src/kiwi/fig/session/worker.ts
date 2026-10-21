@@ -1,3 +1,5 @@
+import { loadFigDataDecompressor } from '@open-pencil/kiwi/fig/container'
+
 import { serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import { createFigArchiveOperations } from '#core/kiwi/fig/session/archive/access'
 import type {
@@ -101,7 +103,7 @@ function handleRequest(request: FigSessionRequest): void {
   }
 }
 
-self.onmessage = (event: MessageEvent<FigSessionOpenRequest>) => {
+self.onmessage = async (event: MessageEvent<FigSessionOpenRequest>) => {
   const request = event.data
   port = request.port
   port.onmessage = (message: MessageEvent<FigSessionRequest>) => handleRequest(message.data)
@@ -109,6 +111,7 @@ self.onmessage = (event: MessageEvent<FigSessionOpenRequest>) => {
   // The worker copies the archive itself, so the main thread sends the file once.
   const archiveBytes = request.buffer.slice(0)
   try {
+    await loadFigDataDecompressor()
     const opened = openReaderSession(request.buffer, request.options?.populate)
     const archiveInfo = opened.session.archiveRecordInfo()
     archive = createFigArchiveOperations(archiveBytes, () => archiveInfo)
