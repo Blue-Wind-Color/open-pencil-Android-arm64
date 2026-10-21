@@ -121,8 +121,8 @@ API намеренно близок к Figma Plugin API, но работает �
 - `figma.deleteVariable(id)`
 - `figma.createVariableCollection(name)`
 - `figma.deleteVariableCollection(id)`
-- `figma.bindVariable(nodeId, field, variableId)`
-- `figma.unbindVariable(nodeId, field)`
+- `openpencil.bindVariable(node, field, variable)` — привязки как в панели слоя: текст принимает текстовую или числовую переменную, видимость — логическую или текстовую
+- `openpencil.unbindVariable(node, field)`
 
 ### Свойства
 

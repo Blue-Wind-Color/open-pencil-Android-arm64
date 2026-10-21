@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 
+import { OpenPencilAPI } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -22,7 +23,7 @@ test('Figma API edits reconcile existing scaled bindings without an editor', () 
   expect(frame.paddingLeft).toBe(5)
   expect(frame.width).toBe(10)
   expect(child.x).toBe(5)
-  api.unbindVariable(frame.id, 'paddingLeft')
+  new OpenPencilAPI(api).unbindVariable(frame.id, 'paddingLeft')
   api.setVariableValue(first.id, collection.defaultModeId, 80)
   expect(frame.paddingLeft).toBe(5)
 })

@@ -391,16 +391,6 @@ export class FigmaAPI implements NodeProxyHost {
     this.graph.removeCollection(id)
   }
 
-  bindVariable(nodeId: string, field: string, variableId: string): void {
-    this.graph.bindVariable(nodeId, field, variableId)
-    reconcileVariableLayouts(this.graph, { subtrees: [nodeId] })
-  }
-
-  unbindVariable(nodeId: string, field: string): void {
-    this.graph.unbindVariable(nodeId, field)
-    reconcileVariableLayouts(this.graph, { subtrees: [nodeId] })
-  }
-
   // --- Boolean Operations ---
 
   private _booleanOperation(

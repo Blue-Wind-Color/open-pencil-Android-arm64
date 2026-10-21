@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { OpenPencilAPI } from '#core/openpencil-api'
 import { nodeIdInput } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'
 
@@ -21,7 +22,8 @@ export const bindVariable = defineTool({
           '"topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius", ' +
           '"borderTopWeight", "borderBottomWeight", "borderLeftWeight", "borderRightWeight", ' +
           '"gridRowGap", "gridColumnGap". ' +
-          'For STRING: "fontFamily". For BOOLEAN: "visible".'
+          'For STRING: "fontFamily". For STRING or FLOAT: "text", a number shown as text. ' +
+          'For BOOLEAN or STRING: "visible", text showing the layer unless empty or "false", "no", "off".'
       )
     ),
     variable_id: v.pipe(v.string(), v.description('Variable ID'))
@@ -32,7 +34,7 @@ export const bindVariable = defineTool({
     const variable = figma.getVariableById(args.variable_id)
     if (!variable) return { error: `Variable "${args.variable_id}" not found` }
     try {
-      figma.bindVariable(args.node_id, args.field, args.variable_id)
+      new OpenPencilAPI(figma).bindVariable(args.node_id, args.field, variable)
     } catch (err) {
       return { error: err instanceof Error ? err.message : String(err) }
     }

@@ -7,7 +7,11 @@ import type { VariableModeFallback } from '../variables'
 import { NUMERIC_FIELDS, isNumericVariableBindingField } from './fields'
 import { variableText, variableTruthy } from './text'
 import { variableValueReferences } from './value'
-export { isNumericVariableBindingField, VISIBILITY_VARIABLE_TYPES } from './fields'
+export {
+  isNumericVariableBindingField,
+  TEXT_CONTENT_VARIABLE_TYPES,
+  VISIBILITY_VARIABLE_TYPES
+} from './fields'
 
 /** New declarations belong to the outermost occurrence, bounded by a component definition. */
 export function variableBindingOwner(graph: SceneGraph, node: SceneNode): SceneNode {

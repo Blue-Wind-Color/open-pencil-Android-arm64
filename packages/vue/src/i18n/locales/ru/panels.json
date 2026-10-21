@@ -408,6 +408,7 @@
   "createComponentProperty": "Создать свойство…",
   "applyComponentProperty": "Применить свойство компонента к полю «{field}»",
   "applyVariableOrProperty": "Применить переменную или свойство",
+  "applyVariableToTextContent": "Применить переменную к тексту",
   "propertiesInComponent": "Свойства компонента «{name}»",
   "goToComponentProperty": "Перейти к свойству",
   "detachComponentProperty": "Отвязать свойство",

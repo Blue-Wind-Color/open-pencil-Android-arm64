@@ -25,9 +25,11 @@ import {
   type NewComment
 } from './comments'
 import { getStatus, listStatuses, setStatus, type StatusInfo } from './statuses'
+import { bindVariable, unbindVariable, type VariableRef } from './variables'
 
 export { BehaviourHandle, type NodeRef } from './behaviours'
 export type { StatusInfo } from './statuses'
+export type { VariableRef } from './variables'
 export {
   CommentHandle,
   DEFAULT_COMMENT_AUTHOR,
@@ -77,6 +79,21 @@ export class OpenPencilAPI {
     const { value, resolved } = parseVariableFormula(graph, variable.id, mode.modeId, source)
     this.figma.setVariableValue(variable.id, mode.modeId, value)
     return resolved
+  }
+
+  /**
+   * Bind a layer field to a variable from `figma.getLocalVariables()`, as the layer panel does:
+   * fields by OpenPencil's names, such as `'text'`, `'visible'`, `'opacity'` or `'fills/0/color'`.
+   * Text content takes a text or number variable, a number shown as text; visibility takes a
+   * boolean, or text that shows the layer unless it is empty or reads false, no or off.
+   */
+  bindVariable(node: NodeRef, field: string, variable: VariableRef): void {
+    bindVariable(this.figma.graph, node, field, variable)
+  }
+
+  /** Let a layer field go of its variable, keeping the value the variable last gave it. */
+  unbindVariable(node: NodeRef, field: string): void {
+    unbindVariable(this.figma.graph, node, field)
   }
 
   /** The behaviour kinds, after Reka UI's primitives, with the values and parts each binds. */

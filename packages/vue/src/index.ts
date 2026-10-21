@@ -408,6 +408,7 @@ export {
   useOpenPencilBindingProvider,
   useNumberBindingProvider,
   useColorBindingProvider,
+  useTextContentBindingProvider,
   useVisibilityBindingProvider
 } from '#vue/controls/binding-provider'
 export type {

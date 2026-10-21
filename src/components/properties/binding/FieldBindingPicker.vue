@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useSlots } from 'vue'
 
 import { variableText } from '@open-pencil/scene-graph'
 import { useBindableValue, useEditor, useI18n } from '@open-pencil/vue'
@@ -11,19 +11,23 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPicker, { type AppPickerItem } from '@/components/ui/select/AppPicker.vue'
 import { VARIABLE_TYPE_ICONS } from '@/components/variables/type-icons'
 
+import { BOUND_LAYER_FIELDS, type BoundLayerField } from './fields'
+
 /**
- * The list a layer's visibility binds from, as Figma's: a component layer's boolean properties,
- * then boolean and text variables. A component layer opens it from its own button; any layer
- * opens it by right-clicking the eye, which the `eye` slot renders.
+ * The list a layer field binds from, as Figma's: a component layer's properties of the field's
+ * type, then the variables the field takes. It opens from its own button, or, for a layer outside
+ * a component, from the control the `anchor` slot renders when there is one, such as the eye.
  */
-const { nodeId } = defineProps<{ nodeId: string }>()
-defineSlots<{ eye(props: { open: () => void }): unknown }>()
+const { nodeId, field } = defineProps<{ nodeId: string; field: BoundLayerField }>()
+defineSlots<{ anchor?(props: { open: () => void }): unknown }>()
 
 const PROPERTY = 'property:'
 
 const editor = useEditor()
-const binding = useBindableValue<boolean>()
-const property = usePropertyBinding('VISIBLE')
+const slots = useSlots()
+const config = BOUND_LAYER_FIELDS[field]
+const binding = useBindableValue()
+const property = usePropertyBinding(field)
 const { panels, common } = useI18n()
 
 const open = computed({
@@ -32,6 +36,17 @@ const open = computed({
 })
 
 const properties = computed(() => (property.available.value ? property.compatible.value : []))
+
+const heading = computed(() =>
+  property.available.value ? panels.value.applyVariableOrProperty : panels.value.applyVariable
+)
+/** The section's other fields have buttons of their own, so the field's button names its field. */
+const buttonLabel = computed(() =>
+  property.available.value ? heading.value : panels.value[config.buttonLabel]
+)
+
+/** A layer outside a component with an anchor opens the list from it, not from a button. */
+const ownButton = computed(() => property.available.value || !slots.anchor)
 
 /** A property the layer follows can only be let go of where properties are editable. */
 const lockedToProperty = computed(() => !!property.definition.value && !property.editable.value)
@@ -74,7 +89,7 @@ function variableType(value: string) {
 /** A layer follows one source at a time, so choosing one lets go of the other in the same step. */
 function select(value: string) {
   if (value.startsWith(PROPERTY) ? !property.editable.value : lockedToProperty.value) return
-  editor.undo.runBatch('Bind visibility', () => {
+  editor.undo.runBatch(config.undoLabel, () => {
     if (value.startsWith(PROPERTY)) {
       if (binding.state.value !== 'unbound') binding.actions.unbind()
       property.bind(value.slice(PROPERTY.length))
@@ -87,7 +102,7 @@ function select(value: string) {
 
 function createProperty() {
   open.value = false
-  editor.undo.runBatch('Bind visibility', () => {
+  editor.undo.runBatch(config.undoLabel, () => {
     if (binding.state.value !== 'unbound') binding.actions.unbind()
     property.create()
   })
@@ -104,10 +119,10 @@ function openPicker() {
 </script>
 
 <template>
-  <slot v-if="property.available.value" name="eye" :open="openPicker" />
+  <slot v-if="ownButton" name="anchor" :open="openPicker" />
   <AppPicker
     v-model:open="open"
-    :heading="property.available.value ? panels.applyVariableOrProperty : panels.applyVariable"
+    :heading="heading"
     :items="items"
     :selected="selected"
     density="compact"
@@ -116,25 +131,25 @@ function openPicker() {
     :search-placeholder="common.search"
     :empty-label="panels.noVariablesFound"
     :close-label="common.close"
-    :tooltip="panels.applyVariableOrProperty"
+    :tooltip="buttonLabel"
     @select="select"
   >
-    <template v-if="property.available.value" #trigger>
+    <template v-if="ownButton" #trigger>
       <IconButton
-        :label="panels.applyVariableOrProperty"
-        :disabled="!property.editable.value"
+        :label="buttonLabel"
+        :disabled="property.available.value && !property.editable.value"
         :active="open"
       >
         <icon-lucide-diamond-plus class="size-3.5" />
       </IconButton>
     </template>
     <template v-else #anchor>
-      <slot name="eye" :open="openPicker" />
+      <slot name="anchor" :open="openPicker" />
     </template>
     <template #leading="{ item }">
-      <PropertyTypeIcon v-if="item.value.startsWith(PROPERTY)" kind="BOOLEAN" />
+      <PropertyTypeIcon v-if="item.value.startsWith(PROPERTY)" :kind="config.propertyType" />
       <component
-        :is="VARIABLE_TYPE_ICONS[variableType(item.value) ?? 'BOOLEAN']"
+        :is="VARIABLE_TYPE_ICONS[variableType(item.value) ?? 'STRING']"
         v-else
         class="size-3.5 shrink-0 text-muted"
         aria-hidden="true"

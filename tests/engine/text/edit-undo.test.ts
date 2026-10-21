@@ -554,4 +554,27 @@ describe('editing text a component property drives', () => {
     expect(getNodeOrThrow(graph, label.id).text).toBe('Buy')
     expect(getNodeOrThrow(graph, caption.id).text).toBe('Buy')
   })
+
+  test('typing over text a variable decides lets go of the variable in the same step', () => {
+    const { graph, undo, textEditor, textNode, actions } = setup()
+    const collection = graph.createCollection('Copy')
+    const count = graph.createVariable('count', 'FLOAT', collection.id, 3)
+    graph.bindVariable(textNode.id, 'text', count.id)
+    graph.updateNode(textNode.id, { text: '3' })
+
+    actions.startTextEditing(textNode.id)
+    textEditor.insert(' items', getNodeOrThrow(graph, textNode.id))
+    actions.commitTextEdit()
+
+    expect(getNodeOrThrow(graph, textNode.id)).toMatchObject({
+      text: '3 items',
+      boundVariables: {}
+    })
+    undo.undo()
+    expect(getNodeOrThrow(graph, textNode.id)).toMatchObject({
+      text: '3',
+      boundVariables: { text: count.id }
+    })
+    expect(undo.canUndo).toBe(false)
+  })
 })

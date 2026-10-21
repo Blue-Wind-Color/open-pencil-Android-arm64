@@ -20,9 +20,6 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-import PropertyBindButton from './component-properties/PropertyBindButton.vue'
-import PropertyBoundField from './component-properties/PropertyBoundField.vue'
-
 const { panels, menu } = useI18n()
 const fontLoader = { load: loadFont }
 const alignmentOptions = computed(() => [
@@ -78,14 +75,6 @@ function picked<T>(value: MixedValue<T>): T | '' {
 <template>
   <TypographyControlsRoot v-slot="ctx" :font-loader="fontLoader">
     <PanelSection v-if="ctx.node.value" :label="panels.typography" data-test-id="typography">
-      <template v-if="ctx.nodes.value.length === 1" #actions>
-        <PropertyBindButton field="TEXT" />
-      </template>
-      <PropertyBoundField
-        v-if="ctx.nodes.value.length === 1"
-        field="TEXT"
-        :label="panels.content"
-      />
       <SharedStyleField kind="text" :label="panels.textStyle" />
 
       <div class="mb-1.5 flex min-w-0 items-center gap-1.5">

@@ -47,6 +47,8 @@ import StatusesSection from './properties/status/StatusesSection.vue'
 import StatusSection from './properties/status/StatusSection.vue'
 import StickySection from './properties/sticky/StickySection.vue'
 import StrokeSection from './properties/stroke/StrokeSection.vue'
+import TextContentControl from './properties/text-content/TextContentControl.vue'
+import TextContentSection from './properties/text-content/TextContentSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
 
@@ -174,6 +176,7 @@ const { panels } = useI18n()
             <icon-lucide-diamond-plus class="size-3.5" />
           </IconButton>
           <PropertyBindButton v-if="node.type === 'INSTANCE'" field="INSTANCE_SWAP" />
+          <TextContentControl v-if="node.type === 'TEXT'" :node-id="node.id" :text="node.text" />
           <InstanceUpdateAction
             v-if="node.type === 'INSTANCE'"
             :node="node"
@@ -201,6 +204,7 @@ const { panels } = useI18n()
         </template>
       </PanelHeader>
 
+      <TextContentSection v-if="node.type === 'TEXT'" :node-id="node.id" />
       <StatusSection />
       <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />
       <VariantAuthoringSection

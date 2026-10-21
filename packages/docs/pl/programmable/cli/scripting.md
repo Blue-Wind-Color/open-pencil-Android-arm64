@@ -84,7 +84,7 @@ API jest celowo zbliżone do Figma Plugin API, ale pracuje z SceneGraph i format
 
 ### Komponenty i zmienne
 
-Nazwy metod, takie jak `component.createInstance()`, `figma.getLocalVariables()` i `figma.bindVariable()`, pozostają zgodne z Figma Plugin API.
+Nazwy metod, takie jak `component.createInstance()` i `figma.getLocalVariables()`, pozostają zgodne z Figma Plugin API. Zmienne wiąże się z polami warstw przez `openpencil.bindVariable(node, field, variable)` i `openpencil.unbindVariable(node, field)`.
 
 ### Właściwości
 

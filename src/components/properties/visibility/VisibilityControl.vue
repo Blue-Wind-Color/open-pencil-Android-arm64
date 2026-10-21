@@ -3,9 +3,8 @@ import { computed } from 'vue'
 
 import { BindableValueRoot, useI18n, useVisibilityBindingProvider } from '@open-pencil/vue'
 
+import FieldBindingPicker from '@/components/properties/binding/FieldBindingPicker.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
-
-import VisibilityPicker from './VisibilityPicker.vue'
 
 /**
  * The Appearance eye with what binds visibility. While a variable decides it, the eye is
@@ -31,8 +30,8 @@ const targets = computed(() => (nodeId ? [{ nodeId, path: 'visible' }] : []))
     :targets="targets"
     :value="visibility === 'visible'"
   >
-    <VisibilityPicker :node-id="nodeId">
-      <template #eye="{ open }">
+    <FieldBindingPicker :node-id="nodeId" field="VISIBLE">
+      <template #anchor="{ open }">
         <!-- A disabled button gets no events, so the right-click that opens the list lands here. -->
         <span class="inline-flex" @contextmenu.prevent="open">
           <IconButton
@@ -47,7 +46,7 @@ const targets = computed(() => (nodeId ? [{ nodeId, path: 'visible' }] : []))
           </IconButton>
         </span>
       </template>
-    </VisibilityPicker>
+    </FieldBindingPicker>
   </BindableValueRoot>
   <IconButton
     v-else

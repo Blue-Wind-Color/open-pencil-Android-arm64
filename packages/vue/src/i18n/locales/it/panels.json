@@ -402,6 +402,7 @@
   "createComponentProperty": "Crea proprietà…",
   "applyComponentProperty": "Applica proprietà del componente a {field}",
   "applyVariableOrProperty": "Applica variabile/proprietà",
+  "applyVariableToTextContent": "Applica variabile al contenuto del testo",
   "propertiesInComponent": "Proprietà di {name}",
   "goToComponentProperty": "Vai alla proprietà",
   "detachComponentProperty": "Scollega proprietà",

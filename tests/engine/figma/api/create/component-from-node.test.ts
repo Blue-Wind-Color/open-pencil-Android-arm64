@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { computeAllLayouts } from '@open-pencil/core'
+import { OpenPencilAPI, computeAllLayouts } from '@open-pencil/core'
 
 import { createAPI } from '../helpers'
 
@@ -34,7 +34,7 @@ describe('createComponentFromNode', () => {
     frame.name = 'Card'
     frame.resize(200, 50)
     frame.cornerRadius = 8
-    api.bindVariable(frame.id, 'cornerRadius', variable.id)
+    new OpenPencilAPI(api).bindVariable(frame, 'cornerRadius', variable)
     api.graph.updateNode(frame.id, {
       variableModes: { [collection.id]: collection.defaultModeId }
     })

@@ -396,6 +396,7 @@
   "createComponentProperty": "创建属性…",
   "applyComponentProperty": "将组件属性应用到{field}",
   "applyVariableOrProperty": "应用变量/属性",
+  "applyVariableToTextContent": "将变量应用到文本内容",
   "propertiesInComponent": "{name}中的属性",
   "goToComponentProperty": "转到属性",
   "detachComponentProperty": "分离属性",

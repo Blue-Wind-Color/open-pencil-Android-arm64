@@ -414,6 +414,7 @@
   "createComponentProperty": "プロパティを作成…",
   "applyComponentProperty": "{field}にコンポーネントプロパティを適用",
   "applyVariableOrProperty": "変数/プロパティを適用",
+  "applyVariableToTextContent": "テキストの内容に変数を適用",
   "propertiesInComponent": "{name}のプロパティ",
   "goToComponentProperty": "プロパティに移動",
   "detachComponentProperty": "プロパティを解除",

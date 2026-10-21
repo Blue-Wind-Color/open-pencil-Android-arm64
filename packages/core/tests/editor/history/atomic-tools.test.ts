@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { OpenPencilAPI } from '@open-pencil/core'
 import { createEditor, executeAtomicTool } from '@open-pencil/core/editor'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, type ToolDef } from '@open-pencil/core/tools'
@@ -73,7 +74,7 @@ describe('atomic agent tools', () => {
       a: 1
     })
     tool('set_fill').execute(figma, { id: rectangle.id, color: '#ff0000' })
-    figma.bindVariable(rectangle.id, 'fills/0/color', variable.id)
+    new OpenPencilAPI(figma).bindVariable(rectangle.id, 'fills/0/color', variable)
     const page = figma.createPage()
     figma.currentPage = page
     executeAtomicTool(editor, figma, tool('set_variable'), {

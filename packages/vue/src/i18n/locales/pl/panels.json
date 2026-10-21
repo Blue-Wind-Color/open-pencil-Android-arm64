@@ -408,6 +408,7 @@
   "createComponentProperty": "Utwórz właściwość…",
   "applyComponentProperty": "Zastosuj właściwość komponentu do: {field}",
   "applyVariableOrProperty": "Zastosuj zmienną/właściwość",
+  "applyVariableToTextContent": "Zastosuj zmienną do treści tekstu",
   "propertiesInComponent": "Właściwości w: {name}",
   "goToComponentProperty": "Przejdź do właściwości",
   "detachComponentProperty": "Odłącz właściwość",

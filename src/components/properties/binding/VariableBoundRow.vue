@@ -2,26 +2,29 @@
 import { computed } from 'vue'
 
 import { variableText } from '@open-pencil/scene-graph'
-import {
-  BindableValueRoot,
-  useEditor,
-  useI18n,
-  useVisibilityBindingProvider
-} from '@open-pencil/vue'
+import { BindableValueRoot, useEditor, useI18n, type BindingProvider } from '@open-pencil/vue'
 
-import BoundFieldRow from '@/components/properties/binding/BoundFieldRow.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { VARIABLE_TYPE_ICONS } from '@/components/variables/type-icons'
 
+import BoundFieldRow from './BoundFieldRow.vue'
+import { BOUND_LAYER_FIELDS, type BoundLayerField } from './fields'
+
 /**
- * The variable a layer's visibility follows, with its value here and a way to let go of it.
+ * The variable a layer field follows, with its value here and a way to let go of it.
  */
-const { nodeId } = defineProps<{ nodeId: string }>()
+const { nodeId, field, label } = defineProps<{
+  nodeId: string
+  field: BoundLayerField
+  label: string
+}>()
 
 const editor = useEditor()
 const { panels } = useI18n()
-const provider = useVisibilityBindingProvider()
-const targets = computed(() => [{ nodeId, path: 'visible' }])
+const config = BOUND_LAYER_FIELDS[field]
+// The row reads the binding alone, never the field's value, so any field's provider fits.
+const provider: BindingProvider<unknown> = config.useProvider()
+const targets = computed(() => [{ nodeId, path: config.path }])
 
 function valueText(variableId: string) {
   return variableText(editor.graph.resolveVariableForNode(nodeId, variableId))
@@ -29,17 +32,17 @@ function valueText(variableId: string) {
 </script>
 
 <template>
-  <BindableValueRoot v-slot="binding" :provider="provider" :targets="targets" :value="true">
+  <BindableValueRoot v-slot="binding" :provider="provider" :targets="targets" :value="undefined">
     <BoundFieldRow
       v-if="binding.state !== 'unbound'"
-      :label="panels.layerVisibility"
+      :label="label"
       :name="binding.variable?.name ?? binding.bindingId ?? panels.unresolvedVariable"
       :value="binding.variable ? valueText(binding.variable.id) : undefined"
       :tone="binding.state === 'unresolved' ? 'unresolved' : 'variable'"
     >
       <template #icon>
         <component
-          :is="VARIABLE_TYPE_ICONS[binding.variable?.type ?? 'BOOLEAN']"
+          :is="VARIABLE_TYPE_ICONS[binding.variable?.type ?? 'STRING']"
           class="size-3.5 shrink-0 text-muted"
           aria-hidden="true"
         />

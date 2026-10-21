@@ -5,6 +5,7 @@ import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixture
 import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
 import * as v from 'valibot'
 
+import { OpenPencilAPI } from '@open-pencil/core'
 import { createEditor } from '@open-pencil/core/editor'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile } from '@open-pencil/core/io'
@@ -43,9 +44,14 @@ function document(inherited = false) {
 for (const caller of ['editor', 'api'] as const) {
   test(`${caller} authors new root and nested aliases in occurrence-owner units`, async () => {
     const { graph, root, nested } = document()
-    const writer = caller === 'editor' ? createEditor({ graph }) : new FigmaAPI(graph)
-    writer.bindVariable(nested.id, 'paddingRight', '293742:7')
-    writer.bindVariable(root.id, 'paddingRight', '293742:7')
+    const editor = caller === 'editor' ? createEditor({ graph }) : undefined
+    const openpencil = new OpenPencilAPI(new FigmaAPI(graph))
+    const bind = (id: string) =>
+      editor
+        ? editor.bindVariable(id, 'paddingRight', '293742:7')
+        : openpencil.bindVariable(id, 'paddingRight', { id: '293742:7' })
+    bind(nested.id)
+    bind(root.id)
     expect(nested.paddingRight).toBe(6)
     expect(root.paddingRight).toBe(6)
     expect(nested.width).toBe(17)

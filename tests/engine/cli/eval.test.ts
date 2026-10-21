@@ -58,7 +58,7 @@ heavy('eval CLI', () => {
         const child = figma.createRectangle();
         child.resize(5, 5);
         frame.appendChild(child);
-        figma.bindVariable(frame.id, 'paddingLeft', variable.id);
+        openpencil.bindVariable(frame, 'paddingLeft', variable);
         figma.setVariableValue(variable.id, collection.defaultModeId, 20);
         return { padding: frame.paddingLeft, width: frame.width, childX: child.x };
       `

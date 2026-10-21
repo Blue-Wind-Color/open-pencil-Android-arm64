@@ -102,6 +102,7 @@ export const panelMessageDefaults = {
   createComponentProperty: 'Create property…',
   applyComponentProperty: params('Apply component property to {field}'),
   applyVariableOrProperty: 'Apply variable/property',
+  applyVariableToTextContent: 'Apply variable to text content',
   propertiesInComponent: params('Properties in {name}'),
   goToComponentProperty: 'Go to property',
   detachComponentProperty: 'Detach property',

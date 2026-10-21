@@ -20,6 +20,7 @@ import {
 import {
   BOOLEAN_BINDING_FIELDS,
   STRING_BINDING_FIELDS,
+  TEXT_CONTENT_VARIABLE_TYPES,
   VISIBILITY_VARIABLE_TYPES
 } from './variables/fields'
 
@@ -265,7 +266,9 @@ export function bindVariable(
     throw new Error(`Cannot bind ${variable.type} variable to scalar field "${field}"`)
   }
 
-  if (STRING_BINDING_FIELDS.has(field) && variable.type !== 'STRING') {
+  const textTypes: readonly VariableType[] =
+    field === 'text' ? TEXT_CONTENT_VARIABLE_TYPES : ['STRING']
+  if (STRING_BINDING_FIELDS.has(field) && !textTypes.includes(variable.type)) {
     throw new Error(`Cannot bind ${variable.type} variable to string field "${field}"`)
   }
 

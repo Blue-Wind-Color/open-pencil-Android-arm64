@@ -94,7 +94,7 @@ La API sigue el modelo de Figma Plugin API, pero actúa sobre SceneGraph y los f
 
 ### Componentes y variables
 
-Se admiten creación de componentes e instancias, consulta del componente principal, colecciones, modos, creación y eliminación de variables y enlaces mediante `bindVariable` y `unbindVariable`.
+Se admiten creación de componentes e instancias, consulta del componente principal, colecciones, modos, creación y eliminación de variables y enlaces mediante `openpencil.bindVariable` y `openpencil.unbindVariable`.
 
 ### Propiedades
 
