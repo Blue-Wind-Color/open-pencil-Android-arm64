@@ -4,6 +4,7 @@ import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   CLOUD_FEATURE_KEYS,
   createCloudApp,
+  loadAISigningKey,
   createCloudAuthenticationRuntime,
   createCollaborationRelay,
   createCollaborationStateStore,
@@ -35,6 +36,11 @@ export type NodeCloudServerOptions = {
 export async function startNodeCloudServer(options: NodeCloudServerOptions = {}) {
   const environment = options.environment ?? process.env
   const { config, database } = await createMigratedNodeCloudDatabase(environment)
+  // Before any worker starts, so a key that cannot sign leaves nothing running.
+  const aiSigningKey = await loadAISigningKey(config).catch(async (error: unknown) => {
+    await database.destroy()
+    throw error
+  })
   const objects = createS3ObjectStore(config)
   const {
     email,
@@ -106,6 +112,7 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     invitationOutbox,
     transactionalEmail: email,
     enrollment,
+    aiSigningKey,
     relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
     onDocumentRestored: (documentId) => relay.startOver(documentId),
     onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId)

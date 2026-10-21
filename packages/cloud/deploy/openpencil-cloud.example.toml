@@ -79,6 +79,23 @@ checksum_verification = "metadata"
 [email]
 transport = "none"
 
+# Add this table to offer an AI service to editors. Cloud never proxies models: it advertises the
+# endpoint and signs short-lived ES256 tokens the service verifies against /.well-known/jwks.json.
+# The PKCS #8 signing key defaults to OPENPENCIL_CLOUD_AI_SIGNING_KEY. Workspaces also need the
+# [entitlements.ai] enabled entitlement.
+# [ai]
+# endpoint = "https://ai.example.com"
+# token_lifetime_minutes = 10
+
+# Where people manage their plan; editors link to it. Leave it out when the deployment does not bill.
+# [billing]
+# portal_url = "https://billing.example.com"
+
+# Add this table to let services such as billing set workspace entitlements over HTTP at
+# PUT /api/internal/workspaces/<id>/entitlements. The bearer token defaults to
+# OPENPENCIL_CLOUD_SERVICE_TOKEN; requires entitlements from the database.
+# [internal_api]
+
 [workers.email]
 batch_size = 50
 interval_ms = 30000
@@ -112,6 +129,12 @@ guest_presence = true
 [entitlements.collaboration]
 enabled = true
 maximum_participants = 100
+
+# The AI service [ai] advertises. The allowance is credits per month, passed to the service in
+# every token; leave it out for no allowance.
+[entitlements.ai]
+enabled = false
+# monthly_credit_allowance = 10000
 
 [technical_limits]
 maximum_upload_bytes = 1073741824

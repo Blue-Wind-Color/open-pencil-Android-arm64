@@ -7,12 +7,18 @@ export const workspaceEntitlementsSchema = v.object({
     anonymousEdit: v.boolean(),
     guestPresence: v.boolean(),
     collaboration: v.boolean(),
-    revisionHistory: v.boolean()
+    revisionHistory: v.boolean(),
+    // Optional so editors keep reading servers released before the AI service.
+    cloudAI: v.optional(v.boolean(), false)
   }),
   limits: v.object({
     maximumFileBytes: v.pipe(v.number(), v.integer(), v.minValue(1)),
     maximumStorageBytes: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1))),
-    maximumParticipants: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1)))
+    maximumParticipants: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1))),
+    monthlyCreditAllowance: v.optional(
+      v.nullable(v.pipe(v.number(), v.integer(), v.minValue(0))),
+      null
+    )
   }),
   usage: v.object({
     committedStorageBytes: v.pipe(v.number(), v.integer(), v.minValue(0)),

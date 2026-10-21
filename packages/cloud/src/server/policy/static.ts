@@ -5,6 +5,7 @@ import * as v from 'valibot'
 import { CLOUD_FEATURE_KEYS } from './keys'
 
 const positiveInteger = v.pipe(v.number(), v.integer(), v.minValue(1))
+const nonNegativeInteger = v.pipe(v.number(), v.integer(), v.minValue(0))
 
 export const staticEntitlementsSchema = v.object({
   documents: v.optional(
@@ -30,10 +31,19 @@ export const staticEntitlementsSchema = v.object({
       maximumParticipants: v.optional(positiveInteger)
     }),
     {}
+  ),
+  ai: v.optional(
+    v.object({
+      enabled: v.optional(v.boolean()),
+      monthlyCreditAllowance: v.optional(nonNegativeInteger)
+    }),
+    {}
   )
 })
 
 export type StaticEntitlements = v.InferOutput<typeof staticEntitlementsSchema>
+/** Entitlements as a writer sends them, with any group left out. */
+export type StaticEntitlementsInput = v.InferInput<typeof staticEntitlementsSchema>
 
 export const staticEntitlementsTOMLSchema = v.object({
   documents: v.optional(
@@ -56,11 +66,19 @@ export const staticEntitlementsTOMLSchema = v.object({
       enabled: v.optional(v.boolean()),
       maximum_participants: v.optional(positiveInteger)
     })
+  ),
+  ai: v.optional(
+    v.object({
+      enabled: v.optional(v.boolean()),
+      monthly_credit_allowance: v.optional(nonNegativeInteger)
+    })
   )
 })
 
-export function parseStaticEntitlementsTOML(input: unknown): StaticEntitlements {
-  const value = v.parse(staticEntitlementsTOMLSchema, input)
+/** Entitlements as the deployment TOML spells them, renamed to their structured form. */
+export function staticEntitlementsFromTOML(
+  value: v.InferOutput<typeof staticEntitlementsTOMLSchema>
+): StaticEntitlements {
   return v.parse(staticEntitlementsSchema, {
     documents: {
       maximumFileBytes: value.documents?.maximum_file_bytes,
@@ -76,8 +94,16 @@ export function parseStaticEntitlementsTOML(input: unknown): StaticEntitlements 
     collaboration: {
       enabled: value.collaboration?.enabled,
       maximumParticipants: value.collaboration?.maximum_participants
+    },
+    ai: {
+      enabled: value.ai?.enabled,
+      monthlyCreditAllowance: value.ai?.monthly_credit_allowance
     }
   })
+}
+
+export function parseStaticEntitlementsTOML(input: unknown): StaticEntitlements {
+  return staticEntitlementsFromTOML(v.parse(staticEntitlementsTOMLSchema, input))
 }
 
 export function staticEntitlementValues(input: unknown): Record<string, boolean | number> {
@@ -91,7 +117,9 @@ export function staticEntitlementValues(input: unknown): Record<string, boolean 
     [CLOUD_FEATURE_KEYS.anonymousEdit]: entitlements.sharing.anonymousEdit,
     [CLOUD_FEATURE_KEYS.guestPresence]: entitlements.sharing.guestPresence,
     [CLOUD_FEATURE_KEYS.collaboration]: entitlements.collaboration.enabled,
-    [CLOUD_FEATURE_KEYS.maximumParticipants]: entitlements.collaboration.maximumParticipants
+    [CLOUD_FEATURE_KEYS.maximumParticipants]: entitlements.collaboration.maximumParticipants,
+    [CLOUD_FEATURE_KEYS.cloudAI]: entitlements.ai.enabled,
+    [CLOUD_FEATURE_KEYS.monthlyCreditAllowance]: entitlements.ai.monthlyCreditAllowance
   }
   return pickBy(values, isNotNil) as Record<string, boolean | number>
 }

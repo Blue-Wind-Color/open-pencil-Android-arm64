@@ -20,6 +20,17 @@ export {
   type EnrollmentStatus
 } from '#cloud/admin'
 export {
+  AINotEntitledError,
+  createAIRoutes,
+  createAITokenService,
+  importAISigningKey,
+  loadAISigningKey,
+  type AIRouteEnvironment,
+  type AISigningKey,
+  type AITokenService,
+  type AITokenServiceOptions
+} from './ai'
+export {
   createAuthenticationEmailService,
   createAccountAuthenticationService,
   createCloudAuthenticationRuntime,
@@ -168,6 +179,14 @@ export {
   type TransactionalEmailWorkerOptions
 } from './email'
 export {
+  createInternalRoutes,
+  createInternalService,
+  parseSetWorkspaceEntitlements,
+  setWorkspaceEntitlementsSchema,
+  type InternalService,
+  type SetWorkspaceEntitlementsInput
+} from './internal'
+export {
   noOpInvitationDelivery,
   type DocumentInvitationMessage,
   type InvitationDelivery,
@@ -221,7 +240,8 @@ export {
   type EntitlementSource,
   type EntitlementService,
   type EntitlementSubject,
-  type StaticEntitlements
+  type StaticEntitlements,
+  type StaticEntitlementsInput
 } from './policy'
 export {
   createStorageQuotaService,

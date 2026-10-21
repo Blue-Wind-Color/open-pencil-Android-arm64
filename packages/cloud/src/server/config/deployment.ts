@@ -1,5 +1,8 @@
 import { cloudEditorVersionSchema } from '#cloud/contract'
-import { staticEntitlementsTOMLSchema } from '#cloud/server/policy/static'
+import {
+  staticEntitlementsFromTOML,
+  staticEntitlementsTOMLSchema
+} from '#cloud/server/policy/static'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
@@ -18,7 +21,9 @@ const DEFAULT_SECRET_NAMES = {
   s3SessionToken: 'S3_SESSION_TOKEN',
   smtpUser: 'OPENPENCIL_CLOUD_SMTP_USER',
   smtpPassword: 'OPENPENCIL_CLOUD_SMTP_PASSWORD',
-  turnstileSecretKey: 'TURNSTILE_SECRET_KEY'
+  turnstileSecretKey: 'TURNSTILE_SECRET_KEY',
+  aiSigningKey: 'OPENPENCIL_CLOUD_AI_SIGNING_KEY',
+  internalServiceToken: 'OPENPENCIL_CLOUD_SERVICE_TOKEN'
 } as const
 
 const url = v.pipe(v.string(), v.url())
@@ -214,6 +219,20 @@ export const cloudDeploymentConfigSchema = v.object({
       v.object({ source: v.literal('database') })
     ])
   ),
+  ai: v.optional(
+    v.object({
+      endpoint: url,
+      signing_key: defaultReference(DEFAULT_SECRET_NAMES.aiSigningKey),
+      token_lifetime_minutes: v.optional(
+        v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(60)),
+        10
+      )
+    })
+  ),
+  billing: v.optional(v.object({ portal_url: url })),
+  internal_api: v.optional(
+    v.object({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
+  ),
   technical_limits: v.optional(
     v.object({
       maximum_upload_bytes: v.optional(positiveInteger),
@@ -254,23 +273,7 @@ function optionalSecret(
 
 function staticEntitlements(config: CloudDeploymentConfig) {
   if (config.entitlements?.source !== 'static') return undefined
-  return {
-    documents: {
-      maximumFileBytes: config.entitlements.documents?.maximum_file_bytes,
-      revisionHistory: config.entitlements.documents?.revision_history
-    },
-    storage: { maximumBytes: config.entitlements.storage?.maximum_bytes },
-    sharing: {
-      capabilityLinks: config.entitlements.sharing?.capability_links,
-      anonymousView: config.entitlements.sharing?.anonymous_view,
-      anonymousEdit: config.entitlements.sharing?.anonymous_edit,
-      guestPresence: config.entitlements.sharing?.guest_presence
-    },
-    collaboration: {
-      enabled: config.entitlements.collaboration?.enabled,
-      maximumParticipants: config.entitlements.collaboration?.maximum_participants
-    }
-  }
+  return staticEntitlementsFromTOML(config.entitlements)
 }
 
 function emailConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
@@ -316,6 +319,18 @@ function workerConfig(config: CloudDeploymentConfig) {
     cleanupIntervalMs: cleanup?.interval_ms,
     cleanupLeaseDurationMs: cleanup?.lease_ms,
     documentRetentionMs: cleanup ? cleanup.document_retention_days * 86_400_000 : undefined
+  }
+}
+
+function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
+  return {
+    aiEndpoint: config.ai?.endpoint,
+    aiSigningKey: config.ai ? requiredSecret(environment, config.ai.signing_key) : undefined,
+    aiTokenLifetimeSeconds: config.ai ? config.ai.token_lifetime_minutes * 60 : undefined,
+    billingPortalURL: config.billing?.portal_url,
+    internalServiceToken: config.internal_api
+      ? requiredSecret(environment, config.internal_api.service_token)
+      : undefined
   }
 }
 
@@ -389,6 +404,7 @@ export function parseCloudDeploymentConfig(
     staticEntitlements: staticEntitlements(config),
     ...emailConfig(config, environment),
     ...workerConfig(config),
+    ...serviceConfig(config, environment),
     technicalLimits: technicalLimits(config)
   })
 }

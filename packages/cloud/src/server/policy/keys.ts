@@ -8,7 +8,9 @@ export const CLOUD_FEATURE_KEYS = {
   revisionHistory: 'cloud.documents.revision-history',
   maximumFileBytes: 'cloud.documents.maximum-file-bytes',
   maximumStorageBytes: 'cloud.storage.maximum-bytes',
-  maximumParticipants: 'cloud.collaboration.maximum-participants'
+  maximumParticipants: 'cloud.collaboration.maximum-participants',
+  cloudAI: 'cloud.ai.enabled',
+  monthlyCreditAllowance: 'cloud.ai.monthly-credit-allowance'
 } as const
 
 export type CloudPolicyContext = {

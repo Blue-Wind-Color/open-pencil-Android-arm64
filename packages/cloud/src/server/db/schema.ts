@@ -208,6 +208,8 @@ export interface WorkspaceEntitlementTable {
   values: unknown
   source: string
   revision: Generated<number>
+  /** Set only by versioned writes; see `setVersioned`. */
+  externalVersion: number | null
   updatedAt: TimestampColumn
 }
 

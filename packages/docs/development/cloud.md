@@ -211,6 +211,24 @@ Storage quota uses reservations: the upload locks the workspace's quota row, cou
 plus active reservations, reserves the requested bytes, and commits the verified size when the
 upload finishes. Cleanup releases reservations from abandoned uploads.
 
+## AI service and billing
+
+Cloud does not proxy models or keep credit balances. An `[ai]` table advertises a separate AI
+service in discovery, and `POST /api/ai/token` signs a short-lived ES256 token for a workspace
+member when the workspace has the `ai.enabled` entitlement. The token names the user, the
+workspace, and its `ai.monthly_credit_allowance`; the service verifies it against the keys at
+`/.well-known/jwks.json`, so it never reads Cloud's database. The contract editors and services
+share, including the service's catalog, wallet, and error codes, is `src/contract/ai.ts`; it has its
+own version so a service can change without a Cloud release. A `[billing]` table only advertises
+where people manage their plan.
+
+Services that decide entitlements, such as billing, write them through the internal API rather than
+the database: `setWorkspaceEntitlements` in `src/server/internal`, which runtimes expose over HTTP
+with a bearer token (`[internal_api]`) or a private transport of their own. Every write carries an
+increasing `externalVersion`, and a write older than the stored one is refused, because billing
+events arrive out of order. Cloud keeps answering from the last entitlements it received while the
+writer is down.
+
 ## Rate limiting
 
 OpenPencil routes use `hono-rate-limiter` with one PostgreSQL store that atomically increments
@@ -334,3 +352,10 @@ and named versions, and saves between them are compacted after a day. Checkpoint
 save lands rather than on a timer, so they need no client clock and cover every writer. History stores
 `.fig` revisions rather than Yjs snapshots: snapshots would need garbage collection off in every room
 and a version would still have to become a file to open, restore, or duplicate.
+
+**2026-10 · AI services verify Cloud-signed tokens instead of calling Cloud.** A service checks a
+token against a published key on every model request, with no round-trip to Cloud or its database,
+and the same check serves the official service and self-hosted ones. Entitlements are read when a
+token is signed, so a plan change reaches the service within one token lifetime; asking Cloud on
+every request would have made model calls depend on Cloud's database. Entitlements are pushed to
+Cloud rather than read from billing, so documents keep opening when billing is down.

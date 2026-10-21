@@ -21,6 +21,7 @@ export const CLOUD_RATE_LIMITS = {
   documentCreation: { namespace: 'document-creation', windowMs: 60_000, limit: 60 },
   uploadCreation: { namespace: 'upload-creation', windowMs: 60_000, limit: 120 },
   authenticatedMutation: { namespace: 'authenticated-mutation', windowMs: 60_000, limit: 120 },
+  aiToken: { namespace: 'ai-token', windowMs: 60_000, limit: 30 },
   adminRead: { namespace: 'admin-read', windowMs: 60_000, limit: 300 },
   adminMutation: { namespace: 'admin-mutation', windowMs: 60_000, limit: 30 }
 } as const satisfies Record<string, RateLimitPolicy>

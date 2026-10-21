@@ -2,6 +2,7 @@ import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   createCloudAuthenticationRuntime,
   createCloudApp,
+  loadAISigningKey,
   type CloudApp,
   type CloudEnvironment,
   type CloudServerConfig,
@@ -28,6 +29,7 @@ export async function createNodeCloudApplication(
 }> {
   const environment = options.environment ?? process.env
   const config = await loadNodeCloudServerConfig(environment)
+  const aiSigningKey = await loadAISigningKey(config)
   const database = createNodeCloudDatabase({
     connectionString: options.databaseURL ?? config.databaseURL
   })
@@ -41,7 +43,8 @@ export async function createNodeCloudApplication(
     objects,
     invitationOutbox,
     transactionalEmail: email,
-    enrollment
+    enrollment,
+    aiSigningKey
   })
   return { app, config, database, objects, email }
 }

@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { cloudAIDiscoverySchema, cloudBillingDiscoverySchema } from './ai'
+
 export const CLOUD_PROTOCOL_VERSION = '1' as const
 export const CLOUD_DISCOVERY_PATH = '/.well-known/openpencil' as const
 
@@ -60,7 +62,11 @@ export const cloudDiscoverySchema = v.object({
   appURL: v.optional(v.pipe(v.string(), v.url())),
   authentication: cloudAuthenticationSchema,
   capabilities: cloudCapabilitiesSchema,
-  listing: v.optional(cloudListingSchema)
+  listing: v.optional(cloudListingSchema),
+  /** The AI service editors reach with Cloud-signed tokens; absent when the deployment has none. */
+  ai: v.optional(cloudAIDiscoverySchema),
+  /** Where people manage their plan and buy credits; absent when the deployment does not bill. */
+  billing: v.optional(cloudBillingDiscoverySchema)
 })
 export type CloudDiscovery = v.InferOutput<typeof cloudDiscoverySchema>
 

@@ -10,7 +10,8 @@ export {
   parseStaticEntitlementsTOML,
   staticEntitlementValues,
   staticEntitlementsSchema,
-  type StaticEntitlements
+  type StaticEntitlements,
+  type StaticEntitlementsInput
 } from './static'
 export { CloudPolicy, createDefaultCloudPolicy } from './policy'
 export { createEntitlementService, type EntitlementService } from './service'

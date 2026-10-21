@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { staticEntitlementValues } from '#cloud/server'
+import { parseStaticEntitlementsTOML, staticEntitlementValues } from '#cloud/server'
 
 describe('structured static entitlements', () => {
   test('maps product-domain configuration to internal feature keys', () => {
@@ -21,5 +21,14 @@ describe('structured static entitlements', () => {
       'cloud.collaboration.enabled': true,
       'cloud.collaboration.maximum-participants': 5
     })
+  })
+
+  test('maps AI service entitlements, including a zero allowance', () => {
+    expect(
+      staticEntitlementValues(
+        parseStaticEntitlementsTOML({ ai: { enabled: true, monthly_credit_allowance: 0 } })
+      )
+    ).toEqual({ 'cloud.ai.enabled': true, 'cloud.ai.monthly-credit-allowance': 0 })
+    expect(() => parseStaticEntitlementsTOML({ ai: { monthly_credit_allowance: -1 } })).toThrow()
   })
 })

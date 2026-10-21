@@ -1,4 +1,37 @@
 export * from './account'
+export {
+  AI_ERROR_STATUS,
+  aiCatalogSchema,
+  aiCreditBucketSchema,
+  aiErrorCodeSchema,
+  aiErrorSchema,
+  aiModelSchema,
+  aiTokenClaimsSchema,
+  aiTokenSchema,
+  aiUsageEntrySchema,
+  aiUsagePageSchema,
+  aiWalletSchema,
+  CLOUD_AI_CONTRACT_VERSION,
+  CLOUD_AI_JWKS_PATH,
+  CLOUD_AI_TOKEN_AUDIENCE,
+  cloudAIDiscoverySchema,
+  cloudBillingDiscoverySchema,
+  createAITokenSchema,
+  parseCreateAIToken,
+  type AICatalog,
+  type AICreditBucket,
+  type AIError,
+  type AIErrorCode,
+  type AIModel,
+  type AIToken,
+  type AITokenClaims,
+  type AIUsageEntry,
+  type AIUsagePage,
+  type AIWallet,
+  type CloudAIDiscovery,
+  type CloudBillingDiscovery,
+  type CreateAITokenInput
+} from './ai'
 export * from './admin'
 export {
   collaborationPrincipalSchema,

@@ -123,6 +123,22 @@ describe('Cloud server configuration', () => {
     )
   })
 
+  test('requires HTTPS for the official AI service endpoint, whatever the scheme case', () => {
+    const official = {
+      ...baseConfig,
+      deployment: 'official',
+      aiSigningKey: 'signing-key-pem'
+    }
+    for (const aiEndpoint of ['http://ai.example.com', 'HTTP://ai.example.com']) {
+      expect(() => parseCloudServerConfig({ ...official, aiEndpoint })).toThrow(
+        'Official AI service endpoint must use HTTPS'
+      )
+    }
+    expect(
+      parseCloudServerConfig({ ...official, aiEndpoint: 'HTTPS://ai.example.com' }).aiEndpoint
+    ).toBe('HTTPS://ai.example.com')
+  })
+
   test('rejects short auth secrets', () => {
     expect(() => parseCloudServerConfig({ ...baseConfig, authSecret: 'short' })).toThrow()
   })
