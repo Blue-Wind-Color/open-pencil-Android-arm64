@@ -35,7 +35,7 @@ import {
   effectRasterScaleMatches
 } from './renderer/effect-raster-cache'
 import { mapVisualBounds, subtreeVisualBounds } from './renderer/visual-bounds'
-import { renderLayerShadows } from './shadows'
+import { isolatesInnerShadows, renderLayerShadows } from './shadows'
 import { isLayerContainer } from './shadows/silhouette'
 import {
   configureStrokePaint,
@@ -920,11 +920,14 @@ export function paintShapeContent(
     )
   }
 
+  const isolated = afterFills !== undefined && isolatesInnerShadows(node)
+  if (isolated) canvas.saveLayer()
   if (!drawVectorMultiStyleFills(r, canvas, node, graph)) {
     drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, fill))
   }
   if (node.type === 'TEXT') drawTextEmoji(r, canvas, node)
   afterFills?.()
+  if (isolated) canvas.restore()
 
   if (!pathTextStrokeFirst && !reflowedPathText) {
     paintNodeStrokes(r, canvas, node, graph, sg, vectorPaths, vectorStroke)

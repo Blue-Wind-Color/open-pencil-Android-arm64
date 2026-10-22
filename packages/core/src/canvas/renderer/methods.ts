@@ -352,8 +352,8 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     return Effects.getCachedMaskBlur(this, sigma)
   },
 
-  applyClippedBlur(canvas: Canvas, node: SceneNode, sigma: number): void {
-    Effects.applyClippedBlur(this, canvas, node, sigma)
+  applyClippedBlur(canvas: Canvas, node: SceneNode, sigma: number, shape?: Path | null): void {
+    Effects.applyClippedBlur(this, canvas, node, sigma, shape)
   }
 }
 

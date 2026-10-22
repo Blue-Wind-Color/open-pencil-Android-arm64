@@ -229,23 +229,23 @@ export function clipOutShapeKnockout(
 
 /**
  * Draws an inner shadow: everything outside the shape, moved by the shadow's offset and grown
- * into the shape by its spread, blurred and clipped to the shape.
+ * into the shape by its spread, blurred and clipped to the shape. `isolated` says the shape's fills
+ * sit in a layer of their own, as `isolatesInnerShadows` has them.
  */
 export function drawShapeInnerShadow(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
   effect: Effect,
-  spread: number
+  spread: number,
+  isolated = false
 ): void {
   const sp = spread
   r.auxFill.setColor(r.ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a))
   r.auxFill.setImageFilter(r.getCachedDecalBlur(blurSigma(effect.radius)))
-  r.auxFill.setBlendMode(figmaBlendModeToSkia(r.ck, effect.blendMode))
 
   canvas.save()
   try {
-    r.clipNodeShape(canvas, node)
     const expand = effect.radius * 2
     const { x: offsetX, y: offsetY } = effect.offset
     const spreadPadding = sp < 0 ? -sp : 0
@@ -267,10 +267,19 @@ export function drawShapeInnerShadow(
     const shadowPath = r.ck.Path.MakeFromOp(areaPath, shapePath, r.ck.PathOp.Difference)
     areaPath.delete()
     shapePath.delete()
-    if (shadowPath) {
+    if (!shadowPath) return
+    if (isolated) {
+      // Alone over the fills, the shadow takes the fill out from under it before it is clipped,
+      // so the outline's antialiased edge applies once and no fill shows through it.
+      r.auxFill.setBlendMode(r.ck.BlendMode.DstOut)
       canvas.drawPath(shadowPath, r.auxFill)
-      shadowPath.delete()
+      r.auxFill.setBlendMode(r.ck.BlendMode.Plus)
+    } else {
+      r.auxFill.setBlendMode(figmaBlendModeToSkia(r.ck, effect.blendMode))
     }
+    r.clipNodeShape(canvas, node)
+    canvas.drawPath(shadowPath, r.auxFill)
+    shadowPath.delete()
   } finally {
     canvas.restore()
     r.auxFill.setImageFilter(null)

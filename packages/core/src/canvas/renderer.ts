@@ -410,7 +410,12 @@ export class SkiaRenderer {
   declare getCachedBlur: (sigma: number) => ImageFilter
   declare getCachedDecalBlur: (sigma: number) => ImageFilter
   declare getCachedMaskBlur: (sigma: number) => MaskFilter
-  declare applyClippedBlur: (canvas: Canvas, node: SceneNode, sigma: number) => void
+  declare applyClippedBlur: (
+    canvas: Canvas,
+    node: SceneNode,
+    sigma: number,
+    shape?: Path | null
+  ) => void
   color4f(r: number, g: number, b: number, a: number): Float32Array {
     const c = this._tmpColor
     c[0] = r

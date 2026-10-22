@@ -45,6 +45,12 @@ const FIGMA: Record<string, number[]> = {
     31, 39, 48, 58, 69, 80, 94, 107, 122, 137, 152, 166, 179, 190, 202, 210, 219, 227, 234, 241,
     245, 249, 252, 254, 254, 255, 255, 254, 255, 255, 255, 254, 255, 254, 254, 254, 255, 255, 255,
     254, 255, 255, 255, 255, 255, 255, 255, 254, 254, 255
+  ],
+  'BACKGROUND_BLUR 16 union': [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 198, 190, 202, 210, 219, 227, 234, 241, 245, 249, 252,
+    254, 254, 255, 255, 254, 255, 255, 255, 254, 255, 254, 254, 254, 255, 255, 255, 254, 255, 255,
+    255, 255, 255, 255, 255, 254, 254, 255
   ]
 }
 
@@ -171,6 +177,31 @@ describe('blur effects fall off as in Figma', () => {
       })
     }, 0)
     expectFigmaEdge(row, FIGMA['BACKGROUND_BLUR 16'])
+  })
+
+  test('background blur on a boolean, inside its result alone', () => {
+    // The row crosses the lower circle from x 103; before it the backdrop stays sharp.
+    const row = edgeRow((graph, frameId) => {
+      graph.createNode('RECTANGLE', frameId, { width: 100, height: 400, fills: [solid(0, 0, 0)] })
+      graph.createNode('RECTANGLE', frameId, {
+        x: 100,
+        width: 300,
+        height: 400,
+        fills: [solid(1, 1, 1)]
+      })
+      const union = graph.createNode('BOOLEAN_OPERATION', frameId, {
+        x: 40,
+        y: 40,
+        width: 180,
+        height: 240,
+        booleanOperation: 'UNION',
+        fills: [solid(1, 1, 1, 0.01)],
+        effects: [effect('BACKGROUND_BLUR', 16)]
+      })
+      graph.createNode('ELLIPSE', union.id, { width: 120, height: 120 })
+      graph.createNode('ELLIPSE', union.id, { x: 60, y: 120, width: 120, height: 120 })
+    }, 0)
+    expectFigmaEdge(row, FIGMA['BACKGROUND_BLUR 16 union'])
   })
 })
 

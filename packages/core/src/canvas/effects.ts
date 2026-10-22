@@ -1,4 +1,4 @@
-import type { Canvas, ImageFilter, MaskFilter } from 'canvaskit-wasm'
+import type { Canvas, ImageFilter, MaskFilter, Path } from 'canvaskit-wasm'
 
 import { readEffectiveFigmaRawField } from '@open-pencil/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -62,11 +62,16 @@ export function getCachedMaskBlur(r: SkiaRenderer, sigma: number): MaskFilter {
   return filter
 }
 
+/**
+ * Blurs what lies behind the layer, inside its outline, or inside `shape` when the layer's outline
+ * is not its box, as with a boolean's result.
+ */
 export function applyClippedBlur(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  sigma: number
+  sigma: number,
+  shape: Path | null = null
 ): void {
   const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
   // Entry guard: reset shared paint to known state
@@ -75,7 +80,8 @@ export function applyClippedBlur(
   r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
   canvas.save()
-  r.clipNodeShape(canvas, node)
+  if (shape) canvas.clipPath(shape, r.ck.ClipOp.Intersect, true)
+  else r.clipNodeShape(canvas, node)
   canvas.saveLayer(undefined, rect, r.getCachedBlur(sigma), undefined, r.ck.TileMode.Clamp)
   canvas.restore()
   // Exit guard: ensure shared paint is in clean state

@@ -5,7 +5,8 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { nodeOrientationMatrix } from '#core/geometry'
 
-import { figmaBlendModeToSkia } from './blend'
+import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'
+import { makeBooleanOperationPath } from './boolean'
 import { blurSigma, renderNoiseEffects } from './effects'
 import type { SkiaRenderer } from './renderer'
 import {
@@ -359,12 +360,31 @@ function renderInnerShadow(
     return
   }
   if (!includeChildren && castsFromOwnShape(node)) {
-    drawShapeInnerShadow(r, canvas, node, effect, innerShadowSpread(node, effect))
+    const spread = innerShadowSpread(node, effect)
+    drawShapeInnerShadow(r, canvas, node, effect, spread, isolatesInnerShadows(node))
     return
   }
   const bounds = shadowLayerBounds(r, graph, node, effect, 0, includeChildren)
   drawSilhouetteInnerShadow(r, canvas, effect, bounds, () =>
     drawSilhouette(r, canvas, graph, node, 'cast', includeChildren)
+  )
+}
+
+/**
+ * Whether a shape draws its fills and inner shadows in a layer of their own. There each shadow
+ * replaces the fill under it before taking the shape's outline, so the antialiased edge applies
+ * once, as in Figma, rather than letting the fill show through. Blended fills and shadows mix with
+ * what lies under the shape, so they keep drawing in place.
+ */
+export function isolatesInnerShadows(node: SceneNode): boolean {
+  if (isLayerContainer(node) || !castsFromOwnShape(node)) return false
+  const shadows = node.effects.filter((effect) => effect.visible && effect.type === 'INNER_SHADOW')
+  return (
+    shadows.length > 0 &&
+    shadows.every((effect) => !needsIsolatedBlendLayer(effect.blendMode)) &&
+    [...node.fills, ...node.fillGeometry.flatMap((geometry) => geometry.fills ?? [])].every(
+      (fill) => !fill.visible || !needsIsolatedBlendLayer(fill.blendMode)
+    )
   )
 }
 
@@ -390,7 +410,10 @@ export function renderEffects(
     }
 
     if (pass === 'behind' && effect.type === 'BACKGROUND_BLUR') {
-      r.applyClippedBlur(canvas, node, blurSigma(effect.radius))
+      const shape =
+        node.type === 'BOOLEAN_OPERATION' ? makeBooleanOperationPath(r, node, graph) : null
+      r.applyClippedBlur(canvas, node, blurSigma(effect.radius), shape)
+      shape?.delete()
     }
 
     if (pass === 'inner' && effect.type === 'INNER_SHADOW' && ownShadows) {
