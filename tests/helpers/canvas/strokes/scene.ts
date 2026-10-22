@@ -1,4 +1,8 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { GradientTransform, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import {
+  DEFAULT_GRADIENT_TRANSFORM,
+  IDENTITY_GRADIENT_TRANSFORM
+} from '@open-pencil/scene-graph/gradient'
 
 const ALIGNS = ['INSIDE', 'CENTER', 'OUTSIDE'] as const
 const CORNERS = [
@@ -117,6 +121,55 @@ export function createDashEndsScene(graph: SceneGraph, pageId: string): void {
       strokeWeight: 8,
       ...props,
       strokeAlign: align
+    })
+  }
+}
+
+const RED = { r: 1, g: 0, b: 0, a: 1 }
+const BLUE = { r: 0, g: 0, b: 1, a: 1 }
+
+function gradientStroke(gradientTransform: GradientTransform): Stroke {
+  return {
+    type: 'GRADIENT_LINEAR',
+    color: RED,
+    opacity: 1,
+    visible: true,
+    weight: 6,
+    align: 'CENTER',
+    gradientStops: [
+      { position: 0, color: RED },
+      { position: 1, color: BLUE }
+    ],
+    gradientTransform
+  }
+}
+
+/**
+ * A solid rectangle as a landmark, and three straight lines with a red to blue gradient stroke: a
+ * horizontal one with no height, a vertical one with no width and Figma's default top to bottom
+ * transform, and a rotated one. Each runs red at its start to blue at its end.
+ */
+export function createGradientLinesScene(graph: SceneGraph, pageId: string): void {
+  graph.createNode('RECTANGLE', pageId, {
+    name: 'landmark',
+    x: 60,
+    y: 60,
+    width: 120,
+    height: 80,
+    fills: [{ type: 'SOLID', color: { r: 0.2, g: 0.7, b: 0.4, a: 1 }, opacity: 1, visible: true }]
+  })
+  const lines: Array<[string, Partial<SceneNode>, GradientTransform]> = [
+    ['horizontal', { x: 60, y: 200, width: 300, height: 0 }, IDENTITY_GRADIENT_TRANSFORM],
+    ['vertical', { x: 460, y: 60, width: 0, height: 200 }, DEFAULT_GRADIENT_TRANSFORM],
+    ['rotated', { x: 60, y: 280, width: 300, height: 0, rotation: 30 }, IDENTITY_GRADIENT_TRANSFORM]
+  ]
+  for (const [name, placement, transform] of lines) {
+    graph.createNode('LINE', pageId, {
+      name: `${name} line`,
+      fills: [],
+      strokes: [gradientStroke(transform)],
+      strokeWeight: 6,
+      ...placement
     })
   }
 }

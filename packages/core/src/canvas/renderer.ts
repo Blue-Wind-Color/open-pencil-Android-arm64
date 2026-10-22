@@ -385,7 +385,7 @@ export class SkiaRenderer {
     fill?: Fill
   ) => void
   declare applyFill: (fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex?: number) => boolean
-  declare applyGradientFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => void
+  declare applyGradientFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => boolean
   declare applyImageFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => boolean
   declare drawArc: (canvas: Canvas, node: SceneNode, paint: Paint) => void
   declare drawNodeStroke: (

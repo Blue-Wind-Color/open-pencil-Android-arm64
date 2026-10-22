@@ -438,9 +438,9 @@ function forVisibleStrokes(
   for (let index = 0; index < node.strokes.length; index++) {
     const stroke = node.strokes[index]
     if (!stroke.visible) continue
-    applyStrokeShader(r, stroke, index, node, graph)
+    const draws = applyStrokeShader(r, stroke, index, node, graph)
     try {
-      draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))
+      if (draws) draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))
     } finally {
       r.strokePaint.setShader(null)
       r.fillPaint.setShader(null)

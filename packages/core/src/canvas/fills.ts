@@ -1,4 +1,4 @@
-import type { Canvas, Image, Paint } from 'canvaskit-wasm'
+import type { Canvas, Image, Paint, Shader } from 'canvaskit-wasm'
 
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
@@ -147,8 +147,7 @@ export function applyFill(
   }
 
   if (fill.type.startsWith('GRADIENT') && fill.gradientStops && fill.gradientTransform) {
-    r.applyGradientFill(fill, node, graph)
-    return true
+    return r.applyGradientFill(fill, node, graph)
   }
 
   if (fill.type === 'IMAGE' && fill.imageHash) {
@@ -285,7 +284,10 @@ function applyPatternFill(
   return true
 }
 
-/** Gradient space to the layer's pixels: Figma's transform maps the other way, so it is inverted. */
+/**
+ * Gradient space to the layer's pixels: Figma's transform maps the other way, so it is inverted.
+ * A side with no length counts as one pixel, so a straight line still carries its gradient.
+ */
 function makeGradientLocalMatrix(
   r: SkiaRenderer,
   width: number,
@@ -293,7 +295,7 @@ function makeGradientLocalMatrix(
   transform: NonNullable<Fill['gradientTransform']>
 ) {
   const t = invertGradientTransform(transform)
-  return r.ck.Matrix.multiply(r.ck.Matrix.scaled(width, height), [
+  return r.ck.Matrix.multiply(r.ck.Matrix.scaled(width || 1, height || 1), [
     t.m00,
     t.m01,
     t.m02,
@@ -309,6 +311,11 @@ function makeGradientLocalMatrix(
 /** Resolves one gradient stop's color, so a stroke resolves its own bindings, not a fill's. */
 export type ResolveGradientStop = (color: Color, stopIndex: number) => Color
 
+/**
+ * Sets `paint`'s shader to `fill`'s gradient on `node` and returns whether it did. CanvasKit
+ * builds no shader when the local matrix cannot be inverted, as for a transform that holds no
+ * numbers; the paint then keeps no shader, and the caller draws nothing rather than its color.
+ */
 export function applyGradientFill(
   r: SkiaRenderer,
   fill: Fill,
@@ -322,10 +329,10 @@ export function applyGradientFill(
       node,
       graph
     ).color
-): void {
+): boolean {
   const stops = fill.gradientStops
   const t = fill.gradientTransform
-  if (!stops || !t) return
+  if (!stops || !t) return false
   const colors = stops.map((s, index) => {
     const c = resolveStop(s.color, index)
     return r.ck.Color4f(c.r, c.g, c.b, c.a)
@@ -336,12 +343,14 @@ export function applyGradientFill(
   const h = node.height
 
   /** The paint keeps its own reference, so the caller's handle has to go or WASM memory grows. */
-  const setShader = (shader: ReturnType<typeof makeDiamondGradient>) => {
+  const setShader = (shader: Shader | null): boolean => {
+    if (!shader) return false
     try {
       paint.setShader(shader)
     } finally {
       shader.delete()
     }
+    return true
   }
 
   if (fill.type === 'GRADIENT_LINEAR') {
@@ -355,9 +364,9 @@ export function applyGradientFill(
       r.ck.TileMode.Clamp,
       makeGradientLocalMatrix(r, w, h, t)
     )
-    setShader(shader)
+    return setShader(shader)
   } else if (fill.type === 'GRADIENT_DIAMOND') {
-    setShader(makeDiamondGradient(r, colors, positions, makeGradientLocalMatrix(r, w, h, t)))
+    return setShader(makeDiamondGradient(r, colors, positions, makeGradientLocalMatrix(r, w, h, t)))
   } else if (fill.type === 'GRADIENT_RADIAL') {
     // Gradient space is centred on (0.5, 0.5) with radius 0.5; the local matrix takes it to the
     // layer's pixels.
@@ -370,7 +379,7 @@ export function applyGradientFill(
       r.ck.TileMode.Clamp,
       localMatrix
     )
-    setShader(shader)
+    return setShader(shader)
   } else if (fill.type === 'GRADIENT_ANGULAR') {
     const localMatrix = makeGradientLocalMatrix(r, w, h, t)
     const shader = r.ck.Shader.MakeSweepGradient(
@@ -381,8 +390,9 @@ export function applyGradientFill(
       r.ck.TileMode.Clamp,
       localMatrix
     )
-    setShader(shader)
+    return setShader(shader)
   }
+  return false
 }
 
 /**

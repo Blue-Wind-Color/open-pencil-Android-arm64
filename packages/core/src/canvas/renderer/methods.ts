@@ -280,8 +280,8 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     return Fills.applyFill(this, fill, node, graph, fillIndex)
   },
 
-  applyGradientFill(fill: Fill, node: SceneNode, graph: SceneGraph): void {
-    Fills.applyGradientFill(this, fill, node, graph)
+  applyGradientFill(fill: Fill, node: SceneNode, graph: SceneGraph): boolean {
+    return Fills.applyGradientFill(this, fill, node, graph)
   },
 
   applyImageFill(fill: Fill, node: SceneNode, graph: SceneGraph): boolean {
