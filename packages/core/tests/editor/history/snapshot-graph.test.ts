@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor, graphFromPageSnapshot } from '@open-pencil/core/editor'
+import { createEditor, graphFromPageSnapshot } from '@open-pencil/core'
 import {
   comparePNGs,
   createCanvasKitRasterCodec,

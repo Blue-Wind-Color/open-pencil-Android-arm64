@@ -1,5 +1,6 @@
-import { cloneNodeProps, contentPluginData, SceneGraph } from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
+import { contentPluginData } from '@open-pencil/scene-graph/plugin-data'
 
 import { contentHash } from './hash'
 import { assertLibraryAssetKey } from './identity'

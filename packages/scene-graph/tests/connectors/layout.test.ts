@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
 import {
   attachedConnectors,
   boundEndpoint,
@@ -8,10 +9,8 @@ import {
   connectorSublayers,
   createConnector,
   freeEndpoint,
-  layoutConnector,
-  SceneGraph,
-  type Stroke
-} from '@open-pencil/scene-graph'
+  layoutConnector
+} from '@open-pencil/scene-graph/connectors'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 
 function boxes() {

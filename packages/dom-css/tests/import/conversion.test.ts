@@ -1,15 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 
 import { browserHTMLToSceneGraph } from '#dom-css/browser'
+import { serializeHTML } from '#dom-css/export/html'
+import { sceneGraphToDesignDocument } from '#dom-css/export/projection'
+import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
 import type { DesignElement, DesignNode } from '#dom-css/index'
-import {
-  createHeadlessCSSRuntime,
-  designDocumentToSceneGraph,
-  htmlToDesignDocument,
-  htmlToSceneGraph,
-  sceneGraphToDesignDocument,
-  serializeHTML
-} from '#dom-css/index'
+import { createHeadlessCSSRuntime, htmlToDesignDocument, htmlToSceneGraph } from '#dom-css/index'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 

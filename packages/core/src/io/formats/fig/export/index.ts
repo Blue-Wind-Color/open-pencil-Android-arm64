@@ -2,7 +2,8 @@ import { compressFigDataSync, renameFigArchive } from '@open-pencil/fig'
 import {
   nameImagesForFigma,
   placeSlotContent,
-  type FigNodeChangeExportRuntime
+  type FigNodeChangeExportRuntime,
+  sceneNodeToKiwi
 } from '@open-pencil/fig/node-change'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
@@ -14,7 +15,6 @@ import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { IS_BROWSER, IS_TAURI } from '#core/constants'
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
-import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
 import {
   hasPendingReaderPages,
@@ -222,7 +222,6 @@ async function writeFigFile(
   )
 }
 
-export { compressFigDataSync } from '@open-pencil/fig'
 export type { FigFileExtrasOptions }
 
 function canUseWorker(): boolean {

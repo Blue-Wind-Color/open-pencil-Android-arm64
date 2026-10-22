@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { setTextMeasurer } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
-import { shapeWithTextLabel } from '@open-pencil/scene-graph'
+import { setTextMeasurer } from '@open-pencil/core/layout'
+import { createEditor } from '@open-pencil/core'
+import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 
 import { applyGeneratedTextNameEdit } from '#core/editor/text/name'

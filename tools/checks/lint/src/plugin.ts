@@ -20,7 +20,7 @@ import { normalizedFilename } from '#lint/support/context.ts'
 import type { PluginRule, RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
 
-import type { Color } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 const noInlineNamedTypes = {
   meta: {
@@ -386,12 +386,8 @@ import {
   noMcpParentRelativeImports,
   noVueParentRelativeImports,
   noCliParentRelativeImports,
-  noMcpCoreBarrelImports,
-  noCliCoreBarrelImports,
-  noScriptCoreBarrelImports,
   noCoreSelfPackageImports,
   noInlinePromptConstants,
-  noAppVueCoreBarrelImports,
   noAppImportsInPackages,
   noCoreFrameworkImports
 } from '#lint/rules/imports.ts'
@@ -467,12 +463,8 @@ const plugin = {
     'no-mcp-parent-relative-imports': noMcpParentRelativeImports,
     'no-vue-parent-relative-imports': noVueParentRelativeImports,
     'no-cli-parent-relative-imports': noCliParentRelativeImports,
-    'no-mcp-core-barrel-imports': noMcpCoreBarrelImports,
-    'no-cli-core-barrel-imports': noCliCoreBarrelImports,
-    'no-script-core-barrel-imports': noScriptCoreBarrelImports,
     'no-core-self-package-imports': noCoreSelfPackageImports,
     'no-inline-prompt-constants': noInlinePromptConstants,
-    'no-app-vue-core-barrel-imports': noAppVueCoreBarrelImports,
     'no-app-imports-in-packages': noAppImportsInPackages,
     'no-core-framework-imports': noCoreFrameworkImports,
     'no-direct-storage-access': noDirectStorageAccess,

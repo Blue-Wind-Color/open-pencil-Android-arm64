@@ -1,7 +1,13 @@
 import { computed } from 'vue'
 
-import { figJamTextSize, figJamTypeface, stickySublayers } from '@open-pencil/scene-graph'
-import type { FigJamTextSize, FigJamTypeface, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import {
+  figJamTextSize,
+  figJamTypeface,
+  type FigJamTextSize,
+  type FigJamTypeface
+} from '@open-pencil/scene-graph/figjam'
+import { stickySublayers } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useEditor } from '#vue/editor/context'

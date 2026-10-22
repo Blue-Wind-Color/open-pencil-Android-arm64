@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { createSticky, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { createSticky } from '@open-pencil/scene-graph/generated'
 
 function stickyNote() {
   const graph = new SceneGraph()

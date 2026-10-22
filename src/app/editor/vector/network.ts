@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '@open-pencil/core/vector'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 

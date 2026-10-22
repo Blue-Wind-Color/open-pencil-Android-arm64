@@ -1,20 +1,16 @@
 import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
-import {
-  FONT_WEIGHT_NAMES,
-  fontManager,
-  nearestFamilyFace,
-  weightToStyle
-} from '@open-pencil/core/text'
-import { shapeWithTextLabel } from '@open-pencil/scene-graph'
+import type { Editor } from '@open-pencil/core'
+import { fontManager, nearestFamilyFace } from '@open-pencil/core/text'
 import type {
   SceneNode,
   TextDecoration,
   TextListType,
   TextParagraphSpacingField
 } from '@open-pencil/scene-graph'
+import { FONT_WEIGHT_NAMES, weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 
 import {
   createTextListActions,

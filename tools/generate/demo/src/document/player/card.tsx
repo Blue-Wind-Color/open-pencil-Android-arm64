@@ -12,7 +12,8 @@ import {
   shader,
   type TreeNode
 } from '@open-pencil/design-jsx'
-import type { ComponentPropertyDefinition, ShaderPreset } from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
+import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
 
 import type { Theme } from '../theme'
 

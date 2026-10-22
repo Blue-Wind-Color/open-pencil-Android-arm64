@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useConnector, useI18n } from '@open-pencil/vue'
+import { useConnector } from '@open-pencil/vue/controls/connector'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 

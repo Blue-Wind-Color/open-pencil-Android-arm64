@@ -45,3 +45,10 @@ export {
 } from './analyze/overlaps/params'
 export { setPexelsAPIKey, setUnsplashAccessKey } from './stock-photo'
 export { importSVG } from './create'
+export {
+  getStockPhotoProviders,
+  registerStockPhotoProvider,
+  setActiveStockPhotoProvider,
+  type StockPhotoProvider,
+  type StockPhotoResult
+} from './stock-photo/providers'

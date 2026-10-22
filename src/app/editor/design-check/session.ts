@@ -1,7 +1,7 @@
 import { useTimeoutFn } from '@vueuse/core'
 import { computed, effectScope, ref, shallowRef, watch } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import { isFigPagePending } from '@open-pencil/core/io/formats/fig'
 import { createLinter, type LintConfig, type LintFixRequest } from '@open-pencil/core/lint'
 

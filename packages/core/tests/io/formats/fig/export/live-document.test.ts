@@ -2,9 +2,11 @@ import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
-import { emptyBehaviour, readBehaviour, SceneGraph } from '@open-pencil/scene-graph'
+import { createEditor } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { emptyBehaviour, readBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 import { settleFontDigestMap } from '#core/kiwi/fig/node-change/font/digests'
 import { fontManager } from '#core/text/fonts'

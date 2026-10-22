@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { OpenPencilAPI } from '@open-pencil/core'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { compileScript } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'

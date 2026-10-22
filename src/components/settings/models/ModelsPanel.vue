@@ -2,7 +2,7 @@
 import { ref, onUnmounted, useTemplateRef } from 'vue'
 
 import { HARNESS_PROVIDER_ID } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
 import { useModelSettings } from '@/app/ai/models/settings/use'

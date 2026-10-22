@@ -1,6 +1,5 @@
-import type { FontFamilyStyle } from '@open-pencil/scene-graph'
-
-import { FONT_WEIGHT_NAMES } from '#core/text/fonts'
+import type { FontFamilyStyle } from '@open-pencil/scene-graph/font-style'
+import { FONT_WEIGHT_NAMES } from '@open-pencil/scene-graph/font-style'
 
 export type FigmaFontName = FontFamilyStyle
 export type FigmaFont = { fontName: FigmaFontName }

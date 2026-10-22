@@ -10,14 +10,17 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, nextTick, useAttrs, useTemplateRef, watch } from 'vue'
 
-import { LayerTreeRoot, LayerTreeItem, stickyTopLevelRow, useInlineRename } from '@open-pencil/vue'
-import type {
-  LayerDragInstruction,
-  LayerNode,
-  LayerRow,
-  LayerSelectionMode,
-  LayerTreeVirtualizer
-} from '@open-pencil/vue'
+import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
+import {
+  LayerTreeRoot,
+  LayerTreeItem,
+  stickyTopLevelRow,
+  type LayerDragInstruction,
+  type LayerNode,
+  type LayerRow,
+  type LayerSelectionMode,
+  type LayerTreeVirtualizer
+} from '@open-pencil/vue/primitives/LayerTree'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { layerIssueMarks } from '@/app/editor/design-check/layers'

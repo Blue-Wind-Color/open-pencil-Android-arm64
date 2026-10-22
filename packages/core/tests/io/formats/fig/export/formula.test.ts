@@ -2,10 +2,12 @@ import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { parseVariableFormula } from '@open-pencil/scene-graph'
+import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
 
 test('numeric, Boolean and comparison formulas survive fresh and patched .fig saves', async () => {
   await initCodec()
@@ -56,7 +58,6 @@ test('numeric, Boolean and comparison formulas survive fresh and patched .fig sa
     }
   }
 })
-
 
 test.each([
   { operator: 'add', operands: [true, 1] },

@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { toUint8Array } from 'js-base64'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { BUILTIN_IO_FORMATS, IORegistry, initCanvasKit, parseFigFile } from '@open-pencil/core/io'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { pngSize } from '@open-pencil/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 

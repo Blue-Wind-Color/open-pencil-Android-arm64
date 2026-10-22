@@ -2,7 +2,7 @@ import { useFileDialog } from '@vueuse/core'
 import { uniq } from 'es-toolkit'
 import { computed, onBeforeUnmount, ref, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 import {
   createImagePreviewURL,

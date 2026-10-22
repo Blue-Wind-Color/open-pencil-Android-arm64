@@ -1,5 +1,5 @@
 import { CONNECTOR_KIND } from '../connectors/sublayers'
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { NodeType, SceneNode } from '../types'
 import type { GeneratedFrameKind } from './kind'
 import { SHAPE_WITH_TEXT_KIND } from './shape-with-text'

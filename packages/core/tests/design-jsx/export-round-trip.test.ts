@@ -6,7 +6,8 @@ import { pick } from 'es-toolkit'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
-import { SceneGraph, shaderOfPaint } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 
 describe('attribute string round-trip', () => {
   it.each([

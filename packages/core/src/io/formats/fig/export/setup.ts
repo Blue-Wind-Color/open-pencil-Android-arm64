@@ -9,23 +9,22 @@ import {
   figImageEntries,
   importCanvasGuides,
   parseGuidOrNull,
-  stringToGuid,
-  type FigNodeChangeExportRuntime
+  type FigNodeChangeExportRuntime,
+  makeCanvasNodeChange,
+  makeDocumentNodeChange
 } from '@open-pencil/fig/node-change'
-import { getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
+import type { PluginDataEntry, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
-  ownsSlotContent,
   readBehaviour,
   renameBehaviourProperties,
-  withBehaviour,
-  type PluginDataEntry,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  withBehaviour
+} from '@open-pencil/scene-graph/behaviours'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID, Rect, Size } from '@open-pencil/scene-graph/primitives'
+import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
@@ -33,11 +32,7 @@ import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { applyDocumentPluginData } from '#core/io/formats/fig/document-metadata'
 import { findFigThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
 import { renderThumbnail, thumbnailFrame } from '#core/io/formats/raster'
-import {
-  makeCanvasNodeChange,
-  makeDocumentNodeChange,
-  settleFontDigestMap
-} from '#core/kiwi/fig/node-change/serialize'
+import { settleFontDigestMap } from '#core/kiwi/fig/node-change/serialize'
 
 import { assignVariableGuid, assignVariableGuids } from './variables'
 

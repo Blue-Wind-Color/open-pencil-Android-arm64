@@ -1,4 +1,5 @@
-import { connectorLineEnds, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { connectorLineEnds } from '@open-pencil/scene-graph/connectors'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 

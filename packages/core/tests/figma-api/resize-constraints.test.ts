@@ -1,7 +1,8 @@
 import { expect, test } from 'bun:test'
 
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { hasInstanceOverride, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 // Recorded with the same script in Figma desktop 126.
 

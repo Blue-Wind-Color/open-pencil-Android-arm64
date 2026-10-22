@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import { ref, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 
 import { cycleSafeTarget, findMoveDropTarget } from '#vue/shared/input/drop-target'
 

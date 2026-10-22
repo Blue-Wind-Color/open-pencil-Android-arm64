@@ -1,9 +1,3 @@
-import {
-  mergeVectorNetworks,
-  normalizeVectorNetwork,
-  transformVectorNetwork,
-  validateVectorNetwork
-} from '@open-pencil/scene-graph'
 import type {
   GeometryPath,
   HandleMirroring,
@@ -14,6 +8,12 @@ import type {
 } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import { parsePluginVectorPath } from '@open-pencil/scene-graph/parse-path'
+import {
+  mergeVectorNetworks,
+  normalizeVectorNetwork,
+  transformVectorNetwork,
+  validateVectorNetwork
+} from '@open-pencil/scene-graph/vector-network'
 
 import {
   graph,

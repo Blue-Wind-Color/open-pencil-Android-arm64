@@ -1,10 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  figJamTextSizeFields,
-  figJamTypeface,
-  figJamTypefaceFields
-} from '@open-pencil/scene-graph'
+import { figJamTextSizeFields, figJamTypeface, figJamTypefaceFields } from '@open-pencil/scene-graph/figjam'
 
 // Values measured in FigJam's text menus.
 describe("FigJam's text", () => {

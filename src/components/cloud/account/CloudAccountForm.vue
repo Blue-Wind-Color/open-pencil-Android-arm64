@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, toRef, watch } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue'
+import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import {
   useCloudAccountForm,

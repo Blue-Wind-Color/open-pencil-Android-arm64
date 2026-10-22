@@ -3,11 +3,9 @@ import { expect, test } from 'bun:test'
 import { expectDefined } from '#core-tests/helpers/assert'
 
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import {
-  createComponentPropertyId,
-  hasInstanceOverride,
-  SceneGraph
-} from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
+import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 // Recorded with the same script in Figma desktop 126.
 

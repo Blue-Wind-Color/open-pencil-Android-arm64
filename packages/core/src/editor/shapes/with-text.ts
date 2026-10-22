@@ -1,3 +1,4 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   figJamColorName,
   figJamFillMode,
@@ -6,14 +7,12 @@ import {
   figJamShapePaint,
   figJamTextSizeFields,
   figJamTypeface,
-  shapeWithTextFrameFields,
-  shapeWithTextLabel,
   type FigJamColorName,
   type FigJamFillMode,
   type FigJamLineStyle,
-  type FigJamTextSize,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  type FigJamTextSize
+} from '@open-pencil/scene-graph/figjam'
+import { shapeWithTextFrameFields, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'

@@ -1,9 +1,5 @@
-import {
-  captureGraphCheckpoint,
-  type SceneGraph,
-  type SceneNode,
-  type Variable
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Variable } from '@open-pencil/scene-graph'
+import { captureGraphCheckpoint } from '@open-pencil/scene-graph/checkpoint'
 
 import type { Editor } from '#core/editor/create'
 import { ReadOnlyDocumentError } from '#core/editor/read-only'

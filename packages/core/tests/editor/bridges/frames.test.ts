@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@open-pencil/core'
 
 const VIEWPORT = { width: 800, height: 600 }
 
@@ -9,7 +9,12 @@ describe('frame navigation', () => {
   function frames() {
     const editor = createEditor({ getViewportSize: () => VIEWPORT })
     const pageId = editor.state.currentPageId
-    const right = editor.graph.createNode('FRAME', pageId, { x: 600, y: 0, width: 100, height: 100 })
+    const right = editor.graph.createNode('FRAME', pageId, {
+      x: 600,
+      y: 0,
+      width: 100,
+      height: 100
+    })
     const left = editor.graph.createNode('FRAME', pageId, { x: 0, y: 0, width: 100, height: 100 })
     const section = editor.graph.createNode('SECTION', pageId, { x: 200, y: 0, width: 300 })
     const inSection = editor.graph.createNode('COMPONENT', section.id, {

@@ -1,6 +1,7 @@
 import { clamp } from 'es-toolkit'
 
-import type { ArcData, SceneNode, Vector } from '@open-pencil/scene-graph'
+import type { ArcData, SceneNode } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /**
  * On-canvas arc handles, as Figma desktop draws and drags them on a selected ellipse. Angles run

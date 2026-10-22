@@ -5,13 +5,9 @@
  * clicks one sees in the panel.
  */
 import { Component, Frame, Instance, Text, type TreeNode } from '@open-pencil/design-jsx'
-import {
-  createComponentPropertyId,
-  createSlotProperty,
-  updateSlotProperty,
-  type ComponentPropertyDefinition,
-  type SceneGraph
-} from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition, SceneGraph } from '@open-pencil/scene-graph'
+import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
+import { createSlotProperty, updateSlotProperty } from '@open-pencil/scene-graph/slots'
 
 import { previewButton } from './chrome'
 import { renderTree } from './icons'

@@ -2,7 +2,7 @@
 import { compact } from 'es-toolkit/array'
 import { computed } from 'vue'
 
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import type { DesignIssueCounts } from '@/app/editor/design-check/issues'
 import Tip from '@/components/ui/overlay/Tip.vue'

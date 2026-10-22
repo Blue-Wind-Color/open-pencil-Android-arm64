@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import { breakAtVertex, deleteVectorParts, vectorHandleParts } from '@open-pencil/core/vector'
 
 import { pushNodeEditHistory } from './history'

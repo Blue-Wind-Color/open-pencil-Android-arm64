@@ -48,7 +48,7 @@ function restoreChildren(
     if (!snap) continue
     const { parentId: _snapParentId, childIds: snapChildIds, ...rest } = snap
     graph.createNode(snap.type, parentId, { ...rest, childIds: [] })
-    graph.reorderChild(snap.id, parentId, childIds.indexOf(childId))
+    graph.insertChildAt(snap.id, parentId, childIds.indexOf(childId))
     restoreChildren(graph, snapshot, snap.id, snapChildIds)
   }
 }

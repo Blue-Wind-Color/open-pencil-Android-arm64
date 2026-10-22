@@ -2,7 +2,7 @@
 
 import type { ExportFormatId } from './export-format'
 import type { CanvasGuide } from './guides'
-import type { InstanceOverrideState } from './instance-overrides'
+import type { InstanceOverrideState } from './instances/overrides'
 import type { Color, Matrix, Rect, Vector } from './primitives'
 import type { ShapeWithTextType } from './shape-with-text/kinds'
 

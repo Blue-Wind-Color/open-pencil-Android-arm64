@@ -2,8 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectFills } from '#core-tests/helpers/assert'
 
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
-import type { Color } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 // Results recorded from the same scripts run in live Figma (2026-10-11). OpenPencil reports
 // lengths in pixels, as its node getters do, and paints in the shape `fills` returns.
@@ -247,9 +248,7 @@ describe('character style ranges', () => {
     expect(() => text.setRangeFontSize(5, 9, 0)).toThrow(
       'in setRangeFontSize: Range outside of available characters.'
     )
-    expect(() =>
-      text.setRangeLetterSpacing(0, 1, { value: 1, unit: 'EM' as 'PIXELS' })
-    ).toThrow(
+    expect(() => text.setRangeLetterSpacing(0, 1, { value: 1, unit: 'EM' as 'PIXELS' })).toThrow(
       message(
         'setRangeLetterSpacing',
         "Invalid enum value. Expected 'PIXELS' | 'PERCENT', received 'EM' at .unit"
@@ -321,8 +320,7 @@ describe('character style ranges', () => {
 
     text.setRangeTextDecoration(0, 3, 'UNDERLINE')
     const color = (problem: string) =>
-      'in setRangeTextDecorationColor: Property "textDecorationColor" failed validation: ' +
-      problem
+      'in setRangeTextDecorationColor: Property "textDecorationColor" failed validation: ' + problem
     const noneMatched = (issues: string) =>
       color(
         `Expected one of the following, but none matched:\n${issues}\n` +

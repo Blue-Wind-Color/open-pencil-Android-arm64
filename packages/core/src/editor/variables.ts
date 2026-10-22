@@ -3,14 +3,13 @@ import { isEmptyObject } from 'es-toolkit/predicate'
 
 import {
   isModeAttributeName,
-  tokenExpressionForValue,
-  type BindingScope,
   type TokenExpression,
   type Variable,
   type VariableCollection,
   type VariableType,
   type VariableValue
 } from '@open-pencil/scene-graph'
+import { tokenExpressionForValue, type BindingScope } from '@open-pencil/scene-graph/variables'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 

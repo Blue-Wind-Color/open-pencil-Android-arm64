@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import { useStorageMessages } from '@open-pencil/vue'
+import { useStorageMessages } from '@open-pencil/vue/i18n'
 
 import { useWaitlistSignup } from '@/app/cloud/waitlist/signup'
 import { openExternalLink } from '@/app/shell/ui'

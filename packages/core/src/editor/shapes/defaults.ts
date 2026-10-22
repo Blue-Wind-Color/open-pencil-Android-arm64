@@ -1,11 +1,8 @@
 import type { Fill, NodeType, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import {
-  DEFAULT_STROKE_WEIGHT,
-  figJamColor,
-  figJamPairedStroke,
-  SHAPE_WITH_TEXT_SIZE
-} from '@open-pencil/scene-graph'
+import { DEFAULT_STROKE_WEIGHT } from '@open-pencil/scene-graph/constants'
 import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
+import { figJamColor, figJamPairedStroke } from '@open-pencil/scene-graph/figjam'
+import { SHAPE_WITH_TEXT_SIZE } from '@open-pencil/scene-graph/generated'
 
 import {
   BLACK,

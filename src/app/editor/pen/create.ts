@@ -1,7 +1,8 @@
-import type { Editor, Tool } from '@open-pencil/core/editor'
-import { transformVectorNetwork, type VectorNetwork } from '@open-pencil/scene-graph'
+import type { Editor, Tool } from '@open-pencil/core'
+import type { VectorNetwork } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import {
   chainEndingAt,

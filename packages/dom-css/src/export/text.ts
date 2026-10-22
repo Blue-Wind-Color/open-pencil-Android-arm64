@@ -1,5 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
+import type { CharacterStyleOverride, HyperlinkTarget, SceneNode } from '@open-pencil/scene-graph'
 import {
   hasTextList,
   listNumberFormat,
@@ -7,12 +8,9 @@ import {
   paragraphStyleAt,
   textListItems,
   textParagraphRanges,
-  type CharacterStyleOverride,
-  type HyperlinkTarget,
-  type SceneNode,
   type TextListItem,
   type TextParagraphRange
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/text'
 
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { fillToCSS } from './css'

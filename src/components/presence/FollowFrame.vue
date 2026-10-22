@@ -3,7 +3,7 @@ import { useEventListener } from '@vueuse/core'
 import { computed } from 'vue'
 
 import { colorToCSS, darkenForContrast } from '@open-pencil/scene-graph/color'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import type { FollowedLabel } from '@/app/presence/registry'
 import { isEditing } from '@/app/shell/keyboard/focus'

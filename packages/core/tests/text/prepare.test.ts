@@ -38,13 +38,15 @@ describe('emoji font preparation', () => {
 
   function recordNotoRequests() {
     const load = fontManager.loadRemoteFont.bind(fontManager)
-    spy = spyOn(fontManager, 'loadRemoteFont').mockImplementation(async (family, style, characters) => {
-      if (family === NOTO_COLOR_EMOJI_FAMILY) {
-        requested.push(characters ?? '')
-        return null
+    spy = spyOn(fontManager, 'loadRemoteFont').mockImplementation(
+      async (family, style, characters) => {
+        if (family === NOTO_COLOR_EMOJI_FAMILY) {
+          requested.push(characters ?? '')
+          return null
+        }
+        return load(family, style, characters)
       }
-      return load(family, style, characters)
-    })
+    )
   }
 
   test('fetches nothing for symbols the text font has', async () => {

@@ -3,12 +3,8 @@ import { resolve } from 'node:path'
 
 import * as v from 'valibot'
 
-import {
-  parseFigFile,
-  type ParseFigFileOptions,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/core'
+import { parseFigFile, type ParseFigFileOptions } from '@open-pencil/core/io/formats/fig'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { testPath } from '../paths'
 import { collectAllNodes } from './traversal'

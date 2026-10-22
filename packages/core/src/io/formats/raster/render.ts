@@ -1,13 +1,10 @@
 import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
-import {
-  getWorldMatrix,
-  type Mat3,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { getPageColor } from '#core/figma-api/page-backgrounds'

@@ -1,5 +1,5 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { formatColor, type SVGExportContext, type SVGFontAlias } from '#core/io/formats/svg/defs'
 import { svg, type SVGNode } from '#core/io/formats/svg/node'

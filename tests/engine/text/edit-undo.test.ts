@@ -2,13 +2,12 @@ import { describe, test, expect } from 'bun:test'
 
 import type { CanvasKit } from 'canvaskit-wasm'
 
-import { SceneGraph, TextEditor, UndoManager } from '@open-pencil/core'
-import type { StyleRun } from '@open-pencil/core'
-import { createTextActions } from '@open-pencil/core/editor'
-import type { EditorContext, EditorState } from '@open-pencil/core/editor'
+import { createTextActions, type EditorContext, type EditorState } from '@open-pencil/core'
 import { iconify } from '@open-pencil/core/icons'
-import { getInstanceOverride } from '@open-pencil/scene-graph'
-import type { DerivedTextGlyph } from '@open-pencil/scene-graph'
+import { TextEditor } from '@open-pencil/core/text'
+import { SceneGraph, type StyleRun, type DerivedTextGlyph } from '@open-pencil/scene-graph'
+import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { UndoManager } from '@open-pencil/scene-graph/undo'
 
 import { fontManager } from '#core/text/fonts'
 

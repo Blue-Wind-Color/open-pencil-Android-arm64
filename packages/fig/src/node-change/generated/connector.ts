@@ -1,12 +1,8 @@
 import { pick } from 'es-toolkit'
 
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, isUnsetGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
-import {
-  buildConnectorSublayers,
-  connectorRouteEnds,
-  connectorSublayers
-} from '@open-pencil/scene-graph'
 import type {
   ConnectorEndpoint,
   ConnectorLineType,
@@ -15,6 +11,11 @@ import type {
   SceneNode,
   StrokeCap
 } from '@open-pencil/scene-graph'
+import {
+  buildConnectorSublayers,
+  connectorRouteEnds,
+  connectorSublayers
+} from '@open-pencil/scene-graph/connectors'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { nodeChangeToProps } from '../convert'

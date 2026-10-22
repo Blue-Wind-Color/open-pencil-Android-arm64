@@ -1,12 +1,12 @@
-import {
-  variableValueReferences,
-  type Color,
-  type SceneGraph,
-  type Variable,
-  type VariableLiteral,
-  type VariableType,
-  type VariableValue
+import type {
+  SceneGraph,
+  Variable,
+  VariableLiteral,
+  VariableType,
+  VariableValue
 } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { variableValueReferences } from '@open-pencil/scene-graph/variables'
 
 /** A reference to a variable, as Figma's plugin API writes one. */
 export interface FigmaVariableAlias {

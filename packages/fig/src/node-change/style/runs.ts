@@ -1,14 +1,15 @@
 import { isEmptyObject } from 'es-toolkit/predicate'
 
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
-import { styleToWeight } from '@open-pencil/scene-graph'
 import type {
   CharacterStyleOverride,
   HyperlinkTarget,
   StyleRun,
   TextCase
 } from '@open-pencil/scene-graph'
+import { styleToWeight } from '@open-pencil/scene-graph/font-style'
 
 import { convertFontFeatures } from '../font/features'
 import { convertFontVariations } from '../font/variations'

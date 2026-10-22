@@ -15,7 +15,7 @@ import {
   exposedInstances,
   instanceExposureIssue,
   resolveComponentPropertyValue
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/components'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
 import { becomesComponent, componentWrapProps } from '#core/editor/components/create'

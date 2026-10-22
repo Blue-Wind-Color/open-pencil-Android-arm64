@@ -1,18 +1,15 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 import { fromUint8Array } from 'js-base64'
 
+import type { Fill, DerivedTextGlyph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { isGradientFill } from '@open-pencil/scene-graph/gradient'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
   hasTextList,
   textListItems,
   textParagraphRanges,
-  type Color,
-  type Fill,
-  type DerivedTextGlyph,
-  type SceneNode,
-  type Stroke,
   type TextParagraphRange
-} from '@open-pencil/scene-graph'
-import { isGradientFill } from '@open-pencil/scene-graph/gradient'
+} from '@open-pencil/scene-graph/text'
 
 import type { ResourceCache } from '#core/cache/resource'
 import { createPathCache } from '#core/canvas/paths/cache'

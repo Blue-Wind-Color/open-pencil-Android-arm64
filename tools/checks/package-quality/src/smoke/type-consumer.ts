@@ -8,10 +8,11 @@ import { Frame, type TreeNode } from '@open-pencil/design-jsx'
 import { htmlToDesignDocument, type DesignDocument } from '@open-pencil/dom-css'
 import { FIG_PACKAGE_STATUS, type FigContainerDocument } from '@open-pencil/fig'
 import { FIG_KIWI_DEFAULT_VERSION, buildFigKiwi } from '@open-pencil/kiwi/fig/container'
-import { type GUID as KiwiGUID } from '@open-pencil/kiwi/fig'
+import type { GUID as KiwiGUID } from '@open-pencil/kiwi/fig'
 import { parsePenFile, type PenDocument } from '@open-pencil/pen'
-import { SceneGraph, type Color, type SceneNode, type Vector } from '@open-pencil/scene-graph'
-import { testIdSelector } from '@open-pencil/vue'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import { testIdSelector } from '@open-pencil/vue/testing'
 
 const graph = new SceneGraph()
 const editorFactory: typeof createEditor = createEditor

@@ -11,7 +11,10 @@ describe('lintGraph roots', () => {
     const card = graph.createNode('FRAME', page.id, { name: 'Card', width: 200, height: 100 })
     const inner = graph.createNode('FRAME', card.id, { name: 'Frame 1', width: 50, height: 50 })
     const lint = (roots: string[]) =>
-      createLinter({ rules: ['no-default-names'], config: { rules: { 'no-default-names': 'warning' } } })
+      createLinter({
+        rules: ['no-default-names'],
+        config: { rules: { 'no-default-names': 'warning' } }
+      })
         .lintGraph(graph, roots)
         .messages.map(({ nodeId, nodePath }) => ({ nodeId, nodePath }))
 

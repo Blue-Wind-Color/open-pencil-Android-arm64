@@ -3,16 +3,11 @@ import type { StateElement } from '#dom-css/behaviours/states/types'
 import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
-import {
-  behaviourOwner,
-  findComponentPropertyTargets,
-  findLayerByPath,
-  instanceMainComponent,
-  isIconModified,
-  readIcon,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { behaviourOwner, findLayerByPath } from '@open-pencil/scene-graph/behaviours'
+import { findComponentPropertyTargets } from '@open-pencil/scene-graph/components'
+import { isIconModified, readIcon } from '@open-pencil/scene-graph/icons'
+import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 
 import { drawsAsMain } from './drawn'
 import type { ComponentModel } from './model'

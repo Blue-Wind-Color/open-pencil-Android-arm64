@@ -5,7 +5,7 @@ import { computed, shallowRef } from 'vue'
 
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useSettingsMessages } from '@open-pencil/vue'
+import { useSettingsMessages } from '@open-pencil/vue/i18n'
 
 import { accentPreference } from '@/app/shell/accent'
 import {

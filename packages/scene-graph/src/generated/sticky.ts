@@ -1,5 +1,5 @@
 import { BLACK } from '../constants'
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { Color } from '../primitives'
 import type { Effect, Fill, SceneNode } from '../types'
 import type { GeneratedFrameKind } from './kind'

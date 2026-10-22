@@ -1,14 +1,13 @@
 import { mapValues, pickBy } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
+import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import { copyFills } from '@open-pencil/scene-graph/copy'
 import {
   paragraphIndexAt,
   paragraphSpacingAt,
-  paragraphStyleAt,
-  type Fill,
-  type SceneNode
-} from '@open-pencil/scene-graph'
-import { copyFills } from '@open-pencil/scene-graph/copy'
+  paragraphStyleAt
+} from '@open-pencil/scene-graph/text'
 
 import { weightToStyleName } from '#core/figma-api/fonts'
 import { toFigmaPaint, type WithFigmaTransforms } from '#core/figma-api/paints'

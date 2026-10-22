@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import {
-  ToolbarRoot,
-  useEditorCommands,
-  useI18n,
-  useToolbarState,
-  useViewportKind
-} from '@open-pencil/vue'
+import { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { ToolbarRoot, useToolbarState } from '@open-pencil/vue/primitives/Toolbar'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { readOnlyToolbarLayout, toolbarItems } from '@/app/editor/toolbar/layout'

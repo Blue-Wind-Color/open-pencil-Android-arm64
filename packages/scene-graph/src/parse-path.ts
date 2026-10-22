@@ -1,6 +1,6 @@
 import svgpath from 'svgpath'
 
-import type { VectorNetwork, VectorVertex, VectorSegment, VectorRegion, WindingRule } from './index'
+import type { VectorNetwork, VectorVertex, VectorSegment, VectorRegion, WindingRule } from './types'
 
 interface SubPath {
   startVertexIndex: number

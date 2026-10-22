@@ -11,8 +11,6 @@ import type { NodeChange } from './codec'
 import { decompressFigKiwiData } from './container'
 import { extractFigPageManifest, type FigPageManifestEntry } from './page-manifest'
 
-export type { NodeChange } from './codec'
-
 /**
  * Deduplicates pluginData/pluginRelaunchData entries on raw NodeChange objects.
  * Some .fig files have millions of identical entries where only a small

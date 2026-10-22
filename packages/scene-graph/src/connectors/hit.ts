@@ -1,5 +1,5 @@
 import { getWorldMatrix } from '../coordinate'
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import Matrix from '../matrix'
 import type { Vector } from '../primitives'
 import type { SceneNode } from '../types'

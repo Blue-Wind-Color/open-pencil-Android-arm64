@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-import type { TokenImportResult } from '@open-pencil/core/editor'
 import {
+  type TokenImportResult,
   defaultTokenImportOptions,
   planTokenImport,
   type CollectionTarget,
@@ -13,7 +13,7 @@ import {
   type TokenImportOptions
 } from '@open-pencil/core/io/formats/design-tokens'
 import { isLibraryCollection } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'

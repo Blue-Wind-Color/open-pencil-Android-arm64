@@ -1,5 +1,5 @@
 import { getAxisAlignedBoundsInParent } from './coordinate'
-import type { SceneGraph } from './index'
+import type { SceneGraph } from './graph'
 import { FITTED_CONTAINER_TYPES } from './node-defaults'
 import type { Rect } from './primitives'
 import type { SceneNode } from './types'

@@ -2,6 +2,8 @@ import { compact, countBy } from 'es-toolkit/array'
 import { camelCase } from 'es-toolkit/string'
 import * as v from 'valibot'
 
+import type { ConnectorEndpoint, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { colorToHex } from '@open-pencil/scene-graph/color'
 import {
   boundEndpoint,
   CONNECTOR_COLOR,
@@ -11,13 +13,9 @@ import {
   connectorStroke,
   connectorSublayers,
   createConnector,
-  freeEndpoint,
-  isGeneratedFrame,
-  type ConnectorEndpoint,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+  freeEndpoint
+} from '@open-pencil/scene-graph/connectors'
+import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { CONNECTOR_LINE, CONNECTOR_SIDE, enumProp, STROKE_CAP } from './enums'

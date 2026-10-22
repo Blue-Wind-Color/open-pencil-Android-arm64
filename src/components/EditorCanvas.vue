@@ -25,19 +25,15 @@ import {
   SECTION_TITLE_HEIGHT
 } from '@open-pencil/core/constants'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
-import {
-  autoLayoutValueAnchor,
-  PlayIslands,
-  toolCursor,
-  useCanvas,
-  useCanvasDrop,
-  useCanvasInput,
-  useCanvasIssueMarkers,
-  useCanvasStatusLabels,
-  useCanvasVirtualReference,
-  useTextEdit,
-  type AutoLayoutValueField
-} from '@open-pencil/vue'
+import { PlayIslands, useCanvasInput } from '@open-pencil/vue/canvas'
+import { useCanvasDrop } from '@open-pencil/vue/canvas/drop'
+import { useCanvasIssueMarkers } from '@open-pencil/vue/canvas/issues'
+import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
+import { useCanvasStatusLabels } from '@open-pencil/vue/canvas/statuses'
+import { useCanvas } from '@open-pencil/vue/canvas/surface'
+import { useTextEdit } from '@open-pencil/vue/canvas/text-edit'
+import { toolCursor } from '@open-pencil/vue/editor/tool-cursor'
+import { autoLayoutValueAnchor, type AutoLayoutValueField } from '@open-pencil/vue/shared/input'
 
 import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'

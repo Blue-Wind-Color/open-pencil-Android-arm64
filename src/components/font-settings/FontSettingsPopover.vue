@@ -4,7 +4,9 @@ import { onMounted } from 'vue'
 
 import { WEB_FONT_PROVIDER_IDS, WEB_FONT_PROVIDER_LABELS } from '@open-pencil/core/text'
 import type { WebFontProviderId } from '@open-pencil/core/text'
-import { useI18n, useRetainedPopup, vTestId } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import { vTestId } from '@open-pencil/vue/testing'
 
 import { isTauri } from '@/app/tauri/env'
 import AppButton from '@/components/ui/button/AppButton.vue'

@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { DEFAULT_FONT_FAMILY, FigmaAPI, fontManager } from '@open-pencil/core'
+import { DEFAULT_FONT_FAMILY } from '@open-pencil/core/constants'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { fontManager } from '@open-pencil/core/text'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ALL_TOOLS, type ToolResult } from '#tests/helpers/tools'

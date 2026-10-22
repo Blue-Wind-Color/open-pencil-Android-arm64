@@ -1,17 +1,19 @@
 import { isEqual } from 'es-toolkit'
 
-import {
-  cloneInstanceOverrideState,
-  createSceneMutationImpact,
-  recordSceneMutations,
-  withLiveComments,
-  type FigmaSourcePayload,
-  type SceneGraph,
-  type SceneNode,
-  type SourceMetadata,
-  type Variable,
-  type VariableCollection
+import type {
+  FigmaSourcePayload,
+  SceneGraph,
+  SceneNode,
+  SourceMetadata,
+  Variable,
+  VariableCollection
 } from '@open-pencil/scene-graph'
+import { withLiveComments } from '@open-pencil/scene-graph/comments'
+import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
+import {
+  createSceneMutationImpact,
+  recordSceneMutations
+} from '@open-pencil/scene-graph/mutation-impact'
 
 import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'

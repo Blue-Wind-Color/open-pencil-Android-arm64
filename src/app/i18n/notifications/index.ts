@@ -2,7 +2,7 @@ import { createI18n, params } from '@nanostores/i18n'
 import type { ComponentsJSON } from '@nanostores/i18n'
 import { useStore } from '@nanostores/vue'
 
-import { locale, type Locale, type TranslatedLocale } from '@open-pencil/vue'
+import { locale, type Locale, type TranslatedLocale } from '@open-pencil/vue/i18n'
 
 export const notificationMessageDefaults = {
   chatInitializationFailed: params('Could not initialize chat: {error}'),

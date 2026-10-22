@@ -1,4 +1,4 @@
-import type { CopyOptions } from '@open-pencil/core/editor'
+import type { CopyOptions } from '@open-pencil/core'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'

@@ -1,13 +1,12 @@
 import { minBy } from 'es-toolkit'
 
-import {
-  boundEndpoint,
-  freeEndpoint,
-  type ConnectorEndpoint,
-  type ConnectorMagnet,
-  type SceneGraph,
-  type SceneNode
+import type {
+  ConnectorEndpoint,
+  ConnectorMagnet,
+  SceneGraph,
+  SceneNode
 } from '@open-pencil/scene-graph'
+import { boundEndpoint, freeEndpoint } from '@open-pencil/scene-graph/connectors'
 import { getAxisAlignedBoundsInParent, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'

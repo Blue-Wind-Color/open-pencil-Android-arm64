@@ -1,5 +1,5 @@
+import type { Editor } from '@open-pencil/core'
 import { HANDLE_HIT_RADIUS, LAYER_HIT_PAD } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
 import {
   createSceneGeometry,
   isLineLike,

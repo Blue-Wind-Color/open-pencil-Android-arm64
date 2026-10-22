@@ -4,12 +4,8 @@ import { getNodeOrThrow } from '#core-tests/helpers/assert'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
-import {
-  DEFAULT_STICKY_COLOR,
-  SceneGraph,
-  STICKY_COLORS,
-  stickySublayers
-} from '@open-pencil/scene-graph'
+import { DEFAULT_STICKY_COLOR, STICKY_COLORS, stickySublayers } from '@open-pencil/scene-graph/generated'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 const BOARD = `
   <Frame name="Board" w={900} h={400}>

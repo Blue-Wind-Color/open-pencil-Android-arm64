@@ -8,8 +8,6 @@ import type {
   MaskType,
   SceneNode,
   Stroke,
-  FigJamTextSize,
-  FigJamTypeface,
   StrokeCap,
   StrokeJoin,
   TextAutoResize,
@@ -18,6 +16,7 @@ import type {
   TextDecorationStyle,
   TextDirection
 } from '@open-pencil/scene-graph'
+import type { FigJamTextSize, FigJamTypeface } from '@open-pencil/scene-graph/figjam'
 import {
   SHAPE_WITH_TEXT_TYPES,
   type ShapeWithTextType

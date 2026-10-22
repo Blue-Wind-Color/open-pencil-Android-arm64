@@ -2,12 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import {
-  createEditor,
-  graphFromDocumentChange,
-  isEmptyDocumentChange
-} from '@open-pencil/core/editor'
-import { readComments, writeComments, type CommentThread } from '@open-pencil/scene-graph'
+import { createEditor, graphFromDocumentChange, isEmptyDocumentChange } from '@open-pencil/core'
+import type { CommentThread } from '@open-pencil/scene-graph'
+import { readComments, writeComments } from '@open-pencil/scene-graph/comments'
 
 function setup() {
   const editor = createEditor()
@@ -77,7 +74,7 @@ describe('document changes', () => {
     const { editor, pageId, card, title, other } = setup()
     roundTrip(editor, () => {
       editor.graph.insertChildAt(title.id, other.id, 0)
-      editor.graph.reorderChild(other.id, pageId, 0)
+      editor.graph.insertChildAt(other.id, pageId, 0)
     })
     roundTrip(editor, () => {
       editor.graph.reparentNode(other.id, card.id)

@@ -1,5 +1,5 @@
-import type { Editor } from '@open-pencil/core/editor'
-import { layerResizes, layerRotates } from '@open-pencil/scene-graph'
+import type { Editor } from '@open-pencil/core'
+import { layerResizes, layerRotates } from '@open-pencil/scene-graph/generated'
 
 import {
   MOVE_CURSOR,

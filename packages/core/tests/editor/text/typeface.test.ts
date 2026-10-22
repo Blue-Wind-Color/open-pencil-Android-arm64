@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createEditor } from '@open-pencil/core/editor'
-import { createSticky, shapeWithTextLabel, stickySublayers } from '@open-pencil/scene-graph'
+import { createEditor } from '@open-pencil/core'
+import { createSticky, shapeWithTextLabel, stickySublayers } from '@open-pencil/scene-graph/generated'
 
 function setup() {
   const editor = createEditor({ loadFont: () => Promise.resolve(null) })

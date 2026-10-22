@@ -1,11 +1,11 @@
 import { difference } from 'es-toolkit/array'
 
-import type { SceneNode } from '../'
 import { CORNER_FIELDS, PAINT_FIELDS, STROKE_FIELDS } from '../fields/appearance'
 import { SIZE_FIELDS, TRANSFORM_FIELDS } from '../fields/geometry'
 import { AUTO_LAYOUT_FIELDS, SIZE_CONSTRAINT_FIELDS } from '../fields/layout'
 import { TEXT_STYLE_FIELDS } from '../fields/text'
 import { STYLE_LINK_FIELDS } from '../shared-styles'
+import type { SceneNode } from '../types'
 
 export const INSTANCE_SYNC_TEXT_PROPS = [
   'name',

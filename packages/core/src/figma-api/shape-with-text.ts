@@ -1,9 +1,5 @@
-import {
-  createShapeWithText,
-  shapeWithTextFrameFields,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { createShapeWithText, shapeWithTextFrameFields } from '@open-pencil/scene-graph/generated'
 import {
   isShapeWithTextType,
   SHAPE_WITH_TEXT_TYPES,

@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import {
-  createDefaultNode,
-  type NodeType,
-  type SceneNode,
-  type VectorNetwork
-} from '@open-pencil/scene-graph'
-import type { LayerNode, LayerOutline } from '@open-pencil/vue'
+import type { NodeType, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import type { LayerNode, LayerOutline } from '@open-pencil/vue/primitives/LayerTree'
 
 import type { LayerIssueMark } from '@/app/editor/design-check/layers'
 import LayerTreeNodeRow from '@/components/LayerTree/LayerTreeNodeRow.vue'

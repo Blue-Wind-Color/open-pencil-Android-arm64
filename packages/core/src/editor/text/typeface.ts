@@ -1,13 +1,13 @@
 import {
   FIGJAM_TYPEFACES,
   figJamTypefaceFields,
-  generatedFrameText,
   type FigJamTypeface
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/figjam'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { generatedFrameText } from '@open-pencil/scene-graph/generated'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { EditorContext } from '#core/editor/types'
-import { weightToStyle } from '#core/text/fonts'
 
 /** Typefaces for the text generated frames are named by, such as a sticky note's body or a shape's label. */
 export function createGeneratedTextActions(ctx: EditorContext) {

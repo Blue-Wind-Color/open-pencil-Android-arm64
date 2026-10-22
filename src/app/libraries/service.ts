@@ -1,6 +1,6 @@
 import { markRaw, shallowRef } from 'vue'
 
-import { reapplyInstanceComponentProperties } from '@open-pencil/core/editor'
+import { reapplyInstanceComponentProperties } from '@open-pencil/core'
 import {
   materializeLibraryAsset,
   ensureLibraryAssetKeys,
@@ -12,16 +12,14 @@ import {
   createSelectiveLibraryRevision,
   discoverPublishableLibraryChanges,
   readSourceLibraryPublication,
-  writeSourceLibraryPublication
-} from '@open-pencil/core/library'
-import type {
-  ComponentLibraryRevision,
-  LibraryCatalog,
-  LibrarySummary,
-  LibraryUpdateImpact,
-  LibraryUpdateSummary,
-  PublishLibraryInput,
-  LibraryAssetChange
+  writeSourceLibraryPublication,
+  type ComponentLibraryRevision,
+  type LibraryCatalog,
+  type LibrarySummary,
+  type LibraryUpdateImpact,
+  type LibraryUpdateSummary,
+  type PublishLibraryInput,
+  type LibraryAssetChange
 } from '@open-pencil/core/library'
 import type {
   ComponentCatalog,

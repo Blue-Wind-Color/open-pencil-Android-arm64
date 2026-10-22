@@ -5,13 +5,13 @@ import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixture
 import { inheritedNestedBindingRecords } from '#core-tests/helpers/fig/nested-binding'
 import * as v from 'valibot'
 
-import { OpenPencilAPI } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
+import { createEditor } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { exportFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
-import { cloneInstanceOverrideState } from '@open-pencil/scene-graph'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 
 /** Only the component-edit measurements this file asserts against are read from the oracle. */
 const AuthoringOracle = v.looseObject({

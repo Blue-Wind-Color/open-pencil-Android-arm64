@@ -1,11 +1,10 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import {
-  recordInstanceOverride,
-  type LayoutDirection,
-  type SceneGraph,
-  type SceneNode,
-  type TextDirection
+import type {
+  LayoutDirection,
+  SceneGraph,
+  SceneNode,
+  TextDirection
 } from '@open-pencil/scene-graph'
 import {
   getFillOkHCL,
@@ -15,6 +14,7 @@ import {
   type OkHCLColor,
   type OkHCLPayload
 } from '@open-pencil/scene-graph/color'
+import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 

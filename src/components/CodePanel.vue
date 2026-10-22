@@ -14,7 +14,8 @@ import {
 
 import { JSX_REFERENCE } from '@open-pencil/design-jsx'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { useEditorEvent, useI18n } from '@open-pencil/vue'
+import { useEditorEvent } from '@open-pencil/vue/editor/events'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
   commitDOMCodeSession,

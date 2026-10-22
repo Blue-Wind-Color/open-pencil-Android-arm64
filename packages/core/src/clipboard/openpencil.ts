@@ -2,18 +2,20 @@ import { deflateSync, inflateSync } from 'fflate'
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
+import type {
+  GeometryPath,
+  NodeType,
+  SceneGraph,
+  SceneNode,
+  WindingRule
+} from '@open-pencil/scene-graph'
 import {
   createInstanceOverrideState,
   deserializeInstanceOverrideState,
   serializeInstanceOverrideState,
   setInstanceOverride,
-  type InstanceOverrideState,
-  type GeometryPath,
-  type NodeType,
-  type SceneGraph,
-  type SceneNode,
-  type WindingRule
-} from '@open-pencil/scene-graph'
+  type InstanceOverrideState
+} from '@open-pencil/scene-graph/instances/overrides'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import type { ClipboardSnapshot } from '#core/editor/clipboard/copy'

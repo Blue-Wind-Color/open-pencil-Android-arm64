@@ -73,11 +73,6 @@
       "import": "./dist/design-jsx/index.js",
       "default": "./dist/design-jsx/index.js"
     },
-    "./editor": {
-      "types": "./dist/editor/index.d.ts",
-      "import": "./dist/editor/index.js",
-      "default": "./dist/editor/index.js"
-    },
     "./tools": {
       "types": "./dist/tools/index.d.ts",
       "import": "./dist/tools/index.js",
@@ -138,11 +133,6 @@
       "types": "./dist/io/formats/svg/index.d.ts",
       "import": "./dist/io/formats/svg/index.js",
       "default": "./dist/io/formats/svg/index.js"
-    },
-    "./kiwi": {
-      "types": "./dist/kiwi/index.d.ts",
-      "import": "./dist/kiwi/index.js",
-      "default": "./dist/kiwi/index.js"
     },
     "./clipboard": {
       "types": "./dist/clipboard.d.ts",

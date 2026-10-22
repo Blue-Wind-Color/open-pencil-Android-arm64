@@ -2,7 +2,7 @@
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useCloudMessages, useCloudPortalMessages, useCommonMessages } from '@open-pencil/vue'
+import { useCloudMessages, useCloudPortalMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import {
   cloudAuthFailureMessage,

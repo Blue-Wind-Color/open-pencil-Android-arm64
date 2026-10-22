@@ -1,6 +1,7 @@
 import { limitAsync } from 'es-toolkit/promise'
 
-import { instanceMainComponent, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import {

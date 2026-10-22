@@ -9,14 +9,16 @@ import {
   fontWeightMatchOrder,
   fontManager,
   isVariableFont,
+  FontManager
+} from '@open-pencil/core/text'
+import { weightToFigmaStyle } from '@open-pencil/fig/node-change'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import {
   normalizeFontFamily,
   styleToVariant,
   styleToWeight,
-  weightToFigmaStyle,
-  weightToStyle,
-  FontManager,
-  SceneGraph
-} from '@open-pencil/core'
+  weightToStyle
+} from '@open-pencil/scene-graph/font-style'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { fetchStub } from '#tests/helpers/fetch'

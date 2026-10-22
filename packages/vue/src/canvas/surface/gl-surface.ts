@@ -1,7 +1,7 @@
 import type { CanvasKit, Surface } from 'canvaskit-wasm'
 
+import type { Editor } from '@open-pencil/core'
 import { IS_BROWSER } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
 import type { DocumentColorSpace } from '@open-pencil/scene-graph'
 
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'

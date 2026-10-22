@@ -1,4 +1,4 @@
-import { executeAtomicTool, isEmptyDocumentChange } from '@open-pencil/core/editor'
+import { executeAtomicTool, isEmptyDocumentChange } from '@open-pencil/core'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 import type { ToolDef } from '@open-pencil/core/tools'
 

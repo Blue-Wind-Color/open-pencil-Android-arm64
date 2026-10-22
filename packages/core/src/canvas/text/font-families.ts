@@ -1,10 +1,12 @@
 import { uniq } from 'es-toolkit/array'
 
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+
 import { ResourceCache } from '#core/cache/resource'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import type { FamilyFace } from '#core/text/font/faces'
-import { fontManager, fontWeightMatchOrder, weightToStyle } from '#core/text/fonts'
+import { fontManager, fontWeightMatchOrder } from '#core/text/fonts'
 
 const familiesCache = new ResourceCache<string, string[]>({ maxEntries: 256 })
 

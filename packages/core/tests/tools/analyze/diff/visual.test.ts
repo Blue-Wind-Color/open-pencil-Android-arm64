@@ -9,8 +9,8 @@ import {
   initCanvasKit
 } from '@open-pencil/core/io/formats/raster'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
-import { SceneGraph, type Color } from '@open-pencil/scene-graph'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Color, Rect } from '@open-pencil/scene-graph/primitives'
 
 type VisualDiff = {
   error?: string

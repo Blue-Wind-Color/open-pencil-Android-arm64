@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 
-import { cloneVectorNetwork } from '@open-pencil/scene-graph'
 import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import { cloneVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import type { FigmaAPI } from '#core/figma-api'
 import { toolNumber, nodeIdInput, nodeInput } from '#core/tools/input'

@@ -2,7 +2,7 @@ import { compact } from 'es-toolkit'
 import { computed } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@open-pencil/core'
 import type { BlendMode, SceneNode } from '@open-pencil/scene-graph'
 
 import type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'

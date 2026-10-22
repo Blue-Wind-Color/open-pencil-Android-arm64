@@ -1,6 +1,8 @@
 import { computed, type Ref } from 'vue'
 
-import { formatShortcut, type Editor, type MenuEntry } from '@open-pencil/vue'
+import type { Editor } from '@open-pencil/core'
+import { formatShortcut } from '@open-pencil/vue/editor/commands'
+import type { MenuEntry } from '@open-pencil/vue/editor/menu-model'
 
 import type { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
 import {

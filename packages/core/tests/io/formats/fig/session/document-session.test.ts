@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { exportFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { createFigDocumentSession, materializeFigArchive } from '@open-pencil/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, CommittedGraphEventError } from '@open-pencil/scene-graph'
 
 test('a mid-load creation failure leaves existing nodes and loaded pages unchanged', async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { mergeVectorNetworks, type VectorNetwork } from '@open-pencil/scene-graph'
+import type { VectorNetwork } from '@open-pencil/scene-graph'
+import { mergeVectorNetworks } from '@open-pencil/scene-graph/vector-network'
 
 import { expectDefined } from './helpers/assert'
 

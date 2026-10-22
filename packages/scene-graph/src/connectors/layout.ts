@@ -2,7 +2,7 @@ import { compact, isEqual, pick } from 'es-toolkit'
 
 import { getAxisAlignedBoundsInParent, getParentWorldMatrix, getWorldMatrix } from '../coordinate'
 import { computeBounds } from '../geometry'
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import Matrix from '../matrix'
 import type { Vector } from '../primitives'
 import type { ConnectorEndpoint, SceneNode, StrokeCap } from '../types'

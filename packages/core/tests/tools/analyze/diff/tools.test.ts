@@ -4,7 +4,8 @@ import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, diffDocuments } from '@open-pencil/core/tools'
-import { SceneGraph, type Color } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 type DiffResult = { diff?: string | null; message?: string; error?: string }
 type ApplyResult = {

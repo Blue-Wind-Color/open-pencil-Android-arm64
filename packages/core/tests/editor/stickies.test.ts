@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
-import { setTextMeasurer } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
-import { STICKY_COLORS, stickySublayers } from '@open-pencil/scene-graph'
+import { createEditor } from '@open-pencil/core'
+import { setTextMeasurer } from '@open-pencil/core/layout'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { STICKY_COLORS, stickySublayers } from '@open-pencil/scene-graph/generated'
 
 import { applyGeneratedTextNameEdit } from '#core/editor/text/name'
 

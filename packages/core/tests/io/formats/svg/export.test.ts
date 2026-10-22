@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { renderNodesToSVG } from '@open-pencil/core'
+import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
 import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#core-tests/helpers/assert'

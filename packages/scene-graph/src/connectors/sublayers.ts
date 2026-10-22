@@ -1,6 +1,6 @@
 import { BLACK } from '../constants'
 import type { GeneratedFrameKind } from '../generated/kind'
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { Color, Vector } from '../primitives'
 import type { ConnectorEndpoint, Fill, SceneNode, Stroke, VectorNetwork } from '../types'
 

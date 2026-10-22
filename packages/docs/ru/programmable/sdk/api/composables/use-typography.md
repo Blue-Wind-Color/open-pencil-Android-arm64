@@ -17,7 +17,7 @@ description: Чтение и изменение семейства, начерт
 ## Использование
 
 ```ts
-import { useTypography } from '@open-pencil/vue'
+import { useTypography } from '@open-pencil/vue/controls/typography'
 
 const typography = useTypography()
 ```

@@ -1,4 +1,4 @@
-import type { EditorState } from '@open-pencil/core/editor'
+import type { EditorState } from '@open-pencil/core'
 import type {
   VectorNetwork,
   VectorRegion,

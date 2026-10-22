@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { colorToCSS } from '@open-pencil/scene-graph/color'
-import { useI18n, useInlineRename } from '@open-pencil/vue'
+import { useInlineRename } from '@open-pencil/vue/editor/inline-rename'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { initials } from '@/app/presence/initials'
 import type { FollowTarget } from '@/app/presence/types'

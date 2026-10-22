@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue'
+import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import CloudAccountForm from '@/components/cloud/account/CloudAccountForm.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'

@@ -1,12 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  sceneNodeToDesignDocument,
-  sceneNodesToTailwindJSXWithLayers,
-  serializeHTML
-} from '#dom-css/index'
+import { serializeHTML } from '#dom-css/export/html'
+import { sceneNodeToDesignDocument } from '#dom-css/export/projection'
+import { sceneNodesToTailwindJSXWithLayers } from '#dom-css/export/tailwind-jsx'
 
-import { createShaderPaint, SceneGraph, withShaderPaints } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { createShaderPaint, withShaderPaints } from '@open-pencil/scene-graph/shaders'
 
 const PRESET = {
   components: [{ type: 'Aurora', props: { colorA: '#ff3300', speed: 2 } }, { type: 'FilmGrain' }]

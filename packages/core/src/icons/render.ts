@@ -1,3 +1,6 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
+import { BLACK } from '@open-pencil/scene-graph/constants'
 import {
   iconGlyph,
   iconLayerName,
@@ -6,12 +9,8 @@ import {
   readIconTint,
   withIcon,
   withIconTint,
-  type IconPaint,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
-import { BLACK } from '@open-pencil/scene-graph/constants'
+  type IconPaint
+} from '@open-pencil/scene-graph/icons'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
   createResizeSnapshot,

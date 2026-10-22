@@ -3,7 +3,7 @@ import { useObjectUrl } from '@vueuse/core'
 import { computed, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { useCloudMessages } from '@open-pencil/vue'
+import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { openCloudConnect } from '@/app/cloud/connect/flow'
 import { resolveCloudConflict, type CloudConflictChoice } from '@/app/cloud/documents/conflict'

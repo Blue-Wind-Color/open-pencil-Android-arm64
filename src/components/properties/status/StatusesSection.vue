@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useSceneComputed, useStatusMessages } from '@open-pencil/vue'
+import { useStatusMessages } from '@open-pencil/vue/i18n'
+import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openStatusesDialog } from '@/app/editor/statuses/dialog'

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useAutomationMessages, useCommonMessages } from '@open-pencil/vue'
+import { useAutomationMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import type { WebMCPMode } from '@/app/automation/webmcp/policy'
 import type { WebMCPRuntimeState } from '@/app/automation/webmcp/service'

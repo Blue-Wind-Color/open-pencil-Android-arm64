@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { renderTree, renderJSX } from '@open-pencil/core'
+import { renderTree, renderJSX } from '@open-pencil/core/design-jsx'
 import {
   Frame,
   Text,

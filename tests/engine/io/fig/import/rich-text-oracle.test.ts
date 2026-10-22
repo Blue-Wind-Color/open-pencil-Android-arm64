@@ -3,11 +3,9 @@ import { readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
 
-import { nodeChangeToProps } from '@open-pencil/fig/node-change'
+import { nodeChangeToProps, sceneNodeToKiwi } from '@open-pencil/fig/node-change'
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
 
 const OracleLength = v.object({ unit: v.string(), value: v.number() })
 

@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import { getNodeOrThrow } from '#core-tests/helpers/assert'
 import { pick } from 'es-toolkit'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { connectorSublayers, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
 
 function setup() {
   const graph = new SceneGraph()
@@ -39,7 +39,8 @@ describe('ConnectorNode', () => {
       startCap: connector.connectorStartStrokeCap,
       endCap: connector.connectorEndStrokeCap,
       strokeWeight: connector.strokeWeight,
-      color: connector.strokes[0]?.type === 'SOLID' && pick(connector.strokes[0].color, ['r', 'g', 'b']),
+      color:
+        connector.strokes[0]?.type === 'SOLID' && pick(connector.strokes[0].color, ['r', 'g', 'b']),
       text: connector.text.characters
     }).toEqual({
       name: 'Connector line',
@@ -111,7 +112,9 @@ describe('ConnectorNode', () => {
     }).toThrow('in set_connectorStart: Invalid endpointNodeId')
     expect(() => {
       connector.connectorStartStrokeCap = 'ROUND' as ConnectorStrokeCap
-    }).toThrow('in set_connectorStartStrokeCap: Property "connectorStartStrokeCap" failed validation')
+    }).toThrow(
+      'in set_connectorStartStrokeCap: Property "connectorStartStrokeCap" failed validation'
+    )
     connector.connectorStartStrokeCap = 'DIAMOND_FILLED'
     expect(connector.connectorStartStrokeCap).toBe('DIAMOND_FILLED')
     expect(() => {

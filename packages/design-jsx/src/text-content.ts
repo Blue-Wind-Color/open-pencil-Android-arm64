@@ -1,17 +1,19 @@
 import { isEmptyObject, isEqual, omitBy, pick } from 'es-toolkit'
 import * as v from 'valibot'
 
+import type {
+  CharacterStyleOverride,
+  SceneNode,
+  StyleRun,
+  TextParagraphStyle
+} from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import {
-  createDefaultNode,
   MAX_LIST_INDENTATION,
   paragraphCount,
   PLAIN_PARAGRAPH,
-  trimParagraphStyles,
-  type CharacterStyleOverride,
-  type SceneNode,
-  type StyleRun,
-  type TextParagraphStyle
-} from '@open-pencil/scene-graph'
+  trimParagraphStyles
+} from '@open-pencil/scene-graph/text'
 
 import { isTreeNode, type TreeNode } from './tree'
 import { parseScriptInput } from './validation'

@@ -9,9 +9,9 @@ import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 import {
   LOCALE_DIR_NAMES,
   TRANSLATED_LOCALES,
-  messageDefaults,
-  type TranslatedLocale
-} from '@open-pencil/vue'
+  type TranslatedLocale,
+  messageDefaults
+} from '@open-pencil/vue/i18n'
 
 import { hasMixedLatinAndCjk, placeholders } from './quality'
 

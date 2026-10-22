@@ -102,7 +102,8 @@ const guid = stringToGuid('1:42')
 
 ## Public subpaths
 
-- `@open-pencil/kiwi`
+The package has no root entry; import each name from its subpath.
+
 - `@open-pencil/kiwi/schema-runtime`
 - `@open-pencil/kiwi/fig`
 - `@open-pencil/kiwi/fig/codec`

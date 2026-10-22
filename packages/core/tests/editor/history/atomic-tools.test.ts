@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { OpenPencilAPI } from '@open-pencil/core'
-import { createEditor, executeAtomicTool } from '@open-pencil/core/editor'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
+import { createEditor, executeAtomicTool } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, type ToolDef } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'

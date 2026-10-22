@@ -7,7 +7,7 @@ import {
   useCredentialMessages,
   useSettingsMessages,
   useStorageMessages
-} from '@open-pencil/vue'
+} from '@open-pencil/vue/i18n'
 
 import { homeLocation } from '@/app/home/location'
 import { useNotificationMessages } from '@/app/i18n/notifications'

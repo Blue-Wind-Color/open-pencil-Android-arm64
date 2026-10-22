@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 
-import { DEFAULT_STICKY_COLOR, type FigJamTextSize } from '@open-pencil/scene-graph'
+import type { FigJamTextSize } from '@open-pencil/scene-graph/figjam'
+import { DEFAULT_STICKY_COLOR } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import StickyControls from './StickyControls.vue'

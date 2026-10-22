@@ -7,9 +7,11 @@ import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
 import { corePackagePath } from '#core-tests/helpers/paths'
 import { heavy, HEAVY_TEST_TIMEOUT_MS } from '#core-tests/helpers/test-utils'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { fontManager } from '@open-pencil/core/text'
 import { parseFigBuffer } from '@open-pencil/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 const INTER_ASSETS = corePackagePath('assets')
 

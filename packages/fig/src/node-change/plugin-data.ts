@@ -2,19 +2,21 @@ import { omit } from 'es-toolkit/object'
 
 import type { NodeChange, PluginData, PluginRelaunchData } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import type {
+  ExportSetting,
+  PluginDataEntry,
+  PluginRelaunchDataEntry,
+  SceneNode
+} from '@open-pencil/scene-graph'
+import type { ExportFormatId } from '@open-pencil/scene-graph/export-format'
+import { clampExportScale } from '@open-pencil/scene-graph/export-scale'
 import {
-  clampExportScale,
   hasPluginData,
   OPEN_PENCIL_PLUGIN_DATA,
   OPEN_PENCIL_PLUGIN_ID,
   withPluginData,
-  type ExportFormatId,
-  type ExportSetting,
-  type PluginDataEntry,
-  type PluginDataField,
-  type PluginRelaunchDataEntry,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  type PluginDataField
+} from '@open-pencil/scene-graph/plugin-data'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'

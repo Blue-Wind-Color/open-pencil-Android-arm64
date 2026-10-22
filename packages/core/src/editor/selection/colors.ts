@@ -1,5 +1,6 @@
-import { stickySublayers } from '@open-pencil/scene-graph'
-import type { Color, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { stickySublayers } from '@open-pencil/scene-graph/generated'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 /**
  * Figma's Selection colors: every solid fill and stroke colour of the selected layers and their

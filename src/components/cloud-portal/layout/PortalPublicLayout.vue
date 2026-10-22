@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useCloudPortalMessages } from '@open-pencil/vue'
+import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import BrandMark from '@/components/brand/BrandMark.vue'
 import { CLOUD_DOCS_URL } from '@/constants'

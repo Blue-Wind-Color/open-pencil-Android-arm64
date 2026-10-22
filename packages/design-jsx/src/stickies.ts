@@ -1,15 +1,14 @@
 import * as v from 'valibot'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { colorToHex, tryParseColor } from '@open-pencil/scene-graph/color'
 import {
   createSticky,
   isWideSticky,
   STICKY_COLORS,
   stickyScale,
-  stickySublayers,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
-import { colorToHex, tryParseColor } from '@open-pencil/scene-graph/color'
+  stickySublayers
+} from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { enumProp, FIGJAM_TEXT_SIZE, FIGJAM_TYPEFACE } from './enums'

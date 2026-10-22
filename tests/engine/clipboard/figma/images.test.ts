@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { buildFigmaClipboardHTML, FigmaAPI } from '@open-pencil/core'
+import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'

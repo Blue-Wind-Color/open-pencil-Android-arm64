@@ -1,4 +1,5 @@
-import { createShapeWithText, type NodeType, type SceneNode } from '@open-pencil/scene-graph'
+import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
+import { createShapeWithText } from '@open-pencil/scene-graph/generated'
 
 import { prepareSlotEdits } from './components/slots'
 import { restoreSubtree, snapshotSubtree } from './history/subtree'

@@ -17,11 +17,6 @@ export {
 
 import type { CanvasKit, Path } from 'canvaskit-wasm'
 
-export {
-  buildStyleOverrideTable,
-  decodeVectorNetworkBlob,
-  encodeVectorNetworkBlob
-} from '@open-pencil/fig/node-change'
 import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
 
 import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
@@ -140,3 +135,15 @@ export function geometryBlobToPath(
   result.setFillType(fillType(ck, windingRule))
   return result
 }
+export {
+  cubicExtrema,
+  evalCubic,
+  isLineSegment,
+  nearestPointOnCubic,
+  segmentToAbsolute,
+  splitCubicAt,
+  type CubicPoints,
+  type NearestResult,
+  type NetworkNearestResult
+} from './curve-math'
+export { extractSubNetwork, findConnectedComponents } from './connectivity'

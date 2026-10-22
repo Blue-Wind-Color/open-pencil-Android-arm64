@@ -1,20 +1,22 @@
 import * as v from 'valibot'
 
-import {
-  createShaderPaint,
-  shaderPresetSchema,
-  type BlendMode,
-  type Fill,
-  type FillType,
-  type GradientStop,
-  type GradientTransform,
-  type ShaderComponent,
-  type ShaderPreset
+import type {
+  BlendMode,
+  Fill,
+  FillType,
+  GradientStop,
+  GradientTransform
 } from '@open-pencil/scene-graph'
 import { colorToFill, parseColor } from '@open-pencil/scene-graph/color'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { IDENTITY_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import {
+  createShaderPaint,
+  shaderPresetSchema,
+  type ShaderComponent,
+  type ShaderPreset
+} from '@open-pencil/scene-graph/shaders'
 
 import { parseScriptInput } from './validation'
 

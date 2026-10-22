@@ -1,6 +1,6 @@
-import { generatedFrameOwner, stickySublayers } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
+import { generatedFrameOwner, stickySublayers } from '@open-pencil/scene-graph/generated'
 
 /**
  * The body of an empty sticky note as an editing canvas draws it: `placeholder`, in the

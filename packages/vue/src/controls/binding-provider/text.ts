@@ -1,5 +1,5 @@
-import type { Editor } from '@open-pencil/core/editor'
-import { TEXT_CONTENT_VARIABLE_TYPES, variableText } from '@open-pencil/scene-graph'
+import type { Editor } from '@open-pencil/core'
+import { TEXT_CONTENT_VARIABLE_TYPES, variableText } from '@open-pencil/scene-graph/variables'
 
 import { useOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
 import type { BindingTarget } from '#vue/controls/binding-provider/types'

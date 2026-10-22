@@ -6,17 +6,18 @@ import type { FontVariation, SceneGraph } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import { facesFromStyles, hasFamilyFace, type FamilyFace } from '#core/text/font/faces'
-import {
-  chooseLocalFontMatch,
-  normalizeFontFamily,
-  styleToWeight,
-  weightToStyle
-} from '#core/text/font/style'
+import { chooseLocalFontMatch } from '#core/text/font/style'
 import { isVariableFont, namedInstanceVariations } from '#core/text/font/variation'
 
 export * from '#core/text/font/sources'
 export * from '#core/text/font/style'
 export * from '#core/text/font/variation'
+import {
+  normalizeFontFamily,
+  styleToWeight,
+  weightToStyle
+} from '@open-pencil/scene-graph/font-style'
+
 import { fontFallbackEntry } from '#core/text/fallbacks'
 import type { FontFallbackScript } from '#core/text/fallbacks'
 import { UnsupportedFontFormatError } from '#core/text/font/sources'

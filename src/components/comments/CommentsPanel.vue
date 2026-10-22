@@ -16,8 +16,8 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { commentThreadNumbers, listCommentThreads } from '@open-pencil/scene-graph'
-import { useCommentMessages } from '@open-pencil/vue'
+import { commentThreadNumbers, listCommentThreads } from '@open-pencil/scene-graph/comments'
+import { useCommentMessages } from '@open-pencil/vue/i18n'
 
 import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'

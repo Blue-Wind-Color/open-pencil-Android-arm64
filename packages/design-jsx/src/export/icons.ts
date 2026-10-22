@@ -1,12 +1,11 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { colorToHex } from '@open-pencil/scene-graph/color'
 import {
   isIconModified,
   isPlacedIconName,
   readIcon,
-  readIconTint,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
-import { colorToHex } from '@open-pencil/scene-graph/color'
+  readIconTint
+} from '@open-pencil/scene-graph/icons'
 
 import type { JSXProp } from './props'
 

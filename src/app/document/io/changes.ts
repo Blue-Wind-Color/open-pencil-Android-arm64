@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
-import type { UndoEntry } from '@open-pencil/scene-graph'
+import type { Editor } from '@open-pencil/core'
+import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
 /** Stands for the history of a save whose state was not captured, which history never returns to. */
 const UNKNOWN_HISTORY: UndoEntry = { label: '', forward: () => undefined, inverse: () => undefined }

@@ -1,8 +1,9 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters, shownText } from '#core/text/case'
-import { fontManager, weightToStyle } from '#core/text/fonts'
+import { fontManager } from '#core/text/fonts'
 import {
   fontCoverageDemand,
   fontFaceDemand,

@@ -1,4 +1,5 @@
-import type { SceneGraph, SceneNode, SharedStyle, SharedStyleKind, SharedStyleType } from './index'
+import type { SceneGraph } from './graph'
+import type { SceneNode, SharedStyle, SharedStyleKind, SharedStyleType } from './types'
 
 const STYLE_REF_KEYS = {
   fill: 'fillStyleId',

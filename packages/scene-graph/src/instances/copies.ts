@@ -1,12 +1,13 @@
 // How an instance's copies follow the component's layers when its structure changes.
-import type { SceneGraph, SceneNode } from '../'
+import type { SceneGraph } from '../graph'
+import { ownsSlotContent, slotPropertyId } from '../slots/frames'
+import type { SceneNode } from '../types'
+import { DEFAULT_HISTORY_LIMIT } from '../undo'
 import {
   getInstanceOverride,
   hasInstanceOverride as hasNodeInstanceOverride,
   type InstanceOverrideState
-} from '../instance-overrides'
-import { ownsSlotContent, slotPropertyId } from '../slots/frames'
-import { DEFAULT_HISTORY_LIMIT } from '../undo'
+} from './overrides'
 
 /**
  * One instance's sync: the copies it has matched to the component's layers, the parents it

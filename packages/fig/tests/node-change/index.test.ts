@@ -19,9 +19,15 @@ import {
 } from '#fig/node-change/index'
 import { fillToKiwiPaint } from '#fig/node-change/paint'
 
-import { getCompiledSchema, initCodec } from '@open-pencil/kiwi/fig/codec'
-import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph, getWorldMatrix, TransformMatrix } from '@open-pencil/scene-graph'
+import {
+  getCompiledSchema,
+  initCodec,
+  type NodeChange,
+  type Paint
+} from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import TransformMatrix from '@open-pencil/scene-graph/matrix'
 
 describe('@open-pencil/fig NodeChange policy', () => {
   test('keeps raw LINE endpoints through reflected parents and exports authored origin pivots', () => {

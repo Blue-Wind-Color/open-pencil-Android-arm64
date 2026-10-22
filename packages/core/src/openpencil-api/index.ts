@@ -1,12 +1,12 @@
+import type { VariableLiteral } from '@open-pencil/scene-graph'
 import {
   BEHAVIOUR_CONTRACTS,
   BEHAVIOUR_KINDS,
-  parseVariableFormula,
   type BehaviourKind,
-  type BehaviourSpec,
-  type VariableLiteral
-} from '@open-pencil/scene-graph'
+  type BehaviourSpec
+} from '@open-pencil/scene-graph/behaviours'
 import type { OkHCLColor, OkHCLPayload } from '@open-pencil/scene-graph/color'
+import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
 
 import { exposeInstanceSwap } from '#core/figma-api/components'
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api/index'

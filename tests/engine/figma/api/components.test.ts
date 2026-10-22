@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { hasInstanceOverride } from '@open-pencil/scene-graph'
+import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 import { expectDefined } from '#tests/helpers/assert'
 

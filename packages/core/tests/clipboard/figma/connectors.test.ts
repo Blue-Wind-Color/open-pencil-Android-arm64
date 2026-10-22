@@ -4,14 +4,11 @@ import { join } from 'node:path'
 import { expectDefined } from '#core-tests/helpers/assert'
 import { FIXTURES } from '#core-tests/helpers/paths'
 
-import {
-  buildFigmaClipboardHTML,
-  importClipboardNodes,
-  initCodec,
-  parseFigmaClipboard
-} from '@open-pencil/core'
-import { connectorSublayers, layoutConnector, SceneGraph } from '@open-pencil/scene-graph'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { buildFigmaClipboardHTML, importClipboardNodes } from '@open-pencil/core/clipboard'
+import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { connectorSublayers, layoutConnector } from '@open-pencil/scene-graph/connectors'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /** Two FigJam stickies joined by four connectors, as FigJam copies them. */

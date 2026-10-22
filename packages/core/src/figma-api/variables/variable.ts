@@ -1,7 +1,6 @@
 import { uniq } from 'es-toolkit/array'
 
 import {
-  updateTokenExpression,
   VARIABLE_SCOPES,
   type CodeSyntaxPlatform,
   type SceneGraph,
@@ -11,6 +10,7 @@ import {
   type VariableType,
   type VariableValue
 } from '@open-pencil/scene-graph'
+import { updateTokenExpression } from '@open-pencil/scene-graph/variables'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 

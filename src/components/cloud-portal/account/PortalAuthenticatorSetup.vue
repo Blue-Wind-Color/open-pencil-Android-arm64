@@ -3,7 +3,7 @@ import { computedAsync } from '@vueuse/core'
 import { toDataURL } from 'qrcode'
 import { computed, ref } from 'vue'
 
-import { useCloudPortalMessages } from '@open-pencil/vue'
+import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'

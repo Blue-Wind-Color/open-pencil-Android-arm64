@@ -12,7 +12,9 @@ import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import type { TokenStylesheetFormat } from '@open-pencil/dom-css/export'
-import { useEditor, useI18n, useSceneComputed } from '@open-pencil/vue'
+import { useEditor } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
 import CodeViewer from '@/components/code-editor/CodeViewer.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'

@@ -1,35 +1,3 @@
-import {
-  DEFAULT_STROKE_WEIGHT,
-  normalizeFontFamily,
-  OPEN_PENCIL_PLUGIN_DATA,
-  withPluginData
-} from '@open-pencil/scene-graph'
-import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
-
-import { effectiveFigmaRawNodeFields } from '../source-metadata'
-import { computeExportTransform, mapToFigmaType } from './basics'
-import { buildNodeDerivedTextData } from './derived-text/build'
-import { fillsOwnSizingAxis } from './export/fill-sizing'
-import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export/runtime'
-import { applyFontFeaturesToKiwi } from './font/features'
-import { weightToFigmaStyle } from './font/style'
-import { fillToKiwiPaint, safeColor } from './paint'
-import {
-  exportedVariableConsumptionEntries,
-  mergeVariableConsumptionMaps
-} from './variable/bindings'
-import {
-  buildStyleOverrideTable,
-  encodeVectorNetworkBlob,
-  type StyleOverride
-} from './vector/network'
-
-export {
-  buildFigKiwi,
-  decompressFigKiwiDataAsync,
-  FIG_KIWI_DEFAULT_VERSION,
-  parseFigKiwiChunks
-} from '@open-pencil/kiwi/fig/container'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
@@ -38,17 +6,38 @@ import type {
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
+import { DEFAULT_STROKE_WEIGHT } from '@open-pencil/scene-graph/constants'
+import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
+import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 import type { GUID, JSONObject } from '@open-pencil/scene-graph/primitives'
 
+import { effectiveFigmaRawNodeFields } from '../source-metadata'
+import { computeExportTransform, mapToFigmaType } from './basics'
+import { buildNodeDerivedTextData } from './derived-text/build'
+import { fillsOwnSizingAxis } from './export/fill-sizing'
 import {
   buildAssetRefToVarGuidMap,
   buildComponentPropIndex,
   sceneNodeToKiwiWithContext,
   type KiwiNodeChange
 } from './export/node'
+import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export/runtime'
+import { applyFontFeaturesToKiwi } from './font/features'
+import { weightToFigmaStyle } from './font/style'
+import { fillToKiwiPaint, safeColor } from './paint'
 import { exportTextData, fontVariationToKiwi } from './text/data-export'
 import { FIGMA_AUTO_LINE_HEIGHT } from './text/values'
+import {
+  exportedVariableConsumptionEntries,
+  mergeVariableConsumptionMaps
+} from './variable/bindings'
 import { toKiwiWindingRule } from './vector/geometry'
+import {
+  buildStyleOverrideTable,
+  encodeVectorNetworkBlob,
+  type StyleOverride
+} from './vector/network'
 
 function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
   const anyIndividual =

@@ -1,4 +1,4 @@
-import { geometryCommandCoordCount } from '@open-pencil/scene-graph'
+import { geometryCommandCoordCount } from '@open-pencil/scene-graph/geometry'
 
 import type { OutlineCommand } from '#core/text/opentype'
 

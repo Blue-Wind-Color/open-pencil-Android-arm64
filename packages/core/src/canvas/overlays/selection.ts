@@ -1,10 +1,11 @@
 import type { Canvas } from 'canvaskit-wasm'
 
-import { layerRotates, slotPropertyId } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { layerRotates } from '@open-pencil/scene-graph/generated'
 import { computeBounds, rotatedCorners } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import { drawConnectorHover, drawConnectorSelection } from '#core/canvas/overlays/connectors'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'

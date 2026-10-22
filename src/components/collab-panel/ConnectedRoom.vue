@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { selectTarget } from '@open-pencil/vue'
+import { selectTarget } from '@open-pencil/vue/shared/dom-events'
 
 import { useCollabPanelContext } from '@/components/collab-panel/context'
 import { roomStatusText } from '@/components/collab-room/statusText'

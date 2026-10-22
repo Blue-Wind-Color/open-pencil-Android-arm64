@@ -1,4 +1,4 @@
-import type { DocumentChange, PageSnapshot } from '@open-pencil/core/editor'
+import type { DocumentChange, PageSnapshot } from '@open-pencil/core'
 import type { StepBudget } from '@open-pencil/core/tools'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 

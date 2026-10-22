@@ -5,14 +5,11 @@ import {
 } from '#fig/instance-overrides/fields'
 import { compact } from 'es-toolkit'
 
-import {
-  forEachInstanceOverride,
-  ownsSlotContent,
-  scaleNodeChanges,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { forEachInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
+import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
+import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 
 import { instanceExportAddress } from '../instance/geometry'
 import { mergeVariableConsumptionMaps, overrideVariableBindingEntry } from '../variable/bindings'

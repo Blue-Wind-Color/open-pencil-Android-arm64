@@ -2,10 +2,10 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import type { Surface } from 'canvaskit-wasm'
 
+import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { createEditor } from '@open-pencil/core/editor'
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { initCanvasKit } from '@open-pencil/core/io'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 

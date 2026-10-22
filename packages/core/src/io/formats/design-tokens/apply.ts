@@ -2,19 +2,19 @@ import { compact } from 'es-toolkit/array'
 import { pick } from 'es-toolkit/object'
 import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 
-import {
-  findInstanceAncestor,
-  type CodeSyntaxPlatform,
-  type SceneGraph,
-  type SceneNode,
-  type TokenExpression,
-  type TokenUnit,
-  type Variable,
-  type VariableCollection,
-  type VariableScope,
-  type VariableValue
+import type {
+  CodeSyntaxPlatform,
+  SceneGraph,
+  SceneNode,
+  TokenExpression,
+  TokenUnit,
+  Variable,
+  VariableCollection,
+  VariableScope,
+  VariableValue
 } from '@open-pencil/scene-graph'
 import { copyEffects } from '@open-pencil/scene-graph/copy'
+import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'

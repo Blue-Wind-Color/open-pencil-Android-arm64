@@ -1,8 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { CODEGEN_PROMPT as BARREL_CODEGEN } from '@open-pencil/core'
 import { renderJSX } from '@open-pencil/core/design-jsx'
-import { CODEGEN_PROMPT } from '@open-pencil/core/tools'
+import { CODEGEN_PROMPT as BARREL_CODEGEN, CODEGEN_PROMPT } from '@open-pencil/core/tools'
 import { AUTHORING_EXAMPLES, JSX_REFERENCE } from '@open-pencil/design-jsx'
 
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'

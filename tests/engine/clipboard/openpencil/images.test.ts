@@ -3,14 +3,13 @@ import { describe, expect, test } from 'bun:test'
 import { deflateSync } from 'fflate'
 import { fromUint8Array } from 'js-base64'
 
+import { buildOpenPencilClipboardHTML, parseOpenPencilClipboard } from '@open-pencil/core/clipboard'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import {
-  buildOpenPencilClipboardHTML,
-  FigmaAPI,
-  parseOpenPencilClipboard,
-  SceneGraph
-} from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/core'
-import { getInstanceOverride, setInstanceOverride } from '@open-pencil/scene-graph'
+  getInstanceOverride,
+  setInstanceOverride
+} from '@open-pencil/scene-graph/instances/overrides'
 
 import { expectDefined } from '#tests/helpers/assert'
 

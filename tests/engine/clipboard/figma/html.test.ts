@@ -1,14 +1,11 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
 
-import {
-  buildFigmaClipboardHTML,
-  fontManager,
-  importClipboardNodes,
-  initCodec,
-  parseFigmaClipboard,
-  SceneGraph
-} from '@open-pencil/core'
-import { slotPropertyId } from '@open-pencil/scene-graph'
+import { buildFigmaClipboardHTML, importClipboardNodes } from '@open-pencil/core/clipboard'
+import { fontManager } from '@open-pencil/core/text'
+import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import { expectDefined } from '#tests/helpers/assert'
 

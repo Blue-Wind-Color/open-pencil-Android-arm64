@@ -2,10 +2,8 @@ import * as v from 'valibot'
 
 import {
   CODE_SYNTAX_PLATFORMS,
-  ROOT_FONT_SIZE_PX,
   TOKEN_UNITS,
   VARIABLE_SCOPES,
-  type Color,
   type CodeSyntaxPlatform,
   type TokenUnit,
   type VariableScope,
@@ -13,6 +11,8 @@ import {
 } from '@open-pencil/scene-graph'
 import { parseDisplayableColor } from '@open-pencil/scene-graph/color'
 import { parseCSSNumber } from '@open-pencil/scene-graph/css'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { ROOT_FONT_SIZE_PX } from '@open-pencil/scene-graph/variables'
 
 import type { ReadToken } from './read'
 import { OPENPENCIL_EXTENSION } from './types'

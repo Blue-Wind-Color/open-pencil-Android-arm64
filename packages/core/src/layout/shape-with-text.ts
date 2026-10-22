@@ -1,9 +1,9 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   SHAPE_WITH_TEXT_LABEL_LAYOUT,
   shapeWithTextFrameFields,
   shapeWithTextLabel
-} from '@open-pencil/scene-graph'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/generated'
 import {
   fitShapeWithTextHeight,
   shapeWithTextLabelBox

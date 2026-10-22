@@ -1,5 +1,5 @@
-import type { Editor } from '@open-pencil/core/editor'
-import { isSVGMarkup } from '@open-pencil/core/io'
+import type { Editor } from '@open-pencil/core'
+import { isSVGMarkup } from '@open-pencil/core/io/formats/svg'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { matchingClipboardSnapshot } from '../memory'

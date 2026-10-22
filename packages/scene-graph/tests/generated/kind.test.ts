@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
 import {
   createShapeWithText,
   createSticky,
@@ -7,9 +8,8 @@ import {
   generatedFrameText,
   layerResizes,
   layerRotates,
-  SceneGraph,
   stickySublayers
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/generated'
 
 describe('generated frame kinds', () => {
   test('a sticky note edits its body in place, stays upright, and scales by its own handles', () => {

@@ -17,7 +17,8 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
-import { fuzzySearch, useRetainedPopup } from '@open-pencil/vue'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import { fuzzySearch } from '@open-pencil/vue/shared/search'
 
 import type { ComponentUI } from '@/components/ui/types'
 import theme from '@/theme/select/combobox'

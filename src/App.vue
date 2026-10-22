@@ -6,7 +6,8 @@ import { TooltipProvider } from 'reka-ui'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { provideEditor, useI18n } from '@open-pencil/vue'
+import { provideEditor } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import { startCloud } from '@/app/cloud/integration'
 import { useDocumentCloseProtection } from '@/app/document/close/use'

@@ -1,20 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  createHeadlessCSSRuntime,
-  designDocumentToSceneGraph,
-  htmlToDesignDocument,
-  sceneNodeToDesignDocument,
-  serializeHTML
-} from '#dom-css/index'
+import { serializeHTML } from '#dom-css/export/html'
+import { sceneNodeToDesignDocument } from '#dom-css/export/projection'
+import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
+import { createHeadlessCSSRuntime, htmlToDesignDocument } from '#dom-css/index'
 
-import {
-  paragraphSpacingAt,
-  SceneGraph,
-  textParagraphRanges,
-  type SceneNode,
-  type TextParagraphStyle
-} from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode, type TextParagraphStyle } from '@open-pencil/scene-graph'
+import { paragraphSpacingAt, textParagraphRanges } from '@open-pencil/scene-graph/text'
 
 async function texts(html: string): Promise<SceneNode[]> {
   const document = await htmlToDesignDocument(html, { runtime: createHeadlessCSSRuntime() })

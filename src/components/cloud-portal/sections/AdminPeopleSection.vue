@@ -2,7 +2,7 @@
 import { refDebounced } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
-import { useCloudPortalMessages, useI18n } from '@open-pencil/vue'
+import { useCloudPortalMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'

@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { fitEnclosingGroups, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { fitEnclosingGroups } from '@open-pencil/scene-graph/group-bounds'
 
 // Live Figma 126: a group holding a rectangle, then a mask ellipse, then a larger rectangle
 // measures 0,0 150×150, and moving the masked rectangle leaves it unchanged.

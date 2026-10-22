@@ -1,15 +1,12 @@
 import { fromUint8Array } from 'js-base64'
 
-import {
-  imageMimeType,
-  layoutSizingInParent,
-  readIcon,
-  shaderOfPaint,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
+import { readIcon } from '@open-pencil/scene-graph/icons'
+import { imageMimeType } from '@open-pencil/scene-graph/images'
+import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
+import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'

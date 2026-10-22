@@ -1,12 +1,12 @@
 import { uniqBy } from 'es-toolkit/array'
 
 import type { CharacterStyleOverride, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters } from '#core/text/case'
 import type { FontFaceRef } from '#core/text/face'
 import { cjkFallbackScriptForLanguage, type FontFallbackScript } from '#core/text/fallbacks'
-import { weightToStyle } from '#core/text/font/style'
 
 /** The face a text draws in, or the face a style run over it draws in. */
 export function textFontFace(node: SceneNode, style: CharacterStyleOverride = {}): FontFaceRef {

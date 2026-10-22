@@ -1,13 +1,12 @@
 import { uniq } from 'es-toolkit'
 
+import type { Editor } from '@open-pencil/core'
 import { SNAP_THRESHOLD_SCREEN_PX } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
-import { computeSnap } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
-import type { SnapGuide } from '@open-pencil/scene-graph/snap'
+import { computeSnap, type SnapGuide } from '@open-pencil/scene-graph/snap'
 
 export interface PixelSnapResult {
   delta: Vector

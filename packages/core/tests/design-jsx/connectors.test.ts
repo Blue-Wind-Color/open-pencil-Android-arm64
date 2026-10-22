@@ -9,7 +9,8 @@ import {
   selectionToJSX,
   selectionToJSXWithLayers
 } from '@open-pencil/design-jsx'
-import { connectorRouteEnds, connectorSublayers, SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { connectorRouteEnds, connectorSublayers } from '@open-pencil/scene-graph/connectors'
 
 const FLOW = `
   <Frame name="Flow" w={800} h={400}>

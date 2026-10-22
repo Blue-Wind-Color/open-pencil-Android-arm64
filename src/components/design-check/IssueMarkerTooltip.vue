@@ -10,7 +10,7 @@ import {
 import { computed } from 'vue'
 
 import type { PlacedIssueMarker } from '@open-pencil/core/canvas'
-import { useDesignCheckMessages } from '@open-pencil/vue'
+import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { issueDetail, ruleTitle } from '@/app/editor/design-check/format'

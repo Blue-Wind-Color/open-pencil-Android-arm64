@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { BlendMode } from '@open-pencil/scene-graph'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
-import { AppearanceControlsRoot, MIXED, useI18n, useVariableModes } from '@open-pencil/vue'
+import { MIXED } from '@open-pencil/vue/controls/node-props'
+import { useVariableModes } from '@open-pencil/vue/controls/variable-modes'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { AppearanceControlsRoot } from '@open-pencil/vue/primitives/AppearanceControls'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import { useBlendModeGroups } from '@/components/properties/blend-mode/use'

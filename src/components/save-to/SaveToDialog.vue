@@ -3,7 +3,7 @@ import { groupBy } from 'es-toolkit'
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { computed } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue'
+import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import AppButton from '@/components/ui/button/AppButton.vue'

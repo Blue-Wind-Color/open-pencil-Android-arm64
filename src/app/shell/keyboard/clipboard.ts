@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 
-import { isSVGMarkup } from '@open-pencil/core/io'
-import { extractImageFilesFromClipboard } from '@open-pencil/vue'
+import { isSVGMarkup } from '@open-pencil/core/io/formats/svg'
+import { extractImageFilesFromClipboard } from '@open-pencil/vue/canvas/drop'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'

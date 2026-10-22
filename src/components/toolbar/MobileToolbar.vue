@@ -5,9 +5,9 @@ import { tv } from 'tailwind-variants'
 import IconChevronLeft from '~icons/lucide/chevron-left'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
-import type { EditorToolDef } from '@open-pencil/core/editor'
-import { getToolbarToolSelection, toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
-import type { Tool } from '@open-pencil/vue'
+import type { EditorToolDef, Tool } from '@open-pencil/core'
+import { getToolbarToolSelection, ToolbarItem } from '@open-pencil/vue/primitives/Toolbar'
+import { toolbarToolTestId } from '@open-pencil/vue/testing'
 
 import { animationsEnabled } from '@/app/shell/motion'
 import { useMotionTransitions } from '@/app/shell/motion/transitions'

@@ -2,8 +2,6 @@ import { omit, pick } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
 import {
-  SHARED_TEXT_STYLE_FIELDS,
-  styleDetachmentChanges,
   TEXT_BINDABLE_FIELDS,
   type CharacterStyleOverride,
   type HyperlinkTarget,
@@ -11,6 +9,10 @@ import {
   type StyleRun,
   type TextBoundVariables
 } from '@open-pencil/scene-graph'
+import {
+  SHARED_TEXT_STYLE_FIELDS,
+  styleDetachmentChanges
+} from '@open-pencil/scene-graph/shared-styles'
 
 /** A character's style: the text's own, with its run's overrides over it. */
 export type CharacterStyle = Required<

@@ -1,12 +1,6 @@
-import {
-  shaderOfPaint,
-  type Effect,
-  type Fill,
-  type GradientTransform,
-  type SceneNode,
-  type Stroke
-} from '@open-pencil/scene-graph'
+import type { Effect, Fill, GradientTransform, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { isIdentityGradientTransform } from '@open-pencil/scene-graph/gradient'
+import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 
 import { STROKE_ALIGN, STROKE_CAP, STROKE_JOIN } from '../enums'
 import { formatColor, formatShadow } from './helpers'

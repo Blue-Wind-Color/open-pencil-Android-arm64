@@ -1,3 +1,4 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   generatedFrameText,
   isGeneratedFrame,
@@ -5,8 +6,7 @@ import {
   stickyScale,
   stickySublayers,
   stickyWidth
-} from '@open-pencil/scene-graph'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/generated'
 
 import {
   graph,

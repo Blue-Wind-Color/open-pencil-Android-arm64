@@ -1,12 +1,6 @@
 import { fromUint8Array } from 'js-base64'
 
-import {
-  imageMimeType,
-  type Effect,
-  type Fill,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { Effect, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   colorToHex,
   colorToDisplayCSS,
@@ -18,6 +12,7 @@ import {
   invertGradientTransform,
   isIdentityGradientTransform
 } from '@open-pencil/scene-graph/gradient'
+import { imageMimeType } from '@open-pencil/scene-graph/images'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { svg, type SVGNode } from './node'

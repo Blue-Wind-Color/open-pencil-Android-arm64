@@ -4,15 +4,13 @@ import type { FocusOutsideEvent, PointerDownOutsideEvent } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import type { Fill, ShaderPaint, ShaderPreset } from '@open-pencil/scene-graph'
-import {
-  applySolidFillColor,
-  DEFAULT_SHADER_PRESET,
-  FillRoot,
-  useI18n,
-  useRetainedPopup
-} from '@open-pencil/vue'
-import type { OkHCLControls } from '@open-pencil/vue'
+import type { Fill } from '@open-pencil/scene-graph'
+import type { ShaderPaint, ShaderPreset } from '@open-pencil/scene-graph/shaders'
+import { applySolidFillColor, type OkHCLControls } from '@open-pencil/vue/controls/color-model'
+import { DEFAULT_SHADER_PRESET } from '@open-pencil/vue/controls/shader'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
+import { FillRoot } from '@open-pencil/vue/primitives/Fill'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import GradientEditor from '@/components/fill-picker/GradientEditor.vue'

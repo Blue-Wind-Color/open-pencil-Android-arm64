@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
-import type { Color } from '@open-pencil/scene-graph'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 // Shapes and messages follow `@figma/plugin-typings` and the Plugin API documentation for the
 // range methods; validation messages follow those Figma reports for the other range setters.

@@ -32,7 +32,7 @@ function legacyDocument(): { update: Uint8Array; graph: SceneGraph; pageId: stri
   graph.createNode('RECTANGLE', 'frame:1', { id: 'rect:2' })
   graph.createNode('RECTANGLE', 'frame:1', { id: 'rect:1' })
   graph.createNode('RECTANGLE', pageId, { id: 'rect:3' })
-  graph.reorderChild('rect:3', pageId, 0)
+  graph.insertChildAt('rect:3', pageId, 0)
 
   const doc = new Y.Doc()
   const ynodes = doc.getMap<Y.Map<unknown>>('nodes')

@@ -9,7 +9,8 @@ import {
 } from '@open-pencil/fig'
 import { derivedSymbolDataOf, symbolDataOf } from '@open-pencil/fig/instance-overrides'
 import type { FigNodeChangeExportRuntime } from '@open-pencil/fig/node-change'
-import type { GUID, NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 

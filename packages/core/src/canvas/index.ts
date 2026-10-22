@@ -43,3 +43,5 @@ export type {
   PlacedIssueMarker
 } from './issues/types'
 export { hitTestStatusLabels, type PlacedStatusLabel } from './labels/status'
+export { LabelCache, type CachedComponent, type CachedSection } from './labels/cache'
+export { withFigExportRuntime } from './text/shape'

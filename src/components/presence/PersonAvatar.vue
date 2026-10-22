@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import { useCollaborationMessages } from '@open-pencil/vue'
+import { useCollaborationMessages } from '@open-pencil/vue/i18n'
 
 import { initials } from '@/app/presence/initials'
 import { avatar } from '@/theme/collaboration/avatar/person'

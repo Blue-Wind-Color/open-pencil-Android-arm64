@@ -1,12 +1,11 @@
-import { mergePluginData } from '@open-pencil/fig/node-change'
-import type { KiwiNodeChange } from '@open-pencil/fig/node-change'
+import { mergePluginData, type KiwiNodeChange } from '@open-pencil/fig/node-change'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import {
   isPluginDataEntry,
   OPEN_PENCIL_PLUGIN_DATA,
   withoutPluginData,
-  withPluginData,
-  type SceneGraph
-} from '@open-pencil/scene-graph'
+  withPluginData
+} from '@open-pencil/scene-graph/plugin-data'
 
 const { documentId, enabledLibraries } = OPEN_PENCIL_PLUGIN_DATA
 

@@ -2,7 +2,7 @@ import type { CSSFontFaceRule } from '@acemir/cssom'
 import { isValid, toUint8Array } from 'js-base64'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
-import { normalizeFontFamily } from '@open-pencil/scene-graph'
+import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
 
 import { tokenStylesheet, type TokenStylesheetFormat } from '../tokens/stylesheet'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'

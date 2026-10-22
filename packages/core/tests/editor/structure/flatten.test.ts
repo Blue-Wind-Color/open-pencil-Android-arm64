@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { BLACK, TRANSPARENT } from '@open-pencil/core/constants'
-import { createEditor } from '@open-pencil/core/editor'
-import { initCanvasKit } from '@open-pencil/core/io'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { fontManager } from '@open-pencil/core/text'
 
 import { textNodeToOutlineLayout } from '#core/text/outlines'
@@ -205,33 +205,33 @@ describe('flattenSelected', () => {
   test.each(['NONE', 'UNDERLINE'] as const)(
     'flattens a list with its bullets, as the canvas draws it (%s)',
     async (textDecoration) => {
-    await loadInterRegular()
-    const { editor, renderer } = await createEditorWithRenderer()
-    await renderer.loadFonts()
-    const pageId = editor.state.currentPageId
-    const text = editor.graph.createNode('TEXT', pageId, {
-      x: 100,
-      text: 'One\nTwo',
-      fontFamily: 'Inter',
-      fontWeight: 400,
-      fontSize: 16,
-      width: 120,
-      height: 40,
-      textDecoration,
-      textParagraphs: [
-        { listType: 'UNORDERED', indentation: 1 },
-        { listType: 'UNORDERED', indentation: 1 }
-      ]
-    })
+      await loadInterRegular()
+      const { editor, renderer } = await createEditorWithRenderer()
+      await renderer.loadFonts()
+      const pageId = editor.state.currentPageId
+      const text = editor.graph.createNode('TEXT', pageId, {
+        x: 100,
+        text: 'One\nTwo',
+        fontFamily: 'Inter',
+        fontWeight: 400,
+        fontSize: 16,
+        width: 120,
+        height: 40,
+        textDecoration,
+        textParagraphs: [
+          { listType: 'UNORDERED', indentation: 1 },
+          { listType: 'UNORDERED', indentation: 1 }
+        ]
+      })
 
-    editor.select([text.id])
-    editor.flattenSelected()
+      editor.select([text.id])
+      editor.flattenSelected()
 
-    const [vectorId] = [...editor.state.selectedIds]
-    const vector = editor.graph.getNode(vectorId)
-    // The bullets sit in the first 24px of indent, left of the items' text.
-    expect(vector?.x).toBeGreaterThan(106)
-    expect(vector?.x).toBeLessThan(112)
+      const [vectorId] = [...editor.state.selectedIds]
+      const vector = editor.graph.getNode(vectorId)
+      // The bullets sit in the first 24px of indent, left of the items' text.
+      expect(vector?.x).toBeGreaterThan(106)
+      expect(vector?.x).toBeLessThan(112)
     }
   )
 

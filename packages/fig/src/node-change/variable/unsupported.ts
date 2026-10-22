@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
-import type { GUID, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
+import type { GUID } from '@open-pencil/kiwi/fig'
+import type { VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
 
 const guid = v.looseObject({
   sessionID: v.pipe(v.number(), v.integer(), v.minValue(0)),

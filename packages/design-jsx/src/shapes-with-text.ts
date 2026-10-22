@@ -1,13 +1,12 @@
 import * as v from 'valibot'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   createShapeWithText,
   SHAPE_WITH_TEXT_CORNER_RADIUS,
   SHAPE_WITH_TEXT_SIZE,
-  shapeWithTextLabel,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  shapeWithTextLabel
+} from '@open-pencil/scene-graph/generated'
 
 import {
   enumProp,

@@ -7,7 +7,8 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import { acpPermissionOptionTestId, useI18n, vTestId } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { acpPermissionOptionTestId, vTestId } from '@open-pencil/vue/testing'
 
 import {
   currentPermission,

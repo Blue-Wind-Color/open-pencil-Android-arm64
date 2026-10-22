@@ -1,34 +1,33 @@
 import {
   generateId,
+  type Effect,
+  type Fill,
+  type LayoutAlign,
+  type LayoutCounterAlign,
+  type LayoutMode,
+  type LayoutSizing,
+  type NodeType,
+  type SceneGraph,
+  type SceneNode,
+  type Stroke,
+  type StrokeCap,
+  type StrokeJoin,
+  type TextAlignVertical,
+  type Variable,
+  type VariableCollection,
+  type VariableCollectionMode,
+  type VariableType,
+  type VariableValue
+} from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
+import { BLACK } from '@open-pencil/scene-graph/constants'
+import {
   paddingFromShorthand,
   parseAutoLayoutDirection,
   parseCounterAxisAlign,
   parsePrimaryAxisAlign
-} from '@open-pencil/scene-graph'
-import type {
-  Color,
-  Effect,
-  Fill,
-  LayoutAlign,
-  LayoutCounterAlign,
-  LayoutMode,
-  LayoutSizing,
-  NodeType,
-  SceneGraph,
-  SceneNode,
-  Stroke,
-  StrokeCap,
-  StrokeJoin,
-  TextAlignVertical,
-  Variable,
-  VariableCollection,
-  VariableCollectionMode,
-  VariableType,
-  VariableValue
-} from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
-import { BLACK } from '@open-pencil/scene-graph/constants'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+} from '@open-pencil/scene-graph/layout'
+import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 export interface PenDocument {
   version: string

@@ -12,7 +12,8 @@ import type {
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { loadedFace, resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
 import { laidOutText } from '#core/canvas/text/keycap'
@@ -25,7 +26,7 @@ import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownTextSlice } from '#core/text/case'
 import { ELLIPSIS } from '#core/text/ellipsis'
-import { fontManager, weightToStyle } from '#core/text/fonts'
+import { fontManager } from '#core/text/fonts'
 
 import type { ParagraphNode } from './inputs'
 

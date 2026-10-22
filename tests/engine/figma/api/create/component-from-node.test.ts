@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { OpenPencilAPI, computeAllLayouts } from '@open-pencil/core'
+import { computeAllLayouts } from '@open-pencil/core/layout'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 
 import { createAPI } from '../helpers'
 

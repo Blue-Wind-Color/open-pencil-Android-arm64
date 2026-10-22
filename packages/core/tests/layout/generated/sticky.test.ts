@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
-import { computeAllLayouts, SceneGraph, setTextMeasurer } from '@open-pencil/core'
-import { createSticky, stickySublayers } from '@open-pencil/scene-graph'
-
 import { expectDefined } from '#core-tests/helpers/assert'
+
+import { computeAllLayouts, setTextMeasurer } from '@open-pencil/core/layout'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { createSticky, stickySublayers } from '@open-pencil/scene-graph/generated'
 
 /** One line per line break, each as tall as the text's line height. */
 function measureLines(): void {

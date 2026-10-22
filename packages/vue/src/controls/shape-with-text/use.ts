@@ -1,21 +1,19 @@
 import { computed } from 'vue'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   figJamColorName,
   figJamFillMode,
   figJamLineStyle,
   figJamTextSize,
   figJamTypeface,
-  shapeWithTextLabel
-} from '@open-pencil/scene-graph'
-import type {
-  FigJamColorName,
-  FigJamFillMode,
-  FigJamLineStyle,
-  FigJamTextSize,
-  FigJamTypeface,
-  SceneNode
-} from '@open-pencil/scene-graph'
+  type FigJamColorName,
+  type FigJamFillMode,
+  type FigJamLineStyle,
+  type FigJamTextSize,
+  type FigJamTypeface
+} from '@open-pencil/scene-graph/figjam'
+import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 import { useEditor } from '#vue/editor/context'

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { EXPORT_FORMAT_IDS, isExportFormatId } from '@open-pencil/scene-graph'
+import { EXPORT_FORMAT_IDS, isExportFormatId } from '@open-pencil/scene-graph/export-format'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 

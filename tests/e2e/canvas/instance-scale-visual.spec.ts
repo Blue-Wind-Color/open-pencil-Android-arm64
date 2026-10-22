@@ -11,12 +11,9 @@ import {
   initCodec,
   type NodeChange
 } from '@open-pencil/kiwi/fig/codec'
-import {
-  reconcileVariableBindings,
-  rescaleNodeTree,
-  type SceneNode,
-  SceneGraph
-} from '@open-pencil/scene-graph'
+import { type SceneNode, SceneGraph } from '@open-pencil/scene-graph'
+import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
+import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import bindingFixture from '#tests/fixtures/nested-binding-ownership-records.json' with { type: 'json' }

@@ -1,12 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
-import {
-  getSharedStyles,
-  parseVariableFormula,
-  SceneGraph,
-  type Variable
-} from '@open-pencil/scene-graph'
+import { createEditor } from '@open-pencil/core'
+import { SceneGraph, type Variable } from '@open-pencil/scene-graph'
+import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
+import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
 
 import {
   defaultTokenImportOptions,

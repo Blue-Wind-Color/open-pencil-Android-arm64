@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getInstanceOverride } from '@open-pencil/scene-graph'
+import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
 import { createAPI, solidFill } from '../helpers'
 

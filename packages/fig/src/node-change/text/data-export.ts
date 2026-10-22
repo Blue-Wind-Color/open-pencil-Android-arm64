@@ -1,6 +1,6 @@
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
-import { normalizeFontFamily } from '@open-pencil/scene-graph'
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
 
 import { applyFontFeaturesToKiwi } from '../font/features'
 import { weightToFigmaStyle } from '../font/style'

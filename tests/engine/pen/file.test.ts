@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parsePenFile } from '@open-pencil/core'
+import { parsePenFile } from '@open-pencil/pen'
 
 import { repoPath } from '#tests/helpers/paths'
 

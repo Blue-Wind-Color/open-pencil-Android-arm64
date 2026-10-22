@@ -1,19 +1,17 @@
-import type { SceneGraph, SceneNode } from './'
-import type { NodeCloneMode } from './copy'
+import type { NodeCloneMode } from '../copy'
+import type { SceneGraph } from '../graph'
+import { detachOwnedSlotContent, restoreOwnedSlotContent } from '../slots/frames'
+import type { SceneNode } from '../types'
+import { keepOwnContentSize } from './content-size'
+import { createInstanceSyncContext, groupCopyRemovals, removeLeftoverCopies } from './copies'
+import { canCreateInstance } from './cycles'
+import { INSTANCE_OVERRIDE_FIELDS, INSTANCE_SYNC_PROPS } from './fields'
 import {
   clearInstanceOverrides,
   getInstanceOverride,
   hasInstanceOverride as hasNodeInstanceOverride,
   setInstanceOverride
-} from './instance-overrides'
-import { keepOwnContentSize } from './instances/content-size'
-import {
-  createInstanceSyncContext,
-  groupCopyRemovals,
-  removeLeftoverCopies
-} from './instances/copies'
-import { canCreateInstance } from './instances/cycles'
-import { INSTANCE_OVERRIDE_FIELDS, INSTANCE_SYNC_PROPS } from './instances/fields'
+} from './overrides'
 import {
   bindingProtection,
   cloneChildrenWithMapping,
@@ -24,17 +22,17 @@ import {
   syncBindingFields,
   syncChildren,
   updateSyncedProps
-} from './instances/sync'
-import { detachOwnedSlotContent, restoreOwnedSlotContent } from './slots/frames'
+} from './sync'
 
-export type { NodeCloneMode } from './copy'
+export { canCreateInstance, createsComponentCycle, cycleSafeParent } from './cycles'
+export { instanceMainComponent } from './main-component'
 export {
   INSTANCE_FOLLOWED_FIELDS,
   INSTANCE_OVERRIDE_FIELDS,
   INSTANCE_SYNC_FIELDS,
   INSTANCE_SYNC_PROPS,
   INSTANCE_SYNC_TEXT_PROPS
-} from './instances/fields'
+} from './fields'
 
 export function copyInstanceComponentProps(component: SceneNode): Partial<SceneNode> {
   const props: Partial<SceneNode> = {}

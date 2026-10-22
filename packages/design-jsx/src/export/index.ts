@@ -1,12 +1,8 @@
 import { compact } from 'es-toolkit/array'
 
 import { jsx, type SyntaxNode } from '@open-pencil/emit'
-import {
-  isGeneratedFrame,
-  type GeneratedFrameType,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { isGeneratedFrame, type GeneratedFrameType } from '@open-pencil/scene-graph/generated'
 
 import {
   connectorExportScope,

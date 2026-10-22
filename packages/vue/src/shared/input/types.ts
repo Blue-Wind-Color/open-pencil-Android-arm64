@@ -1,4 +1,4 @@
-import type { MovePlace, Tool } from '@open-pencil/core/editor'
+import type { MovePlace, Tool } from '@open-pencil/core'
 import type { HandlePosition } from '@open-pencil/core/geometry'
 import type {
   DerivedTextGlyph,

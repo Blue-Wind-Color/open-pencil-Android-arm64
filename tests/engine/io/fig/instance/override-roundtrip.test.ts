@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('instance descendant fill override round trip', () => {
@@ -26,7 +26,7 @@ describe('instance descendant fill override round trip', () => {
     graph.updateNode(instancePath.id, {
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
     })
-    const { recordInstanceOverride } = await import('@open-pencil/scene-graph')
+    const { recordInstanceOverride } = await import('@open-pencil/scene-graph/instances')
     recordInstanceOverride(graph, instancePath.id, ['fills'])
 
     const exported = await exportFigFile(graph)

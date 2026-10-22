@@ -2,8 +2,10 @@ import { beforeAll, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-import { hasInstanceOverride, recordInstanceOverride } from '@open-pencil/scene-graph'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { hasInstanceOverride, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 beforeAll(async () => {
   await initCodec()

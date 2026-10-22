@@ -1,17 +1,17 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import {
-  localTransformFromWorld,
-  type CharacterStyleOverride,
-  type SceneGraph,
-  type SceneNode,
-  type StyleRun
+import type {
+  CharacterStyleOverride,
+  SceneGraph,
+  SceneNode,
+  StyleRun
 } from '@open-pencil/scene-graph'
+import { localTransformFromWorld } from '@open-pencil/scene-graph/coordinate'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import type { SVGElementLayer } from '#core/icons/types'
 import { measureTextForLayout } from '#core/layout/text-measurement'
-import { weightToStyle } from '#core/text/font/style'
 import type {
   SVGVectorizeResult,
   VectorizedText,

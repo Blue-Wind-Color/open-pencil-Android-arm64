@@ -1,15 +1,17 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import {
-  deserializeInstanceOverrideState,
-  serializeInstanceOverrideState,
-  type Fill,
-  type FillType,
-  type GeometryPath,
-  type SceneNode,
-  type SourceMetadata
+import type {
+  Fill,
+  FillType,
+  GeometryPath,
+  SceneNode,
+  SourceMetadata
 } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
+import {
+  deserializeInstanceOverrideState,
+  serializeInstanceOverrideState
+} from '@open-pencil/scene-graph/instances/overrides'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import type { Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 

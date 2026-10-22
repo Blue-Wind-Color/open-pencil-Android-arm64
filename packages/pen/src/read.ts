@@ -1,13 +1,14 @@
-import { fillSizingFields, SceneGraph } from '@open-pencil/scene-graph'
-import type {
-  AxisSizingMode,
-  LayoutMode,
-  LayoutSizing,
-  SceneNode,
-  VectorNetwork
+import {
+  SceneGraph,
+  type AxisSizingMode,
+  type LayoutMode,
+  type LayoutSizing,
+  type SceneNode,
+  type VectorNetwork
 } from '@open-pencil/scene-graph'
 import { copyEffects, copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 import { populateInstanceChildren } from '@open-pencil/scene-graph/instances'
+import { fillSizingFields } from '@open-pencil/scene-graph/layout'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
 import {

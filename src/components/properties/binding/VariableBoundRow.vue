@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { variableText } from '@open-pencil/scene-graph'
-import { BindableValueRoot, useEditor, useI18n, type BindingProvider } from '@open-pencil/vue'
+import { variableText } from '@open-pencil/scene-graph/variables'
+import { useEditor } from '@open-pencil/vue'
+import type { BindingProvider } from '@open-pencil/vue/controls/binding-provider'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { BindableValueRoot } from '@open-pencil/vue/primitives/BindableValue'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { VARIABLE_TYPE_ICONS } from '@/components/variables/type-icons'

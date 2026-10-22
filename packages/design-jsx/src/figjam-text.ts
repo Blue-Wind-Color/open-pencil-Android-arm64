@@ -1,12 +1,12 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   figJamTextSize,
   figJamTextSizeFields,
   figJamTypeface,
   figJamTypefaceFields,
   type FigJamTextSize,
-  type FigJamTypeface,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  type FigJamTypeface
+} from '@open-pencil/scene-graph/figjam'
 
 import { FIGJAM_TEXT_SIZE, FIGJAM_TYPEFACE } from './enums'
 

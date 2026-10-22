@@ -7,16 +7,12 @@ import {
 import { heavy } from '#core-tests/helpers/test-utils'
 import { unzipSync } from 'fflate'
 
-import {
-  exportFigFile,
-  initCodec,
-  isZstdCompressed,
-  parseFigFile,
-  parseFigKiwiChunks,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { pngSize } from '@open-pencil/fig'
+import { isZstdCompressed } from '@open-pencil/kiwi/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { parseFigKiwiChunks } from '@open-pencil/kiwi/fig/container'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import {

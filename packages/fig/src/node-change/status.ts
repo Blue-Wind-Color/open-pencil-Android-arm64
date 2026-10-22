@@ -1,14 +1,13 @@
 import * as v from 'valibot'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 import {
   FIGMA_STATUS_STATE_IDS,
   figmaDevStatusOf,
-  OPEN_PENCIL_PLUGIN_DATA,
-  withPluginData,
-  type FigmaDevStatus,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+  type FigmaDevStatus
+} from '@open-pencil/scene-graph/statuses'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
 import type { KiwiNodeChange } from './export/context'

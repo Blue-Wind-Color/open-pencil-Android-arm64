@@ -1,16 +1,18 @@
 import { isEmptyObject, isEqual, omitBy, pick } from 'es-toolkit'
 
 import { jsx, type SyntaxNode } from '@open-pencil/emit'
+import type {
+  SceneNode,
+  TextParagraphSpacingField,
+  TextParagraphStyle
+} from '@open-pencil/scene-graph'
 import {
   hasParagraphSpacing,
   MAX_LIST_INDENTATION,
   paragraphStyleAt,
   textParagraphRanges,
-  withParagraphSpacing,
-  type SceneNode,
-  type TextParagraphSpacingField,
-  type TextParagraphStyle
-} from '@open-pencil/scene-graph'
+  withParagraphSpacing
+} from '@open-pencil/scene-graph/text'
 
 import { TEXT_CASE, TEXT_DECORATION } from '../enums'
 import { AUTO } from '../overrides/text'

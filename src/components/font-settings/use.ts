@@ -5,7 +5,7 @@ import type {
   LocalFontAccessState,
   WebFontProviderId
 } from '@open-pencil/core/text'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
   clearDownloadedFontCache,

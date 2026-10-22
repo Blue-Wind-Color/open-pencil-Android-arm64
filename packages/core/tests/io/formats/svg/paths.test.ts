@@ -1,11 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import {
-  createDefaultNode,
-  type NodeType,
-  type SceneNode,
-  type VectorNetwork
-} from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import type { NodeType, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 
 import { nodeOutlinePath, vectorNetworkToSVGPaths } from '#core/io/formats/svg/paths'
 

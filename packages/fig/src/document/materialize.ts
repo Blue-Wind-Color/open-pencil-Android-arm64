@@ -1,12 +1,8 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import {
-  generateId,
-  OPEN_PENCIL_PLUGIN_DATA,
-  remapStyleRunReferences,
-  SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import { generateId, SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
+import { remapStyleRunReferences } from '@open-pencil/scene-graph/text'
 
 import {
   reconcileLiveComponentEdits,

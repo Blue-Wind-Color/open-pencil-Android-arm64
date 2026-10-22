@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
-import { boundEndpoint, createConnector, freeEndpoint } from '@open-pencil/scene-graph'
+import { createEditor } from '@open-pencil/core'
+import { boundEndpoint, createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
+
 import { connectorAttachment, magnetAt } from '#core/editor/connectors/attach'
 
 function setup() {
@@ -47,10 +48,15 @@ describe('where a connector end attaches', () => {
 
   test('a straight connector attaches by centres', () => {
     const { editor, page, a } = setup()
-    const { endpoint } = connectorAttachment(editor.graph, page, { x: 30, y: 16 }, {
-      zoom: 1,
-      straight: true
-    })
+    const { endpoint } = connectorAttachment(
+      editor.graph,
+      page,
+      { x: 30, y: 16 },
+      {
+        zoom: 1,
+        straight: true
+      }
+    )
     expect(endpoint).toEqual({ nodeId: a.id, magnet: 'CENTER', position: { x: 0, y: 0 } })
   })
 })
@@ -96,7 +102,10 @@ describe('the connector tool', () => {
     const [connector] = connectors(editor)
     expect(connector.connectorStart).toMatchObject({ nodeId: a.id, magnet: 'AUTO' })
     expect(connector.connectorEnd).toMatchObject({ nodeId: b.id, magnet: 'AUTO' })
-    expect([connector.connectorStartCap, connector.connectorEndCap]).toEqual(['NONE', 'ARROW_LINES'])
+    expect([connector.connectorStartCap, connector.connectorEndCap]).toEqual([
+      'NONE',
+      'ARROW_LINES'
+    ])
     expect(editor.state.activeTool).toBe('CONNECTOR')
     editor.undoAction()
     expect(connectors(editor)).toHaveLength(0)
@@ -170,8 +179,18 @@ describe('dropping a connector end', () => {
     const editor = createEditor()
     const page = editor.state.currentPageId
     const frame = editor.graph.createNode('FRAME', page, { x: 0, y: 0, width: 1000, height: 600 })
-    const a = editor.graph.createNode('RECTANGLE', frame.id, { x: 100, y: 100, width: 200, height: 200 })
-    const b = editor.graph.createNode('RECTANGLE', frame.id, { x: 600, y: 100, width: 200, height: 200 })
+    const a = editor.graph.createNode('RECTANGLE', frame.id, {
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 200
+    })
+    const b = editor.graph.createNode('RECTANGLE', frame.id, {
+      x: 600,
+      y: 100,
+      width: 200,
+      height: 200
+    })
     const connector = createConnector(editor.graph, frame.id, {
       start: boundEndpoint(a.id),
       end: boundEndpoint(b.id)
@@ -193,14 +212,21 @@ describe('dropping a connector end', () => {
 
   test('on a layer inside a frame attaches to that layer', () => {
     const { editor, connector } = framed()
-    const c = editor.graph.createNode('RECTANGLE', editor.graph.getNode(connector.id)?.parentId ?? '', {
-      x: 350,
-      y: 400,
-      width: 150,
-      height: 150
-    })
+    const c = editor.graph.createNode(
+      'RECTANGLE',
+      editor.graph.getNode(connector.id)?.parentId ?? '',
+      {
+        x: 350,
+        y: 400,
+        width: 150,
+        height: 150
+      }
+    )
     dropEnd(editor, connector.id, 425, 475)
-    expect(editor.graph.getNode(connector.id)?.connectorEnd).toMatchObject({ nodeId: c.id, magnet: 'AUTO' })
+    expect(editor.graph.getNode(connector.id)?.connectorEnd).toMatchObject({
+      nodeId: c.id,
+      magnet: 'AUTO'
+    })
   })
 
   test('on a layer outside a frame that does not clip attaches to that layer', () => {

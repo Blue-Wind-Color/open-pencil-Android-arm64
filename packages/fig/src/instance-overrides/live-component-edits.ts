@@ -1,9 +1,6 @@
-import {
-  getInstanceOverride,
-  INSTANCE_SYNC_FIELDS,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { INSTANCE_SYNC_FIELDS } from '@open-pencil/scene-graph/instances'
+import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
 import type { MaterializedInstance } from './materialize-instance'
 

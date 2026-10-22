@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '@open-pencil/core'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 
 import { createPenActions } from '@/app/editor/pen'

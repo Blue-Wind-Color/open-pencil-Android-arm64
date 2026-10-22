@@ -1,6 +1,6 @@
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
-import type { FigmaNodeProxy } from '@open-pencil/core'
-import type { Color, Fill, Stroke } from '@open-pencil/scene-graph'
+import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
+import { SceneGraph, type Fill, type Stroke } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export function createAPI(): FigmaAPI {
   return new FigmaAPI(new SceneGraph())

@@ -7,8 +7,8 @@ import { sceneNodeToKiwi } from '#fig/node-change/index'
 
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { createSticky, stickySublayers, STICKY_COLORS } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { createSticky, stickySublayers, STICKY_COLORS } from '@open-pencil/scene-graph/generated'
 
 const guid = (localID: number) => ({ sessionID: 0, localID })
 const slot = (localID: number) => ({ guids: [{ sessionID: 40_000_000, localID }] })

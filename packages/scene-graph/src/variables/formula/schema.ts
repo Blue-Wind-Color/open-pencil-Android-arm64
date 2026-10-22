@@ -1,10 +1,9 @@
-import * as v from 'valibot'
-
 import {
   VARIABLE_FORMULA_OPERATORS,
   type VariableFormula,
   type VariableFormulaNode
-} from '@open-pencil/scene-graph/types'
+} from '#scene-graph/types'
+import * as v from 'valibot'
 
 import { variableAliasSchema } from '../schema'
 import { inferFormulaType } from './check'

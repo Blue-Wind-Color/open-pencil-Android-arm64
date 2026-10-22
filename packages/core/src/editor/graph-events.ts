@@ -1,9 +1,5 @@
-import {
-  TRANSFORM_FIELDS,
-  type SceneGraph,
-  type SceneGraphEvents,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneGraphEvents, SceneNode } from '@open-pencil/scene-graph'
+import { TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { markFlowChanged } from '#core/layout/derived'

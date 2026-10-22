@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
 import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
-import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
-import { initCodec } from '@open-pencil/core/kiwi'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { Component, Instance, Text } from '@open-pencil/design-jsx'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 const CARD = `

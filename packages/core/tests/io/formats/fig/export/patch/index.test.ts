@@ -4,13 +4,24 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { isEqual } from 'es-toolkit/predicate'
 import { deflateSync } from 'fflate'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
+import {
+  exportFigFile,
+  parseFigFile,
+  populateAllFigPages,
+  populateFigPage
+} from '@open-pencil/core/io/formats/fig'
 import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
-import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import {
+  initCodec,
+  getCompiledSchema,
+  getSchemaBytes,
+  type NodeChange
+} from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import { computeImageHash, getSharedStyles, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
+import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
 import {

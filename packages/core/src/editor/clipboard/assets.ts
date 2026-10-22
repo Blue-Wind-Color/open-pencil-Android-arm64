@@ -2,12 +2,12 @@ import { sumBy } from 'es-toolkit'
 
 import type { Fill } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { TRANSPARENT } from '#core/constants'
 import { resolvePasteTarget } from '#core/editor/clipboard/paste/target'
 import type { EditorContext } from '#core/editor/types'
-import { computeImageHash } from '#core/figma-api'
 import {
   createSVGNodesFromImport,
   isSVGMarkup,

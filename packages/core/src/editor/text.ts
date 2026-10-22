@@ -1,14 +1,14 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import {
   cloneInstanceOverrideState,
   setInstanceOverride,
-  type InstanceOverrideState,
-  type SceneNode
-} from '@open-pencil/scene-graph'
-import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
+  type InstanceOverrideState
+} from '@open-pencil/scene-graph/instances/overrides'
 
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import type { TextEditorState } from '#core/text/editor'
-import { weightToStyle } from '#core/text/fonts'
 import { hasGlyphOutlines } from '#core/text/opentype'
 
 import { applyBoundTextEdit } from './components/authoring/text-edit'

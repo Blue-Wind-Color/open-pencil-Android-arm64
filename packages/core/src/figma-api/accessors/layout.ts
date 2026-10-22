@@ -1,21 +1,16 @@
+import type { LayoutGrid, LayoutMode, LayoutSizing, SceneNode } from '@open-pencil/scene-graph'
 import {
   aspectRatioLockEditable,
   layoutSizing,
   layoutSizingError,
   layoutSizingUpdates,
   lockedAspectRatioTarget,
-  type LayoutGrid,
-  type LayoutMode,
-  type LayoutSizing,
   type LayoutSizingAxis,
-  type SceneNode,
-  type Vector
-} from '@open-pencil/scene-graph'
-import {
   AUTO_LAYOUT_GRID_COUNT,
   isAutoGridCount,
   layoutGridCount
 } from '@open-pencil/scene-graph/layout'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
   prepareFollowedFieldEdit,

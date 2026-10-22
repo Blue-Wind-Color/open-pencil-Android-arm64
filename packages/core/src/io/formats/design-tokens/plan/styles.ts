@@ -1,13 +1,9 @@
 import { isEqual, isPlainObject } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
-import {
-  getSharedStyles,
-  type Color,
-  type Effect,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 
 import { tryParseFigmaEffects } from '#core/figma-api/effects'
 import {

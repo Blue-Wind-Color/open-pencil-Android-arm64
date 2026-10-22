@@ -1,6 +1,6 @@
 import { arrowCapOverflow } from './arrow-caps'
-import type { Effect, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './index'
 import type { Rect, Vector } from './primitives'
+import type { Effect, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './types'
 
 export function degToRad(degrees: number): number {
   return (degrees * Math.PI) / 180

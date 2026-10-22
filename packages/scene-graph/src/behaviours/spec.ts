@@ -1,7 +1,7 @@
 import { omitBy } from 'es-toolkit/object'
 import * as v from 'valibot'
 
-import type { SceneGraph } from '../index'
+import type { SceneGraph } from '../graph'
 import type { ComponentPropertyDefinition, SceneNode } from '../types'
 import { BEHAVIOUR_KINDS, behaviourContract, type BehaviourKind } from './kinds'
 import {

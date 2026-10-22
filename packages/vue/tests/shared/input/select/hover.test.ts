@@ -1,7 +1,9 @@
 import { afterEach, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
-import { boundEndpoint, createConnector, createSticky, type SceneNode } from '@open-pencil/scene-graph'
+import { createEditor, type Editor } from '@open-pencil/core'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { boundEndpoint, createConnector } from '@open-pencil/scene-graph/connectors'
+import { createSticky } from '@open-pencil/scene-graph/generated'
 
 import {
   MOVE_CURSOR,
@@ -83,10 +85,12 @@ test("a sticky note's handles keep their cursor, since they scale it", () => {
 
 test("a line's ends show the move cursor, and its length takes no resize", () => {
   editor = createEditor()
-  const line = editor.graph.createNode('LINE', editor.state.currentPageId, { width: 200, height: 0 })
+  const line = editor.graph.createNode('LINE', editor.state.currentPageId, {
+    width: 200,
+    height: 0
+  })
   editor.select([line.id])
   expect(updateHoverCursor(200, 0, editor, NO_HITS)).toBe(MOVE_CURSOR)
   expect(updateHoverCursor(0, 2, editor, NO_HITS)).toBe(MOVE_CURSOR)
   expect(updateHoverCursor(100, 3, editor, NO_HITS)).toBeNull()
 })
-

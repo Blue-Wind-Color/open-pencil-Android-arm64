@@ -1,16 +1,15 @@
 import { describe, expect, it } from 'bun:test'
 
-import type { DesignElement } from '@open-pencil/dom-css'
 import {
+  type DesignElement,
   compileTailwindCSS,
   createHeadlessCSSRuntime,
-  designDocumentToSceneGraph,
   htmlToDesignDocument,
   htmlToSceneGraph,
-  sceneGraphToDesignDocument,
-  serializeHTML,
   tailwindHTMLToSceneGraph
 } from '@open-pencil/dom-css'
+import { sceneGraphToDesignDocument, serializeHTML } from '@open-pencil/dom-css/export'
+import { designDocumentToSceneGraph } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 

@@ -12,15 +12,15 @@ import { computed } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
 import {
-  vTestId,
   useEditorCommands,
-  useI18n,
-  useMenuModel,
-  useSelectionState,
   editorCommandMetadata,
-  formatShortcut
-} from '@open-pencil/vue'
-import type { EditorCommandId } from '@open-pencil/vue'
+  formatShortcut,
+  type EditorCommandId
+} from '@open-pencil/vue/editor/commands'
+import { useMenuModel } from '@open-pencil/vue/editor/menu-model'
+import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { vTestId } from '@open-pencil/vue/testing'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'

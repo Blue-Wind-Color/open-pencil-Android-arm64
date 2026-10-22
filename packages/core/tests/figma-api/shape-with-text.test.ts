@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { pick } from 'es-toolkit'
 
-import { SceneGraph, shapeWithTextFrameFields } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { shapeWithTextFrameFields } from '@open-pencil/scene-graph/generated'
 
 import { FigmaAPI } from '#core/figma-api'
 

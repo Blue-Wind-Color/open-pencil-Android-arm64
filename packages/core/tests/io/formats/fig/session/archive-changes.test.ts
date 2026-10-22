@@ -1,6 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { computeAllLayouts, exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { computeAllLayouts } from '@open-pencil/core/layout'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { archiveChanges } from '#core/kiwi/fig/session/archive/changes'
 

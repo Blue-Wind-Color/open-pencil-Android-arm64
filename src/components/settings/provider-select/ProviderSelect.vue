@@ -9,7 +9,7 @@ import {
   IS_TAURI,
   type AIProviderID
 } from '@open-pencil/core/constants'
-import { useAIMessages } from '@open-pencil/vue'
+import { useAIMessages } from '@open-pencil/vue/i18n'
 
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import type { AppSelectGroup } from '@/components/ui/select/select'

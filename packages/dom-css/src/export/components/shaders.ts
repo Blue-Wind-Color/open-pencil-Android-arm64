@@ -1,13 +1,13 @@
 import type { StateElement } from '#dom-css/behaviours/states/types'
 
 import { es, jsx } from '@open-pencil/emit'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { findLayerByPath } from '@open-pencil/scene-graph/behaviours'
 import {
-  findLayerByPath,
   shaderOfPaint,
-  type SceneGraph,
   type ShaderComponent,
   type ShaderPreset
-} from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/shaders'
 
 import { isPositioned } from '../projection'
 import type { ComponentElement, ComponentNode } from './model'

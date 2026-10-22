@@ -1,25 +1,20 @@
 import { pickBy } from 'es-toolkit'
 
-import {
-  getAxisAlignedWorldBounds,
-  getWorldMatrix,
-  FITTED_CONTAINER_TYPES,
-  TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS,
-  findInstanceAncestor,
-  recapturedAspectRatio,
-  recordInstanceOverride,
-  rescaleNodeTree,
-  slotPropertyId,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
+import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { recapturedAspectRatio } from '@open-pencil/scene-graph/layout'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
+import { FITTED_CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
   computeConstrainedResizeChanges,
   createResizeSnapshot,
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
+import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
+import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import {

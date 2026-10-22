@@ -1,7 +1,7 @@
 import { tool } from 'ai'
 import { isPlainObject } from 'es-toolkit'
 
-import { graphFromPageSnapshot } from '@open-pencil/core/editor'
+import { graphFromPageSnapshot } from '@open-pencil/core'
 import { registerComponentCatalog, isAtomicTool, toolsToAI } from '@open-pencil/core/tools'
 
 import {

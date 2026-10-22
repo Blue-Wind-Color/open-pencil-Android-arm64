@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { MIXED, TypographyControlsRoot, useI18n, type MixedValue } from '@open-pencil/vue'
+import { MIXED, type MixedValue } from '@open-pencil/vue/controls/node-props'
+import { useI18n } from '@open-pencil/vue/i18n'
+import { TypographyControlsRoot } from '@open-pencil/vue/primitives/TypographyControls'
 
 import { loadFont } from '@/app/editor/fonts'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'

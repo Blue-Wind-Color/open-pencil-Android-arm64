@@ -1,6 +1,6 @@
-import type { SceneGraph } from '../'
-import { getInstanceOverride } from '../instance-overrides'
+import type { SceneGraph } from '../graph'
 import type { SceneNode } from '../types'
+import { getInstanceOverride } from './overrides'
 
 /**
  * Walk an instance's layers beside the component layers they copy, matched the way instance

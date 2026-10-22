@@ -1,11 +1,8 @@
 import { groupBy } from 'es-toolkit/array'
 
-import {
-  fitEnclosingGroups,
-  WHITE,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { WHITE } from '@open-pencil/scene-graph/constants'
+import { fitEnclosingGroups } from '@open-pencil/scene-graph/group-bounds'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import { BLACK } from '#core/constants'

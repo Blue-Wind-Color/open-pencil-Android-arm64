@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import { ref, watch } from 'vue'
 
 import { cloudDocumentPath, cloudDocumentURL } from '@open-pencil/cloud/contract'
-import { cloudMessages } from '@open-pencil/vue'
+import { cloudMessages } from '@open-pencil/vue/i18n'
 
 import type { EditorStore } from '@/app/editor/session'
 import { toast } from '@/app/shell/ui'

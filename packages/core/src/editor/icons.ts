@@ -1,5 +1,6 @@
-import { readIcon, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
+import { readIcon } from '@open-pencil/scene-graph/icons'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'

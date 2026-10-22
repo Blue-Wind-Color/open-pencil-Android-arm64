@@ -1,4 +1,4 @@
-import type { Editor, MovePlace } from '@open-pencil/core/editor'
+import type { Editor, MovePlace } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'

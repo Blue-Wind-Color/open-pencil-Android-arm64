@@ -1,14 +1,9 @@
 import { groupBy } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import {
-  hasTextList,
-  normalizeFontFamily,
-  paragraphIndexAt,
-  textParagraphRanges,
-  weightToStyle
-} from '@open-pencil/scene-graph'
 import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
+import { normalizeFontFamily, weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { hasTextList, paragraphIndexAt, textParagraphRanges } from '@open-pencil/scene-graph/text'
 
 import { bytesToHex } from '../bytes'
 import type { PlacedTextGlyph, TextDecorationRecord } from '../export/runtime'

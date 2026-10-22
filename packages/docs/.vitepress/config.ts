@@ -81,6 +81,7 @@ export default defineConfig({
             baseUrl: repoRoot,
             paths: {
               '@open-pencil/vue': ['packages/vue/src/index.ts'],
+              '@open-pencil/vue/*': ['packages/vue/src/*'],
               '#vue/*': ['packages/vue/src/*']
             }
           }

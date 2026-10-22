@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { createSticky, SceneGraph, stickySublayers } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { createSticky, stickySublayers } from '@open-pencil/scene-graph/generated'
 
 import { stickyPlaceholderNode } from '#core/canvas/text/sticky-placeholder'
 

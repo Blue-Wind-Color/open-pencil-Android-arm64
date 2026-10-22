@@ -105,7 +105,7 @@ export function createUndoActions(ctx: EditorContext) {
       for (const [id, pos] of ordered) {
         ctx.graph.reparentNode(id, pos.parentId)
         if (pos.index !== undefined && pos.index >= 0)
-          ctx.graph.reorderChild(id, pos.parentId, pos.index)
+          ctx.graph.insertChildAt(id, pos.parentId, pos.index)
         ctx.graph.updateNode(id, { x: pos.x, y: pos.y })
       }
       for (const id of places.keys()) ctx.runLayoutForNode(id)

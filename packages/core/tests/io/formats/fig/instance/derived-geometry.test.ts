@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { guid } from '#core-tests/helpers/fig/guid'
 
-import { FigmaAPI } from '@open-pencil/core'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { interpretInstance, materializeInstance } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'

@@ -1,5 +1,7 @@
 import type { Paragraph } from 'canvaskit-wasm'
 
+import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
+import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import {
   hasParagraphSpacing,
   hasTextList,
@@ -8,12 +10,10 @@ import {
   textListItems,
   textParagraphRanges,
   topLevelNumberDigits,
-  type CharacterStyleOverride,
-  type StyleRun,
   type TextListItem,
   type TextParagraphRange
-} from '@open-pencil/scene-graph'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
+} from '@open-pencil/scene-graph/text'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { TextLayout, type TextLayoutBlock, type TextLayoutMarker } from '#core/canvas/text/layout'
 import type { LineHeightRun, TextLayoutBlockLines } from '#core/canvas/text/layout/lines'
@@ -29,7 +29,6 @@ import type { TextRenderer } from '#core/canvas/text/renderer'
 import { utf8Length } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
-import { weightToStyle } from '#core/text/fonts'
 import { glyphAdvanceSync } from '#core/text/opentype'
 
 /** A list item's indent per level, in ems of the list's first character. */

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FontManager, SceneGraph, documentFontStatus } from '@open-pencil/core'
-import { UnsupportedFontFormatError } from '@open-pencil/core/text'
+import { FontManager, documentFontStatus, UnsupportedFontFormatError } from '@open-pencil/core/text'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id

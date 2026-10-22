@@ -54,7 +54,7 @@ export function createNudgeActions(ctx: EditorContext) {
   let nudgeCommitTimer: ReturnType<typeof setTimeout> | null = null
 
   function applyOrder(parentId: string, order: readonly string[]) {
-    order.forEach((id, index) => ctx.graph.reorderChild(id, parentId, index))
+    order.forEach((id, index) => ctx.graph.insertChildAt(id, parentId, index))
     ctx.runLayoutForNode(parentId)
   }
 

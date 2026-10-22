@@ -1,6 +1,7 @@
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { setPageBackgrounds } from '@open-pencil/core/figma-api'
-import { exportFigFile, initCanvasKit } from '@open-pencil/core/io'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts, installTextMeasurer } from '@open-pencil/core/layout'
 import { fontManager, prepareGraphFonts } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'

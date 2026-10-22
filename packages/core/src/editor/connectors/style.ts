@@ -1,17 +1,18 @@
+import type {
+  ConnectorEndpoint,
+  ConnectorLineType,
+  SceneNode,
+  StrokeCap
+} from '@open-pencil/scene-graph'
 import {
   CONNECTOR_STROKE_WEIGHT,
   CONNECTOR_THICK_STROKE_WEIGHT,
   connectorLineStyleFields,
   connectorSublayers,
-  figJamColor,
   layoutConnector,
-  type ConnectorEndpoint,
-  type ConnectorLineStyle,
-  type FigJamColorName,
-  type ConnectorLineType,
-  type SceneNode,
-  type StrokeCap
-} from '@open-pencil/scene-graph'
+  type ConnectorLineStyle
+} from '@open-pencil/scene-graph/connectors'
+import { figJamColor, type FigJamColorName } from '@open-pencil/scene-graph/figjam'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { EditorContext } from '#core/editor/types'

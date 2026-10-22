@@ -1,7 +1,8 @@
 import * as v from 'valibot'
 
 import { cloudDesktopLinkURL, type CloudLinkKind } from '@open-pencil/cloud/contract'
-import { cloudMessages, useViewportKind } from '@open-pencil/vue'
+import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
+import { cloudMessages } from '@open-pencil/vue/i18n'
 
 import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
