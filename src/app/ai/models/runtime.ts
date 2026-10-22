@@ -1,7 +1,10 @@
 import type { LanguageModel } from 'ai'
 import { ref } from 'vue'
 
-import { createLanguageModel } from '@/app/ai/chat/model'
+import type { ReasoningEffort } from '@open-pencil/core/constants'
+
+import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/chat/model'
+import { resolveProviderModel } from '@/app/ai/chat/provider-models'
 import { modelConnection, resolveAIModelRole } from '@/app/ai/models/store'
 import type { AIModelConnection, AIModelRole, ResolvedAIModelRole } from '@/app/ai/models/types'
 import { appCredentialServices } from '@/app/settings/credentials/app'
@@ -15,6 +18,7 @@ export type DirectAIModelRuntime = {
   kind: 'direct'
   role: ResolvedAIModelRole
   model: LanguageModel
+  minReasoningEffort?: ReasoningEffort
 }
 
 export type ACPModelRuntime = {
@@ -88,9 +92,15 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
 
   const apiKey = await resolveModelConnectionAPIKey(resolved.connection.id)
   if (!apiKey) throw new Error(`Credential is unavailable for the ${role} model role`)
+  const { providerID } = resolved.connection
+  const known = await resolveProviderModel(
+    providerID,
+    resolveLanguageModelID({ providerID, ...resolved.profile })
+  )
   return {
     kind: 'direct',
     role: resolved,
+    minReasoningEffort: known?.minReasoningEffort,
     model: createLanguageModel({
       providerID: resolved.connection.providerID,
       apiKey,

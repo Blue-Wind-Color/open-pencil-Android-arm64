@@ -230,6 +230,9 @@ export type AIProviderID =
   | 'harness:pi'
   | `acp:${ACPAgentID}`
 
+export const REASONING_EFFORTS = ['minimal', 'low', 'medium', 'high', 'xhigh'] as const
+export type ReasoningEffort = (typeof REASONING_EFFORTS)[number]
+
 export interface ModelOption {
   id: string
   name: string
@@ -238,6 +241,8 @@ export interface ModelOption {
   recommendedMaxOutputTokens?: number
   releaseDate?: string
   status?: 'active' | 'beta' | 'deprecated'
+  /** Lowest reasoning effort the model accepts; lower thinking levels, Off included, use it. */
+  minReasoningEffort?: ReasoningEffort
 }
 
 export interface AIProviderDef {
@@ -447,16 +452,15 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'MiniMax',
     keyPlaceholder: 'API key',
     keyURL: 'https://platform.minimax.io/user-center/basic-information/interface-key',
-    defaultModel: 'MiniMax-M3',
+    defaultModel: 'MiniMax-M3.1-Flash',
     models: [
-      { id: 'MiniMax-M3', name: 'MiniMax-M3', tag: 'Best' },
-      { id: 'MiniMax-M2.7', name: 'MiniMax-M2.7' },
-      { id: 'MiniMax-M2.7-highspeed', name: 'MiniMax-M2.7-highspeed', tag: 'Fast' },
-      { id: 'MiniMax-M2.5', name: 'MiniMax-M2.5' },
-      { id: 'MiniMax-M2.5-highspeed', name: 'MiniMax-M2.5 Highspeed', tag: 'Fast' },
-      { id: 'MiniMax-M2.1', name: 'MiniMax-M2.1' },
-      { id: 'MiniMax-M2.1-highspeed', name: 'MiniMax-M2.1 Highspeed', tag: 'Fast' },
-      { id: 'MiniMax-M2', name: 'MiniMax-M2' }
+      {
+        id: 'MiniMax-M3.1-Flash',
+        name: 'MiniMax-M3.1-Flash',
+        tag: 'Best',
+        minReasoningEffort: 'low'
+      },
+      { id: 'MiniMax-M3', name: 'MiniMax-M3' }
     ]
   },
   {
