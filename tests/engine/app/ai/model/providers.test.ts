@@ -3,10 +3,12 @@ import { describe, expect, test } from 'bun:test'
 import type { LanguageModel } from 'ai'
 
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
+import type { AIProviderID } from '@open-pencil/core/constants'
 
 import { resolveLanguageModelID } from '@/app/ai/chat/model'
 import { resolveProviderModel } from '@/app/ai/chat/provider-models'
 import { reasoningCallSettings } from '@/app/ai/chat/reasoning'
+import type { ThinkingLevel } from '@/app/ai/models/types'
 import { createAnthropicCompatibleAdapter } from '@/app/ai/providers/compatible'
 import { modelProviderAdapter } from '@/app/ai/providers/registry'
 import type { ModelConfig } from '@/app/ai/providers/types'
@@ -15,6 +17,40 @@ import type { FetchFunction } from '@/app/http/types'
 function languageModelInstance(model: LanguageModel): Exclude<LanguageModel, string> {
   if (typeof model === 'string') throw new Error(`Expected a model instance, got ${model}`)
   return model
+}
+
+/** The JSON body a curated model sends at a thinking level, with its reasoning floor applied. */
+async function thinkingRequestBody(
+  providerID: AIProviderID,
+  modelID: string,
+  level: ThinkingLevel
+): Promise<unknown> {
+  let requestBody = ''
+  const fetchSpy: FetchFunction = async (_input, init) => {
+    requestBody = String(init?.body)
+    throw new Error('stop')
+  }
+  const model = languageModelInstance(
+    modelProviderAdapter(providerID).create(
+      {
+        providerID,
+        apiKey: 'test-key',
+        modelID,
+        customModelID: '',
+        customBaseURL: '',
+        customAPIType: 'completions'
+      },
+      { fetch: fetchSpy }
+    )
+  )
+  const known = await resolveProviderModel(providerID, modelID)
+  await Promise.resolve(
+    model.doGenerate({
+      ...reasoningCallSettings(providerID, level, known?.minReasoningEffort),
+      prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }]
+    })
+  ).catch(() => undefined)
+  return JSON.parse(requestBody)
 }
 
 describe('resolveLanguageModelID', () => {
@@ -83,40 +119,33 @@ describe('model provider registry', () => {
   test.each(['off', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const)(
     'sends a supported Flash effort for %s',
     async (level) => {
-      let requestBody = ''
-      const fetchSpy: FetchFunction = async (_input, init) => {
-        requestBody = String(init?.body)
-        throw new Error('stop')
-      }
-      const model = languageModelInstance(
-        modelProviderAdapter('minimax').create(
-          {
-            providerID: 'minimax',
-            apiKey: 'test-key',
-            modelID: 'MiniMax-M3.1-Flash',
-            customModelID: '',
-            customBaseURL: '',
-            customAPIType: 'completions'
-          },
-          { fetch: fetchSpy }
-        )
-      )
-      await Promise.resolve(
-        model.doGenerate({
-          ...reasoningCallSettings(
-            'minimax',
-            level,
-            (await resolveProviderModel('minimax', 'MiniMax-M3.1-Flash'))?.minReasoningEffort
-          ),
-          prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }]
-        })
-      ).catch(() => undefined)
-      expect(JSON.parse(requestBody)).toMatchObject({
+      expect(await thinkingRequestBody('minimax', 'MiniMax-M3.1-Flash', level)).toMatchObject({
         model: 'MiniMax-M3.1-Flash',
         reasoning_effort: level === 'off' || level === 'minimal' ? 'low' : level
       })
     }
   )
+
+  describe.each(['off', 'minimal'] as const)('at %s thinking', (level) => {
+    test.each([
+      ['zai', 'glm-5.3', { thinking: { type: 'enabled' } }],
+      ['zai', 'glm-5.3-flash', { thinking: { type: 'enabled' } }],
+      [
+        'google',
+        'gemini-4-argon',
+        { generationConfig: { thinkingConfig: { thinkingLevel: 'low' } } }
+      ],
+      [
+        'google',
+        'gemini-3.1-pro-preview',
+        { generationConfig: { thinkingConfig: { thinkingLevel: 'low' } } }
+      ],
+      ['openai', 'gpt-6.1-sol', { reasoning: { effort: 'low' } }],
+      ['openai', 'gpt-6-astra', { reasoning: { effort: 'low' } }]
+    ] as const)('%s %s sends the lowest thinking it accepts', async (providerID, modelID, sent) => {
+      expect(await thinkingRequestBody(providerID, modelID, level)).toMatchObject(sent)
+    })
+  })
 
   test('registers every direct provider without handling agent runtimes as models', () => {
     for (const provider of AI_PROVIDERS.filter((entry) => entry.id !== 'harness:pi')) {

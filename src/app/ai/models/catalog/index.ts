@@ -4,7 +4,7 @@ import * as v from 'valibot'
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption } from '@open-pencil/core/constants'
 
-import { readCacheJSON, writeCacheJSON } from '@/app/cache'
+import { cachedRemoteJSON } from '@/app/cache/remote'
 
 const MODELS_DEV_URL = 'https://models.dev/api.json'
 const MODELS_DEV_CACHE_KEY = 'models-dev/catalog'
@@ -52,8 +52,6 @@ const ModelsDevCatalogSchema = v.record(
   })
 ) satisfies v.GenericSchema<unknown, ModelsDevCatalog>
 
-let catalogPromise: Promise<ModelsDevCatalog | null> | null = null
-
 function normalizedStatus(status: unknown): ModelOption['status'] {
   if (status === 'beta' || status === 'deprecated') return status
   return 'active'
@@ -77,49 +75,17 @@ function normalizeModel(id: string, model: ModelsDevModel): ModelOption {
   return normalized
 }
 
-async function loadCatalog(
-  fetcher: typeof fetch,
-  options: { useCache: boolean }
-): Promise<ModelsDevCatalog | null> {
-  if (options.useCache) {
-    const cached = await readCacheJSON(
-      MODELS_DEV_CACHE_KEY,
-      ModelsDevCatalogSchema,
-      MODELS_DEV_CACHE_TTL_MS
-    )
-    if (cached) return cached
-  }
-  try {
+const modelsDevCatalog = cachedRemoteJSON({
+  key: MODELS_DEV_CACHE_KEY,
+  schema: ModelsDevCatalogSchema,
+  maxAgeMs: MODELS_DEV_CACHE_TTL_MS,
+  load: async (fetcher) => {
     const response = await fetcher(MODELS_DEV_URL)
     if (!response.ok) throw new Error(`models.dev catalog request failed: ${response.status}`)
     // Validated like the cached copy, so a bad entry falls back instead of crashing the list.
-    const catalog = v.parse(
-      v.pipe(v.string(), v.parseJson(), ModelsDevCatalogSchema),
-      await response.text()
-    )
-    if (options.useCache) await writeCacheJSON(MODELS_DEV_CACHE_KEY, catalog)
-    return catalog
-  } catch {
-    return null
+    return v.parse(v.pipe(v.string(), v.parseJson(), ModelsDevCatalogSchema), await response.text())
   }
-}
-
-async function resolvedCatalog(fetcher?: typeof fetch): Promise<ModelsDevCatalog | null> {
-  const nativeFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch : undefined
-  const resolvedFetcher = fetcher ?? nativeFetch
-  if (!resolvedFetcher) return null
-  const useCache = resolvedFetcher === nativeFetch
-  if (!useCache) return loadCatalog(resolvedFetcher, { useCache: false })
-  const pending = (catalogPromise ??= loadCatalog(resolvedFetcher, { useCache: true }))
-  try {
-    const catalog = await pending
-    if (!catalog && catalogPromise === pending) catalogPromise = null
-    return catalog
-  } catch {
-    if (catalogPromise === pending) catalogPromise = null
-    return null
-  }
-}
+})
 
 function modelIDCandidates(providerKey: string, modelID: string): string[] {
   const unprefixed = modelID.startsWith(`${providerKey}/`)
@@ -166,7 +132,7 @@ export async function listCatalogModels(
   const curated = curatedProviderModels(providerID)
   const providerKeys = PROVIDER_KEYS[providerID]
   if (!providerKeys?.length) return curated
-  const catalog = await resolvedCatalog(fetcher)
+  const catalog = await modelsDevCatalog.get(fetcher)
   if (!catalog) return curated
 
   const models = providerKeys.flatMap((providerKey) =>
@@ -184,7 +150,7 @@ export async function resolveModelsDevModel(
 ): Promise<ModelOption | null> {
   const providerKeys = PROVIDER_KEYS[providerID]
   if (!providerKeys?.length || !modelID) return null
-  const catalog = await resolvedCatalog(fetcher)
+  const catalog = await modelsDevCatalog.get(fetcher)
   if (!catalog) return null
 
   for (const providerKey of providerKeys) {
@@ -198,5 +164,5 @@ export async function resolveModelsDevModel(
 }
 
 export function resetModelsDevCatalogForTests(): void {
-  catalogPromise = null
+  modelsDevCatalog.reset()
 }

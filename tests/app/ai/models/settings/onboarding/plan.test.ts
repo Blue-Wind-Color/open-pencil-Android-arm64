@@ -181,7 +181,7 @@ describe('planOnboarding for review and fast work', () => {
   })
 
   test('follows the design model when its provider has no separate fast model', () => {
-    expect(planOnboarding(answers({ access: ['anthropic'] }), desktop).fast).toBe('design')
+    expect(planOnboarding(answers({ access: ['google'] }), desktop).fast).toBe('design')
   })
 
   test('uses the API vision model for review and fast work behind an agent', () => {

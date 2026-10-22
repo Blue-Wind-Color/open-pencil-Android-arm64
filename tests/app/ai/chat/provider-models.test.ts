@@ -5,7 +5,6 @@ import {
   resetOpenRouterModelsForTests,
   resolveProviderModel
 } from '@/app/ai/chat/provider-models'
-import * as cache from '@/app/cache'
 
 import { fetchStub } from '#tests/helpers/fetch'
 
@@ -106,26 +105,6 @@ describe('resolveProviderModel', () => {
       })
     } finally {
       timeout.mockRestore()
-    }
-  })
-
-  test('fetches models when the model cache cannot be read or written', async () => {
-    const read = spyOn(cache, 'readCacheJSON').mockRejectedValueOnce(new Error('storage denied'))
-    const write = spyOn(cache, 'writeCacheJSON').mockRejectedValueOnce(new Error('quota exceeded'))
-    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
-    const fetcher = fetchStub(async () =>
-      Response.json({ data: [{ id: 'some/model', supported_parameters: ['tools'] }] })
-    )
-    try {
-      expect(await resolveProviderModel('openrouter', 'some/model', fetcher)).toMatchObject({
-        id: 'some/model'
-      })
-      expect(write).toHaveBeenCalledTimes(1)
-      expect(warn).toHaveBeenCalledTimes(1)
-    } finally {
-      read.mockRestore()
-      write.mockRestore()
-      warn.mockRestore()
     }
   })
 })

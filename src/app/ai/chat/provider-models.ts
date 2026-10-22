@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import { AI_PROVIDERS, REASONING_EFFORTS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption, ReasoningEffort } from '@open-pencil/core/constants'
 
-import { readCacheJSON, writeCacheJSON } from '@/app/cache'
+import { cachedRemoteJSON } from '@/app/cache/remote'
 
 const CachedModelOptions = v.array(
   v.object({
@@ -51,8 +51,6 @@ function curatedProviderModels(providerID: AIProviderID) {
 }
 
 const curatedOpenRouterModels = curatedProviderModels('openrouter')
-
-let modelsPromise: Promise<ModelOption[]> | null = null
 
 function isToolCapableOpenRouterModel(model: OpenRouterModel) {
   return Array.isArray(model.supported_parameters) && model.supported_parameters.includes('tools')
@@ -104,38 +102,23 @@ async function fetchOpenRouterModels(fetcher: typeof fetch): Promise<ModelOption
   })
 }
 
-async function listOpenRouterModels(fetcher: typeof fetch = fetch): Promise<ModelOption[]> {
-  modelsPromise ??= (async () => {
-    try {
-      // Storage failures only skip the cache; they never hide the fetched list.
-      const cached = await readCacheJSON(
-        OPENROUTER_MODELS_CACHE_KEY,
-        CachedModelOptions,
-        OPENROUTER_MODELS_CACHE_TTL_MS
-      ).catch(() => null)
-      if (cached?.length) return cached
-
-      const models = await fetchOpenRouterModels(fetcher)
-      if (!models.length) return curatedOpenRouterModels
-      await writeCacheJSON(OPENROUTER_MODELS_CACHE_KEY, models).catch((error: unknown) => {
-        console.warn('OpenRouter model cache write skipped:', error)
-      })
-      return models
-    } catch {
-      // Retried on the next call rather than held for the session.
-      modelsPromise = null
-      return curatedOpenRouterModels
-    }
-  })()
-
-  return modelsPromise
-}
+const openRouterModels = cachedRemoteJSON<ModelOption[]>({
+  key: OPENROUTER_MODELS_CACHE_KEY,
+  schema: CachedModelOptions,
+  maxAgeMs: OPENROUTER_MODELS_CACHE_TTL_MS,
+  load: async (fetcher) => {
+    const models = await fetchOpenRouterModels(fetcher)
+    return models.length ? models : null
+  }
+})
 
 export async function listProviderModels(
   providerID: AIProviderID,
-  fetcher: typeof fetch = fetch
+  fetcher?: typeof fetch
 ): Promise<ModelOption[]> {
-  if (providerID === 'openrouter') return listOpenRouterModels(fetcher)
+  if (providerID === 'openrouter') {
+    return (await openRouterModels.get(fetcher)) ?? curatedOpenRouterModels
+  }
   return curatedProviderModels(providerID)
 }
 
@@ -148,5 +131,5 @@ export async function resolveProviderModel(
 }
 
 export function resetOpenRouterModelsForTests(): void {
-  modelsPromise = null
+  openRouterModels.reset()
 }
