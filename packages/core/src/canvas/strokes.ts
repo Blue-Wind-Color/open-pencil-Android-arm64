@@ -1,4 +1,4 @@
-import type { Canvas, EmbindEnumEntity, Paint } from 'canvaskit-wasm'
+import type { Canvas, EmbindEnumEntity, Paint, Path } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { ArrowEndpoint, ArrowWing } from '@open-pencil/scene-graph/arrow-caps'
@@ -112,6 +112,56 @@ export function drawDashedRRectWithSolidCorners(
   r.strokePaint.setPathEffect(null)
 }
 
+/** The outline a polygonal head fills: a triangle, an equilateral arrow, or a diamond. */
+function polygonPath(r: SkiaRenderer, points: readonly Vector[]): Path {
+  const builder = new r.ck.PathBuilder()
+  points.forEach((point, index) =>
+    index === 0 ? builder.moveTo(point.x, point.y) : builder.lineTo(point.x, point.y)
+  )
+  builder.close()
+  return builder.detachAndDelete()
+}
+
+/** The corners of each head drawn as a polygon, from its tip, direction, and weight. */
+const POLYGON_HEADS = {
+  ARROW_EQUILATERAL: equilateralArrowPoints,
+  TRIANGLE_FILLED: triangleCapPoints,
+  DIAMOND_FILLED: diamondCapPoints
+} satisfies Record<string, (x: number, y: number, angle: number, weight: number) => Vector[]>
+
+/**
+ * The filled outline of the head at `endpoint`. A line arrow's wings are one stroked path, so they
+ * meet in a round join rather than overlapping at the tip.
+ */
+export function arrowHeadPath(
+  r: SkiaRenderer,
+  endpoint: ArrowEndpoint,
+  weight: number
+): Path | null {
+  const { x, y, angle, cap } = endpoint
+  if (cap === 'ARROW_LINES') {
+    const [first, second] = arrowLinesSegments(x, y, angle, weight)
+    const builder = new r.ck.PathBuilder()
+    builder.moveTo(first.to.x, first.to.y)
+    builder.lineTo(first.from.x, first.from.y)
+    builder.lineTo(second.to.x, second.to.y)
+    const wings = builder.detachAndDelete()
+    const outline = wings.makeStroked({
+      width: weight,
+      cap: r.ck.StrokeCap.Round,
+      join: r.ck.StrokeJoin.Round
+    })
+    wings.delete()
+    return outline
+  }
+  if (cap === 'CIRCLE_FILLED') {
+    const builder = new r.ck.PathBuilder()
+    builder.addCircle(x, y, circleCapRadius(weight))
+    return builder.detachAndDelete()
+  }
+  return polygonPath(r, POLYGON_HEADS[cap](x, y, angle, weight))
+}
+
 /**
  * Draws arrow heads at open path endpoints in the stroke's color. The shaft
  * is expected to be drawn separately; heads overlay its terminal segment.
@@ -177,12 +227,7 @@ function fillHead(
   color: Color,
   opacity: number
 ) {
-  const builder = new r.ck.PathBuilder()
-  points.forEach((point, index) =>
-    index === 0 ? builder.moveTo(point.x, point.y) : builder.lineTo(point.x, point.y)
-  )
-  builder.close()
-  const path = builder.detachAndDelete()
+  const path = polygonPath(r, points)
   setHeadPaint(r, color, opacity)
   canvas.drawPath(path, r.fillPaint)
   path.delete()

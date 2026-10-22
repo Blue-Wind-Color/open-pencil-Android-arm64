@@ -1,6 +1,9 @@
+import { lineStrokeEnds } from '@open-pencil/scene-graph/arrow-caps'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
+import { normalizeDashPattern } from '#core/canvas/strokes'
+import { fittedDashPattern } from '#core/canvas/strokes/sides'
 import { computeContentBounds } from '#core/io/formats/raster'
 
 import {
@@ -109,6 +112,16 @@ function vectorShapeElements(
     : [svg('rect', { width: round(node.width), height: round(node.height), ...common })]
 }
 
+/** A line's dashes stretched along it as the canvas lays them, half a dash at each end. */
+function lineDashAttrs(stroke: Stroke | undefined, length: number) {
+  const fitted = fittedDashPattern(length, normalizeDashPattern(stroke?.dashPattern))
+  if (!fitted) return {}
+  return {
+    'stroke-dasharray': fitted.intervals.map((size) => round(size)).join(' '),
+    'stroke-dashoffset': round(fitted.offset)
+  }
+}
+
 function nodeShapeElements(
   node: SceneNode,
   fillAttr: string | null,
@@ -136,17 +149,27 @@ function nodeShapeElements(
       ]
     }
 
-    case 'LINE':
+    case 'LINE': {
+      // Where the canvas strokes it: to one side of the line, with its caps inside its length.
+      const stroke = node.strokes.find((item) => item.visible)
+      const { start, end } = lineStrokeEnds(
+        node.width,
+        node.height,
+        stroke?.weight ?? 0,
+        stroke?.cap ?? node.strokeCap
+      )
       return [
         svg('line', {
-          x1: 0,
-          y1: 0,
-          x2: round(node.width),
-          y2: round(node.height),
+          x1: round(start.x),
+          y1: round(start.y),
+          x2: round(end.x),
+          y2: round(end.y),
           fill: 'none',
-          ...strokeAttrs
+          ...strokeAttrs,
+          ...lineDashAttrs(stroke, Math.hypot(end.x - start.x, end.y - start.y))
         })
       ]
+    }
 
     case 'STAR':
     case 'POLYGON':
@@ -321,18 +344,18 @@ function buildGroupAttrs(
 
 function buildSVGStrokeAttrs(
   visibleStrokes: Stroke[],
-  colorSpace: 'srgb' | 'display-p3'
+  colorSpace: 'srgb' | 'display-p3',
+  nodeCap: SceneNode['strokeCap']
 ): Record<string, string | number | undefined> {
   if (visibleStrokes.length === 0) return {}
   const stroke = visibleStrokes[0]
+  const cap = stroke.cap ?? nodeCap
   const attrs: Record<string, string | number | undefined> = {
     stroke: formatColor(stroke.color, 1, colorSpace),
     'stroke-width': round(stroke.weight)
   }
   if (stroke.opacity < 1) attrs['stroke-opacity'] = round(stroke.opacity)
-  if (stroke.cap && stroke.cap !== 'NONE') {
-    attrs['stroke-linecap'] = SVG_STROKE_CAP[stroke.cap] ?? 'butt'
-  }
+  if (cap !== 'NONE') attrs['stroke-linecap'] = SVG_STROKE_CAP[cap] ?? 'butt'
   if (stroke.join && stroke.join !== 'MITER') {
     attrs['stroke-linejoin'] = SVG_STROKE_JOIN[stroke.join] ?? 'miter'
   }
@@ -413,7 +436,7 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
       ? resolveFill(visibleFills[0], node, ctx)
       : null
   const fillAttr = ownFill && tint.includes('fill') ? CURRENT_COLOR : ownFill
-  const ownStrokes = buildSVGStrokeAttrs(visibleStrokes, ctx.colorSpace)
+  const ownStrokes = buildSVGStrokeAttrs(visibleStrokes, ctx.colorSpace, node.strokeCap)
   const strokeAttrs =
     ownStrokes.stroke && tint.includes('stroke')
       ? { ...ownStrokes, stroke: CURRENT_COLOR }

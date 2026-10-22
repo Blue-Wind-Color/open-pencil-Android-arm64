@@ -7,6 +7,7 @@ import { getTextOutlineSupport } from '#core/text/outlines'
 import { makeArcPath } from './fills'
 import type { SkiaRenderer } from './renderer'
 import { nodeHasRadius } from './shapes'
+import { makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines'
 
 const BOOLEAN_PATH_OP: Record<
@@ -62,20 +63,9 @@ export function canMakeBooleanSourceNode(node: SceneNode, graph: SceneGraph): bo
   })
 }
 
-function lineStrokePath(r: SkiaRenderer, node: SceneNode): Path | null {
-  const path = new r.ck.PathBuilder()
-  path.moveTo(0, 0)
-  path.lineTo(node.width, node.height)
-  const stroke = node.strokes.find((item) => item.visible)
-  const source = path.detachAndDelete()
-  const outline = source.makeStroked({ width: stroke?.weight ?? 1 })
-  source.delete()
-  return outline
-}
-
 function baseShapePath(r: SkiaRenderer, node: SceneNode): Path | null {
   if (node.type === 'TEXT') return textNodeToOutlinePath(r, node)
-  if (node.type === 'LINE') return lineStrokePath(r, node)
+  if (node.type === 'LINE') return makeLineStrokeOutline(r, node)
   if (node.type === 'ELLIPSE' && node.arcData) return makeArcPath(r, node)
 
   const rect = r.ck.LTRBRect(0, 0, node.width, node.height)

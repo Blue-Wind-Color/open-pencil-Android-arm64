@@ -2,12 +2,10 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
-import type { ArrowEndpoint } from '@open-pencil/scene-graph/arrow-caps'
 import {
   arrowCapOverflow,
   collectArrowEndpoints,
   hasTrimmedShaft,
-  lineArrowEndpoints,
   trimArrowShafts
 } from '@open-pencil/scene-graph/arrow-caps'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -50,6 +48,7 @@ import {
   getStrokeJoinEntity,
   normalizeDashPattern
 } from './strokes'
+import { drawLineStroke } from './strokes/line'
 import { drawOutlinedDashes } from './strokes/outlined-dashes'
 import { drawDashedRectStroke, strokeDashesByOutline, strokeSideWeights } from './strokes/sides'
 import { textVerticalOffset, withTextParagraph } from './text'
@@ -833,9 +832,9 @@ function isPathTextWithStrokeGeometry(node: SceneNode): boolean {
 }
 
 /**
- * Draws arrow-cap heads for a stroke on the node types that carry open path
- * ends. Runs after the shaft regardless of which branch painted it, so heads
- * survive fills, non-center alignment, corner radii, and dashed shafts.
+ * Draws arrow-cap heads for a stroke on a vector's open path ends. Runs after the shaft
+ * regardless of which branch painted it, so heads survive fills, non-center alignment, corner
+ * radii, and dashed shafts.
  */
 function drawNodeArrowHeads(
   r: SkiaRenderer,
@@ -844,13 +843,8 @@ function drawNodeArrowHeads(
   stroke: SceneNode['strokes'][0],
   color: Color
 ): void {
-  const cap = stroke.cap ?? node.strokeCap
-  let endpoints: ArrowEndpoint[] = []
-  if (node.type === 'LINE') {
-    endpoints = lineArrowEndpoints(node.width, node.height, cap)
-  } else if (node.type === 'VECTOR' && node.vectorNetwork) {
-    endpoints = collectArrowEndpoints(node.vectorNetwork, cap)
-  }
+  if (node.type !== 'VECTOR' || !node.vectorNetwork) return
+  const endpoints = collectArrowEndpoints(node.vectorNetwork, stroke.cap ?? node.strokeCap)
   if (endpoints.length > 0) {
     drawArrowHeads(r, canvas, endpoints, stroke.weight, color, stroke.opacity)
   }
@@ -868,6 +862,10 @@ function paintNodeStrokes(
   vectorStroke: Path[] | null
 ): void {
   forVisibleStrokes(r, node, graph, (stroke, color) => {
+    if (node.type === 'LINE') {
+      drawLineStroke(r, canvas, node, stroke, color)
+      return
+    }
     if (
       stroke.dashPattern &&
       stroke.dashPattern.length > 0 &&
