@@ -205,7 +205,7 @@ provider or a second sign-in step, it opens them in a browser and gets the perso
 
 `CLOUD_PORTAL_PAGE_ROOTS` in the contract lists the page paths, and every runtime serves
 `cloud.html` at and below them with `frame-ancestors 'none'`, so the approval page cannot be
-framed. Both runtimes put the API behind the same Hono router, `createCloudServer` in
+framed. The server's root gets the page too, and the portal sends it on to its home. Both runtimes put the API behind the same Hono router, `createCloudServer` in
 `src/runtime/portal`, which answers portal pages before the API and portal assets only where the
 API returns 404; Node reads the build named by `OPENPENCIL_CLOUD_PORTAL_DIR`, and the Worker reads
 its static assets. `bun run cloud:dev` keeps a

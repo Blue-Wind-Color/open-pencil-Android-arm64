@@ -5,6 +5,7 @@ import { isCloudPortalPage } from '#cloud/contract'
 describe('Cloud portal pages', () => {
   test('cover sign-in, desktop approval, account, and console paths', () => {
     for (const path of [
+      '/',
       '/auth/sign-in',
       '/cloud/device',
       '/account',

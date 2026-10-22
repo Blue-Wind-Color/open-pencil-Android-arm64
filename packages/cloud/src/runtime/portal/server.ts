@@ -39,7 +39,7 @@ export function createCloudServer(
     c.res = withIndexingPolicy(c.res, c.req.path, indexingPolicy)
   })
   if (portal) {
-    const pages = CLOUD_PORTAL_PAGE_ROOTS.flatMap((root) => [root, `${root}/*`])
+    const pages = ['/', ...CLOUD_PORTAL_PAGE_ROOTS.flatMap((root) => [root, `${root}/*`])]
     server.on(['GET', 'HEAD'], pages, async (c) => {
       const page = await portal(PAGE_PATH, c.req.raw)
       return page ? c.body(page.body, 200, PAGE_HEADERS) : c.notFound()

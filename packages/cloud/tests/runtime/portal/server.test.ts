@@ -36,6 +36,7 @@ describe('Cloud server', () => {
     expect(page.headers.get('Content-Security-Policy')).toBe("frame-ancestors 'none'")
     expect(page.headers.get('Cache-Control')).toBe('no-cache')
     expect((await request('/account')).status).toBe(200)
+    expect(await (await request('/')).text()).toContain('Portal')
   })
 
   test('leaves other paths and methods to the API', async () => {
