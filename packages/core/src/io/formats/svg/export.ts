@@ -1,6 +1,5 @@
 import { lineStrokeEnds } from '@open-pencil/scene-graph/arrow-caps'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
-import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import { normalizeDashPattern } from '#core/canvas/strokes'
 import { fittedDashPattern } from '#core/canvas/strokes/sides'
@@ -33,17 +32,13 @@ export {
   type OutlineNode
 } from './paths'
 
-import type {
-  SceneGraph,
-  SceneNode,
-  Fill,
-  Stroke,
-  CharacterStyleOverride
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Fill, Stroke } from '@open-pencil/scene-graph'
 
-import type { SVGExportContext } from './defs'
+import type { SVGExportContext, SVGFontAlias } from './defs'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
+import { renderTextNode } from './text/export'
+import type { SVGTextLayout } from './text/lines'
 
 // --- Node rendering ---
 
@@ -200,91 +195,6 @@ function nodeShapeElements(
   }
 }
 
-function styleOverrideToTspanAttrs(
-  style: CharacterStyleOverride,
-  colorSpace: 'srgb' | 'display-p3'
-): Record<string, string | number | undefined> {
-  const attrs: Record<string, string | number | undefined> = {}
-  if (style.fontFamily) attrs['font-family'] = style.fontFamily
-  if (style.fontSize) attrs['font-size'] = style.fontSize
-  if (style.fontWeight) attrs['font-weight'] = style.fontWeight
-  if (style.italic) attrs['font-style'] = 'italic'
-  if (style.letterSpacing) attrs['letter-spacing'] = round(style.letterSpacing)
-  if (style.textDecoration === 'UNDERLINE') attrs['text-decoration'] = 'underline'
-  if (style.textDecoration === 'STRIKETHROUGH') attrs['text-decoration'] = 'line-through'
-  if (style.fills) {
-    const visibleFill = style.fills.find((f) => f.visible && f.type === 'SOLID')
-    if (visibleFill) {
-      attrs.fill = formatColor(visibleFill.color, visibleFill.opacity, colorSpace)
-    }
-  }
-  return attrs
-}
-
-function isLogicalTextEnd(node: SceneNode, direction: 'LTR' | 'RTL'): boolean {
-  return (
-    (direction === 'LTR' && node.textAlignHorizontal === 'RIGHT') ||
-    (direction === 'RTL' && node.textAlignHorizontal === 'LEFT')
-  )
-}
-
-function textAnchorForNode(
-  node: SceneNode,
-  direction: 'LTR' | 'RTL'
-): 'middle' | 'end' | undefined {
-  if (node.textAlignHorizontal === 'CENTER') return 'middle'
-  if (isLogicalTextEnd(node, direction)) return 'end'
-  return undefined
-}
-
-function textXForNode(node: SceneNode, direction: 'LTR' | 'RTL'): number {
-  if (node.textAlignHorizontal === 'CENTER') return round(node.width / 2)
-  if (isLogicalTextEnd(node, direction)) return round(node.width)
-  return 0
-}
-
-function renderTextNode(
-  node: SceneNode,
-  fillAttr: string | null,
-  colorSpace: 'srgb' | 'display-p3'
-): SVGNode {
-  const direction = resolveNodeTextDirection(node)
-  const textAnchor = textAnchorForNode(node, direction)
-
-  let textDecoration: 'underline' | 'line-through' | undefined
-  if (node.textDecoration === 'UNDERLINE') textDecoration = 'underline'
-  else if (node.textDecoration === 'STRIKETHROUGH') textDecoration = 'line-through'
-
-  const attrs: Record<string, string | number | undefined> = {
-    'font-family': node.fontFamily || undefined,
-    'font-size': node.fontSize || undefined,
-    'font-weight': node.fontWeight !== 400 ? node.fontWeight : undefined,
-    'font-style': node.italic ? 'italic' : undefined,
-    fill: fillAttr ?? undefined,
-    direction: direction === 'RTL' ? 'rtl' : undefined,
-    'text-anchor': textAnchor,
-    'text-decoration': textDecoration,
-    'letter-spacing': node.letterSpacing ? round(node.letterSpacing) : undefined
-  }
-
-  const x = textXForNode(node, direction)
-  const y = node.fontSize || 14
-
-  if (node.styleRuns.length > 0) {
-    const spans: SVGNode[] = []
-    let pos = 0
-    for (const run of node.styleRuns) {
-      const text = node.text.slice(pos, pos + run.length)
-      pos += run.length
-      spans.push(svg('tspan', styleOverrideToTspanAttrs(run.style, colorSpace), text))
-    }
-
-    return svg('text', { x, y, ...attrs }, ...spans)
-  }
-
-  return svg('text', { x, y, ...attrs }, node.text)
-}
-
 // --- Main recursive renderer ---
 
 function buildTransformAttr(node: SceneNode): string | undefined {
@@ -424,7 +334,7 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   if (node.type === 'TEXT') {
     const firstFill = node.fills.find((f) => f.visible)
     const fillAttr = firstFill ? resolveFill(firstFill, node, ctx) : null
-    const textEl = renderTextNode(node, fillAttr, ctx.colorSpace)
+    const textEl = renderTextNode(node, fillAttr, ctx)
     return svg('g', groupAttrs, textEl)
   }
 
@@ -488,6 +398,16 @@ export interface SVGExportOptions {
   xmlDeclaration?: boolean
   /** Target export color space (default: srgb) */
   colorSpace?: 'srgb' | 'display-p3'
+  /**
+   * Line breaks of text nodes as the editor laid them out. Without them each text node is one
+   * line of SVG text, which renderers that do not wrap SVG text (such as PDF) keep on one line.
+   */
+  textLayout?: SVGTextLayout
+  /**
+   * A family to name a font face by instead of its own, such as the one a PDF embeds the face's
+   * file under. Text in an aliased face is written in that family at normal weight and style.
+   */
+  fontAlias?: SVGFontAlias
 }
 
 export function renderNodesToSVG(
@@ -507,7 +427,9 @@ export function renderNodesToSVG(
     defs: [],
     defIdCounter: 0,
     graph,
-    colorSpace: options.colorSpace ?? 'srgb'
+    colorSpace: options.colorSpace ?? 'srgb',
+    textLayout: options.textLayout,
+    fontAlias: options.fontAlias
   }
 
   const contentNodes: SVGNode[] = []

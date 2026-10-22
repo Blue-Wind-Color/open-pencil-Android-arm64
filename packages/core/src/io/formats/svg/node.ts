@@ -36,12 +36,22 @@ function renderAttrs(attrs: Record<string, string | number>): string {
   return parts.length > 0 ? ' ' + parts.join(' ') : ''
 }
 
+/** Elements whose whitespace is text: indenting their children would draw it as spaces. */
+const TEXT_CONTENT_TAGS = new Set(['text', 'tspan', 'textPath'])
+
 export function renderSVGNode(node: SVGNode, indent = 0): string {
   const pad = '  '.repeat(indent)
   const attrsStr = renderAttrs(node.attrs)
 
   if (node.children.length === 0) {
     return `${pad}<${node.tag}${attrsStr}/>`
+  }
+
+  if (TEXT_CONTENT_TAGS.has(node.tag)) {
+    const content = node.children
+      .map((child) => (typeof child === 'string' ? escapeText(child) : renderSVGNode(child)))
+      .join('')
+    return `${pad}<${node.tag}${attrsStr}>${content}</${node.tag}>`
   }
 
   const hasOnlyText = node.children.length === 1 && typeof node.children[0] === 'string'

@@ -37,6 +37,22 @@ describe('documentFontStatus', () => {
     })
   })
 
+  test('counts a root that is itself a text node', () => {
+    const graph = new SceneGraph()
+    const manager = new FontManager()
+    manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
+    const node = graph.createNode('TEXT', pageId(graph), {
+      text: 'Hello',
+      fontFamily: 'Inter',
+      fontWeight: 400
+    })
+
+    const status = documentFontStatus(graph, [node.id], manager)
+    expect(status.faces.map((face) => [face.family, face.style, face.status])).toEqual([
+      ['Inter', 'Regular', 'available']
+    ])
+  })
+
   test('reports the active default-family substitution for missing faces', () => {
     const graph = new SceneGraph()
     const manager = new FontManager()

@@ -1,25 +1,32 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { uniqBy } from 'es-toolkit/array'
+
+import type { CharacterStyleOverride, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters } from '#core/text/case'
+import type { FontFaceRef } from '#core/text/face'
 import { cjkFallbackScriptForLanguage, type FontFallbackScript } from '#core/text/fallbacks'
 import { weightToStyle } from '#core/text/font/style'
 
+/** The face a text draws in, or the face a style run over it draws in. */
+export function textFontFace(node: SceneNode, style: CharacterStyleOverride = {}): FontFaceRef {
+  const weight = style.fontWeight ?? (node.fontWeight || 400)
+  const italic = style.italic ?? node.italic
+  return {
+    family: style.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY),
+    style: weightToStyle(weight, italic),
+    weight,
+    italic
+  }
+}
+
 export function collectNodeFontFaces(node: SceneNode): Array<{ family: string; style: string }> {
   if (node.type !== 'TEXT') return []
-  const family = node.fontFamily || DEFAULT_FONT_FAMILY
-  const faces = new Map<string, { family: string; style: string }>()
-  const add = (faceFamily: string, style: string) => {
-    faces.set(`${faceFamily}\0${style}`, { family: faceFamily, style })
-  }
-  add(family, weightToStyle(node.fontWeight || 400, node.italic))
-  for (const run of node.styleRuns) {
-    const runFamily = run.style.fontFamily ?? family
-    const weight = run.style.fontWeight ?? node.fontWeight
-    const italic = run.style.italic ?? node.italic
-    add(runFamily, weightToStyle(weight, italic))
-  }
-  return [...faces.values()]
+  const faces = [textFontFace(node), ...node.styleRuns.map((run) => textFontFace(node, run.style))]
+  return uniqBy(faces, (face) => `${face.family}\0${face.style}`).map(({ family, style }) => ({
+    family,
+    style
+  }))
 }
 
 export function collectGraphFontKeys(

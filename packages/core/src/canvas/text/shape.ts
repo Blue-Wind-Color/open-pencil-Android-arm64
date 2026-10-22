@@ -190,29 +190,47 @@ function needsShaping(graph: SceneGraph): boolean {
   return false
 }
 
+/** How many shaping calls share each provider made for them; the last one to finish deletes it. */
+const shaperProviderUsers = new Map<TypefaceFontProvider, number>()
+
 /**
- * Run a `.fig` or Figma clipboard write with text shaping. Unless the attached font provider
- * belongs to this CanvasKit, the loaded fonts are registered in one that lives for this write only.
+ * Run `use` with text shaped as the canvas lays it out. Unless the attached font provider belongs
+ * to this CanvasKit, the loaded fonts are registered in one made for shaping, which calls that
+ * overlap share and the last of them deletes.
  */
+export async function withTextShaper<T>(
+  canvasKit: CanvasKit,
+  use: (shape: (node: SceneNode) => ShapedText | null) => Promise<T>
+): Promise<T> {
+  const attached = fontManager.providerFor(canvasKit)
+  const provider = attached ?? canvasKit.TypefaceFontProvider.Make()
+  if (!attached) fontManager.attachProvider(canvasKit, provider)
+  const shared = !attached || shaperProviderUsers.has(provider)
+  if (shared) shaperProviderUsers.set(provider, (shaperProviderUsers.get(provider) ?? 0) + 1)
+  try {
+    return await use((node) => shapeText(canvasKit, provider, node))
+  } finally {
+    if (shared) {
+      const users = (shaperProviderUsers.get(provider) ?? 1) - 1
+      if (users > 0) {
+        shaperProviderUsers.set(provider, users)
+      } else {
+        shaperProviderUsers.delete(provider)
+        fontManager.detachProvider(provider)
+        provider.delete()
+      }
+    }
+  }
+}
+
+/** Run a `.fig` or Figma clipboard write with text shaping. */
 export async function withFigExportRuntime<T>(
   graph: SceneGraph,
   ck: CanvasKit | undefined,
   write: (runtime: FigNodeChangeExportRuntime) => Promise<T>
 ): Promise<T> {
   if (!needsShaping(graph)) return write({ ...EMPTY_EXPORT_RUNTIME, textDecorations })
-  const canvasKit = ck ?? (await getCanvasKit())
-  const reusable = fontManager.providerFor(canvasKit)
-  const provider = reusable ?? canvasKit.TypefaceFontProvider.Make()
-  if (!reusable) fontManager.attachProvider(canvasKit, provider)
-  try {
-    return await write({
-      shapeText: (node) => shapeText(canvasKit, provider, node),
-      textDecorations
-    })
-  } finally {
-    if (!reusable) {
-      fontManager.detachProvider(provider)
-      provider.delete()
-    }
-  }
+  return withTextShaper(ck ?? (await getCanvasKit()), (shapeText) =>
+    write({ shapeText, textDecorations })
+  )
 }

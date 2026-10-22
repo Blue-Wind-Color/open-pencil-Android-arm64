@@ -21,7 +21,7 @@ import {
 
 import { parseSVGDocument } from './document'
 import { parseSVGSize, svgRootId } from './metadata'
-import { createSVGText } from './text'
+import { createSVGText } from './text/import'
 
 export type SVGImportData = SVGVectorizeResult &
   Size & {
