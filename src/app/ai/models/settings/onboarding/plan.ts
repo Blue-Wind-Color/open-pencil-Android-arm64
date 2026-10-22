@@ -279,7 +279,10 @@ export function planOnboarding(answers: OnboardingAnswers, options: PlanOptions)
     review: planReview(design, vision, current),
     fast: planFast(design, vision, current)
   }
-  return { ...roles, connections: planConnections(roles) }
+  // A selected agent is always shown, as only its card tells whether it is installed and signed
+  // in, and the person can make it the design model in review.
+  const agents = access.filter(isOnboardingAgent)
+  return { ...roles, connections: uniq([...planConnections(roles), ...agents]) }
 }
 
 /** Providers the planned models need connected, skipping models that are already configured. */

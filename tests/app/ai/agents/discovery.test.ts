@@ -149,6 +149,15 @@ describe('local agent discovery', () => {
     ])
   })
 
+  test('offers an adapter that carries its agent even without the agent CLI', () => {
+    const agents = detectedAgents(lookup())
+    expect(agents.map((agent) => [agent.definition.id, agent.status])).toEqual([
+      ['claude-code', 'needs-adapter'],
+      ['codex', 'needs-adapter'],
+      ['gemini-cli', 'not-installed']
+    ])
+  })
+
   test('browser discovery performs no native operations', async () => {
     const scan = mock(async () => lookup('gemini'))
     const install = mock(async () => undefined)

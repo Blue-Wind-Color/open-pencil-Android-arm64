@@ -1,14 +1,17 @@
 import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 
-import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { ACP_AGENTS, type ACPAgentDef, type ACPAgentID } from '@open-pencil/core/constants'
 
+import { isSignedIn } from '@/app/ai/acp/auth/status'
 import { readPiAccount } from '@/app/ai/harness/pi-settings'
 import { MCP_INSTALL_COMMAND } from '@/app/automation/mcp/failure'
 import { detectUserAgent } from '@/app/tauri/command'
 
+import { agentAccounts, type AgentAccount } from './accounts'
 import { agentDiscovery, type DetectedAgent, type DiscoveryError } from './discovery'
 
 type AgentDiscovery = typeof agentDiscovery
+type AgentAccounts = typeof agentAccounts
 
 /** What setup knows about one coding agent and the MCP server it needs. */
 export interface AgentSetupState {
@@ -37,6 +40,8 @@ export interface AgentSetupState {
   installingAgent: boolean
   installingBridge: boolean
   error: DiscoveryError | null
+  /** The account the agent uses, read from the agent once its adapter is installed. */
+  account?: AgentAccount
 }
 
 /** What setup knows about Pi: the Harness companion that runs it and Pi's own settings. */
@@ -62,6 +67,8 @@ export interface PiSetupState {
   installingBridge: boolean
   /** The default model set in Pi, used unless OpenPencil names another. */
   defaultModel: string | null
+  /** Pi keeps sign-ins; null until read or where they cannot be read. */
+  signedIn?: boolean | null
   error: DiscoveryError | null
 }
 
@@ -142,6 +149,76 @@ export interface AgentSetupView {
   /** Commands for where one-click installation cannot help. */
   manualAgentCommand: string | null
   manualBridgeCommand: string | null
+  /** The agent's account; null where the agent cannot run yet or does not report one. */
+  account: AgentAccountView | null
+  /**
+   * The program on PATH under the adapter's name is another adapter, such as an older one
+   * published under another package, so it neither reports nor signs in to the account.
+   */
+  adapterMismatch: boolean
+}
+
+/** The agent's account as setup shows it. */
+export interface AgentAccountView {
+  state: 'checking' | 'signed-in' | 'signed-out' | 'signing-in' | 'unknown'
+  /** The plan or login type the agent names, such as "Claude Max". */
+  label: string | null
+  /** The account's email, or the agent's own detail line. */
+  detail: string | null
+  /** One click can sign in, through the agent's own login. */
+  canSignIn: boolean
+  /** A sign-in page to open by hand while signing in. */
+  signInURL: string | null
+  acceptsCode: boolean
+  error: AgentAccount['error']
+  /**
+   * Whether a signed-in agent's session reached OpenPencil's tools, with the agent's reason when
+   * it did not; null when signed out or when the MCP server cannot report it.
+   */
+  tools: { state: 'checking' | 'connected' | 'unreachable'; reason: string | null } | null
+}
+
+function toolsView(account: AgentAccount, signedIn: boolean): AgentAccountView['tools'] {
+  if (!signedIn) return null
+  if (account.checking) return { state: 'checking', reason: null }
+  const tools = account.tools
+  if (tools?.connected === true) return { state: 'connected', reason: null }
+  if (tools?.connected === false) return { state: 'unreachable', reason: tools.reason }
+  return null
+}
+
+function accountState(account: AgentAccount): AgentAccountView['state'] | null {
+  if (account.signingIn) return 'signing-in'
+  if (account.status === undefined) {
+    if (account.checking) return 'checking'
+    return account.error ? 'unknown' : null
+  }
+  if (account.status === null) return account.error ? 'unknown' : null
+  return isSignedIn(account.status) ? 'signed-in' : 'signed-out'
+}
+
+function accountView(setup: AgentSetupState, mismatch: boolean): AgentAccountView | null {
+  const account = setup.account
+  if (!account || mismatch || setup.detected?.status !== 'available') return null
+  const state = accountState(account)
+  if (!state) return null
+  const status = account.status
+  const signedIn = state === 'signed-in'
+  return {
+    state,
+    label: signedIn ? (status?.label ?? null) : null,
+    detail: signedIn ? (status?.account?.email ?? status?.detail ?? null) : null,
+    canSignIn: state === 'signed-out' && account.canSignIn,
+    signInURL: account.signInURL,
+    acceptsCode: account.acceptsCode,
+    error: account.error,
+    tools: toolsView(account, signedIn)
+  }
+}
+
+function adapterMismatch(agent: ACPAgentDef, setup: AgentSetupState): boolean {
+  const adapter = setup.account?.adapter
+  return Boolean(agent.adapterPackage && adapter && adapter.name !== agent.adapterPackage)
 }
 
 /** The agent's install command to run by hand, or null where one click installs its adapter. */
@@ -180,13 +257,18 @@ export function agentSetupView(agent: ACPAgentDef, setup: AgentSetupState): Agen
     !setup.npm &&
     (status === 'needs-adapter' || (bridgeMissing && !bridgeInstallable && !bridgeAdmin))
   const needsAdmin = (status === 'needs-adapter' && adapterAdmin) || (bridgeMissing && bridgeAdmin)
+  const mismatch = status === 'available' && adapterMismatch(agent, setup)
   return {
     bridge,
     canInstallAdapter: status === 'needs-adapter' && setup.npm && !adapterAdmin,
     busy: setup.installingAgent || setup.installingBridge,
     problem: setupProblem(setup.error, needsNpm, ['install', 'canvas-install'], needsAdmin),
-    manualAgentCommand: manualAgentCommand(agent, setup),
-    manualBridgeCommand: manualBridgeCommand(setup, bridge)
+    manualAgentCommand: mismatch
+      ? (agent.installCommand ?? null)
+      : manualAgentCommand(agent, setup),
+    manualBridgeCommand: manualBridgeCommand(setup, bridge),
+    account: accountView(setup, mismatch),
+    adapterMismatch: mismatch
   }
 }
 
@@ -300,13 +382,15 @@ export function piSetupView(setup: PiSetupState): PiSetupView {
 /** Setup state of the coding agents and Pi, for guided setup and model settings. */
 export function useAgentSetup(
   discovery: AgentDiscovery = agentDiscovery,
-  readPi: typeof readPiAccount = readPiAccount
+  readPi: typeof readPiAccount = readPiAccount,
+  accounts: AgentAccounts = agentAccounts
 ) {
   const piDefaultModel = ref<string | null>(null)
+  const piSignedIn = ref<boolean | null>(null)
   const readingPi = ref(false)
 
-  function agentID(providerID: string) {
-    return providerID.startsWith('acp:') ? providerID.slice('acp:'.length) : null
+  function agentID(providerID: string): ACPAgentID | null {
+    return ACP_AGENTS.find((agent) => `acp:${agent.id}` === providerID)?.id ?? null
   }
 
   function agentSetup(providerID: string): AgentSetupState {
@@ -316,8 +400,27 @@ export function useAgentSetup(
       scanning: discovery.scanning.value,
       detected: discovery.agents.value.find((agent) => agent.definition.id === id) ?? null,
       adapterNeedsAdmin: discovery.adapterNeedsAdmin.value,
-      installingAgent: discovery.installing.value === id
+      installingAgent: discovery.installing.value === id,
+      account: id ? accounts.account(id) : undefined
     }
+  }
+
+  function installedAgent(providerID: string): ACPAgentDef | undefined {
+    const detected = agentSetup(providerID).detected
+    return detected?.status === 'available' ? detected.definition : undefined
+  }
+
+  /**
+   * Reads the account of each installed agent setup can sign in to, all at once. Others, such
+   * as Gemini CLI, do not report a login, so starting them would show nothing.
+   */
+  function checkAccounts(): Promise<void> {
+    const installed = discovery.agents.value.filter(
+      (agent) => agent.status === 'available' && agent.definition.signIn
+    )
+    return Promise.all(installed.map((agent) => accounts.check(agent.definition))).then(
+      () => undefined
+    )
   }
 
   function piSetup(providerID: string): PiSetupState | undefined {
@@ -331,7 +434,8 @@ export function useAgentSetup(
       companionNeedsAdmin: discovery.harnessNeedsAdmin.value,
       companionInstallable: discovery.harnessInstallable.value,
       installingCompanion: discovery.installing.value === 'harness',
-      defaultModel: piDefaultModel.value
+      defaultModel: piDefaultModel.value,
+      signedIn: piSignedIn.value
     }
   }
 
@@ -350,10 +454,13 @@ export function useAgentSetup(
     }
   }
 
-  function installAgent(providerID: string): Promise<void> {
+  async function installAgent(providerID: string): Promise<void> {
     if (providerID === 'harness:pi') return discovery.setupHarness()
     const detected = agentSetup(providerID).detected
-    return detected ? discovery.install(detected.definition.id) : Promise.resolve()
+    if (!detected) return
+    await discovery.install(detected.definition.id)
+    const installed = installedAgent(providerID)
+    if (installed) await accounts.check(installed)
   }
 
   async function refreshAgents(): Promise<void> {
@@ -362,9 +469,21 @@ export function useAgentSetup(
     try {
       const [, account] = await Promise.all([discovery.refresh(true), readPi().catch(() => null)])
       piDefaultModel.value = account?.defaultModel ?? null
+      piSignedIn.value = account?.signedIn ?? null
     } finally {
       readingPi.value = false
     }
+    await checkAccounts()
+  }
+
+  function signInAgent(providerID: string): Promise<void> {
+    const agent = installedAgent(providerID)
+    return agent ? accounts.signIn(agent) : Promise.resolve()
+  }
+
+  function agentAction(providerID: string, run: (id: ACPAgentID) => Promise<void>) {
+    const id = agentID(providerID)
+    return id ? run(id) : Promise.resolve()
   }
 
   return {
@@ -373,6 +492,10 @@ export function useAgentSetup(
     mcpServerSetup,
     installAgent,
     refreshAgents,
+    signInAgent,
+    cancelAgentSignIn: (providerID: string) => agentAction(providerID, accounts.cancelSignIn),
+    submitAgentSignInCode: (providerID: string, code: string) =>
+      agentAction(providerID, (id) => accounts.submitCode(id, code)),
     setupCanvasBridge: () => discovery.setupCanvasBridge()
   }
 }

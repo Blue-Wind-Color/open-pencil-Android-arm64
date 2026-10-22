@@ -40,7 +40,8 @@ export function detectedAgents(lookup: AgentLookup): DetectedAgent[] {
   return ACP_AGENTS.map((definition) => {
     const cliPath = lookup.executables[definition.cliCommand ?? definition.command] ?? null
     const adapterPath = lookup.executables[definition.command] ?? null
-    const unavailableStatus = cliPath ? 'needs-adapter' : 'not-installed'
+    // An adapter package carries its agent, so it installs whether or not the CLI is there.
+    const unavailableStatus = definition.adapterPackage ? 'needs-adapter' : 'not-installed'
     return {
       definition,
       cliPath,

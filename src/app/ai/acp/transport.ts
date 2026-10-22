@@ -12,9 +12,10 @@ import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
-import { buildACPMCPServers } from '@/app/integrations/mcp'
 
-import { mapUpdate } from './map-update'
+import { parseAuthStatusUpdate } from './auth/status'
+import { createUpdateMapper } from './map-update'
+import { linkOwnTools } from './own-tools'
 import { spawnACPProcess } from './process'
 
 type TauriChild = Awaited<ReturnType<typeof spawnACPProcess>>['child']
@@ -55,7 +56,23 @@ export function formatConnectionError(e: unknown, agentDef?: ACPAgentDef): strin
   if (isMissingCommandError(msg)) {
     return missingCommandMessage(agentDef)
   }
+  if (isAuthRequiredError(e)) {
+    return `${agentDef?.name ?? 'The agent'} is not signed in. Sign in from Set up AI, then try again.`
+  }
   return msg
+}
+
+/** ACP's `auth_required` error, which an agent returns for a new session before sign-in. */
+function isAuthRequiredError(e: unknown): boolean {
+  return typeof e === 'object' && e !== null && 'code' in e && e.code === -32000
+}
+
+/** The agent never opened its session with OpenPencil's MCP server, so it has no design tools. */
+function toolsUnreachableError(agentDef: ACPAgentDef, reason: string | null): Error {
+  return new Error(
+    `${agentDef.name} couldn't reach OpenPencil's tools, so your message wasn't sent.` +
+      (reason ? ` ${agentDef.name} reported: ${reason}` : '')
+  )
 }
 
 function startupError(error: unknown, agentDef: ACPAgentDef): Error {
@@ -83,6 +100,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private cwd: string
   private sentContext = false
   private destroying = false
+  /** The agent while it starts, before it becomes the session, so destroying can stop it. */
+  private starting: TauriChild | null = null
 
   constructor(options: { agentDef: ACPAgentDef; cwd?: string }) {
     this.agentDef = options.agentDef
@@ -107,11 +126,19 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     if (!this.session) {
-      this.session = await this.spawnAgent()
+      const started = await this.spawnAgent()
+      // Destroyed between startup and here: the agent is still `starting`, so stop it.
+      if (this.destroying) {
+        await started.child.kill().catch(() => undefined)
+        throw new Error('The chat closed while its agent was starting.')
+      }
+      this.session = started
+      this.starting = null
       this.sentContext = false
     }
 
-    const promptText = this.sentContext ? text : `${SYSTEM_PROMPT}\n\n${text}`
+    const carriesContext = !this.sentContext
+    const promptText = carriesContext ? `${SYSTEM_PROMPT}\n\n${text}` : text
     this.sentContext = true
 
     const { connection, sessionId } = this.session
@@ -119,15 +146,14 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     return new ReadableStream<UIMessageChunk>({
       start: (controller) => {
-        const textId = `text-${Date.now()}`
-        let textStarted = false
+        const mapper = createUpdateMapper(`turn-${Date.now()}`)
         let closed = false
 
         function finish(reason: 'stop' | 'other' | 'error', errorText?: string) {
           if (closed) return
           closed = true
           if (errorText) controller.enqueue({ type: 'error', errorText })
-          if (textStarted) controller.enqueue({ type: 'text-end', id: textId })
+          for (const chunk of mapper.end()) controller.enqueue(chunk)
           controller.enqueue({ type: 'finish-step' })
           controller.enqueue({ type: 'finish', finishReason: reason })
           session.onUpdate = null
@@ -136,11 +162,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
         session.onUpdate = (params) => {
           if (closed) return
-          const result = mapUpdate(params.update, textId, textStarted)
-          for (const chunk of result.chunks) {
-            controller.enqueue(chunk)
-          }
-          textStarted = result.textStarted
+          for (const chunk of mapper.map(params.update)) controller.enqueue(chunk)
         }
 
         abortSignal?.addEventListener('abort', () => {
@@ -151,11 +173,21 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         controller.enqueue({ type: 'start' })
         controller.enqueue({ type: 'start-step' })
 
+        // Stopped while the agent started and reached its tools: the abort event already fired.
+        if (abortSignal?.aborted) {
+          // The instructions went out with nothing, so the next message carries them.
+          if (carriesContext) this.sentContext = false
+          finish('stop')
+          return
+        }
+
         connection
           .prompt({
             sessionId,
             prompt: [{ type: 'text', text: promptText }]
           })
+          // The prompt answers once the agent's turn is over; nothing else ends the reply.
+          .then((result) => finish(result.stopReason === 'end_turn' ? 'stop' : 'other'))
           .catch((e) => {
             recordACPTransportFailure({
               operation: 'message',
@@ -173,6 +205,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
   async destroy(): Promise<void> {
     this.destroying = true
+    const starting = this.starting
+    this.starting = null
+    await starting?.kill().catch(() => undefined)
     if (this.session) {
       await this.session.child.kill()
       this.session = null
@@ -211,10 +246,24 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
       async sessionUpdate(params: SessionNotification): Promise<void> {
         onUpdate?.(params)
+      },
+
+      extNotification: async (method, params) => {
+        const status = parseAuthStatusUpdate(method, params)
+        if (!status) return
+        const { agentAccounts } = await import('@/app/ai/agents/accounts')
+        agentAccounts.report(this.agentDef.id, status)
       }
     }
 
     const connection = new ClientSideConnection((_agent: Agent) => clientImpl, stream)
+    this.starting = child
+    // The SDK leaves requests pending when the agent exits, so each startup request races it.
+    const stopped = connection.closed.then((): never => {
+      throw new Error('The agent stopped while it was starting.')
+    })
+    stopped.catch(() => undefined)
+    const untilStopped = <T>(request: Promise<T>): Promise<T> => Promise.race([request, stopped])
     const { getAutomationAuthToken } = await import('@/app/automation/mcp/spawn')
     let automationAuthToken: string | null
     try {
@@ -225,25 +274,62 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     try {
-      await connection.initialize({
-        protocolVersion: PROTOCOL_VERSION,
-        clientCapabilities: {}
-      })
+      await untilStopped(
+        connection.initialize({
+          protocolVersion: PROTOCOL_VERSION,
+          clientCapabilities: {}
+        })
+      )
     } catch (e) {
       await child.kill().catch(() => undefined)
       throw startupError(e, this.agentDef)
     }
 
-    let sessionResult
+    // The agent must reach OpenPencil's tools before it gets a prompt.
+    let tools: Awaited<ReturnType<typeof linkOwnTools>>
     try {
-      sessionResult = await connection.newSession({
-        cwd: this.cwd,
-        mcpServers: await buildACPMCPServers({ authorizationToken: automationAuthToken })
-      })
+      tools = await linkOwnTools(automationAuthToken)
     } catch (e) {
+      // An outside MCP connection whose credential cannot be read fails here.
       await child.kill().catch(() => undefined)
       throw startupError(e, this.agentDef)
     }
+    onUpdate = ({ update }) => tools.noteUpdate(update)
+
+    let sessionResult
+    try {
+      sessionResult = await untilStopped(
+        connection.newSession({
+          cwd: this.cwd,
+          mcpServers: tools.mcpServers,
+          _meta: tools.meta
+        })
+      )
+    } catch (e) {
+      tools.stop()
+      await child.kill().catch(() => undefined)
+      throw startupError(e, this.agentDef)
+    }
+
+    let outcome: Awaited<ReturnType<typeof tools.outcome>>
+    try {
+      outcome = await untilStopped(tools.outcome())
+    } catch (e) {
+      tools.stop()
+      throw startupError(e, this.agentDef)
+    }
+    // Destroyed while starting, as when the chat closes: the agent must not get a prompt.
+    if (this.destroying) {
+      await child.kill().catch(() => undefined)
+      throw new Error('The chat closed while its agent was starting.')
+    }
+    if (outcome.connected === false) {
+      await child.kill().catch(() => undefined)
+      const error = toolsUnreachableError(this.agentDef, outcome.reason)
+      recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(error) })
+      throw error
+    }
+    onUpdate = null
 
     const session: ACPSession = {
       connection,

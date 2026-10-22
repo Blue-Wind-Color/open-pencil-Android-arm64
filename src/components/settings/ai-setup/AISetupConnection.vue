@@ -66,6 +66,9 @@ const emit = defineEmits<{
   checkAgent: []
   installAgent: []
   installBridge: []
+  signInAgent: []
+  cancelAgentSignIn: []
+  submitAgentSignInCode: [code: string]
 }>()
 const { ai, credentials } = useI18n()
 const styles = tv(theme)()
@@ -105,6 +108,9 @@ const keyHint = computed(() => {
       @check="emit('checkAgent')"
       @install-agent="emit('installAgent')"
       @install-bridge="emit('installBridge')"
+      @sign-in="emit('signInAgent')"
+      @cancel-sign-in="emit('cancelAgentSignIn')"
+      @submit-sign-in-code="emit('submitAgentSignInCode', $event)"
     />
     <PiSetup
       v-else-if="piSetup"

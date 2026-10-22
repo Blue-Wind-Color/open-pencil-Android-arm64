@@ -179,6 +179,15 @@ export const AUTOMATION_HTTP_PORT = 7600
  */
 export const MCP_AGENT_HEADER = 'x-openpencil-agent'
 
+/** The name the app's chats give OpenPencil's MCP server in an agent's session. */
+export const OPEN_PENCIL_MCP_SERVER = 'open-pencil'
+
+/**
+ * Request header naming the app chat whose agent opens an MCP session, so the app can tell that
+ * this chat's agent reached its tools before it sends the prompt.
+ */
+export const MCP_CHAT_HEADER = 'x-openpencil-chat'
+
 export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 
 export const CJK_FALLBACK_FAMILIES_MACOS = [

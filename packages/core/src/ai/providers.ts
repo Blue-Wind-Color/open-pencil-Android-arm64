@@ -14,6 +14,12 @@ export interface ACPAgentDef {
   /** The vendor's installation guide for the agent itself. */
   setupURL?: string
   installCommand?: string
+  /**
+   * The ACP auth method setup signs in with, once the agent offers it. `acp` methods run inside
+   * the agent through `authenticate`; `terminal` methods run the agent's command with `args`,
+   * which the desktop shell scope pins under `<command>-sign-in`.
+   */
+  signIn?: { via: 'acp'; method: string } | { via: 'terminal'; method: string; args: string[] }
 }
 
 export const ACP_AGENTS: ACPAgentDef[] = [
@@ -25,7 +31,12 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     cliCommand: 'claude',
     adapterPackage: '@agentclientprotocol/claude-agent-acp',
     setupURL: 'https://code.claude.com/docs/en/setup',
-    installCommand: 'npm i -g @agentclientprotocol/claude-agent-acp'
+    installCommand: 'npm i -g @agentclientprotocol/claude-agent-acp',
+    signIn: {
+      via: 'terminal',
+      method: 'claude-ai-login',
+      args: ['--cli', 'auth', 'login', '--claudeai']
+    }
   },
   {
     id: 'codex',
@@ -35,7 +46,8 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     cliCommand: 'codex',
     adapterPackage: '@agentclientprotocol/codex-acp',
     setupURL: 'https://developers.openai.com/codex/cli',
-    installCommand: 'npm i -g @agentclientprotocol/codex-acp'
+    installCommand: 'npm i -g @agentclientprotocol/codex-acp',
+    signIn: { via: 'acp', method: 'chat-gpt' }
   },
   {
     id: 'gemini-cli',

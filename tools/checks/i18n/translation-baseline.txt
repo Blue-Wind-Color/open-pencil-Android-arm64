@@ -198,6 +198,7 @@ fr:tools.ellipse
 fr:tools.rectangle
 fr:tools.section
 fr:variables.modes
+it:ai.aiSetupAgentAccount
 it:ai.chatSettings
 it:ai.completions
 it:ai.responses

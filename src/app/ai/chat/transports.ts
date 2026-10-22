@@ -112,8 +112,9 @@ export async function createACPTransport(providerID: AIProviderID) {
   if (!agentDef) throw new Error(`Unknown ACP agent: ${agentId}`)
 
   const { ACPChatTransport } = await import('@/app/ai/acp/transport')
-  const { homeDir } = await import('@tauri-apps/api/path')
-  return new ACPChatTransport({ agentDef, cwd: await homeDir() })
+  const { agentWorkspace } = await import('@/app/ai/agents/native')
+  // A folder of its own, not the home folder, whose project settings the agent would read.
+  return new ACPChatTransport({ agentDef, cwd: await agentWorkspace() })
 }
 
 export function createToolLoopTransport({

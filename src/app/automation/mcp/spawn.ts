@@ -40,6 +40,8 @@ export interface AutomationHealth {
   authRequired?: boolean
   discoveryPath?: string
   tools?: ToolDescriptor[]
+  /** The server tells the app when an agent opens a session, so a chat can wait for its agent. */
+  agentSessionEvents?: boolean
 }
 
 export interface AutomationServerHandle {
@@ -237,6 +239,7 @@ interface AutomationHealthRecord {
   authRequired?: unknown
   discoveryPath?: unknown
   tools?: unknown
+  agentSessionEvents?: unknown
 }
 
 function isAutomationHealthRecord(value: unknown): value is AutomationHealthRecord {
@@ -272,7 +275,14 @@ function parseAutomationHealth(value: unknown): AutomationHealth | null {
   const authRequired = optionalBoolean(value.authRequired)
   const discoveryPath = optionalString(value.discoveryPath)
   const tools = parseToolDescriptors(value.tools)
-  if (version === null || authRequired === null || discoveryPath === null || tools === null) {
+  const agentSessionEvents = optionalBoolean(value.agentSessionEvents)
+  if (
+    version === null ||
+    authRequired === null ||
+    discoveryPath === null ||
+    tools === null ||
+    agentSessionEvents === null
+  ) {
     return null
   }
   const health: AutomationHealth = { status: value.status }
@@ -280,6 +290,7 @@ function parseAutomationHealth(value: unknown): AutomationHealth | null {
   if (authRequired !== undefined) health.authRequired = authRequired
   if (discoveryPath !== undefined) health.discoveryPath = discoveryPath
   if (tools !== undefined) health.tools = tools
+  if (agentSessionEvents !== undefined) health.agentSessionEvents = agentSessionEvents
   return health
 }
 

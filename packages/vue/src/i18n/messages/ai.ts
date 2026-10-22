@@ -253,9 +253,10 @@ export const aiMessageDefaults = {
   aiSetupConnectTitle: 'Connect your AI',
   aiSetupNothingDescription: 'Go back to choose other access, or set up AI in advanced settings.',
   aiSetupAgentDescription: params(
-    'OpenPencil starts {agent} when you send a message. Sign in with its own command-line tool first.'
+    'OpenPencil starts {agent} when you send a message, with the account {agent} is signed in to.'
   ),
   aiSetupAgentInstall: 'If it is not installed yet, run:',
+  aiSetupAgentInstallSupported: 'Install the supported adapter:',
   aiSetupAgentChecking: 'Checking this computer…',
   aiSetupAgentInstalled: 'installed',
   aiSetupAgentNotFound: 'not found',
@@ -283,6 +284,34 @@ export const aiMessageDefaults = {
   aiSetupAgentLookupFailed: 'Couldn’t check this computer. Try again.',
   aiSetupAgentCopyPrompt: 'Copy setup prompt',
   aiSetupAgentCheckAgain: 'Check again',
+  aiSetupAgentInstallRuns: params('Installing runs {command}.'),
+  aiSetupDetectNotFound: 'Not found on this computer',
+  aiSetupDetectFound: 'Found on this computer',
+  aiSetupDetectSignedOut: 'Found · not signed in',
+  aiSetupDetectSignedIn: 'Signed in',
+  aiSetupDetectSignedInAs: params('Signed in · {account}'),
+  aiSetupAgentAccount: 'Account',
+  aiSetupAgentAccountChecking: 'checking…',
+  aiSetupAgentAccountUnknown: 'couldn’t check',
+  aiSetupAgentNotSignedIn: 'not signed in',
+  aiSetupAgentSigningIn: 'signing in…',
+  aiSetupAgentSignIn: 'Sign in',
+  aiSetupAgentSignInBrowser: 'Finish signing in in your browser.',
+  aiSetupAgentSignInOpenPage: 'Open the sign-in page',
+  aiSetupAgentSignInCode: 'Code from the sign-in page, if it shows one',
+  aiSetupAgentSignInSubmitCode: 'Submit code',
+  aiSetupAgentSignInFailed: params('Couldn’t sign in to {agent}. Try again.'),
+  aiSetupAgentTools: 'OpenPencil tools',
+  aiSetupAgentToolsConnected: 'connected',
+  aiSetupAgentToolsUnreachable: 'not reachable',
+  aiSetupAgentToolsFailed: params(
+    '{agent} can’t reach OpenPencil’s tools, so chats with it won’t start.'
+  ),
+  aiSetupAgentToolsHint:
+    'Check that OpenPencil’s MCP server is running in Settings → MCP, then press Check again.',
+  aiSetupAgentAdapterMismatch: params(
+    'OpenPencil found {path}, another adapter it doesn’t support. Install the supported one, then remove this one or move it later on your PATH.'
+  ),
   aiSetupPiDescription:
     'OpenPencil runs Pi through its Harness companion and uses the providers you signed in to in Pi.',
   aiSetupPiCompanion: 'Harness companion',

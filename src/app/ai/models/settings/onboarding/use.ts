@@ -1,8 +1,9 @@
 import { uniq } from 'es-toolkit'
 import { computed, reactive, ref, watch } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
+import { ACP_AGENTS, IS_TAURI } from '@open-pencil/core/constants'
 
+import { codingAgentDetection, piDetection, type AgentDetection } from '@/app/ai/agents/detection'
 import { useAgentSetup } from '@/app/ai/agents/setup'
 import { refreshAIProviderStatus } from '@/app/ai/chat/storage'
 import {
@@ -18,6 +19,7 @@ import { existingOnboardingConnection, useOnboardingConnections } from './connec
 import { currentOnboardingModels } from './current'
 import {
   isOnboardingAccess,
+  ONBOARDING_AGENTS,
   ONBOARDING_GOALS,
   planOnboarding,
   type OnboardingAccess,
@@ -82,9 +84,22 @@ export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOpti
   const { connection, ready, markKeySaved } = connections
   const signIn = useOnboardingSignIn(connections)
   const agents = useAgentSetup()
-  // Look for installed agents when they are about to be connected, and again on return.
+  // Look for installed agents when they are offered and when they are about to be connected.
   watch(step, (current) => {
-    if (current === 'connect') void agents.refreshAgents()
+    if (current === 'access' || current === 'connect') void agents.refreshAgents()
+  })
+
+  /** What setup found of each agent on this computer, for the access step. */
+  const detections = computed(() => {
+    const found: Partial<Record<OnboardingAccess, AgentDetection>> = {}
+    if (!agentsAvailable) return found
+    for (const providerID of ONBOARDING_AGENTS) {
+      const pi = agents.piSetup(providerID)
+      const agent = ACP_AGENTS.find((candidate) => `acp:${candidate.id}` === providerID)
+      if (pi) found[providerID] = piDetection(pi)
+      else if (agent) found[providerID] = codingAgentDetection(agent, agents.agentSetup(providerID))
+    }
+    return found
   })
 
   const canContinue = computed(() => {
@@ -172,6 +187,7 @@ export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOpti
     saveResult,
     canContinue,
     plannedModel,
+    detections,
     ...connections,
     ...signIn,
     ...agents,

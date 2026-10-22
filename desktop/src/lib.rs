@@ -417,6 +417,7 @@ pub fn run() {
         .manage(PendingCloudLinks(Mutex::new(Vec::new())))
         .invoke_handler(tauri::generate_handler![
             agents::agent_lookup,
+            agents::agent_workspace,
             build_fig_file,
             credential_read,
             credential_access_paused,

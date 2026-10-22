@@ -7,7 +7,7 @@ import { join } from 'node:path'
 
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 
-import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
+import { MCP_AGENT_HEADER, MCP_CHAT_HEADER } from '@open-pencil/core/constants'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
@@ -954,5 +954,39 @@ describe('MCP sessions as agents', () => {
       for (let attempt = 0; attempt < 50 && !closed(); attempt++) await Bun.sleep(10)
       expect(closed()?.args).toEqual({ session: agent.session })
     })
+  })
+
+  function openedNotice(browser: MockBrowser) {
+    return browser.requests.find((item) => item.command === 'agent_session_opened')
+  }
+
+  test("an ACP chat's session tells the app it opened, naming the chat", async () => {
+    const chat = '0123456789abcdef0123456789abcdef'
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_CHAT_HEADER]: chat },
+      async (client, browser) => {
+        // The notice reaches the app over its socket after initialize is answered.
+        for (let attempt = 0; attempt < 50 && !openedNotice(browser); attempt++) {
+          await Bun.sleep(10)
+        }
+        expect(openedNotice(browser)?.args).toMatchObject({ kind: 'acp', chat })
+        await client.callTool({ name: 'get_page_tree', arguments: {} })
+        const agent = agentOf(browser) as { session: string }
+        expect(openedNotice(browser)?.args).toMatchObject({ session: agent.session })
+      }
+    )
+  })
+
+  test('a chat header that is not a chat id is not forwarded', async () => {
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_CHAT_HEADER]: 'not hex' },
+      async (_client, browser) => {
+        for (let attempt = 0; attempt < 50 && !openedNotice(browser); attempt++) {
+          await Bun.sleep(10)
+        }
+        const notice = expectDefined(openedNotice(browser), 'agent_session_opened notice')
+        expect(notice.args).not.toHaveProperty('chat')
+      }
+    )
   })
 })

@@ -24,6 +24,12 @@ export async function lookupAgents(): Promise<AgentLookup> {
   return v.parse(lookupSchema, await invoke<unknown>('agent_lookup'))
 }
 
+/** The folder coding agents start in, which the desktop shell creates in the app's data. */
+export async function agentWorkspace(): Promise<string> {
+  const { invoke } = await import('@tauri-apps/api/core')
+  return v.parse(v.string(), await invoke<unknown>('agent_workspace'))
+}
+
 const INSTALL_TIMEOUT_MS = 120_000
 
 export async function installAgentAdapter(agent: ACPAgentDef, searchPath: string): Promise<void> {

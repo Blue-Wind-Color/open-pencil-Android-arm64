@@ -73,6 +73,8 @@ export type MCPAgentKind = (typeof MCP_AGENT_KINDS)[number]
 export interface MCPAgentSession {
   id: string
   kind: MCPAgentKind
+  /** The app chat the session belongs to, from its `x-openpencil-chat` header. */
+  chat?: string
 }
 
 export interface RegisterToolsOptions {

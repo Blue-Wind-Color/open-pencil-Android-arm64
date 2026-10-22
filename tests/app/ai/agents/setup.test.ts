@@ -4,6 +4,7 @@ import { nextTick, ref } from 'vue'
 
 import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
 
+import { createAgentAccounts, type AgentAccount } from '@/app/ai/agents/accounts'
 import { createAgentDiscovery, type DetectedAgent } from '@/app/ai/agents/discovery'
 import type { AgentLookup } from '@/app/ai/agents/native'
 import {
@@ -54,6 +55,40 @@ describe('useAgentSetup', () => {
     expect(installHarness).toHaveBeenCalledTimes(1)
     expect(agents.piSetup('harness:pi')?.companion).toBe(true)
     expect(agents.piSetup('acp:codex')).toBeUndefined()
+  })
+
+  test('reads the account of each installed agent and signs in to it', async () => {
+    const discovery = createAgentDiscovery({
+      enabled: true,
+      lookup: async () => lookup('npm', 'codex-acp', 'gemini'),
+      install: async () => undefined
+    })
+    const check = mock(async (_agent: ACPAgentDef) => ({
+      status: { kind: 'none' as const, label: 'Not logged in' },
+      adapter: { name: '@agentclientprotocol/codex-acp', version: '2.2.2' },
+      methods: [{ id: 'chat-gpt', name: 'ChatGPT' }],
+      tools: null
+    }))
+    const signInWithAgent = mock(async () => null)
+    const accounts = createAgentAccounts({
+      enabled: true,
+      check,
+      signInWithAgent,
+      startTerminalSignIn: async () => {
+        throw new Error('Not expected')
+      }
+    })
+    const agents = useAgentSetup(discovery, async () => null, accounts)
+    await agents.refreshAgents()
+    expect(check.mock.calls.map(([definition]) => definition.id)).toEqual(['codex'])
+    expect(agentSetupView(agent('codex'), agents.agentSetup('acp:codex')).account).toMatchObject({
+      state: 'signed-out',
+      canSignIn: true
+    })
+    await agents.signInAgent('acp:claude-code')
+    expect(signInWithAgent).not.toHaveBeenCalled()
+    await agents.signInAgent('acp:codex')
+    expect(signInWithAgent).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -156,6 +191,141 @@ describe('agentSetupView', () => {
     const view = agentSetupView(claude, agentState({ supported: false, bridge: false }))
     expect(view.manualAgentCommand).toBe(claude.installCommand ?? null)
     expect(view.manualBridgeCommand).toMatch(/@open-pencil\/mcp/)
+  })
+})
+
+describe('agent account in setup', () => {
+  const claude = agent('claude-code')
+  const installed: DetectedAgent = {
+    definition: claude,
+    status: 'available',
+    cliPath: null,
+    adapterPath: '/test/bin/claude-agent-acp'
+  }
+  const ADAPTER = { name: '@agentclientprotocol/claude-agent-acp', version: '0.93.0' }
+  const account = (overrides: Partial<AgentAccount> = {}): AgentAccount => ({
+    checking: false,
+    status: undefined,
+    adapter: ADAPTER,
+    canSignIn: true,
+    signingIn: false,
+    signInURL: null,
+    acceptsCode: false,
+    tools: null,
+    error: null,
+    ...overrides
+  })
+
+  test("shows whether a signed-in agent reached OpenPencil's tools", () => {
+    const signedIn = { kind: 'account' as const, label: 'Claude Max' }
+    const toolsOf = (overrides: Partial<AgentAccount>) =>
+      agentSetupView(
+        claude,
+        agentState({ detected: installed, account: account({ status: signedIn, ...overrides }) })
+      ).account?.tools
+    expect(toolsOf({ tools: { connected: true } })).toEqual({ state: 'connected', reason: null })
+    expect(toolsOf({ tools: { connected: false, reason: 'failed to start' } })).toEqual({
+      state: 'unreachable',
+      reason: 'failed to start'
+    })
+    expect(toolsOf({ checking: true })).toEqual({ state: 'checking', reason: null })
+    // An older MCP server cannot tell, and a signed-out agent has no sessions to check.
+    expect(toolsOf({ tools: { connected: null } })).toBeNull()
+    expect(
+      agentSetupView(
+        claude,
+        agentState({
+          detected: installed,
+          account: account({ status: { kind: 'none', label: 'Not logged in' } })
+        })
+      ).account?.tools
+    ).toBeNull()
+  })
+
+  test('names the plan and email of a signed-in agent', () => {
+    const view = agentSetupView(
+      claude,
+      agentState({
+        detected: installed,
+        account: account({
+          status: { kind: 'account', label: 'Claude Max', account: { email: 'a@example.com' } }
+        })
+      })
+    )
+    expect(view.account).toMatchObject({
+      state: 'signed-in',
+      label: 'Claude Max',
+      detail: 'a@example.com',
+      canSignIn: false
+    })
+  })
+
+  test('offers sign-in to a signed-out agent', () => {
+    const view = agentSetupView(
+      claude,
+      agentState({
+        detected: installed,
+        account: account({ status: { kind: 'none', label: 'Not logged in' } })
+      })
+    )
+    expect(view.account).toMatchObject({ state: 'signed-out', label: null, canSignIn: true })
+  })
+
+  test('shows nothing for an agent that does not report its login', () => {
+    const view = agentSetupView(
+      claude,
+      agentState({ detected: installed, account: account({ status: null }) })
+    )
+    expect(view.account).toBeNull()
+  })
+
+  test('shows the check and the sign-in while they run', () => {
+    const checking = agentSetupView(
+      claude,
+      agentState({ detected: installed, account: account({ checking: true }) })
+    )
+    expect(checking.account?.state).toBe('checking')
+    const signingIn = agentSetupView(
+      claude,
+      agentState({
+        detected: installed,
+        account: account({
+          status: { kind: 'none', label: 'Not logged in' },
+          signingIn: true,
+          signInURL: 'https://claude.com/sign-in',
+          acceptsCode: true
+        })
+      })
+    )
+    expect(signingIn.account).toMatchObject({
+      state: 'signing-in',
+      signInURL: 'https://claude.com/sign-in',
+      acceptsCode: true
+    })
+  })
+
+  test('has no account before the adapter is installed', () => {
+    const view = agentSetupView(
+      claude,
+      agentState({
+        detected: { ...installed, status: 'needs-adapter', adapterPath: null },
+        account: account({ status: { kind: 'none', label: 'Not logged in' } })
+      })
+    )
+    expect(view.account).toBeNull()
+  })
+
+  test('flags another adapter under the same name and offers the supported one', () => {
+    const view = agentSetupView(
+      claude,
+      agentState({
+        detected: installed,
+        account: account({ adapter: { name: 'claude-code-acp', version: '0.1.0' }, status: null })
+      })
+    )
+    expect(view.adapterMismatch).toBe(true)
+    expect(view.account).toBeNull()
+    expect(view.manualAgentCommand).toBe(claude.installCommand ?? null)
   })
 })
 

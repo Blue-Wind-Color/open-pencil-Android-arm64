@@ -9,23 +9,18 @@ import { resolveCommand } from 'package-manager-detector/commands'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
 import { WebSocketServer, type WebSocket } from 'ws'
 
-import { MCP_AGENT_HEADER } from '@open-pencil/core/constants'
+import { MCP_AGENT_HEADER, MCP_CHAT_HEADER } from '@open-pencil/core/constants'
 
 import { bearerToken, isAuthorized, mcpRequestToken } from '#mcp/auth'
 import { createBrowserRPCBridge } from '#mcp/browser-rpc'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/http-options'
 import type { RPCJSONObject } from '#mcp/json'
 import { registerFileRoutes } from '#mcp/server/files'
-import { createMCPSessionManager } from '#mcp/server/sessions'
+import { createMCPSessionManager, sessionOpener } from '#mcp/server/sessions'
 import { createToolDescriptors } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolPolicy } from '#mcp/tool/metadata'
 import { applyToolPolicy } from '#mcp/tool/policy'
-import {
-  MCP_AGENT_KINDS,
-  registerTools,
-  type MCPAgentKind,
-  type MCPAgentSession
-} from '#mcp/tool/registration'
+import { registerTools, type MCPAgentSession } from '#mcp/tool/registration'
 import { scopeRPC, type MCPToolScope } from '#mcp/tool/scope'
 
 import packageJSON from '../package.json' with { type: 'json' }
@@ -76,10 +71,6 @@ export {
   type RegisterToolsOptions,
   type RPCSender
 } from '#mcp/tool/registration'
-
-function agentKindFromHeader(value: string | undefined): MCPAgentKind {
-  return MCP_AGENT_KINDS.find((kind) => kind === value) ?? 'mcp'
-}
 
 export interface ServerOptions {
   /** TCP port for the HTTP + WebSocket server. Ignored when `withTcp` is false. When set to 0 with `withTcp: true`, binds to an ephemeral port. Defaults to 7600. */
@@ -171,6 +162,8 @@ function createHonoApp(options: {
       version: MCP_VERSION,
       installCommand: await mcpInstallCommand(),
       authRequired: authToken !== null,
+      // Tells the app it reports agent_session_opened, so a chat may wait for its agent.
+      agentSessionEvents: true,
       ...(canInspectConfiguration ? { tools: toolDescriptors } : {})
     })
   })
@@ -249,7 +242,7 @@ function createHonoApp(options: {
     }
     const transport = await mcpSessions.resolveTransport(
       undefined,
-      agentKindFromHeader(c.req.header(MCP_AGENT_HEADER))
+      sessionOpener(c.req.header(MCP_AGENT_HEADER), c.req.header(MCP_CHAT_HEADER))
     )
     if ('error' in transport) {
       if (transport.error === 'closed') {
@@ -357,6 +350,11 @@ function buildServerContext(options: ServerOptions) {
         agentSession,
         onToolSettled
       }),
+    onSessionOpened: ({ id, kind, chat }) => {
+      sendToBrowser({ command: 'agent_session_opened', args: { session: id, kind, chat } }).catch(
+        () => undefined
+      )
+    },
     onSessionClosed: (sessionId) => {
       // Best-effort: the app may be gone already, and then it shows no agents anyway.
       sendToBrowser({ command: 'agent_session_closed', args: { session: sessionId } }).catch(
