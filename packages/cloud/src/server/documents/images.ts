@@ -1,6 +1,7 @@
 import type {
   CommitUploadInput,
   DocumentImageDownload,
+  DocumentImageLink,
   ImageUploadOffer,
   RequestImageUploadsInput
 } from '#cloud/contract'
@@ -27,6 +28,36 @@ export function createDocumentImages(
   objects: ObjectStore,
   quota: StorageQuotaService
 ) {
+  /**
+   * Gives up uploads a request reserved when it could not offer them all, so a retry is not
+   * refused for space they hold. A multipart upload the store began is aborted first; one that
+   * cannot be stays pending for cleanup, which aborts it once it expires.
+   */
+  async function abandonUploads(
+    uploads: readonly { uploadId: string; objectKey: string }[],
+    offers: readonly ImageUploadOffer[]
+  ): Promise<void> {
+    const begun = new Map(offers.map((offer) => [offer.uploadId, offer.upload]))
+    for (const { uploadId, objectKey } of uploads) {
+      try {
+        const upload = begun.get(uploadId)
+        if (upload?.kind === 'multipart') {
+          await objects.abortUpload({ key: objectKey, uploadId: upload.uploadId })
+        }
+        await quota.release(uploadId)
+        await database
+          .updateTable('upload')
+          .set({ status: 'abandoned' })
+          .where('id', '=', uploadId)
+          .where('status', '=', 'pending')
+          .execute()
+      } catch (error) {
+        // Cleanup releases it once it expires.
+        console.warn('Giving up an image upload failed', error)
+      }
+    }
+  }
+
   return {
     /**
      * Uploads for the images of `input` the workspace lacks, each with its own object key and
@@ -99,22 +130,27 @@ export function createDocumentImages(
         }
       })
       const offers: ImageUploadOffer[] = []
-      for (const image of missing) {
-        const upload = await objects.createUpload({
-          key: image.objectKey,
-          byteSize: image.byteSize,
-          checksum: image.checksum,
-          contentType: IMAGE_CONTENT_TYPE,
-          expiresAt: input.expiresAt
-        })
-        if (upload.kind === 'multipart') {
-          await database
-            .updateTable('upload')
-            .set({ multipartUploadId: upload.uploadId })
-            .where('id', '=', image.uploadId)
-            .execute()
+      try {
+        for (const image of missing) {
+          const upload = await objects.createUpload({
+            key: image.objectKey,
+            byteSize: image.byteSize,
+            checksum: image.checksum,
+            contentType: IMAGE_CONTENT_TYPE,
+            expiresAt: input.expiresAt
+          })
+          offers.push({ checksum: image.checksum, uploadId: image.uploadId, upload })
+          if (upload.kind === 'multipart') {
+            await database
+              .updateTable('upload')
+              .set({ multipartUploadId: upload.uploadId })
+              .where('id', '=', image.uploadId)
+              .execute()
+          }
         }
-        offers.push({ checksum: image.checksum, uploadId: image.uploadId, upload })
+      } catch (error) {
+        await abandonUploads(missing, offers)
+        throw error
       }
       return offers
     },
@@ -309,4 +345,63 @@ export async function releaseUnusedImages(
     }
     return { released: unused.length, bytes }
   })
+}
+
+/**
+ * Where to download the images of `checksums` the document's workspace holds, for someone who may
+ * view the document. A live room names images by checksum before any save does, and an editor
+ * whose image the workspace already holds through another document uploads nothing for this one,
+ * so the workspace, not the document, is what an image belongs to. Asking needs the image's
+ * SHA-256, which only someone with its bytes has.
+ */
+export async function documentImageLinks(
+  executor: Executor,
+  objects: ObjectStore,
+  input: { documentId: string; checksums: string[]; expiresAt: Date }
+): Promise<DocumentImageLink[]> {
+  const rows = await executor
+    .selectFrom('workspaceImage')
+    .innerJoin('document', 'document.workspaceId', 'workspaceImage.workspaceId')
+    .innerJoin('storageObject', 'storageObject.id', 'workspaceImage.storageObjectId')
+    .select(['workspaceImage.checksum', 'storageObject.objectKey', 'storageObject.byteSize'])
+    .where('document.id', '=', input.documentId)
+    .where('workspaceImage.checksum', 'in', uniq(input.checksums))
+    .execute()
+  return Promise.all(
+    rows.map(async (row) => ({
+      checksum: row.checksum,
+      byteSize: Number(row.byteSize),
+      download: await objects.createDownload({ key: row.objectKey, expiresAt: input.expiresAt })
+    }))
+  )
+}
+
+/** The images the workspace's current revisions use, each counted once however many use it. */
+export async function currentImageUsage(
+  executor: Executor,
+  workspaceId: string
+): Promise<{ objectCount: number; bytesUsed: number }> {
+  const usage = await executor
+    .selectFrom('workspaceImage')
+    .innerJoin('storageObject', 'storageObject.id', 'workspaceImage.storageObjectId')
+    .select((expression) => [
+      expression.fn.count('storageObject.id').as('objectCount'),
+      expression.fn
+        .coalesce(expression.fn.sum('storageObject.byteSize'), expression.val(0))
+        .as('bytesUsed')
+    ])
+    .where('workspaceImage.workspaceId', '=', workspaceId)
+    .where((expression) =>
+      expression.exists(
+        expression
+          .selectFrom('revisionImage')
+          .innerJoin('document', 'document.currentRevisionId', 'revisionImage.revisionId')
+          .select('revisionImage.name')
+          .whereRef('revisionImage.workspaceId', '=', 'workspaceImage.workspaceId')
+          .whereRef('revisionImage.checksum', '=', 'workspaceImage.checksum')
+          .where('document.deletedAt', 'is', null)
+      )
+    )
+    .executeTakeFirstOrThrow()
+  return { objectCount: Number(usage.objectCount), bytesUsed: Number(usage.bytesUsed) }
 }

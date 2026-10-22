@@ -22,7 +22,12 @@ import {
   DocumentNotFoundError,
   UploadInvalidError
 } from '#cloud/server/documents/errors'
-import { createDocumentImages, revisionImageDownloads } from '#cloud/server/documents/images'
+import {
+  createDocumentImages,
+  currentImageUsage,
+  documentImageLinks,
+  revisionImageDownloads
+} from '#cloud/server/documents/images'
 import { writableDocument } from '#cloud/server/documents/limits'
 import {
   findDocument,
@@ -37,7 +42,7 @@ import { announceVersions, recordCheckpoint } from '#cloud/server/documents/vers
 import type { ObjectStore, StoredObject } from '#cloud/server/objects'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import { createStorageQuotaService } from '#cloud/server/quota'
-import { Semaphore, uniq, uniqBy } from 'es-toolkit'
+import { limitAsync, uniq, uniqBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
 const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
@@ -168,6 +173,14 @@ export function createDocumentService(
       .execute()
     await quota.commitInTransaction(transaction, uploadId)
     return checkpointed
+  }
+
+  /** Links for images a live room names, by checksum. */
+  async function imageLinksOf(documentId: string, checksums: string[]) {
+    const expiresAt = new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
+    return {
+      images: await documentImageLinks(database, objects, { documentId, checksums, expiresAt })
+    }
   }
 
   async function createDownload(documentId: string): Promise<DocumentDownload> {
@@ -358,32 +371,10 @@ export function createDocumentService(
         .where('document.workspaceId', '=', workspaceId)
         .where('document.deletedAt', 'is', null)
         .executeTakeFirstOrThrow()
-      // Images current revisions use, each counted once however many documents share it.
-      const shared = await database
-        .selectFrom('workspaceImage')
-        .innerJoin('storageObject', 'storageObject.id', 'workspaceImage.storageObjectId')
-        .select((expression) => [
-          expression.fn.count('storageObject.id').as('objectCount'),
-          expression.fn
-            .coalesce(expression.fn.sum('storageObject.byteSize'), expression.val(0))
-            .as('bytesUsed')
-        ])
-        .where('workspaceImage.workspaceId', '=', workspaceId)
-        .where((expression) =>
-          expression.exists(
-            expression
-              .selectFrom('revisionImage')
-              .innerJoin('document', 'document.currentRevisionId', 'revisionImage.revisionId')
-              .select('revisionImage.name')
-              .whereRef('revisionImage.workspaceId', '=', 'workspaceImage.workspaceId')
-              .whereRef('revisionImage.checksum', '=', 'workspaceImage.checksum')
-              .where('document.deletedAt', 'is', null)
-          )
-        )
-        .executeTakeFirstOrThrow()
+      const shared = await currentImageUsage(database, workspaceId)
       return {
-        bytesUsed: Number(result.bytesUsed) + Number(shared.bytesUsed),
-        objectCount: Number(result.objectCount) + Number(shared.objectCount),
+        bytesUsed: Number(result.bytesUsed) + shared.bytesUsed,
+        objectCount: Number(result.objectCount) + shared.objectCount,
         documentCount: Number(result.documentCount)
       }
     },
@@ -396,6 +387,18 @@ export function createDocumentService(
 
     async downloadShared(documentId: string): Promise<DocumentDownload> {
       return createDownload(documentId)
+    },
+
+    /** Links for images a live room names, for someone who may view the document. */
+    async imageLinks(userId: string, documentId: string, checksums: string[]) {
+      const access = await resolveDocumentAccess(database, userId, documentId)
+      if (!access) throw new DocumentNotFoundError()
+      return imageLinksOf(documentId, checksums)
+    },
+
+    /** Links for images a live room names, for a guest a share already let in. */
+    imageLinksShared(documentId: string, checksums: string[]) {
+      return imageLinksOf(documentId, checksums)
     },
 
     async download(userId: string, documentId: string): Promise<DocumentDownload> {
@@ -566,18 +569,16 @@ export function createDocumentService(
       }
       // Each image is its own object, so a few are checked and landed at once, each once however
       // often the request names it.
-      const semaphore = new Semaphore(IMAGE_COMMIT_CONCURRENCY)
+      const land = limitAsync(
+        (upload: UploadRow, multipart: CommitUploadInput['multipart']) =>
+          finalizeUpload(upload, multipart, (stored) => landImage(upload, stored)),
+        IMAGE_COMMIT_CONCURRENCY
+      )
       await Promise.all(
         uniqBy(uploads, (commit) => commit.uploadId).map(async (commit) => {
           const upload = rows.get(commit.uploadId)
           if (!upload) throw new UploadInvalidError()
-          if (upload.status === 'committed') return
-          await semaphore.acquire()
-          try {
-            await finalizeUpload(upload, commit.multipart, (stored) => landImage(upload, stored))
-          } finally {
-            semaphore.release()
-          }
+          if (upload.status !== 'committed') await land(upload, commit.multipart)
         })
       )
     }

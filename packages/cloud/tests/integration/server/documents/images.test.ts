@@ -4,10 +4,14 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
+  CLOUD_FEATURE_KEYS,
   createBetterAuthAdapter,
   createCloudApp,
+  createDefaultCloudPolicy,
   createRevisionCompactionService,
+  EntitlementOpenFeatureProvider,
   parseCloudServerConfig,
+  StaticEntitlementSource,
   type CloudActor
 } from '#cloud/server'
 import * as v from 'valibot'
@@ -62,6 +66,15 @@ async function testApp() {
     database: runtime.database,
     auth: createBetterAuthAdapter(config, runtime.database),
     objects: objects.store,
+    // Guests reach a document through its share links.
+    policy: createDefaultCloudPolicy(
+      new EntitlementOpenFeatureProvider(
+        new StaticEntitlementSource({
+          [CLOUD_FEATURE_KEYS.capabilityLinks]: true,
+          [CLOUD_FEATURE_KEYS.anonymousView]: true
+        })
+      )
+    ),
     resolveSession: async () => alice
   })
   const request = (path: string, init: { method?: string; json?: unknown } = {}) =>
@@ -178,7 +191,39 @@ async function testApp() {
     }
   }
 
-  return { runtime, objects, request, documentId, uploadImages, save, download, usage, age }
+  /** Links for images the document's live room names, as its people ask for them. */
+  async function links(checksums: string[], document = documentId) {
+    return responseJSON(
+      await request(`/documents/${document}/images/links`, { method: 'POST', json: { checksums } }),
+      v.object({ images: v.array(v.object({ checksum: v.string(), byteSize: v.number() })) })
+    )
+  }
+
+  /** Another document in the same workspace. */
+  async function createDocument(name: string) {
+    const created = await responseJSON(
+      await request(`/workspaces/${workspace.workspace.id}/documents`, {
+        method: 'POST',
+        json: { name }
+      }),
+      documentSchema
+    )
+    return created.document.id
+  }
+
+  return {
+    runtime,
+    objects,
+    request,
+    documentId,
+    uploadImages,
+    save,
+    download,
+    usage,
+    age,
+    links,
+    createDocument
+  }
 }
 
 const photo: Image = { name: '0a1b', checksum: checksumOf('P'), byteSize: 1000 }
@@ -203,6 +248,41 @@ describe('Cloud document images', () => {
         bytesUsed: FILE_BYTES + photo.byteSize + logo.byteSize,
         objectCount: 3
       })
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('gives back what an image request reserved when the store cannot take every upload', async () => {
+    const context = await testApp()
+    const createUpload = context.objects.store.createUpload.bind(context.objects.store)
+    let calls = 0
+    context.objects.store.createUpload = async (input) => {
+      calls++
+      if (calls === 2) throw new Error('object store unavailable')
+      return createUpload(input)
+    }
+    try {
+      const response = await context.request(`/documents/${context.documentId}/images`, {
+        method: 'POST',
+        json: { images: [photo, logo].map(({ checksum, byteSize }) => ({ checksum, byteSize })) }
+      })
+      expect(response.status).toBe(500)
+      const uploads = await context.runtime.database
+        .selectFrom('upload')
+        .select('status')
+        .where('kind', '=', 'image')
+        .execute()
+      expect(uploads.map((upload) => upload.status)).toEqual(['abandoned', 'abandoned'])
+      const held = await context.runtime.database
+        .selectFrom('uploadStorageReservation')
+        .select('id')
+        .where('releasedAt', 'is', null)
+        .execute()
+      expect(held).toHaveLength(0)
+
+      // The retry gets both again.
+      expect(await context.uploadImages([photo, logo])).toHaveLength(2)
     } finally {
       await context.runtime.close()
     }
@@ -287,6 +367,43 @@ describe('Cloud document images', () => {
         .select('committedBytes')
         .executeTakeFirstOrThrow()
       expect(Number(usage.committedBytes)).toBe(2 * FILE_BYTES)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test("links the images the workspace holds, for a document's people and its guests", async () => {
+    const context = await testApp()
+    try {
+      // Uploaded for the document's live room, not saved yet; the workspace lacks the logo.
+      await context.uploadImages([photo])
+      expect((await context.links([photo.checksum, logo.checksum])).images).toEqual([
+        expect.objectContaining({ checksum: photo.checksum, byteSize: photo.byteSize })
+      ])
+
+      // Another document's room names an image the workspace holds through the first one.
+      const other = await context.createDocument('Flyer')
+      expect((await context.links([photo.checksum], other)).images).toHaveLength(1)
+
+      const created = await context.request(`/documents/${context.documentId}/shares`, {
+        method: 'POST',
+        json: { permission: 'view' }
+      })
+      const share = await responseJSON(
+        created,
+        v.object({ share: v.object({ id: v.string() }), secret: v.string() })
+      )
+      const guest = await context.request(`/shares/${share.share.id}/images`, {
+        method: 'POST',
+        json: { secret: share.secret, checksums: [photo.checksum] }
+      })
+      expect(guest.status).toBe(200)
+      expect(await guest.json()).toMatchObject({ images: [{ checksum: photo.checksum }] })
+      const wrongSecret = await context.request(`/shares/${share.share.id}/images`, {
+        method: 'POST',
+        json: { secret: 'f'.repeat(48), checksums: [photo.checksum] }
+      })
+      expect(wrongSecret.status).toBeGreaterThanOrEqual(400)
     } finally {
       await context.runtime.close()
     }

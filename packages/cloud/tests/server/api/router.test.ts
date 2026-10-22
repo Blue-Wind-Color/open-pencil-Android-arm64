@@ -52,6 +52,12 @@ function services() {
       commitImageUploads: async () => {
         throw new Error('not used')
       },
+      imageLinks: async () => {
+        throw new Error('not used')
+      },
+      imageLinksShared: async () => {
+        throw new Error('not used')
+      },
       commitUpload: async () => {
         throw new Error('not used')
       }

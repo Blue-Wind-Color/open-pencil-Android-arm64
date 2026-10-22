@@ -1,7 +1,7 @@
-import { Semaphore, sumBy } from 'es-toolkit'
+import { limitAsync, sumBy } from 'es-toolkit'
 import { fromUint8Array } from 'js-base64'
 
-import type { DocumentDownload } from '@open-pencil/cloud/contract'
+import type { DocumentDownload, DocumentImageLink } from '@open-pencil/cloud/contract'
 
 import type { StorageTransferProgress } from '../types'
 import { assembleCloudDocument } from './images'
@@ -37,6 +37,15 @@ async function fetchVerified(
   return bytes
 }
 
+/** An image a live room names, from where the server linked it, checked against its record. */
+export function downloadCloudImage(
+  link: DocumentImageLink,
+  objectFetch: ObjectFetch,
+  signal?: AbortSignal
+): Promise<Uint8Array> {
+  return fetchVerified(link.download, link, objectFetch, signal)
+}
+
 /** A revision as the editor opens it: its stored file with every image put back under its name. */
 export async function downloadCloudDocument(
   download: DocumentDownload,
@@ -50,18 +59,16 @@ export async function downloadCloudDocument(
     options.onProgress?.({ transferredBytes, totalBytes })
     return bytes
   }
-  const semaphore = new Semaphore(IMAGE_DOWNLOAD_CONCURRENCY)
+  const fetchImage = limitAsync(
+    async (image: DocumentDownload['images'][number]) => ({
+      name: image.name,
+      bytes: received(await fetchVerified(image.download, image, objectFetch, options.signal))
+    }),
+    IMAGE_DOWNLOAD_CONCURRENCY
+  )
   const [lean, ...images] = await Promise.all([
     fetchVerified(download.download, download, objectFetch, options.signal).then(received),
-    ...download.images.map(async (image) => {
-      await semaphore.acquire()
-      try {
-        const bytes = await fetchVerified(image.download, image, objectFetch, options.signal)
-        return { name: image.name, bytes: received(bytes) }
-      } finally {
-        semaphore.release()
-      }
-    })
+    ...download.images.map(fetchImage)
   ])
   return assembleCloudDocument(lean, images)
 }

@@ -10,6 +10,7 @@ import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 import { getTabForStore, openFileInNewTab } from '@/app/tabs'
 import { IS_BROWSER } from '@/constants'
 
+import { sharedCloudRoomImages } from '../rooms/images'
 import {
   cloudRelayTransport,
   leaveRefusedRoom,
@@ -61,7 +62,8 @@ export async function openCloudShareLink(link: CloudShareLink): Promise<void> {
       { onRefused: () => leaveRefusedRoom(store, { permission: first.permission, canSave: false }) }
     ),
     permission: first.permission,
-    guest: true
+    guest: true,
+    images: sharedCloudRoomImages(client, link.shareId, input)
   })
   stopWithTab(store, room)
 }

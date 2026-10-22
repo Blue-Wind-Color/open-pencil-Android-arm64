@@ -1,4 +1,4 @@
-import { retry, Semaphore } from 'es-toolkit'
+import { limitAsync, retry } from 'es-toolkit'
 
 import type { CloudAPIClient } from '@open-pencil/cloud/client'
 import type { ObjectUploadTarget } from '@open-pencil/cloud/contract'
@@ -93,29 +93,24 @@ async function putParts(upload: CloudObjectTransfer, multipart: MultipartUpload)
   const controller = new AbortController()
   const stop = () => controller.abort(upload.signal?.reason)
   upload.signal?.addEventListener('abort', stop, { once: true })
-  const semaphore = new Semaphore(Math.min(MULTIPART_CONCURRENCY, multipart.parts.length))
   let transferred = 0
+  const putOne = limitAsync(async (part: MultipartUpload['parts'][number]) => {
+    try {
+      controller.signal.throwIfAborted()
+      const start = (part.partNumber - 1) * multipart.partSize
+      const bytes = upload.bytes.subarray(start, start + multipart.partSize)
+      const etag = await putPart(upload, part, bytes, controller.signal)
+      transferred += bytes.byteLength
+      report(upload, transferred)
+      return { partNumber: part.partNumber, etag }
+    } catch (error) {
+      // One failed part fails the upload; the others stop instead of finishing for nothing.
+      controller.abort(error)
+      throw error
+    }
+  }, MULTIPART_CONCURRENCY)
   try {
-    return await Promise.all(
-      multipart.parts.map(async (part) => {
-        await semaphore.acquire()
-        try {
-          controller.signal.throwIfAborted()
-          const start = (part.partNumber - 1) * multipart.partSize
-          const bytes = upload.bytes.subarray(start, start + multipart.partSize)
-          const etag = await putPart(upload, part, bytes, controller.signal)
-          transferred += bytes.byteLength
-          report(upload, transferred)
-          return { partNumber: part.partNumber, etag }
-        } catch (error) {
-          // One failed part fails the upload; the others stop instead of finishing for nothing.
-          controller.abort(error)
-          throw error
-        } finally {
-          semaphore.release()
-        }
-      })
-    )
+    return await Promise.all(multipart.parts.map(putOne))
   } finally {
     upload.signal?.removeEventListener('abort', stop)
   }

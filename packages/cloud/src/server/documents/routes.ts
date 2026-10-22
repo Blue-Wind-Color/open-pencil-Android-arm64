@@ -3,6 +3,7 @@ import {
   parseCommitUpload,
   parseCreateDocument,
   parseCreateUpload,
+  parseRequestImageLinks,
   parseRequestImageUploads
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
@@ -197,6 +198,17 @@ export function createDocumentRoutes(
           )
           return context.body(null, 204)
         })
+    )
+    .post('/documents/:documentId/images/links', validatedJSON(parseRequestImageLinks), (context) =>
+      documentResponse(context, async () =>
+        context.json(
+          await service.imageLinks(
+            context.get('actor').userId,
+            context.req.param('documentId'),
+            context.req.valid('json').checksums
+          )
+        )
+      )
     )
     .post('/documents/:documentId/images', validatedJSON(parseRequestImageUploads), (context) =>
       documentResponse(context, async () =>

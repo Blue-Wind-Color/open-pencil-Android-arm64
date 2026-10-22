@@ -9,6 +9,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { shareAgentPreviews } from '@/app/collab/agent-preview'
 import { buildRemotePeers } from '@/app/collab/awareness'
 import { useCollabIdentity } from '@/app/collab/identity'
+import { bindRoomImages, type RoomImageStore } from '@/app/collab/images'
 import { publishLocalAgents } from '@/app/collab/local-awareness'
 import { connectCollabRoom } from '@/app/collab/room/connection'
 import { trackRoomSaves, type RoomSaves } from '@/app/collab/room/saves'
@@ -104,6 +105,8 @@ export interface RoomSessionOptions {
   holdsDocument?: boolean
   /** False for a room the tab's document lives in, which the person never leaves by hand. */
   leavable?: boolean
+  /** Where the room keeps its images instead of in its document, as a Cloud room does. */
+  images?: RoomImageStore
 }
 
 function openIndexedDBCopy(roomId: string, ydoc: Y.Doc): RoomSavedCopy {
@@ -122,12 +125,23 @@ export function openRoomSession({
   unreachableMs = ROOM_UNREACHABLE_MS,
   tickMs = ROOM_STATUS_TICK_MS,
   holdsDocument = false,
-  leavable = true
+  leavable = true,
+  images
 }: RoomSessionOptions): RoomSession {
   const ydoc = new Y.Doc()
   const awareness = new awarenessProtocol.Awareness(ydoc)
   const ynodes: YNodes = ydoc.getMap('nodes')
   const yimages = ydoc.getMap<Uint8Array>('images')
+  const roomImages = images
+    ? bindRoomImages({
+        ydoc,
+        yimages,
+        yrefs: ydoc.getMap<string>('imageRefs'),
+        store,
+        images,
+        report: (message, error) => console.error(`[Collab] ${message}:`, error)
+      })
+    : null
   const meta = ydoc.getMap<unknown>('meta')
   const yvariables: YRecords = ydoc.getMap('variables')
   const ycollections: YRecords = ydoc.getMap('collections')
@@ -167,6 +181,7 @@ export function openRoomSession({
     getYdoc: () => (disposed ? null : ydoc),
     getYnodes: () => (disposed ? null : ynodes),
     getYimages: () => (disposed ? null : yimages),
+    shareImage: roomImages ? (name, bytes) => roomImages.share(name, bytes) : undefined,
     setSuppressYjsEvents: (value) => {
       suppressYjsEvents = value
     }
@@ -214,6 +229,7 @@ export function openRoomSession({
     store,
     ynodes,
     yimages,
+    hasImageRef: roomImages ? (name) => roomImages.hasRef(name) : undefined,
     getSuppressYjsEvents: () => suppressYjsEvents,
     setSuppressGraphSync: (value) => {
       suppressGraphSync = value
@@ -304,6 +320,7 @@ export function openRoomSession({
       // Unbinding writes an edit still waiting to be sent, so it runs while the room is open.
       unbindGraphEvents()
       variableSync.dispose()
+      roomImages?.dispose()
       disposed = true
       connectionTimer.pause()
       stopNameWatch()

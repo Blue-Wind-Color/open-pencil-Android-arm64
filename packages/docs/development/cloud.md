@@ -158,6 +158,15 @@ a ticket, a full room, or a frame past those limits, leaves the room: the docume
 is not editing live and offers to rejoin, a viewer stays read-only, and an editor saves on its own,
 since a tab that was not the room's saver had its edits counted as saved by the room.
 
+A Cloud room names its images instead of carrying them: an editor stores an image it adds in the
+document's workspace and puts only its SHA-256 in the room's `imageRefs` map, and every peer loads
+the images it lacks through links the server signs for anyone who may view the document, or for a
+guest through its share link. A guest or a viewer cannot store images, so the ones it adds travel as
+bytes until an editor in the room stores them and swaps them for references; a store that fails
+leaves the bytes in the room. The room's state, which the relay saves, therefore holds no image
+bytes once an editor has stored them. A peer that cannot load an image asks again later, waiting
+longer each time up to a minute, while the room still names it.
+
 The relay enforces what the ticket allows: a viewer's document updates and sync replies never leave
 it, and presence updates are rewritten so others see the ticket's name and a `cloud` field with the
 verified identity and permission. A peer cannot claim presence clients another peer owns. Voice is

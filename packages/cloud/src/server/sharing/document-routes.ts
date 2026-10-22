@@ -1,4 +1,4 @@
-import { parseResolveDocumentShare } from '#cloud/contract'
+import { parseRequestSharedImageLinks, parseResolveDocumentShare } from '#cloud/contract'
 import type { DocumentService } from '#cloud/server/documents'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import { sharingRoute } from '#cloud/server/sharing/http'
@@ -9,10 +9,8 @@ export function createPublicDocumentRoutes(
   sharing: DocumentSharingService,
   documents: DocumentService
 ) {
-  return new Hono().post(
-    '/shares/:shareId/document',
-    validatedJSON(parseResolveDocumentShare),
-    (context) =>
+  return new Hono()
+    .post('/shares/:shareId/document', validatedJSON(parseResolveDocumentShare), (context) =>
       sharingRoute(context, async () => {
         const resolution = await sharing.resolveShare(
           context.req.param('shareId'),
@@ -23,5 +21,12 @@ export function createPublicDocumentRoutes(
           document: await documents.downloadShared(resolution.documentId)
         })
       })
-  )
+    )
+    .post('/shares/:shareId/images', validatedJSON(parseRequestSharedImageLinks), (context) =>
+      sharingRoute(context, async () => {
+        const { checksums, ...share } = context.req.valid('json')
+        const resolution = await sharing.resolveShare(context.req.param('shareId'), share)
+        return context.json(await documents.imageLinksShared(resolution.documentId, checksums))
+      })
+    )
 }

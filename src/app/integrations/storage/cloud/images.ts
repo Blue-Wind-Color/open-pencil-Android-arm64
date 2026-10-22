@@ -1,8 +1,8 @@
-import { Semaphore } from 'es-toolkit'
+import { limitAsync } from 'es-toolkit'
 import { unzipSync, zipSync, type Zippable } from 'fflate'
 
 import type { CloudAPIClient } from '@open-pencil/cloud/client'
-import { CLOUD_IMAGE_NAME_PATTERN } from '@open-pencil/cloud/contract'
+import { CLOUD_IMAGE_NAME_PATTERN, type ObjectUploadTarget } from '@open-pencil/cloud/contract'
 
 import { putCloudObject, type CloudObjectTransfer } from './upload'
 
@@ -68,22 +68,17 @@ export async function uploadCloudImages(input: {
     images: [...byChecksum].map(([checksum, bytes]) => ({ checksum, byteSize: bytes.byteLength }))
   })
   if (offers.length === 0) return
-  const semaphore = new Semaphore(IMAGE_UPLOAD_CONCURRENCY)
+  const put = limitAsync(
+    (target: ObjectUploadTarget, bytes: Uint8Array) =>
+      putCloudObject(target, { bytes, objectFetch: input.objectFetch, signal: input.signal }),
+    IMAGE_UPLOAD_CONCURRENCY
+  )
   const uploaded = await Promise.all(
     offers.map(async (offer) => {
       const bytes = byChecksum.get(offer.checksum)
       if (!bytes) throw new Error('The server offered an upload for an image this save lacks')
-      await semaphore.acquire()
-      try {
-        const multipart = await putCloudObject(offer.upload, {
-          bytes,
-          objectFetch: input.objectFetch,
-          signal: input.signal
-        })
-        return { uploadId: offer.uploadId, checksum: offer.checksum, multipart }
-      } finally {
-        semaphore.release()
-      }
+      const multipart = await put(offer.upload, bytes)
+      return { uploadId: offer.uploadId, checksum: offer.checksum, multipart }
     })
   )
   // One commit for every image, however many a save adds.
