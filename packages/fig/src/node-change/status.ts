@@ -15,12 +15,12 @@ import { readNodeChangePluginData } from './plugin-data'
 
 const FIGMA_SECTION_STATUS = { READY_FOR_DEV: 'BUILD', COMPLETED: 'COMPLETED' } as const
 
-const sectionStatusInfo = v.object({
+const sectionStatusInfoSchema = v.object({
   status: v.fallback(v.picklist(['NONE', 'BUILD', 'COMPLETED']), 'NONE')
 })
 
 function figmaStatus(nc: NodeChange): FigmaDevStatus | null {
-  const parsed = v.safeParse(sectionStatusInfo, nc.sectionStatusInfo)
+  const parsed = v.safeParse(sectionStatusInfoSchema, nc.sectionStatusInfo)
   const status = parsed.success ? parsed.output.status : 'NONE'
   if (status === 'BUILD') return 'READY_FOR_DEV'
   if (status === 'COMPLETED') return 'COMPLETED'

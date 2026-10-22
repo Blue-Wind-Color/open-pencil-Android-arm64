@@ -1,8 +1,7 @@
 import * as v from 'valibot'
 
 import { OpenPencilAPI } from '#core/openpencil-api'
-import { nodeIdInput } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { nodeIdInputSchema, defineTool } from '#core/tools/schema'
 
 export const bindVariable = defineTool({
   name: 'bind_variable',
@@ -11,7 +10,7 @@ export const bindVariable = defineTool({
     'Bind a variable to a node property. For fills/strokes color bindings use indexed format like "fills/0/color".',
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
-    node_id: nodeIdInput,
+    node_id: nodeIdInputSchema,
     field: v.pipe(
       v.string(),
       v.description(

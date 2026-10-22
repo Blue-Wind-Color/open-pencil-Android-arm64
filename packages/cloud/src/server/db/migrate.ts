@@ -24,7 +24,7 @@ import * as workspaceInvitations from './migrations/020_workspace_invitations'
 import * as documentVersions from './migrations/021_document_versions'
 import * as entitlementExternalVersion from './migrations/022_entitlement_external_version'
 import * as documentImages from './migrations/023_document_images'
-import type { CloudDatabase } from './schema'
+import type { CloudDatabase } from './tables'
 
 const migrations: Record<string, Migration> = {
   '001_foundation': foundation,

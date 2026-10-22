@@ -1,5 +1,3 @@
-import * as v from 'valibot'
-
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   createShapeWithText,
@@ -8,65 +6,18 @@ import {
   shapeWithTextLabel
 } from '@open-pencil/scene-graph/generated'
 
-import {
-  enumProp,
-  FIGJAM_TEXT_SIZE,
-  FIGJAM_TYPEFACE,
-  SHAPE_KIND,
-  STROKE_ALIGN,
-  STROKE_CAP,
-  STROKE_JOIN
-} from './enums'
+import { SHAPE_KIND } from './enums'
 import { collectFillProps, collectStrokeProps } from './export/paint'
 import type { JSXProp } from './export/value'
 import { figJamTextFields, figJamTextProps } from './figjam-text'
-import { isFillValue } from './overrides/fills'
-import { isStrokeValue } from './overrides/strokes'
+import { readElementProps, shapePropsSchema } from './schema'
 import { plainTextOf, type TreeNode } from './tree'
-import { ColorProp, PlacedOwnLayerProps, readElementProps } from './validation'
 
 /**
  * `<Shape kind="diamond" bg="#FFC943">Decide</Shape>`: a FigJam shape with text, made from the
  * same template as the shape tool's. Its text is the label.
  */
 export const SHAPE_ELEMENT = 'shape'
-
-const Size = v.pipe(v.number(), v.gtValue(0))
-const Dash = v.array(v.number())
-
-/**
- * The layer props a shape has: its place, the size it is given, which it grows past to fit its
- * label, and its paint. The label is styled as FigJam styles it, and the shape lays it out.
- */
-export const ShapeLayerProps = v.object({
-  ...PlacedOwnLayerProps.entries,
-  w: v.optional(Size),
-  h: v.optional(Size),
-  rotate: v.optional(v.number()),
-  rounded: v.optional(v.pipe(v.number(), v.minValue(0))),
-  bg: v.optional(v.custom(isFillValue, 'expected a colour or a paint')),
-  fills: v.optional(v.array(v.custom(isFillValue, 'expected a colour or a paint'))),
-  stroke: v.optional(ColorProp),
-  strokeWidth: v.optional(Size),
-  strokeAlign: v.optional(enumProp(STROKE_ALIGN)),
-  strokeDash: v.optional(Dash),
-  strokes: v.optional(v.array(v.custom(isStrokeValue, 'expected a stroke'))),
-  strokeCap: v.optional(enumProp(STROKE_CAP)),
-  strokeJoin: v.optional(enumProp(STROKE_JOIN)),
-  dashPattern: v.optional(Dash)
-})
-
-/**
- * The props `<Shape>` takes: its kind, whether it keeps its height and truncates its label as a
- * resized FigJam shape does, and the layer props a shape has.
- */
-export const ShapeProps = v.object({
-  kind: v.optional(enumProp(SHAPE_KIND)),
-  truncate: v.optional(v.boolean()),
-  textSize: v.optional(enumProp(FIGJAM_TEXT_SIZE)),
-  typeface: v.optional(enumProp(FIGJAM_TYPEFACE)),
-  ...ShapeLayerProps.entries
-})
 
 /**
  * The shape an element describes, with `layer`'s fields; it is named by its label, as FigJam
@@ -78,7 +29,7 @@ export function renderShapeNode(
   parentId: string,
   layer: Partial<SceneNode>
 ) {
-  const props = readElementProps(ShapeProps, tree.props)
+  const props = readElementProps(shapePropsSchema, tree.props)
   const text = plainTextOf(tree)
   const shape = createShapeWithText(
     graph,

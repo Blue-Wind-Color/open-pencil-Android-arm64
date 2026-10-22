@@ -1,15 +1,15 @@
 import { requireTrustedMutationOrigin } from '#cloud/admin/api/security'
 import type { AdminAuditService } from '#cloud/admin/audit/service'
+import type { AdminEmailService } from '#cloud/admin/email/service'
+import type { EnrollmentService } from '#cloud/admin/enrollment/service'
+import { adminErrorStatus, AdminDomainError } from '#cloud/admin/errors'
+import type { AdminOperationsService } from '#cloud/admin/operations/service'
 import {
   enrollmentStatusSchema,
   parseEnrollmentReview,
   parseUserMutation,
   parseUserRoleMutation
-} from '#cloud/admin/contracts'
-import type { AdminEmailService } from '#cloud/admin/email/service'
-import type { EnrollmentService } from '#cloud/admin/enrollment/service'
-import { adminErrorStatus, AdminDomainError } from '#cloud/admin/errors'
-import type { AdminOperationsService } from '#cloud/admin/operations/service'
+} from '#cloud/admin/schema'
 import type { AdminUserService } from '#cloud/admin/users/service'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import type { CloudAuthAdapter } from '#cloud/server/auth'

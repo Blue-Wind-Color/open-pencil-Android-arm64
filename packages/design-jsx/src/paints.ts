@@ -18,7 +18,7 @@ import {
   type ShaderPreset
 } from '@open-pencil/scene-graph/shaders'
 
-import { parseScriptInput } from './validation'
+import { parseScriptInput } from './schema'
 
 export type PaintColor = string | Color
 export type PaintStop = readonly [PaintColor, number] | { color: PaintColor; position: number }
@@ -112,7 +112,7 @@ export function isShaderFill(value: Fill): value is ShaderFill {
   return 'shader' in value
 }
 
-const shaderInput = v.union(
+const shaderInputSchema = v.union(
   [
     shaderPresetSchema,
     v.pipe(
@@ -135,7 +135,7 @@ export function shader(
 ): ShaderFill {
   const parsed = parseScriptInput(
     "shader() expects a preset such as { components: [{ type: 'Aurora' }] } or an array of effects",
-    shaderInput,
+    shaderInputSchema,
     preset
   )
   const { paint } = createShaderPaint(parsed)

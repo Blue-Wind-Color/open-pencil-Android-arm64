@@ -3,8 +3,7 @@ import * as v from 'valibot'
 
 import { PDF_MODES, PDFPlanError, planPDFPages } from '#core/io/formats/pdf/plan'
 import type { RasterExportFormat } from '#core/io/formats/raster'
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
 const exportInputs = {
   ids: v.optional(

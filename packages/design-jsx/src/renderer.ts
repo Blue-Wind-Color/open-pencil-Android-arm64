@@ -19,12 +19,12 @@ import { elementNodeType, elementOwnLayer, type OwnLayerRenderer } from './eleme
 import { applySizeOverrides, propsToOverrides, shapeOverrides } from './props-overrides'
 import { LayerRefs } from './refs'
 import { prepareScalarBindings } from './scalar-bindings'
+import { readElementProps } from './schema'
 import type { DesignJSXServices } from './services'
 import { isTextContent, TEXT_CONTENT_NAMES, textContentFields } from './text-content'
 import { FRAGMENT, isTreeNode } from './tree'
 import type { TreeNode } from './tree'
 import type { RenderOptions } from './types'
-import { readElementProps } from './validation'
 import { isVariable, resolveVariableId, type DesignVariable } from './vars'
 
 export interface RenderResult {

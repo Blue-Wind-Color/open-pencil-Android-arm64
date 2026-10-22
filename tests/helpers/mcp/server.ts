@@ -11,17 +11,19 @@ import type { ToolDescriptor } from '@open-pencil/mcp/tools'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
-const ToolDescriptorShape = v.looseObject({ name: v.string(), enabled: v.boolean() })
+const toolDescriptorSchema = v.looseObject({ name: v.string(), enabled: v.boolean() })
 
-export const HealthResponseSchema = v.object({
+export const healthResponseSchema = v.object({
   status: v.string(),
   version: v.string(),
   authRequired: v.boolean(),
-  tools: v.optional(v.array(v.custom<ToolDescriptor>((value) => v.is(ToolDescriptorShape, value)))),
+  tools: v.optional(
+    v.array(v.custom<ToolDescriptor>((value) => v.is(toolDescriptorSchema, value)))
+  ),
   discoveryPath: v.optional(v.string())
 })
 
-export type HealthResponse = v.InferOutput<typeof HealthResponseSchema>
+export type HealthResponse = v.InferOutput<typeof healthResponseSchema>
 
 /** Read a JSON response body or file, checked against `schema`. */
 export async function readJSON<T>(
@@ -32,7 +34,7 @@ export async function readJSON<T>(
 }
 
 export function readHealth(response: Response): Promise<HealthResponse> {
-  return readJSON(response, HealthResponseSchema)
+  return readJSON(response, healthResponseSchema)
 }
 
 export interface MockBrowserRequest {
@@ -50,13 +52,13 @@ export interface MockBrowser {
 }
 
 /** A `register` broadcast: the browser bridge announcing its token. */
-export const RegisterMessage = v.object({
+export const registerMessageSchema = v.object({
   type: v.string(),
   token: v.optional(v.nullable(v.string()))
 })
 
 /** A tool response relayed through the browser bridge. */
-export const ResponseMessage = v.object({
+export const responseMessageSchema = v.object({
   type: v.string(),
   id: v.string(),
   ok: v.optional(v.boolean()),

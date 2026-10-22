@@ -47,7 +47,7 @@ function splitAutomationTarget(args: Record<string, unknown>): {
 type RPCResponse = { ok?: boolean; result?: unknown; target?: unknown; error?: string }
 
 /** The app's recent files; the server keeps only those `open_file` could reach. */
-const RecentFilesResult = v.object({
+const recentFilesResultSchema = v.object({
   files: v.array(v.object({ path: v.string(), name: v.string(), updated_at: v.string() }))
 })
 
@@ -316,7 +316,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     register('list_recent_files', { inputSchema: v.strictObject({}) }, async () => {
       try {
         const res = await sendCommand(sendRPC, 'list_recent_files', {})
-        const { files } = v.parse(RecentFilesResult, res.result)
+        const { files } = v.parse(recentFilesResultSchema, res.result)
         const insideRoot = await Promise.all(
           files.map((file) =>
             resolveSafePath(file.path, resolvedRoot).then(

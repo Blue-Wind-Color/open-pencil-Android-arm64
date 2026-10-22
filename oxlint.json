@@ -519,6 +519,18 @@
       }
     },
     {
+      "files": ["src/**/*.{ts,vue}", "packages/*/src/**/*.{ts,vue}"],
+      "rules": {
+        "open-pencil/valibot-schema-conventions": "error"
+      }
+    },
+    {
+      "files": ["tools/*/*/src/**/*.ts"],
+      "rules": {
+        "open-pencil/valibot-schema-conventions": ["error", { "placement": false }]
+      }
+    },
+    {
       "files": [
         "src/**/*.{ts,vue}",
         "packages/{scene-graph,pen,kiwi,fig,core,dom-css,vue}/src/**/*.{ts,vue}",

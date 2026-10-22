@@ -1,8 +1,7 @@
 import * as v from 'valibot'
 
 import { OpenPencilAPI } from '#core/openpencil-api'
-import { nodeIdInput } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { nodeIdInputSchema, defineTool } from '#core/tools/schema'
 
 export const unbindVariable = defineTool({
   name: 'unbind_variable',
@@ -10,7 +9,7 @@ export const unbindVariable = defineTool({
   description: 'Remove a variable binding from a node property.',
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
-    node_id: nodeIdInput,
+    node_id: nodeIdInputSchema,
     field: v.pipe(
       v.string(),
       v.description(

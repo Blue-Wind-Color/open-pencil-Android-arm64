@@ -6,7 +6,7 @@ import * as v from 'valibot'
 
 import { parseSetWorkspaceEntitlements, type InternalService } from './service'
 
-const uuid = v.pipe(v.string(), v.uuid())
+const uuidSchema = v.pipe(v.string(), v.uuid())
 
 /** The internal API on HTTP, for runtimes without a private transport to their services. */
 export function createInternalRoutes(service: InternalService, serviceToken: string) {
@@ -27,7 +27,7 @@ export function createInternalRoutes(service: InternalService, serviceToken: str
       validatedJSON(parseSetWorkspaceEntitlements),
       async (context) => {
         const workspaceId = context.req.param('workspaceId')
-        if (!v.is(uuid, workspaceId)) {
+        if (!v.is(uuidSchema, workspaceId)) {
           return context.json({ error: { code: 'not_found' as const } }, 404)
         }
         const result = await service.setWorkspaceEntitlements(

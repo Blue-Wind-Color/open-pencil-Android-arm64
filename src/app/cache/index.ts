@@ -118,7 +118,7 @@ export async function removeCachePrefix(prefix: string): Promise<void> {
   removeStorageEntriesWithPrefix(prefix)
 }
 
-const CacheEnvelopeJSON = v.pipe(
+const cacheEnvelopeSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({ updatedAt: v.number(), value: v.unknown() })
@@ -136,7 +136,7 @@ export async function readCacheJSON<TSchema extends v.GenericSchema>(
   const raw = await readCacheText(key)
   if (!raw) return null
 
-  const envelope = v.safeParse(CacheEnvelopeJSON, raw)
+  const envelope = v.safeParse(cacheEnvelopeSchema, raw)
   if (!envelope.success) return null
   if (maxAgeMs !== undefined && Date.now() - envelope.output.updatedAt > maxAgeMs) return null
   const value = v.safeParse(schema, envelope.output.value)

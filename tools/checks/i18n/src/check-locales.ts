@@ -48,10 +48,10 @@ function localeFileName(namespace: string) {
   return LOCALE_FILE_NAMES[namespace] ?? namespace
 }
 
-const JSONObjectText = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
+const jsonObjectTextSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
 
 function readJSONObject(path: string): JSONObject {
-  return v.parse(JSONObjectText, readFileSync(path, 'utf-8'))
+  return v.parse(jsonObjectTextSchema, readFileSync(path, 'utf-8'))
 }
 
 function report(message: string) {

@@ -27,18 +27,18 @@ export function isGeneratedPath(path: string): boolean {
   return OWN_FILE.test(path) || DESIGN_IMAGE.test(path) || SHARED_FILE.test(path)
 }
 
-const StoryOwnerSchema = v.object({ source: v.string(), page: v.string() })
+const storyOwnerSchema = v.object({ source: v.string(), page: v.string() })
 
-const ManifestSchema = v.object({
+const manifestSchema = v.object({
   version: v.literal(1),
   files: v.record(
     v.pipe(v.string(), v.check(isGeneratedPath, 'Expected a path the Storybook export writes.')),
-    StoryOwnerSchema
+    storyOwnerSchema
   )
 })
 
-export type StoryOwner = v.InferOutput<typeof StoryOwnerSchema>
-export type StoryManifest = v.InferOutput<typeof ManifestSchema>
+export type StoryOwner = v.InferOutput<typeof storyOwnerSchema>
+export type StoryManifest = v.InferOutput<typeof manifestSchema>
 
 export async function readManifest(outputDir: string): Promise<StoryManifest> {
   const path = join(outputDir, MANIFEST_FILE)
@@ -50,7 +50,7 @@ export async function readManifest(outputDir: string): Promise<StoryManifest> {
       return { version: 1, files: {} }
     throw error
   }
-  const result = v.safeParse(v.pipe(v.string(), v.parseJson(), ManifestSchema), text)
+  const result = v.safeParse(v.pipe(v.string(), v.parseJson(), manifestSchema), text)
   if (!result.success)
     throw new Error(
       `${path} is not a valid OpenPencil stories manifest; remove it together with the stories it listed, then export again.`

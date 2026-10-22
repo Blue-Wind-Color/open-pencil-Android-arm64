@@ -110,7 +110,7 @@ export {
   designJSXPropertyNames,
   type DesignJSXHelperDefinition,
   type DesignJSXPropertyDefinition
-} from './schema'
+} from './definitions'
 export {
   transformDesignJSXExpression,
   transformDesignJSXProgram,

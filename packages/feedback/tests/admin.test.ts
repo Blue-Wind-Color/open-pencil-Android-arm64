@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 
 import { createTestService, type TestService } from '#feedback-tests/harness'
-import { MetricsSnapshotSchema, type MetricsSnapshot } from '#feedback/contract'
+import { metricsSnapshotSchema, type MetricsSnapshot } from '#feedback/contract'
 import { createFeedbackDatabase } from '#feedback/db'
 import { exportJWK, generateKeyPair, SignJWT, type CryptoKey } from 'jose'
 import * as v from 'valibot'
@@ -510,7 +510,7 @@ describe('metrics snapshot API', () => {
       await accessToken(signingKey)
     )
     const parsed = v.safeParse(
-      v.pipe(v.string(), v.parseJson(), MetricsSnapshotSchema),
+      v.pipe(v.string(), v.parseJson(), metricsSnapshotSchema),
       await response.text()
     )
     expect(parsed.issues).toBeUndefined()

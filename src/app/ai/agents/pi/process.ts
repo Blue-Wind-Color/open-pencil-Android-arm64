@@ -2,26 +2,26 @@ import * as v from 'valibot'
 
 import type { HarnessSidecarMessage, JSONValue } from '@open-pencil/harness'
 
-import { tokenUsageSchema } from '@/app/diagnostics/events/ai'
+import { tokenUsageSchema } from '@/app/diagnostics/events/schema'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 
 /** Any value `JSON.parse` produced is a JSONValue; only presence needs checking. */
-const jsonValue = v.custom<JSONValue>((value) => value !== undefined)
+const jsonValueSchema = v.custom<JSONValue>((value) => value !== undefined)
 
-const HarnessTurnEventSchema = v.variant('type', [
+const harnessTurnEventSchema = v.variant('type', [
   v.object({ type: v.literal('text-delta'), text: v.string() }),
   v.object({ type: v.literal('reasoning-delta'), text: v.string() }),
   v.object({
     type: v.literal('tool-call'),
     toolCallId: v.string(),
     toolName: v.string(),
-    input: jsonValue
+    input: jsonValueSchema
   }),
   v.object({
     type: v.literal('tool-result'),
     toolCallId: v.string(),
     toolName: v.string(),
-    output: jsonValue
+    output: jsonValueSchema
   }),
   v.object({
     type: v.literal('finish'),
@@ -32,17 +32,17 @@ const HarnessTurnEventSchema = v.variant('type', [
   v.object({ type: v.literal('error'), message: v.string() })
 ])
 
-const HarnessSidecarMessageJSON = v.pipe(
+const harnessSidecarMessageSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.variant('type', [
     v.object({
       type: v.literal('response'),
       id: v.string(),
-      result: v.optional(jsonValue),
+      result: v.optional(jsonValueSchema),
       error: v.optional(v.string())
     }),
-    v.object({ type: v.literal('turn.event'), id: v.string(), event: HarnessTurnEventSchema })
+    v.object({ type: v.literal('turn.event'), id: v.string(), event: harnessTurnEventSchema })
   ])
 ) satisfies v.GenericSchema<string, HarnessSidecarMessage>
 
@@ -83,7 +83,7 @@ export async function spawnHarnessProcess(options: {
     buffer = lines.pop() ?? ''
     for (const line of lines) {
       if (!line.trim()) continue
-      const message = v.safeParse(HarnessSidecarMessageJSON, line)
+      const message = v.safeParse(harnessSidecarMessageSchema, line)
       if (message.success) controller?.enqueue(message.output)
       else console.warn('[Harness] Ignoring malformed sidecar output:', v.summarize(message.issues))
     }

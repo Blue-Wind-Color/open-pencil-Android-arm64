@@ -1,6 +1,6 @@
-import { ADMIN_LIST_MAXIMUM } from '#cloud/admin/contracts'
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
 import { AdminDomainError } from '#cloud/admin/errors'
+import { ADMIN_LIST_MAXIMUM } from '#cloud/admin/schema'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email'
 import { clamp } from 'es-toolkit'

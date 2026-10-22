@@ -8,12 +8,12 @@ import { ENUM_PROPS } from './enums'
 import { designJSXHelpers } from './helpers'
 import * as React from './mini-react'
 import { renderRoots, renderTree, componentPropNames, type RenderResult } from './renderer'
+import { elementPropWarnings } from './schema'
 import type { DesignJSXServices } from './services'
 import { TEXT_CONTENT_NAMES } from './text-content'
 import { transformDesignJSXExpression } from './transform'
 import { isTreeNode, resolveToTree, type TreeNode } from './tree'
 import type { RenderOptions as RenderJSXOptions } from './types'
-import { elementPropWarnings } from './validation'
 
 /** `const Switch = { Root: 'Switch.Root', … }`: each Reka namespace as element types. */
 const REKA_ALIASES = Object.entries(REKA_ELEMENTS)

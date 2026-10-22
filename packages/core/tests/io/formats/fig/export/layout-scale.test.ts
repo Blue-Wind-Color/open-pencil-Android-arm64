@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { NestedLayoutScaleFixture, readFixture } from '#core-tests/helpers/fig/fixtures'
+import { nestedLayoutScaleFixtureSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
 
 import { createEditor } from '@open-pencil/core'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
@@ -10,7 +10,7 @@ import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 
-const fixture = readFixture('nested-layout-scale.json', NestedLayoutScaleFixture)
+const fixture = readFixture('nested-layout-scale.json', nestedLayoutScaleFixtureSchema)
 
 function assembly(phase: 'before' | 'edited') {
   return materializeDocument(

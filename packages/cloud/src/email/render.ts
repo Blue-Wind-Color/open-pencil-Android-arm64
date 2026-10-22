@@ -1,7 +1,5 @@
 import { render } from '@vue-email/render'
 
-import { DocumentInvitationEmail } from './templates/document-invitation'
-import { EnrollmentEmail } from './templates/enrollment'
 import type {
   AdminEnrollmentNotificationPayload,
   AuthenticationEmailPayload,
@@ -11,7 +9,9 @@ import type {
   RenderedTransactionalEmail,
   TransactionalEmailContent,
   TransactionalEmailKind
-} from './types'
+} from './schema'
+import { DocumentInvitationEmail } from './templates/document-invitation'
+import { EnrollmentEmail } from './templates/enrollment'
 
 async function rendered(
   component: Parameters<typeof render>[0],

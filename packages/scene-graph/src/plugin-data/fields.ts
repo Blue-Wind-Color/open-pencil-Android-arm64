@@ -34,7 +34,7 @@ const DIRECTIONS = ['AUTO', 'LTR', 'RTL'] as const satisfies readonly (
   | LayoutDirection
 )[]
 
-const textPathBox: v.GenericSchema<unknown, Rect> = v.pipe(
+const textPathBoxSchema: v.GenericSchema<unknown, Rect> = v.pipe(
   v.object({ x: v.number(), y: v.number(), width: v.number(), height: v.number() }),
   v.check(
     ({ x, y, width, height }) => Number.isFinite(x + y + width + height) && width > 0 && height > 0
@@ -42,7 +42,7 @@ const textPathBox: v.GenericSchema<unknown, Rect> = v.pipe(
 )
 
 /** String-valued entries of a JSON object; other entries are dropped, not rejected. */
-const boundVariables = v.pipe(
+const boundVariablesSchema = v.pipe(
   v.custom<Record<string, unknown>>(
     (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
   ),
@@ -56,7 +56,7 @@ const boundVariables = v.pipe(
 )
 
 /** Every entry must be valid, or the whole value is ignored in favour of native settings. */
-const exportSettings: v.GenericSchema<unknown, ExportSetting[]> = v.array(
+const exportSettingsSchema: v.GenericSchema<unknown, ExportSetting[]> = v.array(
   v.pipe(
     v.object({
       scale: v.pipe(v.number(), v.finite()),
@@ -67,7 +67,7 @@ const exportSettings: v.GenericSchema<unknown, ExportSetting[]> = v.array(
   )
 )
 
-const librarySource: v.GenericSchema<unknown, LibraryAssetSource> = v.pipe(
+const librarySourceSchema: v.GenericSchema<unknown, LibraryAssetSource> = v.pipe(
   v.object({
     identity: v.object({ libraryId: v.string(), assetKey: v.string(), revisionId: v.string() }),
     sourceNodeId: v.optional(v.unknown()),
@@ -80,18 +80,18 @@ const librarySource: v.GenericSchema<unknown, LibraryAssetSource> = v.pipe(
   }))
 )
 
-const enabledLibrary = v.object({
+const enabledLibrarySchema = v.object({
   libraryId: v.string(),
   revisionId: v.string(),
   enabled: v.optional(v.unknown())
 })
 
 /** Invalid entries are skipped one by one, so one bad binding keeps the others. */
-const enabledLibraries: v.GenericSchema<unknown, EnabledLibraryBinding[]> = v.pipe(
+const enabledLibrariesSchema: v.GenericSchema<unknown, EnabledLibraryBinding[]> = v.pipe(
   v.array(v.unknown()),
   v.transform((items) =>
     items.flatMap((item) => {
-      const parsed = v.safeParse(enabledLibrary, item)
+      const parsed = v.safeParse(enabledLibrarySchema, item)
       if (!parsed.success) return []
       const { libraryId, revisionId, enabled } = parsed.output
       return [{ libraryId, revisionId, enabled: enabled === true }]
@@ -100,7 +100,7 @@ const enabledLibraries: v.GenericSchema<unknown, EnabledLibraryBinding[]> = v.pi
 )
 
 // Shape only. Whether a string is valid CSS is checked where it is written into a stylesheet.
-const cssText = v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(1000))
+const cssTextSchema = v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(1000))
 
 /** Token fields Figma has no slot for, with mode ids as the file spells them. */
 export interface StoredToken {
@@ -108,17 +108,17 @@ export interface StoredToken {
   expressions?: Record<string, { css: string; resolved?: number }>
 }
 
-const token: v.GenericSchema<unknown, StoredToken> = v.object({
+const tokenSchema: v.GenericSchema<unknown, StoredToken> = v.object({
   unit: v.optional(v.picklist(TOKEN_UNITS)),
   expressions: v.optional(
     v.record(
       v.string(),
-      v.object({ css: cssText, resolved: v.optional(v.pipe(v.number(), v.finite())) })
+      v.object({ css: cssTextSchema, resolved: v.optional(v.pipe(v.number(), v.finite())) })
     )
   )
 })
 
-const okhcl: v.GenericSchema<unknown, OkHCLPayload> = v.object({
+const okhclSchema: v.GenericSchema<unknown, OkHCLPayload> = v.object({
   version: v.literal(1),
   kind: v.picklist(['fill', 'stroke']),
   index: v.number(),
@@ -130,12 +130,14 @@ const okhcl: v.GenericSchema<unknown, OkHCLPayload> = v.object({
   })
 })
 
-const sourceLibraryPublication: v.GenericSchema<unknown, SourceLibraryPublication> = v.object({
-  libraryId: v.string(),
-  revisionId: v.string(),
-  name: v.string(),
-  catalogSource: v.optional(v.string())
-})
+const sourceLibraryPublicationSchema: v.GenericSchema<unknown, SourceLibraryPublication> = v.object(
+  {
+    libraryId: v.string(),
+    revisionId: v.string(),
+    name: v.string(),
+    catalogSource: v.optional(v.string())
+  }
+)
 
 /**
  * Every plugin-data entry OpenPencil writes under {@link OPEN_PENCIL_PLUGIN_ID}: state Figma's
@@ -150,12 +152,12 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   /** Marks a component set Figma would read as a plain frame. */
   nodeType: textPluginDataField('nodeType', 'format', ['COMPONENT_SET']),
   /** Variable bindings by field path, including those Figma cannot store natively. */
-  boundVariables: jsonPluginDataField('boundVariables', 'format', boundVariables),
-  exportSettings: jsonPluginDataField('exportSettings', 'format', exportSettings),
+  boundVariables: jsonPluginDataField('boundVariables', 'format', boundVariablesSchema),
+  exportSettings: jsonPluginDataField('exportSettings', 'format', exportSettingsSchema),
   /** The node-local rect a TEXT_PATH layout maps onto, which Kiwi has no field for. */
-  textPathBox: jsonPluginDataField('textPathBox', 'format', textPathBox),
+  textPathBox: jsonPluginDataField('textPathBox', 'format', textPathBoxSchema),
   /** The library asset a node was inserted from. */
-  librarySource: jsonPluginDataField('librarySource', 'bookkeeping', librarySource),
+  librarySource: jsonPluginDataField('librarySource', 'bookkeeping', librarySourceSchema),
   /**
    * The document root's id, on the DOCUMENT node, whose own GUID is always Figma's `0:0`; the
    * root keeps it across a save as every layer keeps its GUID.
@@ -166,12 +168,12 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
     v.pipe(v.string(), v.nonEmpty(), v.maxLength(64))
   ),
   /** Libraries enabled for the document, on the DOCUMENT node. */
-  enabledLibraries: jsonPluginDataField('enabledLibraries', 'bookkeeping', enabledLibraries),
+  enabledLibraries: jsonPluginDataField('enabledLibraries', 'bookkeeping', enabledLibrariesSchema),
   /** The library this document publishes as, on the DOCUMENT node. */
   sourceLibraryPublication: jsonPluginDataField(
     'sourceLibraryPublication',
     'bookkeeping',
-    sourceLibraryPublication
+    sourceLibraryPublicationSchema
   ),
   /** Canvas comment threads, deleted ones included, on the DOCUMENT node. */
   comments: jsonPluginDataField('comments', 'bookkeeping', commentThreadsSchema),
@@ -182,9 +184,13 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
   /** A layer's status, any state of the workflow; Figma's `sectionStatusInfo` knows only two. */
   status: jsonPluginDataField('status', 'format', nodeStatusSchema),
   /** Unit and CSS expressions, on each VARIABLE. */
-  token: jsonPluginDataField('token', 'format', token),
+  token: jsonPluginDataField('token', 'format', tokenSchema),
   /** Mode conditions by mode id, on each VARIABLE_SET. */
-  modeConditions: jsonPluginDataField('modeConditions', 'format', v.record(v.string(), cssText)),
+  modeConditions: jsonPluginDataField(
+    'modeConditions',
+    'format',
+    v.record(v.string(), cssTextSchema)
+  ),
   /** The attribute that switches manual modes, on each VARIABLE_SET. */
   modeAttribute: jsonPluginDataField(
     'modeAttribute',
@@ -192,7 +198,7 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
     v.pipe(v.string(), v.trim(), v.maxLength(100), v.regex(MODE_ATTRIBUTE_PATTERN))
   ),
   /** One entry per paint picked in OkHCL, so the picker reopens on the same coordinates. */
-  okhcl: jsonPluginDataField('okhcl', 'content', okhcl),
+  okhcl: jsonPluginDataField('okhcl', 'content', okhclSchema),
   /** How a main component or component set behaves as a control in preview. */
   behaviour: jsonPluginDataField('behaviour', 'content', behaviourSchema),
   /** The icon a frame draws, such as `lucide:home`, on the frame its paths are in. */

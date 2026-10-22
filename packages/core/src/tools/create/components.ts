@@ -2,8 +2,7 @@ import * as v from 'valibot'
 
 import type { FigmaComponentNode, FigmaNodeProxy } from '#core/figma-api'
 import { OpenPencilAPI } from '#core/openpencil-api'
-import { toolNumber } from '#core/tools/input'
-import { defineTool, nodeSummary, requireNodes } from '#core/tools/schema'
+import { toolNumber, defineTool, nodeSummary, requireNodes } from '#core/tools/schema'
 
 export const createComponent = defineTool({
   name: 'create_component',

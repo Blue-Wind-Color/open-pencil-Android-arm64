@@ -29,7 +29,7 @@ export interface DiscoveryInfo {
   scope?: MCPToolScope
 }
 
-const DiscoveryInfoJSON = v.pipe(
+const discoveryInfoSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -47,7 +47,7 @@ const DiscoveryInfoJSON = v.pipe(
 
 /** Parse discovery file contents, or null when the file is not valid discovery JSON. */
 export function parseDiscoveryInfo(raw: string): DiscoveryInfo | null {
-  const result = v.safeParse(DiscoveryInfoJSON, raw)
+  const result = v.safeParse(discoveryInfoSchema, raw)
   return result.success ? result.output : null
 }
 

@@ -13,11 +13,11 @@ import type {
 import {
   createLibraryRevision,
   deserializeLibraryRevision,
-  LibrarySummarySchema,
+  librarySummarySchema,
   MAX_LIBRARY_REVISION_BYTES,
-  SerializedLibraryRevisionSchema,
+  serializedLibraryRevisionSchema,
   serializeLibraryRevision,
-  StoredLibraryLatestManifestSchema,
+  storedLibraryLatestManifestSchema,
   validateLibraryRevision
 } from '@open-pencil/core/library'
 
@@ -49,7 +49,7 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
 
   async listLibraries(): Promise<LibrarySummary[]> {
     try {
-      return await this.#readJSON('libraries.json', v.array(LibrarySummarySchema))
+      return await this.#readJSON('libraries.json', v.array(librarySummarySchema))
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return []
       throw error
@@ -59,11 +59,11 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
   async getRevision(libraryId: string, revisionId?: string): Promise<ComponentLibraryRevision> {
     const resolvedRevisionId =
       revisionId ??
-      (await this.#readJSON(`${libraryId}/manifest.json`, StoredLibraryLatestManifestSchema))
+      (await this.#readJSON(`${libraryId}/manifest.json`, storedLibraryLatestManifestSchema))
         .summary.latestRevisionId
     const data = await this.#readJSON(
       `${libraryId}/revisions/${resolvedRevisionId}.json`,
-      SerializedLibraryRevisionSchema,
+      serializedLibraryRevisionSchema,
       MAX_LIBRARY_REVISION_BYTES
     )
     const revision = deserializeLibraryRevision(data)

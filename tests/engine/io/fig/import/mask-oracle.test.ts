@@ -9,20 +9,23 @@ import { SceneGraph, type MaskType } from '@open-pencil/scene-graph'
 
 const MASK_TYPE_VALUES = ['ALPHA', 'VECTOR', 'LUMINANCE'] as const satisfies readonly MaskType[]
 
-const MaskOracleEntry = v.object({ isMask: v.boolean(), maskType: v.picklist(MASK_TYPE_VALUES) })
+const maskOracleEntrySchema = v.object({
+  isMask: v.boolean(),
+  maskType: v.picklist(MASK_TYPE_VALUES)
+})
 
-const MaskOracleJSON = v.pipe(
+const maskOracleSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
-    masks: v.array(MaskOracleEntry),
-    nested: v.object({ children: v.array(MaskOracleEntry) }),
+    masks: v.array(maskOracleEntrySchema),
+    nested: v.object({ children: v.array(maskOracleEntrySchema) }),
     maskIsOutline: v.object({ pluginApiReadable: v.boolean(), note: v.string() })
   })
 )
 
 function readOracle() {
-  return v.parse(MaskOracleJSON, readFileSync('tests/fixtures/figma-oracles/masks.json', 'utf8'))
+  return v.parse(maskOracleSchema, readFileSync('tests/fixtures/figma-oracles/masks.json', 'utf8'))
 }
 
 describe('Figma mask oracle', () => {

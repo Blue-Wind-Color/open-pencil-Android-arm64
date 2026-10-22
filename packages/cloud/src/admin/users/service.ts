@@ -1,5 +1,5 @@
-import { ADMIN_LIST_MAXIMUM } from '#cloud/admin/contracts'
 import { AdminDomainError } from '#cloud/admin/errors'
+import { ADMIN_LIST_MAXIMUM } from '#cloud/admin/schema'
 import type { CloudAuthAdapter } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { clamp } from 'es-toolkit'

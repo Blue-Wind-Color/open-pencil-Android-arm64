@@ -11,12 +11,10 @@ import {
   normalizeToolbarLayout,
   type ToolbarLayout
 } from '@/app/editor/toolbar/layout'
-import { DEFAULT_RECENT_FILES_LIMIT, recentFilesLimitSchema } from '@/app/recent-files/limit'
-import {
-  accentPreferenceSchema,
-  DEFAULT_ACCENT,
-  type AccentPreference
-} from '@/app/shell/accent/palette'
+import { DEFAULT_RECENT_FILES_LIMIT } from '@/app/recent-files/limit'
+import { recentFilesLimitSchema } from '@/app/recent-files/schema'
+import { DEFAULT_ACCENT } from '@/app/shell/accent/palette'
+import { accentPreferenceSchema, type AccentPreference } from '@/app/shell/accent/schema'
 
 export const ANIMATION_PREFERENCES = ['system', 'off'] as const
 export type AnimationPreference = (typeof ANIMATION_PREFERENCES)[number]

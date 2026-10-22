@@ -3,11 +3,8 @@ import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
 import type { EntitlementSource, EntitlementSubject } from './entitlements'
-import {
-  staticEntitlementValues,
-  staticEntitlementsSchema,
-  type StaticEntitlementsInput
-} from './static'
+import { staticEntitlementsSchema } from './schema'
+import { staticEntitlementValues, type StaticEntitlementsInput } from './static'
 
 export class DatabaseEntitlementSource implements EntitlementSource {
   constructor(private readonly database: Kysely<CloudDatabase>) {}

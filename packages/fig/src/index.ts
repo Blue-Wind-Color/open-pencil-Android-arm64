@@ -8,16 +8,15 @@ export {
   createFigDocumentSession,
   type DocumentAssemblyOptions
 } from './document/materialize'
+export { figArchiveMetaSchema, type FigArchiveMetaJSON } from './schema'
 export {
   compressFigDataSync,
   figArchiveMetaJSON,
-  FigArchiveMetaSchema,
   parseFigBuffer,
   readFigArchiveMeta,
   renameFigArchive,
   writeFigArchive,
   type FigArchiveMeta,
-  type FigArchiveMetaJSON,
   type FigImageEntry,
   type FigParseResult,
   type WriteFigArchiveInput

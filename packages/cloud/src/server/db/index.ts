@@ -17,4 +17,4 @@ export type {
   UploadStatus,
   Workspace,
   WorkspaceUpdate
-} from './schema'
+} from './tables'

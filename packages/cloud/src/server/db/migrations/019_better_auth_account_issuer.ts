@@ -1,4 +1,4 @@
-import type { CloudDatabase } from '#cloud/server/db/schema'
+import type { CloudDatabase } from '#cloud/server/db/tables'
 import type { Kysely } from 'kysely'
 
 /** The unique index Better Auth 1.7.0 through 1.7.2 created on `account (issuer, accountId)`. */

@@ -37,7 +37,7 @@ type ModelsDevProvider = {
 
 type ModelsDevCatalog = Record<string, ModelsDevProvider>
 
-const ModelsDevCatalogSchema = v.record(
+const modelsDevCatalogSchema = v.record(
   v.string(),
   v.object({
     models: v.optional(
@@ -77,13 +77,13 @@ function normalizeModel(id: string, model: ModelsDevModel): ModelOption {
 
 const modelsDevCatalog = cachedRemoteJSON({
   key: MODELS_DEV_CACHE_KEY,
-  schema: ModelsDevCatalogSchema,
+  schema: modelsDevCatalogSchema,
   maxAgeMs: MODELS_DEV_CACHE_TTL_MS,
   load: async (fetcher) => {
     const response = await fetcher(MODELS_DEV_URL)
     if (!response.ok) throw new Error(`models.dev catalog request failed: ${response.status}`)
     // Validated like the cached copy, so a bad entry falls back instead of crashing the list.
-    return v.parse(v.pipe(v.string(), v.parseJson(), ModelsDevCatalogSchema), await response.text())
+    return v.parse(v.pipe(v.string(), v.parseJson(), modelsDevCatalogSchema), await response.text())
   }
 })
 

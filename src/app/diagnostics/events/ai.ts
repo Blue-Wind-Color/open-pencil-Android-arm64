@@ -10,14 +10,7 @@ import type {
   DiagnosticLevel,
   DiagnosticValue
 } from '../types'
-
-/** A model call's tokens; input counts cached tokens too, which the cache fields break out. */
-export const tokenUsageSchema = v.object({
-  inputTokens: v.nullable(v.number()),
-  outputTokens: v.nullable(v.number()),
-  cacheReadTokens: v.nullable(v.number()),
-  cacheWriteTokens: v.nullable(v.number())
-})
+import { tokenUsageSchema } from './schema'
 
 const modelStepSchema = v.object({
   provider: v.string(),

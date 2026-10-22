@@ -1,8 +1,7 @@
 import * as v from 'valibot'
 
 import { finishRenderPlacement, resolveRenderPlacement } from '#core/design-jsx/placement'
-import { toolNumber } from '#core/tools/input'
-import { defineTool } from '#core/tools/schema'
+import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const render = defineTool({
   name: 'render',

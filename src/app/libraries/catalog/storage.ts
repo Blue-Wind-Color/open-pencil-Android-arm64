@@ -5,9 +5,9 @@ import {
   createLibraryRevision,
   deserializeLibraryRevision,
   MAX_LIBRARY_REVISION_BYTES,
-  SerializedLibraryRevisionSchema,
+  serializedLibraryRevisionSchema,
   serializeLibraryRevision,
-  StoredLibraryLatestManifestSchema,
+  storedLibraryLatestManifestSchema,
   validateLibraryRevision
 } from '@open-pencil/core/library'
 import type {
@@ -114,24 +114,24 @@ function encodeRevision(revision: ComponentLibraryRevision): Uint8Array {
   return textEncoder.encode(JSON.stringify(encodeValue(serializeLibraryRevision(revision))))
 }
 
-const RevisionJSON = v.pipe(
+const revisionSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.transform(decodeValue),
-  SerializedLibraryRevisionSchema
+  serializedLibraryRevisionSchema
 )
 
-const LatestManifestJSON = v.pipe(v.string(), v.parseJson(), StoredLibraryLatestManifestSchema)
+const latestManifestSchema = v.pipe(v.string(), v.parseJson(), storedLibraryLatestManifestSchema)
 
 function decodeRevision(bytes: Uint8Array): ComponentLibraryRevision {
-  const parsed = v.safeParse(RevisionJSON, textDecoder.decode(bytes))
+  const parsed = v.safeParse(revisionSchema, textDecoder.decode(bytes))
   if (!parsed.success)
     throw new Error(`Invalid component library revision: ${v.summarize(parsed.issues)}`)
   return deserializeLibraryRevision(parsed.output)
 }
 
 function decodeLatest(bytes: Uint8Array): StoredLibraryLatestManifest {
-  const parsed = v.safeParse(LatestManifestJSON, textDecoder.decode(bytes))
+  const parsed = v.safeParse(latestManifestSchema, textDecoder.decode(bytes))
   if (!parsed.success) throw new Error('Invalid component library manifest')
   return parsed.output
 }

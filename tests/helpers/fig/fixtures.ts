@@ -33,11 +33,11 @@ export const VALID_NODE_TYPES = new Set<string>([
   'STICKY'
 ])
 
-const FixtureObjectJSON = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
+const fixtureObjectSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
 
 /** Read a shared JSON fixture object. */
 export function readFixtureObject(name: string): Record<string, unknown> {
-  return v.parse(FixtureObjectJSON, readFileSync(resolve(FIXTURES, name), 'utf8'))
+  return v.parse(fixtureObjectSchema, readFileSync(resolve(FIXTURES, name), 'utf8'))
 }
 
 export function readFixtureBytes(name: string): Uint8Array {

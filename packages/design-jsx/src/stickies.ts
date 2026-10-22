@@ -1,7 +1,5 @@
-import * as v from 'valibot'
-
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { colorToHex, tryParseColor } from '@open-pencil/scene-graph/color'
+import { colorToHex } from '@open-pencil/scene-graph/color'
 import {
   createSticky,
   isWideSticky,
@@ -11,50 +9,15 @@ import {
 } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { enumProp, FIGJAM_TEXT_SIZE, FIGJAM_TYPEFACE } from './enums'
 import { figJamTextFields, figJamTextProps } from './figjam-text'
+import { readElementProps, stickyPropsSchema } from './schema'
 import { plainTextOf, type TreeNode } from './tree'
-import { PlacedOwnLayerProps, readElementProps } from './validation'
 
 /**
  * `<Sticky color="yellow" author="Ada">Body</Sticky>`: a FigJam sticky note, made from the same
  * template as the sticky tool's.
  */
 export const STICKY_ELEMENT = 'sticky'
-
-type StickyColorName = keyof typeof STICKY_COLORS
-
-function isStickyColorName(value: string): value is StickyColorName {
-  return value in STICKY_COLORS
-}
-
-/** A palette name such as `"yellow"`, or any colour. */
-const StickyColor = v.pipe(
-  v.string(),
-  v.rawTransform(({ dataset, addIssue, NEVER }): Color => {
-    const name = dataset.value
-    if (isStickyColorName(name)) return { ...STICKY_COLORS[name] }
-    const color = tryParseColor(name)
-    if (color) return color
-    addIssue({ message: `expected ${Object.keys(STICKY_COLORS).join(', ')}, or a colour` })
-    return NEVER
-  })
-)
-
-/** The layer props a note has: those that place it, but no size, fills, or layout. */
-export const StickyLayerProps = PlacedOwnLayerProps
-
-/** The props `<Sticky>` takes: its own, and the few layer props a note has. */
-export const StickyProps = v.object({
-  color: v.optional(StickyColor),
-  author: v.optional(v.string()),
-  authorVisible: v.optional(v.boolean()),
-  wide: v.optional(v.boolean()),
-  textSize: v.optional(enumProp(FIGJAM_TEXT_SIZE)),
-  typeface: v.optional(enumProp(FIGJAM_TYPEFACE)),
-  scale: v.optional(v.pipe(v.number(), v.gtValue(0))),
-  ...StickyLayerProps.entries
-})
 
 /**
  * The note an element describes, with `layer`'s fields; it is named by its body, as FigJam names
@@ -66,7 +29,7 @@ export function renderStickyNode(
   parentId: string,
   layer: Partial<SceneNode>
 ) {
-  const props = readElementProps(StickyProps, tree.props)
+  const props = readElementProps(stickyPropsSchema, tree.props)
   const text = plainTextOf(tree)
   const author = props.author ?? ''
   const sticky = createSticky(

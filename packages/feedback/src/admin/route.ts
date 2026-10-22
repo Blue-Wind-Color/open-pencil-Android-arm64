@@ -1,4 +1,4 @@
-import { MetricsQuerySchema } from '#feedback/contract'
+import { metricsQuerySchema } from '#feedback/contract'
 import type { FeedbackEnv, FeedbackServices } from '#feedback/env'
 import { validatedQuery } from '#feedback/http/request'
 import { Hono } from 'hono'
@@ -16,7 +16,7 @@ export function adminRoutes(services: FeedbackServices) {
     new Hono<FeedbackEnv>()
       .use('/admin', access)
       .use('/admin/*', access)
-      .get('/admin/api/snapshot', validatedQuery(MetricsQuerySchema), async (c) => {
+      .get('/admin/api/snapshot', validatedQuery(metricsQuerySchema), async (c) => {
         c.header('Cache-Control', 'private, no-store')
         return c.json(await buildSnapshot(c.env, services, c.req.valid('query')), 200)
       })

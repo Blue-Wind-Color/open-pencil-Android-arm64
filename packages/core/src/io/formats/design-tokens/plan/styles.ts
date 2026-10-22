@@ -38,7 +38,7 @@ const TEXT_BINDING_FIELDS: readonly TextBindingField[] = [
   'lineHeight'
 ]
 
-const OwnTextSchema = v.object({
+const ownTextSchema = v.object({
   text: v.object({
     fontFamily: v.string(),
     fontWeight: v.number(),
@@ -51,7 +51,7 @@ const OwnTextSchema = v.object({
   }),
   bindings: v.optional(v.record(v.string(), v.string()))
 })
-const OwnEffectsSchema = v.object({ effects: v.array(v.unknown()) })
+const ownEffectsSchema = v.object({ effects: v.array(v.unknown()) })
 
 /** The composite types that become styles. */
 const STYLE_KINDS: Partial<Record<string, PlannedStyle['kind']>> = {
@@ -84,7 +84,7 @@ const pixels = (value: unknown) =>
  * the edit wins over the exact fields.
  */
 function ownText(token: ReadToken) {
-  const own = v.safeParse(OwnTextSchema, token.extensions[OPENPENCIL_EXTENSION])
+  const own = v.safeParse(ownTextSchema, token.extensions[OPENPENCIL_EXTENSION])
   if (!own.success) return null
   const { text, bindings = {} } = own.output
   return { ...own.output, current: isEqual(token.value, typographyValue(text, bindings)) }
@@ -186,7 +186,7 @@ function replaceShadows(exact: readonly Effect[], shadows: readonly Effect[]): E
 
 /** A shadow token as effects, preferring the exact effects OpenPencil wrote. */
 function effectFields(token: ReadToken, resolve: Resolve): Partial<SceneNode> | null {
-  const own = v.safeParse(OwnEffectsSchema, token.extensions[OPENPENCIL_EXTENSION])
+  const own = v.safeParse(ownEffectsSchema, token.extensions[OPENPENCIL_EXTENSION])
   // Extension effects that do not read fall back to the token's own shadows.
   const exact = own.success ? tryParseFigmaEffects(own.output.effects) : null
   if (exact && isEqual(token.value, shadowTokenValue(exact))) return { effects: exact }

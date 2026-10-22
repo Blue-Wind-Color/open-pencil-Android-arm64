@@ -3,22 +3,25 @@ import { difference } from 'es-toolkit/array'
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { REKA_ELEMENTS, rekaRole } from './behaviours'
-import {
-  connectorBindingTarget,
-  ConnectorLayerProps,
-  ConnectorProps,
-  renderConnectorNode
-} from './connectors'
+import { connectorBindingTarget, renderConnectorNode } from './connectors'
 import {
   DESIGN_JSX_PARAGRAPH_PROPERTY_NAMES,
   DESIGN_JSX_SPAN_PROPERTY_NAMES,
   DESIGN_JSX_SUPPORTED_PROPERTY_NAMES,
   DESIGN_JSX_TEXT_PARAGRAPH_PROPERTY_NAMES
+} from './definitions'
+import {
+  connectorPropsSchema,
+  ownLayerPropsSchema,
+  placedOwnLayerPropsSchema,
+  shapeLayerPropsSchema,
+  shapePropsSchema,
+  stickyPropsSchema,
+  type ElementPropsSchema
 } from './schema'
-import { renderShapeNode, ShapeLayerProps, ShapeProps } from './shapes-with-text'
-import { renderStickyNode, StickyLayerProps, StickyProps } from './stickies'
+import { renderShapeNode } from './shapes-with-text'
+import { renderStickyNode } from './stickies'
 import type { TreeNode } from './tree'
-import type { ElementPropsSchema } from './validation'
 
 /** How an element that draws a layer of its own, such as a sticky note, renders it. */
 export interface OwnLayerRenderer {
@@ -179,16 +182,16 @@ export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
     name: 'Sticky',
     runtimeType: 'sticky',
     description: 'A FigJam sticky note; its text is the body.',
-    schema: StickyProps,
-    ownLayer: { layer: StickyLayerProps, render: renderStickyNode },
+    schema: stickyPropsSchema,
+    ownLayer: { layer: placedOwnLayerPropsSchema, render: renderStickyNode },
     writes: ['STICKY']
   },
   {
     name: 'Shape',
     runtimeType: 'shape',
     description: 'A FigJam shape with text; its text is the label.',
-    schema: ShapeProps,
-    ownLayer: { layer: ShapeLayerProps, render: renderShapeNode },
+    schema: shapePropsSchema,
+    ownLayer: { layer: shapeLayerPropsSchema, render: renderShapeNode },
     writes: ['SHAPE_WITH_TEXT']
   },
   {
@@ -196,9 +199,9 @@ export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
     runtimeType: 'connector',
     description:
       'A FigJam connector between two layers of the same JSX, named by `from` and `to`, or points.',
-    schema: ConnectorProps,
+    schema: connectorPropsSchema,
     ownLayer: {
-      layer: ConnectorLayerProps,
+      layer: ownLayerPropsSchema,
       render: renderConnectorNode,
       bindingTarget: connectorBindingTarget
     },

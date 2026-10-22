@@ -16,7 +16,7 @@ import { isUnknownRecord } from '@/app/automation/bridge/target'
 import type { EditorStore } from '@/app/editor/active-store'
 
 /** Requests from the MCP bridge; other message types (such as the register prompt) are ignored. */
-const AutomationRequestJSON = v.pipe(
+const automationRequestSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -87,7 +87,7 @@ export function connectAutomation(
 
     socket.onmessage = async (event) => {
       try {
-        const parsed = v.safeParse(AutomationRequestJSON, event.data)
+        const parsed = v.safeParse(automationRequestSchema, event.data)
         if (!parsed.success) {
           if (parsed.issues.some((issue) => issue.type === 'parse_json'))
             console.warn('Failed to parse WebSocket message:', v.summarize(parsed.issues))

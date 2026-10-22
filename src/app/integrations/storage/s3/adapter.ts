@@ -65,7 +65,7 @@ async function resolveConfig(runtime: StorageProviderRuntime): Promise<S3Compati
 }
 
 /** Each field falls back on its own; only a document with both fields is authoritative. */
-const DocumentMetadataJSON = v.pipe(
+const documentMetadataSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({
@@ -87,7 +87,7 @@ function parseMetadata(
   fallback: StorageDocumentMetadata
 ): { metadata: StorageDocumentMetadata; authoritative: boolean } {
   if (!bytes) return { metadata: fallback, authoritative: false }
-  const parsed = v.safeParse(DocumentMetadataJSON, new TextDecoder().decode(bytes))
+  const parsed = v.safeParse(documentMetadataSchema, new TextDecoder().decode(bytes))
   if (!parsed.success) return { metadata: fallback, authoritative: false }
   const { name, updatedAt } = parsed.output
   return {

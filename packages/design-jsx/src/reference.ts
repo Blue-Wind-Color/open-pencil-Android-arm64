@@ -1,7 +1,7 @@
+import { DESIGN_JSX_HELPERS, DESIGN_JSX_SUPPORTED_PROPERTY_NAMES } from './definitions'
 import { DESIGN_JSX_ELEMENTS } from './elements'
 import authoring from './reference/authoring.md?raw'
 import { AUTHORING_EXAMPLES } from './reference/examples'
-import { DESIGN_JSX_HELPERS, DESIGN_JSX_SUPPORTED_PROPERTY_NAMES } from './schema'
 
 export { AUTHORING_EXAMPLES, type AuthoringExample } from './reference/examples'
 

@@ -58,12 +58,12 @@ const RELEASES = [
   }
 ]
 
-const VariablesSchema = v.object({ variables: v.record(v.string(), v.unknown()) })
+const variablesSchema = v.object({ variables: v.record(v.string(), v.unknown()) })
 
 /** The GraphQL variables a Cloudflare request carried. */
 function variablesOf(call: FetchCall): Record<string, unknown> {
   const result = v.safeParse(
-    v.pipe(v.string(), v.parseJson(), VariablesSchema),
+    v.pipe(v.string(), v.parseJson(), variablesSchema),
     String(call.init?.body)
   )
   if (!result.success) throw new Error('Not a GraphQL request')

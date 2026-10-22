@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { CapturedFigRecords, readFixture } from '#core-tests/helpers/fig/fixtures'
+import { capturedFigRecordsSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
 
 import { createEditor } from '@open-pencil/core'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
@@ -12,7 +12,7 @@ import { symbolDataOf } from '@open-pencil/fig/instance-overrides'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 
-const fixture = readFixture('nested-binding-ownership-records.json', CapturedFigRecords)
+const fixture = readFixture('nested-binding-ownership-records.json', capturedFigRecordsSchema)
 
 for (const scale of [0.5, 2]) {
   for (const literalClaim of [false, true]) {

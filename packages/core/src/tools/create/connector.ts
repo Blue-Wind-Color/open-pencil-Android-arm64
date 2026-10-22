@@ -1,7 +1,6 @@
 import * as v from 'valibot'
 
-import { toolNumber } from '#core/tools/input'
-import { defineTool, nodeSummary } from '#core/tools/schema'
+import { toolNumber, defineTool, nodeSummary } from '#core/tools/schema'
 
 const MAGNETS = ['AUTO', 'TOP', 'RIGHT', 'BOTTOM', 'LEFT', 'CENTER'] as const
 const CAPS = [

@@ -1,4 +1,4 @@
-import { ADMIN_LIST_MAXIMUM } from '#cloud/admin/contracts'
+import { ADMIN_LIST_MAXIMUM } from '#cloud/admin/schema'
 import type { CloudDatabase } from '#cloud/server/db'
 import { clamp } from 'es-toolkit'
 import type { Kysely } from 'kysely'

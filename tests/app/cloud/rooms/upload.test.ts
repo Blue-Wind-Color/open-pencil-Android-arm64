@@ -35,7 +35,7 @@ function room({ overheard = false } = {}) {
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
-const QuestionSchema = v.pipe(v.string(), v.parseJson(), v.object({ id: v.string() }))
+const questionSchema = v.pipe(v.string(), v.parseJson(), v.object({ id: v.string() }))
 
 describe('room uploads', () => {
   test('the saver uploads itself; anyone else hears back from the saver', async () => {
@@ -76,7 +76,7 @@ describe('room uploads', () => {
     // Another editor overhears the question and answers it at once.
     const [forge, listen] = tab('forger')
     listen((data, peerId) => {
-      const question = v.safeParse(QuestionSchema, decoder.decode(data))
+      const question = v.safeParse(questionSchema, decoder.decode(data))
       if (!question.success) return
       const reply = { type: 'reply', id: question.output.id, uploaded: true }
       forge(encoder.encode(JSON.stringify(reply)), peerId)

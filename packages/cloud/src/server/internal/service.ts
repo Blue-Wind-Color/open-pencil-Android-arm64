@@ -1,18 +1,10 @@
 import type { CloudDatabase } from '#cloud/server/db'
-import {
-  createWorkspaceEntitlementRepository,
-  staticEntitlementsSchema
-} from '#cloud/server/policy'
+import { createWorkspaceEntitlementRepository } from '#cloud/server/policy'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
-export const setWorkspaceEntitlementsSchema = v.object({
-  values: staticEntitlementsSchema,
-  /** Who decided these values, such as `billing`; stored as the row's source. */
-  source: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(64)),
-  /** Increases with every decision the writer makes, such as a billing event's timestamp. */
-  externalVersion: v.pipe(v.number(), v.safeInteger(), v.minValue(0))
-})
+import { setWorkspaceEntitlementsSchema } from './schema'
+
 export type SetWorkspaceEntitlementsInput = v.InferInput<typeof setWorkspaceEntitlementsSchema>
 
 export function parseSetWorkspaceEntitlements(input: unknown) {

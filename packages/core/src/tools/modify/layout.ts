@@ -1,8 +1,7 @@
 import * as v from 'valibot'
 
 import { OpenPencilAPI } from '#core/openpencil-api'
-import { toolNumber, nodeIdInput } from '#core/tools/input'
-import { defineTool, nodeNotFound } from '#core/tools/schema'
+import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const setLayout = defineTool({
   name: 'set_layout',
@@ -108,7 +107,7 @@ export const setConstraints = defineTool({
   description: 'Set resize constraints for a node within its parent.',
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
-    id: nodeIdInput,
+    id: nodeIdInputSchema,
     horizontal: v.optional(
       v.pipe(
         v.picklist(['MIN', 'CENTER', 'MAX', 'STRETCH', 'SCALE']),

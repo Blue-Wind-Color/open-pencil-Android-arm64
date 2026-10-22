@@ -9,7 +9,7 @@ const RECENT_ICONS_STORAGE_KEY = 'open-pencil:recent-icons'
 const ICON_SET_STORAGE_KEY = 'open-pencil:icon-set'
 
 /** Stored icon names; anything unreadable reads as none rather than failing the picker. */
-const RecentIconsJSON = v.pipe(
+const recentIconsSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.array(v.pipe(v.string(), v.regex(ICON_NAME)))
@@ -19,7 +19,7 @@ const RecentIconsJSON = v.pipe(
 export const recentIcons = useLocalStorage<string[]>(RECENT_ICONS_STORAGE_KEY, [], {
   serializer: {
     read: (raw) => {
-      const parsed = v.safeParse(RecentIconsJSON, raw)
+      const parsed = v.safeParse(recentIconsSchema, raw)
       return parsed.success ? parsed.output : []
     },
     write: (names) => JSON.stringify(names)

@@ -3,7 +3,7 @@ import * as v from 'valibot'
 
 import { defineTool } from '#core/tools/schema'
 
-import { analysisLimitInput } from './input'
+import { analysisLimitInputSchema } from './schema'
 
 export const analyzeTypography = defineTool({
   name: 'analyze_typography',
@@ -11,7 +11,7 @@ export const analyzeTypography = defineTool({
     'Analyze typography usage across the current page. Shows font families, sizes, weights, and their frequencies.',
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({
-    limit: analysisLimitInput,
+    limit: analysisLimitInputSchema,
     group_by: v.optional(
       v.pipe(v.picklist(['family', 'size', 'weight']), v.description('Group results by a property'))
     )

@@ -14,6 +14,7 @@ import { noUnvalidatedJSONParseRule } from '#lint/rules/quality/json-parse.ts'
 import { noModuleMockingRule } from '#lint/rules/quality/module-mocking.ts'
 import { noReduceAccumulatorCopyRule } from '#lint/rules/quality/reduce-accumulator-copy.ts'
 import { noUnknownTailwindClassesRule } from '#lint/rules/quality/tailwind-classes.ts'
+import { valibotSchemaConventionsRule } from '#lint/rules/quality/valibot-schemas.ts'
 import { noWidenThenAssertRule } from '#lint/rules/quality/widen-then-assert.ts'
 import { noRawSQLRule } from '#lint/rules/sql.ts'
 import { normalizedFilename } from '#lint/support/context.ts'
@@ -507,7 +508,8 @@ const plugin = {
     'no-module-mocking': noModuleMockingRule,
     'no-reduce-accumulator-copy': noReduceAccumulatorCopyRule,
     'no-widen-then-assert': noWidenThenAssertRule,
-    'no-sibling-domain-prefixed-files': noSiblingDomainPrefixedFiles
+    'no-sibling-domain-prefixed-files': noSiblingDomainPrefixedFiles,
+    'valibot-schema-conventions': valibotSchemaConventionsRule
   } satisfies Record<string, PluginRule>
 }
 

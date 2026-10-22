@@ -17,14 +17,6 @@ import type {
   BehaviourNumberSettings
 } from './schema'
 
-export type {
-  Behaviour,
-  BehaviourBooleanBinding,
-  BehaviourInteractionStates,
-  BehaviourNumberSettings
-} from './schema'
-export { isNumberRange } from './schema'
-
 export const DEFAULT_NUMBER_SETTINGS: BehaviourNumberSettings = {
   min: 0,
   max: 100,

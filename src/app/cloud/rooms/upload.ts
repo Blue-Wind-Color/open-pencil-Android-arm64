@@ -9,16 +9,16 @@ import { followUpload, kickSyncEngine } from '@/app/storage/sync'
 /** How long a tab waits for the room's saver to say the document is on its server. */
 export const ROOM_UPLOAD_TIMEOUT_MS = 60_000
 
-const id = v.pipe(v.string(), v.minLength(1), v.maxLength(64))
-const UploadMessageSchema = v.pipe(
+const idSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(64))
+const uploadMessageSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.variant('type', [
-    v.object({ type: v.literal('request'), id }),
-    v.object({ type: v.literal('reply'), id, uploaded: v.boolean() })
+    v.object({ type: v.literal('request'), id: idSchema }),
+    v.object({ type: v.literal('reply'), id: idSchema, uploaded: v.boolean() })
   ])
 )
-type UploadMessage = v.InferOutput<typeof UploadMessageSchema>
+type UploadMessage = v.InferOutput<typeof uploadMessageSchema>
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
@@ -82,7 +82,7 @@ export function shareRoomUploads(
   const waiting = new Map<string, { peer: string; answer: (uploaded: boolean) => void }>()
 
   receive((data, peerId) => {
-    const parsed = v.safeParse(UploadMessageSchema, decoder.decode(data))
+    const parsed = v.safeParse(uploadMessageSchema, decoder.decode(data))
     if (!parsed.success) return
     const message = parsed.output
     if (message.type === 'reply') {

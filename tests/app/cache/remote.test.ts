@@ -7,10 +7,10 @@ import { cachedRemoteJSON } from '@/app/cache/remote'
 
 import { fetchStub } from '#tests/helpers/fetch'
 
-const Names = v.array(v.string())
+const namesSchema = v.array(v.string())
 
 function remoteNames(load: (fetcher: typeof fetch) => Promise<string[] | null>) {
-  return cachedRemoteJSON({ key: 'tests/names', schema: Names, maxAgeMs: 60_000, load })
+  return cachedRemoteJSON({ key: 'tests/names', schema: namesSchema, maxAgeMs: 60_000, load })
 }
 
 describe('cachedRemoteJSON', () => {

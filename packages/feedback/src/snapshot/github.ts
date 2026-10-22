@@ -11,17 +11,17 @@ const REQUEST_TIMEOUT_MS = 15_000
 // GitHub's maximum page size; a repository with more releases or issues takes several pages.
 const PER_PAGE = 100
 
-const RepositorySchema = v.object({ stargazers_count: v.number(), forks_count: v.number() })
-const ReleasesSchema = v.array(
+const repositorySchema = v.object({ stargazers_count: v.number(), forks_count: v.number() })
+const releasesSchema = v.array(
   v.object({
     tag_name: v.string(),
     assets: v.array(v.object({ name: v.string(), download_count: v.number() }))
   })
 )
-const TrafficDaySchema = v.object({ timestamp: v.string(), count: v.number(), uniques: v.number() })
-const ViewsSchema = v.object({ views: v.array(TrafficDaySchema) })
-const ClonesSchema = v.object({ clones: v.array(TrafficDaySchema) })
-const IssuesSchema = v.array(
+const trafficDaySchema = v.object({ timestamp: v.string(), count: v.number(), uniques: v.number() })
+const viewsSchema = v.object({ views: v.array(trafficDaySchema) })
+const clonesSchema = v.object({ clones: v.array(trafficDaySchema) })
+const issuesSchema = v.array(
   v.object({
     number: v.number(),
     author_association: v.string(),
@@ -32,7 +32,7 @@ const IssuesSchema = v.array(
     pull_request: v.optional(v.object({ merged_at: v.nullable(v.string()) }))
   })
 )
-const ReferrersSchema = v.array(
+const referrersSchema = v.array(
   v.object({ referrer: v.string(), count: v.number(), uniques: v.number() })
 )
 
@@ -96,9 +96,9 @@ export function githubClient(
   }
 
   async function releases() {
-    const all: v.InferOutput<typeof ReleasesSchema> = []
+    const all: v.InferOutput<typeof releasesSchema> = []
     for (let page = 1; ; page++) {
-      const batch = await get(`/releases?per_page=${PER_PAGE}&page=${page}`, ReleasesSchema)
+      const batch = await get(`/releases?per_page=${PER_PAGE}&page=${page}`, releasesSchema)
       all.push(...batch)
       if (batch.length < PER_PAGE) return all
     }
@@ -106,7 +106,7 @@ export function githubClient(
 
   return {
     async totals(): Promise<GithubTotals> {
-      const [repository, published] = await Promise.all([get('', RepositorySchema), releases()])
+      const [repository, published] = await Promise.all([get('', repositorySchema), releases()])
       const files = published.flatMap((release) =>
         release.assets.flatMap((asset) => {
           const kind = releaseFileKind(asset.name)
@@ -143,7 +143,7 @@ export function githubClient(
         per_page: String(PER_PAGE)
       })
       if (since) query.set('since', since)
-      const page = await get(`/issues?${query.toString()}`, IssuesSchema)
+      const page = await get(`/issues?${query.toString()}`, issuesSchema)
       const items = page.map((item): RepoItem => ({
         number: item.number,
         kind: item.pull_request ? 'pull' : 'issue',
@@ -159,9 +159,9 @@ export function githubClient(
     /** The last 14 days of views and clones, and the referrers over that window. */
     async traffic(): Promise<GithubTraffic> {
       const [views, clones, referrers] = await Promise.all([
-        get('/traffic/views?per=day', ViewsSchema),
-        get('/traffic/clones?per=day', ClonesSchema),
-        get('/traffic/popular/referrers', ReferrersSchema)
+        get('/traffic/views?per=day', viewsSchema),
+        get('/traffic/clones?per=day', clonesSchema),
+        get('/traffic/popular/referrers', referrersSchema)
       ])
       // GitHub stamps each day with its UTC midnight; days are matched by their date.
       const dayOf = (entry: { timestamp: string }) => utcDayOfTimestamp(entry.timestamp)

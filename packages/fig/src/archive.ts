@@ -12,6 +12,7 @@ import { decodeFigKiwiCanvas, parseFigKiwiContainer } from '@open-pencil/kiwi/fi
 import type { HeaderFields } from '@open-pencil/kiwi/schema-runtime'
 import type { Color, Rect, Size } from '@open-pencil/scene-graph/primitives'
 
+import { figArchiveMetaSchema, type FigArchiveMetaJSON } from './schema'
 import { hasPNGSignature } from './thumbnail'
 
 export interface FigImageEntry {
@@ -183,30 +184,6 @@ export interface FigArchiveMeta {
   exportedAt: Date
 }
 
-/** The `meta.json` Figma's "Save local copy…" writes: these keys, and only these. */
-export const FigArchiveMetaSchema = v.strictObject({
-  client_meta: v.strictObject({
-    background_color: v.strictObject({
-      r: v.number(),
-      g: v.number(),
-      b: v.number(),
-      a: v.number()
-    }),
-    thumbnail_size: v.strictObject({ width: v.number(), height: v.number() }),
-    render_coordinates: v.strictObject({
-      x: v.number(),
-      y: v.number(),
-      width: v.number(),
-      height: v.number()
-    })
-  }),
-  file_name: v.string(),
-  developer_related_links: v.array(v.unknown()),
-  exported_at: v.pipe(v.string(), v.isoTimestamp())
-})
-
-export type FigArchiveMetaJSON = v.InferOutput<typeof FigArchiveMetaSchema>
-
 /**
  * The `meta.json` Figma's "Save local copy…" writes, in its key order. Colour channels are
  * rounded to the 32-bit floats the canvas records store, so they read as Figma's do.
@@ -234,11 +211,11 @@ export function figArchiveMetaJSON(meta: FigArchiveMeta): string {
 
 /** Decode an archive's `meta.json`, failing on malformed JSON and on a shape Figma does not write. */
 export function readFigArchiveMeta(text: string) {
-  return v.safeParse(v.pipe(v.string(), v.parseJson(), FigArchiveMetaSchema), text)
+  return v.safeParse(v.pipe(v.string(), v.parseJson(), figArchiveMetaSchema), text)
 }
 
 /** Any `meta.json` object, its keys in the order they were written. */
-const StoredMetaSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
+const storedMetaSchema = v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown()))
 
 /**
  * The archive with its `meta.json` recording `fileName`, every other entry's bytes and every
@@ -249,7 +226,7 @@ export function renameFigArchive(bytes: Uint8Array, fileName: string): Uint8Arra
   if (parseFigKiwiChunks(bytes)) return null
   const stored = unzipSync(bytes, { filter: ({ name }) => name === 'meta.json' })
   if (!Object.hasOwn(stored, 'meta.json')) return null
-  const meta = v.safeParse(StoredMetaSchema, new TextDecoder().decode(stored['meta.json']))
+  const meta = v.safeParse(storedMetaSchema, new TextDecoder().decode(stored['meta.json']))
   if (!meta.success || typeof meta.output.file_name !== 'string') return null
   if (meta.output.file_name === fileName) return bytes
   const renamed: Zippable = {}

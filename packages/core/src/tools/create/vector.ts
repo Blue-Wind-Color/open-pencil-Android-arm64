@@ -5,8 +5,7 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
-import { toolNumber, positionInputs } from '#core/tools/input'
-import { defineTool, nodeSummary } from '#core/tools/schema'
+import { defineTool, nodeSummary, positionInputs, toolNumber } from '#core/tools/schema'
 import { parseVectorNetworkJSON } from '#core/tools/vector/network'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 

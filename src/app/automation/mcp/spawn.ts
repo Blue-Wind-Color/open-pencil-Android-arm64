@@ -127,7 +127,7 @@ function rememberStartupError(error: unknown): null {
 }
 
 /** The one discovery-file field the app reads; the MCP package validates the whole file. */
-const DiscoveryTokenJSON = v.pipe(
+const discoveryTokenSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.looseObject({ authToken: v.optional(v.nullable(v.string())) })
@@ -142,7 +142,7 @@ const DiscoveryTokenJSON = v.pipe(
 async function readDiscoveryToken(discoveryPath: string): Promise<string | null> {
   try {
     const { readTextFile } = await import('@tauri-apps/plugin-fs')
-    const info = v.safeParse(DiscoveryTokenJSON, await readTextFile(discoveryPath))
+    const info = v.safeParse(discoveryTokenSchema, await readTextFile(discoveryPath))
     return info.success ? (info.output.authToken ?? null) : null
   } catch {
     return null

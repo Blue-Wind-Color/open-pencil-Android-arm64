@@ -7,7 +7,7 @@ import {
   elementTag
 } from '#design-jsx/elements'
 import { createDesignJSXRenderer } from '#design-jsx/index'
-import { elementPropWarnings } from '#design-jsx/validation'
+import { elementPropWarnings } from '#design-jsx/schema'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { GENERATED_FRAME_TYPES } from '@open-pencil/scene-graph/generated'
