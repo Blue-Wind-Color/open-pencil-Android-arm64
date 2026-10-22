@@ -8,7 +8,7 @@ import {
   boundedImageScale,
   inspectRenderedDesign,
   type VisualInspectionDependencies
-} from '@/app/ai/tools/vision'
+} from '@/app/ai/tools/vision/inspect'
 import type { EditorStore } from '@/app/editor/session/create'
 
 import { asDouble } from '#tests/helpers/doubles'

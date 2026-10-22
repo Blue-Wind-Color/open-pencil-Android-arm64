@@ -4,7 +4,7 @@ import { ref } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
-import type { AgentAccountView } from '@/app/ai/agents/setup'
+import type { AgentAccountView } from '@/app/ai/agents/setup/view'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'

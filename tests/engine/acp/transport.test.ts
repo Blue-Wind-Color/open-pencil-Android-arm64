@@ -5,8 +5,8 @@ import { readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
-import { createUpdateMapper } from '@/app/ai/acp/map-update'
-import { formatConnectionError, buildCrashChunks } from '@/app/ai/acp/transport'
+import { createUpdateMapper } from '@/app/ai/agents/acp/events'
+import { agentTurnUsage, buildCrashChunks, formatConnectionError } from '@/app/ai/transports/acp'
 import { classifyToolState } from '@/components/chat/tool/state'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -241,6 +241,52 @@ describe('an ACP turn in the chat', () => {
       text('')
     ])
     expect(parts).toEqual([])
+  })
+})
+
+describe('an agent turn’s usage', () => {
+  test('counts cached tokens as input, as the AI SDK does, and keeps them apart', () => {
+    // As Codex and Claude Code report a short turn: fresh input apart from the cache.
+    expect(
+      agentTurnUsage(
+        {
+          inputTokens: 13808,
+          cachedReadTokens: 12288,
+          cachedWriteTokens: 0,
+          outputTokens: 6,
+          totalTokens: 26102
+        },
+        'gpt-6.1-sol[low]'
+      )
+    ).toEqual({
+      model: 'gpt-6.1-sol[low]',
+      inputTokens: 26096,
+      outputTokens: 6,
+      cacheReadTokens: 12288,
+      cacheWriteTokens: 0
+    })
+    expect(
+      agentTurnUsage(
+        {
+          inputTokens: 2,
+          cachedReadTokens: 12211,
+          cachedWriteTokens: 28866,
+          outputTokens: 6,
+          totalTokens: 41085
+        },
+        null
+      )
+    ).toMatchObject({ model: null, inputTokens: 41079, cacheWriteTokens: 28866 })
+  })
+
+  test('leaves cache values unreported when the agent sends none', () => {
+    expect(agentTurnUsage({ inputTokens: 10, outputTokens: 2, totalTokens: 12 }, null)).toEqual({
+      model: null,
+      inputTokens: 10,
+      outputTokens: 2,
+      cacheReadTokens: null,
+      cacheWriteTokens: null
+    })
   })
 })
 

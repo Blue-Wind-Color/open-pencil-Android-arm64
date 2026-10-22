@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { createACPTransport } from '@/app/ai/chat/transports'
+import { createACPTransport } from '@/app/ai/chat/session'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 

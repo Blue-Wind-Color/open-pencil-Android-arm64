@@ -3,8 +3,8 @@ import { ref } from 'vue'
 
 import type { ReasoningEffort } from '@open-pencil/core/constants'
 
-import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/chat/model'
-import { resolveProviderModel } from '@/app/ai/chat/provider-models'
+import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/models/language-model'
+import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { modelConnection, resolveAIModelRole } from '@/app/ai/models/store'
 import type { AIModelConnection, AIModelRole, ResolvedAIModelRole } from '@/app/ai/models/types'
 import { appCredentialServices } from '@/app/settings/credentials/app'

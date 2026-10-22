@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
-import { turnEdits } from '@/app/ai/chat/turns'
+import { turnEdits } from '@/app/ai/reply/turns'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
 const {

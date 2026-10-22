@@ -1,6 +1,6 @@
 import { useI18n } from '@open-pencil/vue'
 
-import type { SetupProblem } from '@/app/ai/agents/setup'
+import type { SetupProblem } from '@/app/ai/agents/setup/view'
 
 /** The warning setup shows for a problem it cannot fix on its own. */
 export function useSetupProblemMessage() {

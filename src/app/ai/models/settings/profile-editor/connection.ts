@@ -2,15 +2,15 @@ import { tryOnScopeDispose } from '@vueuse/core'
 import { computed, ref, type Ref } from 'vue'
 
 import {
-  testProviderConnection,
-  type ProviderConnectionTestFailureReason
-} from '@/app/ai/chat/connection-test'
-import {
   findModelConnectionForDraft,
   modelConnectionCredentialStatus,
   resolveModelConnectionAPIKey,
   type AIModelProfileDraft
 } from '@/app/ai/models'
+import {
+  testProviderConnection,
+  type ProviderConnectionTestFailureReason
+} from '@/app/ai/models/connection-test'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 
 interface ConnectionOptions {

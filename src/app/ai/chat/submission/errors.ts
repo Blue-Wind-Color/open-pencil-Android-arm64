@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import { AgentSetupError, type AgentSetupProblem } from '@/app/ai/agents/readiness'
+import { AgentSetupError, type AgentSetupProblem } from '@/app/ai/agents/setup/readiness'
 import { VisionModelUnavailableError } from '@/app/ai/attachment/image/analyze'
 
 export interface SubmissionMessages {

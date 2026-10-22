@@ -21,7 +21,10 @@ const agentSessionSchema = v.object({
   client: v.fallback(
     v.optional(v.pipe(v.string(), v.trim(), v.maxLength(MAX_NAME_LENGTH))),
     undefined
-  )
+  ),
+  /** The app chat whose agent made the call, and the call's id in that chat. */
+  chat: v.fallback(v.optional(v.pipe(v.string(), v.regex(/^[0-9a-f]{16,64}$/))), undefined),
+  call: v.fallback(v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(128))), undefined)
 })
 
 /** The MCP session a tool call came from, as the MCP server forwards it. */

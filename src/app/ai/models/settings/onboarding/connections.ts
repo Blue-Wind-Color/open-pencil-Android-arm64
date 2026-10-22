@@ -2,15 +2,15 @@ import { tryOnScopeDispose } from '@vueuse/core'
 import { reactive } from 'vue'
 
 import {
-  testProviderConnection,
-  type ProviderConnectionTestFailureReason
-} from '@/app/ai/chat/connection-test'
-import {
   aiModelSettings,
   modelConnectionCredentialStatus,
   resolveModelConnectionAPIKey,
   type AIModelConnection
 } from '@/app/ai/models'
+import {
+  testProviderConnection,
+  type ProviderConnectionTestFailureReason
+} from '@/app/ai/models/connection-test'
 import type { OpenRouterKeyInfo } from '@/app/ai/providers/openrouter/key'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 

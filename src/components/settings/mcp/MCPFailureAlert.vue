@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 
 import { useAutomationMessages, useI18n } from '@open-pencil/vue'
 
-import { mcpServerSetupView, type MCPServerSetupState } from '@/app/ai/agents/setup'
+import { mcpServerSetupView, type MCPServerSetupState } from '@/app/ai/agents/setup/view'
 import {
   restartFixesMCPFailure,
   type MCPFailure,

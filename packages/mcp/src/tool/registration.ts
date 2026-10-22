@@ -97,17 +97,29 @@ function descriptorByName(descriptors: readonly ToolDescriptor[]): Map<string, T
   return new Map(descriptors.map((descriptor) => [descriptor.name, descriptor]))
 }
 
+/**
+ * The id the agent gave a call in its own conversation, which an app chat shows it under: Codex
+ * sends it as `callId`, Claude Code as `claudecode/toolUseId`.
+ */
+function agentCallId(meta: Record<string, unknown> | undefined): string | undefined {
+  const id = meta?.callId ?? meta?.['claudecode/toolUseId']
+  return typeof id === 'string' && id.length > 0 && id.length <= 128 ? id : undefined
+}
+
 export function registerTools(mcpServer: McpServer, options: RegisterToolsOptions): void {
   const { policy, sendRPC, agentSession } = options
-  // Sent with each tool call: the session, and the client's name once it has introduced itself.
-  const agent = () =>
-    agentSession
-      ? {
-          session: agentSession.id,
-          kind: agentSession.kind,
-          client: mcpServer.server.getClientVersion()?.name
-        }
-      : undefined
+  // Sent with each tool call: the session, the client's name once it has introduced itself,
+  // and for an app chat's agent, the chat and the call's id in it.
+  const agent = (meta: Record<string, unknown> | undefined) => {
+    if (!agentSession) return undefined
+    const session = {
+      session: agentSession.id,
+      kind: agentSession.kind,
+      client: mcpServer.server.getClientVersion()?.name
+    }
+    if (!agentSession.chat) return session
+    return { ...session, chat: agentSession.chat, call: agentCallId(meta) }
+  }
   const resolvedRoot = options.mcpRoot ? resolve(options.mcpRoot) : null
   const descriptors = descriptorByName(createToolDescriptors(resolvedRoot !== null))
   const register = <InputArgs extends v.GenericSchema>(
@@ -143,7 +155,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         description: def.description,
         inputSchema: v.strictObject({ ...def.input.entries, ...automationTargetSchema })
       },
-      async (args: Record<string, unknown>) => {
+      async (args: Record<string, unknown>, context) => {
         try {
           const { target, args: toolArgs } = splitAutomationTarget(args)
           const filePath =
@@ -157,7 +169,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
               ...target,
               name: def.name,
               args: toolArgs,
-              agent: agent(),
+              agent: agent(context.mcpReq._meta),
               // A client limited to the selection says so, whatever the server's own scope.
               ...(policy.scope === 'selection' ? { scope: policy.scope } : {})
             }

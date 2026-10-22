@@ -3,8 +3,12 @@ import { computed, reactive, ref, watch } from 'vue'
 
 import { ACP_AGENTS, IS_TAURI } from '@open-pencil/core/constants'
 
-import { codingAgentDetection, piDetection, type AgentDetection } from '@/app/ai/agents/detection'
-import { useAgentSetup } from '@/app/ai/agents/setup'
+import {
+  codingAgentDetection,
+  piDetection,
+  type AgentDetection
+} from '@/app/ai/agents/setup/detection'
+import { useAgentSetup } from '@/app/ai/agents/setup/use'
 import { refreshAIProviderStatus } from '@/app/ai/chat/storage'
 import {
   aiModelSettings,

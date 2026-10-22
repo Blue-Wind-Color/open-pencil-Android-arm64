@@ -8,7 +8,7 @@ import {
   useSettingsMessages
 } from '@open-pencil/vue'
 
-import { useMCPServerSetup } from '@/app/ai/agents/setup'
+import { useMCPServerSetup } from '@/app/ai/agents/setup/use'
 import { restartFixesMCPFailure } from '@/app/automation/mcp/failure'
 import {
   mcpAuthenticationEnabled,

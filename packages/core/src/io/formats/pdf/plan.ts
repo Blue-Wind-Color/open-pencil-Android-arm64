@@ -31,11 +31,7 @@ export class PDFPlanError extends Error {
 }
 
 function pageIdOfNode(graph: SceneGraph, nodeId: string): string | null {
-  let node = graph.getNode(nodeId)
-  while (node && node.type !== 'CANVAS') {
-    node = node.parentId ? graph.getNode(node.parentId) : undefined
-  }
-  return node?.id ?? null
+  return graph.closest(nodeId, (node) => node.type === 'CANVAS')?.id ?? null
 }
 
 function visibleChildren(graph: SceneGraph, pageId: string): string[] {

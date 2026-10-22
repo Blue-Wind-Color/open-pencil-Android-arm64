@@ -13,7 +13,7 @@ import {
   currentPermission,
   rejectCurrentPermission,
   respondToPermission
-} from '@/app/ai/acp/permission'
+} from '@/app/ai/agents/acp/permission'
 import { AppAlertDialogRoot } from '@/components/ui/dialog'
 
 const open = computed(() => currentPermission.value !== null)

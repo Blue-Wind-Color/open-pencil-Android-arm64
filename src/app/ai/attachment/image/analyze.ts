@@ -4,10 +4,10 @@ import { computeContentBounds } from '@open-pencil/core/io'
 
 import { IMAGE_ATTACHMENT_MAX_EDGE } from '@/app/ai/attachment/image/prepare'
 import type { PreparedImageAttachment } from '@/app/ai/attachment/image/types'
-import { runtimeReasoningSettings } from '@/app/ai/chat/reasoning'
 import { createAIModelRuntime } from '@/app/ai/models'
-import { boundedImageScale } from '@/app/ai/tools/vision'
-import type { VisionModelDependencies } from '@/app/ai/vision-runtime'
+import { runtimeReasoningSettings } from '@/app/ai/models/reasoning/settings'
+import { boundedImageScale } from '@/app/ai/tools/vision/inspect'
+import type { VisionModelDependencies } from '@/app/ai/tools/vision/runtime'
 import type { EditorStore } from '@/app/editor/active-store'
 
 const MAX_IMAGE_ANALYSIS_TOKENS = 1200

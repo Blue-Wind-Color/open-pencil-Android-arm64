@@ -5,9 +5,9 @@ import * as v from 'valibot'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 
-import { signInScope } from '@/app/ai/acp/auth/terminal'
-import { bunInstallArgs, npmInstallArgs } from '@/app/ai/agents/native'
-import { HARNESS_PACKAGE } from '@/app/ai/harness/companion'
+import { signInScope } from '@/app/ai/agents/acp/auth/terminal'
+import { HARNESS_PACKAGE } from '@/app/ai/agents/pi/companion'
+import { bunInstallArgs, npmInstallArgs } from '@/app/ai/agents/setup/native'
 import { MCP_PACKAGE_NAME } from '@/app/automation/mcp/failure'
 import { resolvePlatformCommand, resolveScopedCommand } from '@/app/tauri/command'
 

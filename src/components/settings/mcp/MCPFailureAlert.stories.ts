@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
-import type { MCPServerSetupState } from '@/app/ai/agents/setup'
+import type { MCPServerSetupState } from '@/app/ai/agents/setup/view'
 import {
   MCP_INSTALL_COMMAND,
   type MCPFailure,

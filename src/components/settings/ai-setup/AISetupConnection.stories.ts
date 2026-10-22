@@ -3,9 +3,9 @@ import { expect, within } from 'storybook/test'
 
 import { ACP_AGENTS, type ACPAgentID } from '@open-pencil/core/constants'
 
-import type { AgentAccount } from '@/app/ai/agents/accounts'
-import type { DetectedAgent } from '@/app/ai/agents/discovery'
-import type { AgentSetupState, PiSetupState } from '@/app/ai/agents/setup'
+import type { AgentAccount } from '@/app/ai/agents/setup/accounts'
+import type { DetectedAgent } from '@/app/ai/agents/setup/discovery'
+import type { AgentSetupState, PiSetupState } from '@/app/ai/agents/setup/view'
 
 import AISetupConnection from './AISetupConnection.vue'
 

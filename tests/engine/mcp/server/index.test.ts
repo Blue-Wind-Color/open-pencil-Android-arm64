@@ -977,6 +977,33 @@ describe('MCP sessions as agents', () => {
     )
   })
 
+  test("an ACP chat's tool call names the chat and the call's id in it", async () => {
+    const chat = '0123456789abcdef0123456789abcdef'
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_CHAT_HEADER]: chat },
+      async (client, browser) => {
+        // Codex sends its call id as `callId`, Claude Code as `claudecode/toolUseId`.
+        await client.callTool({
+          name: 'get_page_tree',
+          arguments: {},
+          _meta: { callId: 'exec-1' }
+        })
+        await client.callTool({
+          name: 'get_page_tree',
+          arguments: {},
+          _meta: { 'claudecode/toolUseId': 'toolu_1' }
+        })
+        const agents = browser.requests
+          .filter((item) => item.command === 'tool')
+          .map((item) => (item.args as { agent?: unknown }).agent)
+        expect(agents).toMatchObject([
+          { kind: 'acp', chat, call: 'exec-1' },
+          { kind: 'acp', chat, call: 'toolu_1' }
+        ])
+      }
+    )
+  })
+
   test('a chat header that is not a chat id is not forwarded', async () => {
     await withAgentClient(
       { [MCP_AGENT_HEADER]: 'acp', [MCP_CHAT_HEADER]: 'not hex' },
