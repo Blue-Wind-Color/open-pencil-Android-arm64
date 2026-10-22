@@ -65,11 +65,15 @@ export {
   type CloudServices
 } from './app'
 export {
+  cleanupPassOptions,
+  createCleanupServices,
   createDocumentCleanupService,
   createRevisionCompactionService,
   createUploadCleanupService,
   REVISION_COMPACTION_GRACE_MS,
+  runCleanup,
   startCleanupWorker,
+  type CleanupPassOptions,
   type CleanupResult,
   type CleanupServices,
   type CleanupWorker,
@@ -85,6 +89,7 @@ export {
   authorizeRelayTicket,
   createCollaborationRelay,
   createCollaborationStateStore,
+  relayDocumentLookups,
   stampAwareness,
   type CollaborationRelay,
   type CollaborationRelayOptions,
@@ -227,6 +232,7 @@ export {
 export {
   CLOUD_FEATURE_KEYS,
   CloudPolicy,
+  createConfiguredCloudPolicy,
   createWorkspaceEntitlementRepository,
   DatabaseEntitlementSource,
   EntitlementOpenFeatureProvider,

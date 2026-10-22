@@ -5,10 +5,12 @@ import {
   createRelayServerAssembler,
   decodeRelayClientFrame,
   decodeRelayServerFrame,
+  defaultRelayURL,
   encodeRelayClientFrame,
   encodeRelayServerFrame,
   RELAY_FRAGMENT_BYTES,
   RELAY_MINIMUM_MESSAGE_BYTES,
+  RELAY_PATH,
   relayClientMessages,
   relayServerMessages,
   type RelayClientFrame,
@@ -138,5 +140,14 @@ describe('relay frames', () => {
     expect(assembler.push(encodeRelayClientFrame({ type: 'auth', token: 'ticket' })).type).toBe(
       'frame'
     )
+  })
+})
+
+describe('default relay URL', () => {
+  test('uses the API origin with a WebSocket scheme', () => {
+    expect(defaultRelayURL('https://cloud.example.com')).toBe(
+      `wss://cloud.example.com${RELAY_PATH}`
+    )
+    expect(defaultRelayURL('http://localhost:8787/')).toBe(`ws://localhost:8787${RELAY_PATH}`)
   })
 })

@@ -13,5 +13,6 @@ export {
   type StaticEntitlements,
   type StaticEntitlementsInput
 } from './static'
+export { createConfiguredCloudPolicy } from './configured'
 export { CloudPolicy, createDefaultCloudPolicy } from './policy'
 export { createEntitlementService, type EntitlementService } from './service'

@@ -41,12 +41,10 @@ import { createInternalRoutes, createInternalService } from '#cloud/server/inter
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { ObjectStore } from '#cloud/server/objects'
 import {
+  createConfiguredCloudPolicy,
   createDefaultCloudPolicy,
   createEntitlementService,
-  DatabaseEntitlementSource,
   EntitlementOpenFeatureProvider,
-  StaticEntitlementSource,
-  staticEntitlementValues,
   type CloudPolicy,
   type EntitlementSource
 } from '#cloud/server/policy'
@@ -204,14 +202,11 @@ export function createCloudApp(services: CloudServices) {
       requireMFA: services.config.deploymentAdminMFARequired
     }
   )
-  const entitlementSource =
-    services.entitlementSource ??
-    (services.config.staticEntitlements
-      ? new StaticEntitlementSource(staticEntitlementValues(services.config.staticEntitlements))
-      : new DatabaseEntitlementSource(services.database))
   const policy =
     services.policy ??
-    createDefaultCloudPolicy(new EntitlementOpenFeatureProvider(entitlementSource))
+    (services.entitlementSource
+      ? createDefaultCloudPolicy(new EntitlementOpenFeatureProvider(services.entitlementSource))
+      : createConfiguredCloudPolicy(services.config, services.database))
   const documents = createDocumentService(services.database, services.objects, {
     policy,
     technicalMaximumUploadBytes: services.config.technicalLimits.maximumUploadBytes,

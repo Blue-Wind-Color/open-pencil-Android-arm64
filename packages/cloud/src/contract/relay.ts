@@ -7,6 +7,19 @@ import * as Y from 'yjs'
 export const RELAY_PATH = '/api/collaboration/relay'
 
 /**
+ * The relay URL's query parameter naming the ticket's document, so a runtime that keeps each
+ * document's room in its own place can route the socket there before the ticket arrives.
+ */
+export const RELAY_DOCUMENT_PARAM = 'document'
+
+/** The relay's public URL on the same origin as the API, unless the deployment names another. */
+export function defaultRelayURL(publicURL: string): string {
+  const url = new URL(RELAY_PATH, publicURL)
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+  return url.href
+}
+
+/**
  * The room messages collaboration sends. The relay reads the document ones to keep its copy,
  * persist it, and drop writes from viewers; it forwards the rest unread.
  */

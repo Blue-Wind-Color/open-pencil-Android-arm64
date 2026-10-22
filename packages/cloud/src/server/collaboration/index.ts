@@ -14,6 +14,7 @@ export {
   authorizeRelayTicket,
   createCollaborationRelay,
   createCollaborationStateStore,
+  relayDocumentLookups,
   stampAwareness,
   type CollaborationRelay,
   type CollaborationRelayOptions,

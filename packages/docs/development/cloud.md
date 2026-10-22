@@ -5,7 +5,8 @@ documents. The editor stays local-first: opening, editing, and saving local file
 package, a network connection, or an account.
 
 `@open-pencil/cloud` holds the network contracts, a typed client, a runtime-neutral Hono server, and
-the Node runtime that wires PostgreSQL, S3-compatible storage, SMTP, and background workers into it.
+two runtimes that wire PostgreSQL, S3-compatible storage, email, and background work into it: a Node
+process, and Cloudflare Workers.
 
 ```mermaid
 flowchart LR
@@ -29,6 +30,13 @@ flowchart LR
 | `@open-pencil/cloud/email`        | Vue Email rendering for transactional mail                                 |
 | `@open-pencil/cloud/server`       | Hono routes and services; every dependency is injected                     |
 | `@open-pencil/cloud/runtime/node` | PostgreSQL, S3, SMTP, the HTTP listener, workers, and operator commands    |
+
+The Cloudflare runtime, `src/runtime/cloudflare`, isn't a subpath: Wrangler bundles it from
+a deployment folder, type-checked against the Workers types by its own `tsconfig.json`.
+`deploy/cloudflare` is the folder self-hosters copy; the official deployments are filled-in copies
+under `deploy/openpencil/<target>`, which the Deploy Cloud workflow deploys with the secrets of the
+`cloud-<target>` GitHub environment. A new target needs its folder, that environment, and an option
+in the workflow.
 
 The server never imports `pg`, opens a listener, runs migrations, or starts timers; runtimes do.
 Browser code imports only `contract` and `client`, so it never pulls in server dependencies.
@@ -158,6 +166,11 @@ a ticket, a full room, or a frame past those limits, leaves the room: the docume
 is not editing live and offers to rejoin, a viewer stays read-only, and an editor saves on its own,
 since a tab that was not the room's saver had its edits counted as saved by the room.
 
+Each runtime decides where rooms live. The Node process holds every room in one relay. On
+Cloudflare, a Durable Object per document holds that document's rooms, and the Worker routes a
+socket to it by the document named in the ticket's relay URL (`?document=`), since the ticket itself
+arrives only after the upgrade; the object refuses tickets for any other document.
+
 A Cloud room names its images instead of carrying them: an editor stores an image it adds in the
 document's workspace and puts only its SHA-256 in the room's `imageRefs` map, and every peer loads
 the images it lacks through links the server signs for anyone who may view the document, or for a
@@ -192,8 +205,10 @@ provider or a second sign-in step, it opens them in a browser and gets the perso
 
 `CLOUD_PORTAL_PAGE_ROOTS` in the contract lists the page paths, and every runtime serves
 `cloud.html` at and below them with `frame-ancestors 'none'`, so the approval page cannot be
-framed. The Node runtime serves the build named by `OPENPENCIL_CLOUD_PORTAL_DIR`, answering portal
-pages before the API and portal assets only where the API returns 404. `bun run cloud:dev` keeps a
+framed. Both runtimes put the API behind the same Hono router, `createCloudServer` in
+`src/runtime/portal`, which answers portal pages before the API and portal assets only where the
+API returns 404; Node reads the build named by `OPENPENCIL_CLOUD_PORTAL_DIR`, and the Worker reads
+its static assets. `bun run cloud:dev` keeps a
 watched portal build next to the server.
 
 ## Editor client
@@ -276,7 +291,8 @@ hashed, namespaced keys, so limits hold across instances. Better Auth keeps its 
 Vue Email renders matching HTML and plain-text bodies. Email goes through a PostgreSQL outbox: the
 row is written in the same transaction as the change that caused it, payloads are encrypted at rest,
 and a worker claims bounded batches with retries. The Node runtime sends through SMTP with
-Nodemailer; `email.transport = "none"` disables delivery.
+Nodemailer. On Cloudflare, Email Service sends what a request queued once the request finishes, and
+a Cron Trigger retries the rest; `email.transport = "none"` disables delivery.
 
 ## Tests
 
@@ -288,7 +304,9 @@ Nodemailer; `email.transport = "none"` disables delivery.
 
 `bun run test:cloud` type-checks the package and runs unit and integration tests. The end-to-end
 runners start PostgreSQL and SeaweedFS (or Garage) in an isolated Compose project, exercise presigned
-and multipart uploads and the full revision flow, and remove the project afterwards.
+and multipart uploads and the full revision flow, and remove the project afterwards. `test:e2e:cloudflare`
+runs the Worker under `wrangler dev` against the same services and checks the API, the portal, and
+the relay's Durable Object from outside.
 
 ## Decisions
 
@@ -401,3 +419,10 @@ and the same check serves the official service and self-hosted ones. Entitlement
 token is signed, so a plan change reaches the service within one token lifetime; asking Cloud on
 every request would have made model calls depend on Cloud's database. Entitlements are pushed to
 Cloud rather than read from billing, so documents keep opening when billing is down.
+
+**2026-10 · On Cloudflare, a Durable Object per document runs the relay.** The relay holds a room's
+Yjs document and its peers in memory, which a stateless Worker can't, and keeping every epoch of a
+document in one object lets a restore or a version change reach all its rooms in one call. Routing
+needs the document before the ticket arrives, so the ticket's relay URL names it. Objects keep their
+sockets without hibernation, so the relay runs unchanged; hibernating would need the relay to
+rebuild rooms and peers on every wake.

@@ -1,11 +1,11 @@
 ---
 title: Self-hosting OpenPencil Cloud
-description: Run your own OpenPencil Cloud server with PostgreSQL and an S3-compatible bucket.
+description: Run your own OpenPencil Cloud server with PostgreSQL and an S3-compatible bucket, as a Node process or on Cloudflare Workers.
 ---
 
 # Self-hosting OpenPencil Cloud
 
-OpenPencil Cloud is one Node 22+ process in front of PostgreSQL 15 or later and an S3-compatible object store, with optional SMTP for email. The same process serves the API, the collaboration relay, and the server's own pages for signing in, account security, and administration. People connect to it from the editor as described in [OpenPencil Cloud](/user-guide/openpencil-cloud).
+OpenPencil Cloud is one Node 22+ process in front of PostgreSQL 15 or later and an S3-compatible object store, with optional SMTP for email. The same process serves the API, the collaboration relay, and the server's own pages for signing in, account security, and administration. It also runs on [Cloudflare Workers](#cloudflare-workers) with the same configuration. People connect to it from the editor as described in [OpenPencil Cloud](/user-guide/openpencil-cloud).
 
 ## Build
 
@@ -54,6 +54,18 @@ Either way, the desktop app connects to the server directly, and the web editor 
 - Forward WebSocket upgrades for `/api/collaboration/relay`. Collaboration tickets name the relay at `public_url` with a `ws:` or `wss:` scheme; set `[collaboration] relay_url` when clients reach it elsewhere.
 - The object store must accept presigned uploads from the editor's origins: allow `PUT` and `GET` from `trusted_origins` in its CORS rules, with the `Range` request header, which Home uses to read a document's preview without downloading the whole file.
 
+## Cloudflare Workers
+
+On Cloudflare a Worker serves the API and the portal, a Durable Object for each document runs its collaboration rooms, Hyperdrive connects to PostgreSQL, and a Cron Trigger every five minutes runs cleanup and retries email. [`packages/cloud/deploy/cloudflare`](https://github.com/open-pencil/open-pencil/tree/master/packages/cloud/deploy/cloudflare) is the deployment to copy: a Wrangler configuration and the Worker's entry, which reads `openpencil-cloud.toml` from the same folder.
+
+1. Copy the folder beside it, for example to `packages/cloud/deploy/mine`, so its relative paths still reach the runtime and the portal build.
+2. Create a Hyperdrive configuration for the database with `wrangler hyperdrive create`, and put its ID, your domain, and a Worker name in the copy's `wrangler.jsonc`.
+3. Add your TOML as `openpencil-cloud.toml` in the copy; Wrangler bundles it as text. Leave `[database]` empty, since `DATABASE_URL` comes from Hyperdrive, and trust `cf-connecting-ip` under `[authentication.trusted_proxies]`.
+4. Migrate from a checkout, with that TOML as `OPENPENCIL_CLOUD_CONFIG` and a direct connection string as `DATABASE_URL`: `bun --filter @open-pencil/cloud migrate`. The Worker never migrates, so do this before every deploy.
+5. Build the portal with `bun run build:packages && bun run build:cloud-portal`, then deploy from the copy with `bunx wrangler deploy --secrets-file <file>`, where the JSON file holds the secrets the TOML names.
+
+The operator commands below work the same way, from a checkout with a direct connection. The `[workers]` intervals don't apply: mail a request queues is sent when the request finishes, and the Cron Trigger handles the rest.
+
 ## The first administrator
 
 Set `authentication.enrollment_mode = "approval"` for a controlled deployment: a verified identity then creates a pending request that an administrator reviews. Startup never grants roles, so bootstrap the first operator from a repository checkout that reads the same configuration and secrets and can reach the server's database at `DATABASE_URL`:
@@ -80,11 +92,11 @@ Each runs from a repository checkout with the same `OPENPENCIL_CLOUD_CONFIG` and
 
 ## Email
 
-Set `email.transport = "smtp"` with an `[email.smtp]` table, or `"none"` to send nothing; invitations still work through their links. Messages go through an encrypted outbox in PostgreSQL, tuned under `[workers.email]`. Delivery records that the SMTP server accepted a message, not that it reached the inbox.
+Set `email.transport = "smtp"` with an `[email.smtp]` table, `"cloudflare"` on Cloudflare Workers to send through Cloudflare Email Service from an address on a domain onboarded to it (the Worker needs the `send_email` binding named `EMAIL`, and sending to addresses you haven't verified needs Workers Paid), or `"none"` to send nothing; invitations still work through their links. Messages go through an encrypted outbox in PostgreSQL, tuned under `[workers.email]`. Delivery records that the SMTP server accepted a message, not that it reached the inbox.
 
 ## Storage
 
-Any S3-compatible store works; the project tests against SeaweedFS and Garage. Keep `object_storage.checksum_verification = "metadata"` for stores without native SHA-256 checksums: OpenPencil stores each document's digest as object metadata and verifies it before committing a revision. For Garage, set `region = "garage"` and `force_path_style = true`, and leave server-side encryption unset.
+Any S3-compatible store works; the project tests against SeaweedFS and Garage. Keep `object_storage.checksum_verification = "metadata"` for stores without native SHA-256 checksums: OpenPencil stores each document's digest as object metadata and verifies it before committing a revision. For Garage, set `region = "garage"` and `force_path_style = true`, and leave server-side encryption unset. For Cloudflare R2, use the endpoint `https://<account ID>.r2.cloudflarestorage.com` with `region = "auto"` and `force_path_style = false`.
 
 Revision keys are immutable, so bucket versioning isn't needed, but it isn't a backup either. Size `[workers.cleanup]` for your upload volume and retention, or set `enabled = false` and run `cleanup` from a scheduler.
 

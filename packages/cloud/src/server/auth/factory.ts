@@ -124,6 +124,11 @@ async function verifySecondFactor(
 export type CloudAuthRuntimeOptions = {
   email?: AuthenticationEmailService
   runInBackground?: (promise: Promise<unknown>) => void
+  /**
+   * Whether Better Auth checks the database schema when it starts. Runtimes that start it for
+   * every request turn this off; `migrateCloudDatabase` has already checked the recorded version.
+   */
+  validateSchema?: boolean
 }
 
 export function createBetterAuthAdapter(
@@ -157,7 +162,7 @@ export function createBetterAuthAdapter(
     },
     session: { freshAge: ACCOUNT_SECURITY_FRESH_AGE_SECONDS },
     advanced: {
-      database: { generateId: 'uuid' },
+      database: { generateId: 'uuid', validateSchema: runtime.validateSchema },
       ipAddress: {
         ipAddressHeaders: config.authTrustedIPHeaders,
         trustedProxies: config.authTrustedProxies

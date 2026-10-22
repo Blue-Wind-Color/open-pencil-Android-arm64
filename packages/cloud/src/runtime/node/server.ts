@@ -1,32 +1,27 @@
 import { createServer } from 'node:http'
 
+import { defaultRelayURL } from '#cloud/contract'
+import { createCloudServer } from '#cloud/runtime/portal/server'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
-  CLOUD_FEATURE_KEYS,
   createCloudApp,
   loadAISigningKey,
   createCloudAuthenticationRuntime,
   createCollaborationRelay,
   createCollaborationStateStore,
-  createDefaultCloudPolicy,
-  DatabaseEntitlementSource,
-  EntitlementOpenFeatureProvider,
-  StaticEntitlementSource,
-  staticEntitlementValues,
-  createDocumentCleanupService,
-  createRateLimitCleanupService,
-  createRevisionCompactionService,
-  createUploadCleanupService,
+  cleanupPassOptions,
+  createCleanupServices,
+  createConfiguredCloudPolicy,
+  relayDocumentLookups,
   startCleanupWorker,
-  startTransactionalEmailWorker,
-  withIndexingPolicy
+  startTransactionalEmailWorker
 } from '#cloud/server'
 import { getRequestListener } from '@hono/node-server'
 
 import { createMigratedNodeCloudDatabase } from './bootstrap'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
-import { createNodeCloudPortal } from './portal'
-import { attachCollaborationRelay, defaultRelayURL } from './relay'
+import { nodePortalFiles } from './portal'
+import { attachCollaborationRelay } from './relay'
 
 export type NodeCloudServerOptions = {
   environment?: Readonly<Record<string, string | undefined>>
@@ -48,61 +43,20 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     transport: emailTransport
   } = createNodeTransactionalEmailRuntime(config, database)
   const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
-  const policy = createDefaultCloudPolicy(
-    new EntitlementOpenFeatureProvider(
-      config.staticEntitlements
-        ? new StaticEntitlementSource(staticEntitlementValues(config.staticEntitlements))
-        : new DatabaseEntitlementSource(database)
-    )
-  )
+  const policy = createConfiguredCloudPolicy(config, database)
   const cleanup = config.cleanupEnabled
-    ? startCleanupWorker(
-        {
-          documents: createDocumentCleanupService(database, objects),
-          revisions: createRevisionCompactionService(database, objects, {
-            policy,
-            deploymentMode: config.deployment
-          }),
-          uploads: createUploadCleanupService(database, objects),
-          rateLimits: createRateLimitCleanupService(database)
-        },
-        {
-          batchSize: config.cleanupBatchSize,
-          documentRetentionMs: config.documentRetentionMs,
-          intervalMs: config.cleanupIntervalMs,
-          leaseDurationMs: config.cleanupLeaseDurationMs,
-          onError: (error) => console.error('[Cloud] Cleanup worker failed:', error)
-        }
-      )
+    ? startCleanupWorker(createCleanupServices(config, database, objects, policy), {
+        ...cleanupPassOptions(config),
+        intervalMs: config.cleanupIntervalMs,
+        onError: (error) => console.error('[Cloud] Cleanup worker failed:', error)
+      })
     : undefined
   const relay = createCollaborationRelay({
     authSecret: config.authSecret,
     store: createCollaborationStateStore(database),
     maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
     maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
-    async maximumParticipants(documentId) {
-      const document = await database
-        .selectFrom('document')
-        .select('workspaceId')
-        .where('id', '=', documentId)
-        .executeTakeFirst()
-      if (!document) return 0
-      const limit = await policy.number(CLOUD_FEATURE_KEYS.maximumParticipants, -1, {
-        targetingKey: document.workspaceId,
-        workspaceId: document.workspaceId,
-        documentId,
-        deploymentMode: config.deployment
-      })
-      return limit < 0 ? null : limit
-    },
-    async currentRoomEpoch(documentId) {
-      const document = await database
-        .selectFrom('document')
-        .select('collaborationEpoch')
-        .where('id', '=', documentId)
-        .executeTakeFirst()
-      return document?.collaborationEpoch ?? null
-    }
+    ...relayDocumentLookups(database, policy, config.deployment)
   })
   const app = createCloudApp({
     config,
@@ -127,19 +81,14 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
       })
     : undefined
   const portalDirectory = environment.OPENPENCIL_CLOUD_PORTAL_DIR
-  const portal = portalDirectory ? createNodeCloudPortal(portalDirectory) : undefined
-  // Without the portal build, sign-in, account, and administration pages answer 404.
-  if (!portal)
+  if (!portalDirectory)
     console.warn('[Cloud] OPENPENCIL_CLOUD_PORTAL_DIR is not set; sign-in pages are off.')
+  const cloudServer = createCloudServer(app, {
+    portal: portalDirectory ? nodePortalFiles(portalDirectory) : undefined,
+    indexingPolicy: config.indexingPolicy
+  })
   const server = await listen(
-    async (request) => {
-      const path = new URL(request.url).pathname
-      const page = await portal?.page(request)
-      if (page) return withIndexingPolicy(page, path, config.indexingPolicy)
-      const response = await app.fetch(request)
-      const file = response.status === 404 ? await portal?.file(request) : null
-      return withIndexingPolicy(file ?? response, path, config.indexingPolicy)
-    },
+    async (request) => cloudServer.fetch(request),
     options.port ?? Number(environment.PORT ?? 8787),
     environment.HOST ?? '0.0.0.0'
   )

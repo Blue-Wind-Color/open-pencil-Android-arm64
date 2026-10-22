@@ -1,7 +1,9 @@
 # Deploying OpenPencil Cloud
 
 OpenPencil Cloud runs as one Node 22+ process in front of PostgreSQL and an S3-compatible object
-store, with optional SMTP for email. See [security.md](./security.md) for hardening checks.
+store, with optional SMTP for email, or on Cloudflare Workers by copying [`cloudflare/`](./cloudflare). The project's own deployments
+live in [`openpencil/`](./openpencil). See
+[security.md](./security.md) for hardening checks.
 
 ## Local development
 
@@ -37,7 +39,10 @@ commands, email, storage, backups, and upgrades are covered in the
 ```sh
 bun --filter @open-pencil/cloud test:e2e         # PostgreSQL and SeaweedFS
 bun --filter @open-pencil/cloud test:e2e:garage  # Garage S3 compatibility
+bun --filter @open-pencil/cloud test:e2e:cloudflare  # the Worker under wrangler dev
 ```
+
+The Cloudflare run needs `dist-cloud-portal/` (`bun run build:cloud-portal`), which the Worker serves.
 
 Each runner starts an isolated Compose project and removes it with its volumes afterwards. The main
 suite checks object-store readiness, a presigned single PUT and a 33 MiB three-part multipart upload

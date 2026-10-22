@@ -64,7 +64,7 @@ describe('collaboration relay with issued tickets', () => {
       const ticket = await context.tickets.issueUserTicket(owner, context.documentId)
       expect(ticket).toMatchObject({
         provider: 'relay',
-        serverURL: relayURL,
+        serverURL: `${relayURL}?document=${context.documentId}`,
         serverEnforcedWrites: true
       })
 

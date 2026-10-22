@@ -61,12 +61,13 @@
     "test:integration": "bun test --max-concurrency 8 tests/integration",
     "test:e2e": "bun tests/e2e/run.ts",
     "test:e2e:garage": "bun tests/e2e/garage.ts",
+    "test:e2e:cloudflare": "bun tests/e2e/cloudflare/run.ts",
     "migrate": "bun src/runtime/node/migrate.ts",
     "cleanup": "bun src/runtime/node/cleanup.ts",
     "quota:reconcile": "bun src/runtime/node/quota-reconcile.ts",
     "entitlements": "bun src/runtime/node/entitlements/main.ts",
     "admin": "bun src/runtime/node/admin.ts",
-    "typecheck": "bunx tsc --noEmit -p tsconfig.json"
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json && bunx tsc -p src/runtime/cloudflare/tsconfig.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",
@@ -100,6 +101,7 @@
     "pg": "^8.23.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261011.1",
     "@electric-sql/pglite": "0.4.1",
     "@types/bun": "^1.3.14",
     "@types/nodemailer": "^8.0.1",
@@ -108,6 +110,7 @@
     "kysely-pglite-dialect": "1.3.1",
     "tsdown": "^0.22.14",
     "typescript": "~5.8.3",
+    "wrangler": "4.149.0",
     "y-protocols": "^1.0.7"
   }
 }

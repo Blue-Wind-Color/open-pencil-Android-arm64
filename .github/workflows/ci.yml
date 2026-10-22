@@ -325,6 +325,11 @@ jobs:
           # Garage's S3 compatibility for the object-store checks.
           - store: Garage
             script: test:e2e:garage
+          # The Cloudflare Worker under wrangler dev, with its relay Durable Object, against
+          # PostgreSQL and SeaweedFS.
+          - store: Cloudflare Workers
+            script: test:e2e:cloudflare
+            worker: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -334,6 +339,15 @@ jobs:
 
       - name: Generate package declarations
         run: bun run build:packages
+
+      # The Worker serves the portal as static assets, and every official deployment bundles it.
+      - name: Build the Cloud portal and bundle the official Workers
+        if: matrix.worker
+        run: |
+          bun run build:cloud-portal
+          for deployment in packages/cloud/deploy/openpencil/*/; do
+            (cd "$deployment" && bunx wrangler deploy --dry-run)
+          done
 
       - name: Run Cloud end-to-end tests against ${{ matrix.store }}
         env:

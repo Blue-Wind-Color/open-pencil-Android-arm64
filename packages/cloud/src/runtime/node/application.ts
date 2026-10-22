@@ -1,3 +1,4 @@
+import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   createCloudAuthenticationRuntime,
@@ -10,7 +11,6 @@ import {
 } from '#cloud/server'
 
 import { loadNodeCloudServerConfig } from './config'
-import { createNodeCloudDatabase } from './database'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
 
 export type NodeCloudApplicationOptions = {
@@ -23,14 +23,14 @@ export async function createNodeCloudApplication(
 ): Promise<{
   app: CloudApp
   config: CloudServerConfig
-  database: ReturnType<typeof createNodeCloudDatabase>
+  database: ReturnType<typeof createPostgresCloudDatabase>
   objects: ObjectStore
   email: ReturnType<typeof createNodeTransactionalEmailRuntime>['email']
 }> {
   const environment = options.environment ?? process.env
   const config = await loadNodeCloudServerConfig(environment)
   const aiSigningKey = await loadAISigningKey(config)
-  const database = createNodeCloudDatabase({
+  const database = createPostgresCloudDatabase({
     connectionString: options.databaseURL ?? config.databaseURL
   })
   const objects = createS3ObjectStore(config)

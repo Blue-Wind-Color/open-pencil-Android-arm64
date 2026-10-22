@@ -1,3 +1,4 @@
+import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import {
   createBetterAuthAdapter,
   migrateCloudDatabase,
@@ -5,17 +6,16 @@ import {
 } from '#cloud/server'
 
 import { loadNodeCloudServerConfig } from './config'
-import { createNodeCloudDatabase } from './database'
 
 export async function createMigratedNodeCloudDatabase(
   environment: Readonly<Record<string, string | undefined>>
 ): Promise<{
   config: CloudServerConfig
-  database: ReturnType<typeof createNodeCloudDatabase>
+  database: ReturnType<typeof createPostgresCloudDatabase>
   auth: ReturnType<typeof createBetterAuthAdapter>
 }> {
   const config = await loadNodeCloudServerConfig(environment)
-  const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
+  const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
   const auth = createBetterAuthAdapter(config, database)
   await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
   return { config, database, auth }

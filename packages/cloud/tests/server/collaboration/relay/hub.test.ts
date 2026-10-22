@@ -478,6 +478,13 @@ describe('collaboration relay', () => {
     expect(early.closed?.code).toBe(RELAY_CLOSE.unauthorized)
   })
 
+  test('a relay for one document refuses tickets for another', async () => {
+    const { relay: hub } = relay({ documentId })
+    const stranger = await joinTestRelay(hub, crypto.randomUUID())
+    expect(stranger.closed?.code).toBe(RELAY_CLOSE.unauthorized)
+    expect((await join(hub)).closed).toBeNull()
+  })
+
   test('keeps a peer that refreshes its ticket and closes one that changes identity', async () => {
     const { relay: hub } = relay()
     const principal = user('alice')

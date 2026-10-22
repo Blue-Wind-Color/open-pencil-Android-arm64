@@ -32,6 +32,11 @@ export type CollaborationRelayOptions = {
   authSecret: string
   store: CollaborationStateStore
   /**
+   * The one document this relay serves, for runtimes that run a relay per document; tickets for
+   * any other document are refused.
+   */
+  documentId?: string
+  /**
    * The most one socket message may carry. An editor's larger frames arrive as fragments joined
    * up to `MAX_COLLAB_MESSAGE_BYTES`; anyone else's frame must fit in one message.
    */
@@ -364,6 +369,10 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
           authorization = await authorizeRelayTicket(token, options.authSecret)
         } catch {
           socket.close(RELAY_CLOSE.unauthorized, 'Invalid collaboration ticket')
+          return
+        }
+        if (options.documentId !== undefined && authorization.documentId !== options.documentId) {
+          socket.close(RELAY_CLOSE.unauthorized, 'Ticket is for a different document')
           return
         }
         if (state.closed) return
