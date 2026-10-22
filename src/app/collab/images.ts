@@ -24,6 +24,25 @@ export function imageRetryDelayMs(attempt: number): number {
   return Math.min(1000 * 2 ** attempt, 60_000)
 }
 
+/**
+ * Images a tab's closed room was still storing, by name, for the tab's next room to store and
+ * name. A room closes while an upload is in flight when it starts over, as after a restore or a
+ * refused join. The bytes go along, not the reference: the next room may be another workspace's,
+ * and storing what its workspace already holds uploads nothing.
+ */
+const handedOver = new WeakMap<EditorStore, Map<string, Uint8Array>>()
+/** Each tab's open room, so an upload that ends after its room closed reaches the next one. */
+const openRooms = new WeakMap<EditorStore, { take: (images: Map<string, Uint8Array>) => void }>()
+
+/** Gives the tab's next room the images a closed room was still storing. */
+function handOver(store: EditorStore, images: Iterable<readonly [string, Uint8Array]>) {
+  const pending = handedOver.get(store) ?? new Map<string, Uint8Array>()
+  for (const [name, bytes] of images) pending.set(name, bytes)
+  const room = openRooms.get(store)
+  if (room) room.take(pending)
+  else handedOver.set(store, pending)
+}
+
 /** The room's image references by name, beside the `images` map of bytes. */
 export type YImageRefs = Y.Map<string>
 
@@ -83,7 +102,13 @@ export function bindRoomImages({
     for (const image of batch) busy.add(image.name)
     try {
       const refs = await images.store(batch)
-      if (disposed) return
+      if (disposed) {
+        handOver(
+          store,
+          batch.map((image) => [image.name, image.bytes] as const)
+        )
+        return
+      }
       ydoc.transact(() => {
         for (const [name, ref] of refs) {
           yrefs.set(name, ref)
@@ -91,6 +116,13 @@ export function bindRoomImages({
         }
       })
     } catch (error) {
+      if (disposed) {
+        handOver(
+          store,
+          batch.map((image) => [image.name, image.bytes] as const)
+        )
+        return
+      }
       // The bytes stay in the room, as a peer that cannot store images leaves them.
       for (const image of batch) {
         if (!yimages.has(image.name) && !yrefs.has(image.name)) {
@@ -171,8 +203,21 @@ export function bindRoomImages({
     }
   }
 
+  /** Stores and names the images a closed room was still storing. */
+  function take(pending: Map<string, Uint8Array>) {
+    handedOver.delete(store)
+    for (const [name, bytes] of pending) {
+      if (images.canStore) wantStore(name, bytes)
+      // A room this peer cannot store in carries the bytes, as a guest's images travel.
+      else if (!yrefs.has(name) && !yimages.has(name)) yimages.set(name, bytes)
+    }
+  }
+
   yrefs.observe(onRefs)
   yimages.observe(onImages)
+  openRooms.set(store, { take })
+  const pending = handedOver.get(store)
+  if (pending) take(pending)
   for (const name of yrefs.keys()) wantLoad(name)
   for (const [name, bytes] of yimages) wantStore(name, bytes)
 
@@ -185,6 +230,10 @@ export function bindRoomImages({
     hasRef: (name) => yrefs.has(name),
     dispose() {
       disposed = true
+      if (openRooms.get(store)?.take === take) openRooms.delete(store)
+      // Images queued but not yet sent to the store go to the tab's next room.
+      if (toStore.size > 0) handOver(store, toStore)
+      toStore.clear()
       for (const timer of retries) clearTimeout(timer)
       retries.clear()
       yrefs.unobserve(onRefs)

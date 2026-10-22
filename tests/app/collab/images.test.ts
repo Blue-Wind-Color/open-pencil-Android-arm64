@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { noop } from 'es-toolkit'
 import * as Y from 'yjs'
 
 import { bindRoomImages, type RoomImageStore } from '@/app/collab/images'
@@ -167,5 +168,84 @@ describe('room images', () => {
     loader.bound.dispose()
     await afterRetry()
     expect(loads).toBe(1)
+  })
+
+  describe('a room that closes while storing', () => {
+    /** One tab whose rooms come and go, as a room that starts over does. */
+    function tab() {
+      const editor = asDouble<EditorStore>({
+        graph: { images: new Map<string, Uint8Array>() },
+        requestRender: () => undefined
+      })
+      return (images: RoomImageStore) => {
+        const ydoc = new Y.Doc()
+        const bound = bindRoomImages({
+          ydoc,
+          yimages: ydoc.getMap<Uint8Array>('images'),
+          yrefs: ydoc.getMap<string>('imageRefs'),
+          store: editor,
+          images,
+          report: () => undefined
+        })
+        return { ydoc, bound }
+      }
+    }
+
+    test("stores an image whose upload ended after it closed in the tab's next room", async () => {
+      const images = memoryImageStore()
+      let land: () => void = noop
+      const slow: RoomImageStore = {
+        ...images.store,
+        async store(batch) {
+          await new Promise<void>((resolve) => {
+            land = resolve
+          })
+          return images.store.store(batch)
+        }
+      }
+      const open = tab()
+      const first = open(slow)
+      first.bound.share('a1', photo)
+      await settle()
+      first.bound.dispose()
+      const next = open(images.store)
+      land()
+      await settle()
+      expect(next.ydoc.getMap<string>('imageRefs').get('a1')).toBe('ref:a1')
+    })
+
+    test("stores an image in the next room's own store, as another workspace's would be", async () => {
+      const open = tab()
+      const first = open(memoryImageStore().store)
+      first.bound.share('a1', photo)
+      first.bound.dispose()
+      const other = memoryImageStore()
+      const next = open(other.store)
+      await settle()
+      expect(next.ydoc.getMap<string>('imageRefs').get('a1')).toBe('ref:a1')
+      expect(other.kept.get('ref:a1')).toEqual(photo)
+    })
+
+    test("stores an image it never sent in the tab's next room", async () => {
+      const images = memoryImageStore()
+      const open = tab()
+      const first = open(images.store)
+      first.bound.share('a1', photo)
+      first.bound.dispose()
+      const next = open(images.store)
+      await settle()
+      expect(next.ydoc.getMap<string>('imageRefs').get('a1')).toBe('ref:a1')
+      expect(images.calls.stored).toBe(1)
+    })
+
+    test('leaves the bytes in a next room this peer cannot store in', async () => {
+      const open = tab()
+      const first = open(memoryImageStore().store)
+      first.bound.share('a1', photo)
+      first.bound.dispose()
+      const next = open(memoryImageStore(false).store)
+      await settle()
+      expect(next.ydoc.getMap<Uint8Array>('images').get('a1')).toEqual(photo)
+    })
   })
 })

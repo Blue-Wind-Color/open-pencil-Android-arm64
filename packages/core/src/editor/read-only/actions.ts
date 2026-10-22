@@ -136,6 +136,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'hasShaderRasterizer',
   'loadFontsForNodes',
   'onEditorEvent',
+  'refreshDocumentSettings',
   'refreshVariables',
   'releaseGraphResources',
   'removeCanvasRenderer',

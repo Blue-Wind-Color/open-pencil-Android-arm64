@@ -1,7 +1,12 @@
 import { isEqual } from 'es-toolkit'
+import * as v from 'valibot'
 import { effectScope, onScopeDispose, shallowRef, watch } from 'vue'
 
-import { RELAY_SERVER_PEER, type CollaborationTicket } from '@open-pencil/cloud/contract'
+import {
+  cloudPresenceSchema,
+  RELAY_SERVER_PEER,
+  type CollaborationTicket
+} from '@open-pencil/cloud/contract'
 
 import type { RoomImageStore } from '@/app/collab/images'
 import { leaveRoom, openDocumentRoom, roomForStore } from '@/app/collab/rooms'
@@ -53,9 +58,8 @@ export function electCloudSaver(
   const editors = [...presence]
     .filter(([clientId, state]) => {
       if (clientId === self.clientId) return self.canSave
-      const cloud = state.cloud
-      if (typeof cloud !== 'object' || cloud === null) return false
-      return Reflect.get(cloud, 'permission') === 'edit' && Reflect.get(cloud, 'kind') === 'user'
+      const cloud = v.safeParse(cloudPresenceSchema, state.cloud)
+      return cloud.success && cloud.output.permission === 'edit' && cloud.output.kind === 'user'
     })
     .map(([clientId]) => clientId)
   return editors.length ? Math.min(...editors) : null

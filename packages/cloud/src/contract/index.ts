@@ -34,8 +34,10 @@ export {
 } from './ai'
 export * from './admin'
 export {
+  cloudPresenceSchema,
   collaborationPrincipalSchema,
   collaborationTicketSchema,
+  type CloudPresence,
   type CollaborationPrincipal,
   type CollaborationTicket
 } from './collaboration'

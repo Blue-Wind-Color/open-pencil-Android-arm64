@@ -1,4 +1,4 @@
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 
 import type { EditorStore } from '@/app/editor/session'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -127,6 +127,13 @@ export function useLibraryManager(
       if (isOpen) void refresh()
     },
     { immediate: true }
+  )
+
+  // A collaborator's change to the document's libraries shows while the manager is open.
+  onScopeDispose(
+    editor.onEditorEvent('document:libraries-changed', () => {
+      if (open.value) void refresh()
+    })
   )
 
   const source = readLibraryCatalogSource()

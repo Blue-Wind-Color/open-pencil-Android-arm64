@@ -1,10 +1,14 @@
-import { isEmptyObject, isEqual, pickBy } from 'es-toolkit'
+import { isEmptyObject, isEqual, omit, pickBy } from 'es-toolkit'
 import * as Y from 'yjs'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
-import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-codec'
+import {
+  decodeNodeFromYjs,
+  DOCUMENT_NODE_FIELDS,
+  syncEncodedNodeToYMap
+} from '@/app/collab/node-codec'
 import {
   claimRoot,
   markTreeFormat,
@@ -15,7 +19,6 @@ import {
   writeRootEntries,
   type YNodes
 } from '@/app/collab/shared-tree/fields'
-import { migrateLegacyLayers, TREE_MIGRATION_ORIGIN } from '@/app/collab/shared-tree/migration'
 import {
   applySharedTree,
   createLocalEdit,
@@ -140,9 +143,8 @@ export function registerYjsObservers({
   setSuppressGraphSync,
   applyYjsToGraph
 }: YjsObserverOptions): () => void {
-  function onNodes(events: Y.YEvent<Y.Map<unknown>>[], transaction: Y.Transaction) {
-    // A migration this peer wrote was applied by the change that triggered it.
-    if (getSuppressYjsEvents() || transaction.origin === TREE_MIGRATION_ORIGIN) return
+  function onNodes(events: Y.YEvent<Y.Map<unknown>>[]) {
+    if (getSuppressYjsEvents()) return
     setSuppressGraphSync(true)
     try {
       applyYjsToGraph(events)
@@ -207,7 +209,7 @@ export function createYjsGraphSync({
       ynode = new Y.Map()
       ynodes.set(nodeId, ynode)
     }
-    syncEncodedNodeToYMap(node, ynode)
+    syncEncodedNodeToYMap(node, ynode, nodeId === graph.rootId ? DOCUMENT_NODE_FIELDS : [])
 
     const localYimages = getYimages()
     if (!localYimages) return
@@ -318,10 +320,10 @@ export function createYjsGraphSync({
       if (typeof nodeId === 'string') changed.add(nodeId)
     }
 
-    migrateLegacyLayers(ydoc, ynodes, ydoc.getMap('meta'), changed)
+    const roomRoot = readRoot(ydoc.getMap('meta'))
     for (const nodeId of changed) {
       const ynode = ynodes.get(nodeId)
-      if (ynode) applyYnodeToGraph(store.graph, nodeId, ynode)
+      if (ynode) applyYnodeToGraph(store.graph, nodeId, ynode, roomRoot)
     }
     const gone = [...deleted].filter((nodeId) => !ynodes.has(nodeId))
     // Moves go first, so a layer moved out of a deleted parent survives the deletion.
@@ -331,8 +333,16 @@ export function createYjsGraphSync({
   }
 
   /** Applies a layer's own fields; `applySharedTree` places it in the tree afterwards. */
-  function applyYnodeToGraph(graph: SceneGraph, nodeId: string, ynode: Y.Map<unknown>) {
-    const props = decodeNodeFromYjs(ynode)
+  function applyYnodeToGraph(
+    graph: SceneGraph,
+    nodeId: string,
+    ynode: Y.Map<unknown>,
+    roomRoot: string | undefined
+  ) {
+    const decoded = decodeNodeFromYjs(ynode)
+    // The document node's plugin data arrives entry by entry (`src/app/collab/document/sync.ts`).
+    const props: ReturnType<typeof decodeNodeFromYjs> =
+      nodeId === roomRoot || nodeId === graph.rootId ? omit(decoded, DOCUMENT_NODE_FIELDS) : decoded
     const node = graph.getNode(nodeId)
     if (node) {
       // Only what differs: joining a room replays every layer, and a layer that already reads the

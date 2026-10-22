@@ -8,9 +8,11 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { shareAgentPreviews } from '@/app/collab/agent-preview'
 import { buildRemotePeers } from '@/app/collab/awareness'
+import { bindDocumentSync, roomDocumentData } from '@/app/collab/document/sync'
 import { useCollabIdentity } from '@/app/collab/identity'
 import { bindRoomImages, type RoomImageStore } from '@/app/collab/images'
 import { publishLocalAgents } from '@/app/collab/local-awareness'
+import type { YRecords } from '@/app/collab/records'
 import { connectCollabRoom } from '@/app/collab/room/connection'
 import { trackRoomSaves, type RoomSaves } from '@/app/collab/room/saves'
 import { deriveRoomStatus, type RoomStatus } from '@/app/collab/room/status'
@@ -24,7 +26,7 @@ import {
 import type { JoinCollabRoom } from '@/app/collab/transport'
 import type { CollabAction } from '@/app/collab/transport/types'
 import type { RemotePeer } from '@/app/collab/types'
-import { bindVariableSync, type YRecords } from '@/app/collab/variables'
+import { bindVariableSync } from '@/app/collab/variables'
 import { attachRoomVoice, type RoomVoice } from '@/app/collab/voice/room'
 import {
   bindCollabGraphEvents,
@@ -145,8 +147,19 @@ export function openRoomSession({
   const meta = ydoc.getMap<unknown>('meta')
   const yvariables: YRecords = ydoc.getMap('variables')
   const ycollections: YRecords = ydoc.getMap('collections')
+  const documentData = roomDocumentData(ydoc)
   const persistence = openSavedCopy(roomId, ydoc)
-  const saves = trackRoomSaves(ydoc, [ynodes, yimages, yvariables, ycollections])
+  const saves = trackRoomSaves(ydoc, [
+    ynodes,
+    yimages,
+    yvariables,
+    ycollections,
+    documentData.entries,
+    documentData.threads,
+    documentData.libraries,
+    documentData.settings
+  ])
+  const documentSync = bindDocumentSync({ store, ydoc, data: documentData, meta })
   const adopt = (apply: () => void) => (holdsDocument ? store.adoptChanges(apply) : apply())
 
   const peers = shallowRef<RemotePeer[]>([])
@@ -203,6 +216,7 @@ export function openRoomSession({
         suppressGraphSync = false
       }
     }
+    if (hasDocument.value) documentSync.follow()
     // Newcomers wait for someone who has the file, so peers say whether they do.
     if (awareness.getLocalState()?.hasFile !== hasDocument.value) {
       awareness.setLocalStateField('hasFile', hasDocument.value)
@@ -303,6 +317,8 @@ export function openRoomSession({
       awareness.setLocalStateField('selection', ids)
     },
     shareDocument() {
+      // Before the root is claimed, which makes the tab follow the room's document data.
+      documentSync.share()
       sync.syncAllNodesToYjs()
       variableSync.share()
       writeRoomName(meta, store.state.documentName)
@@ -320,6 +336,7 @@ export function openRoomSession({
       // Unbinding writes an edit still waiting to be sent, so it runs while the room is open.
       unbindGraphEvents()
       variableSync.dispose()
+      documentSync.dispose()
       roomImages?.dispose()
       disposed = true
       connectionTimer.pause()

@@ -216,6 +216,7 @@ export interface EditorEvents extends SceneGraphEvents {
   'repaint:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
   'graph:replaced': (graph: SceneGraph) => void
   'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
+  'document:libraries-changed': () => void
   'document:read-only-changed': (readOnly: boolean) => void
   'history:changed': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void

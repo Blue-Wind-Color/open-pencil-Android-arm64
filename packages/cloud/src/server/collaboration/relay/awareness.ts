@@ -1,4 +1,9 @@
-import { presenceName, type CollaborationPrincipal, type DocumentPermission } from '#cloud/contract'
+import {
+  presenceName,
+  type CloudPresence,
+  type CollaborationPrincipal,
+  type DocumentPermission
+} from '#cloud/contract'
 import * as decoding from 'lib0/decoding'
 import * as encoding from 'lib0/encoding'
 import * as v from 'valibot'
@@ -46,7 +51,7 @@ export type VerifiedPresence = {
   permission: DocumentPermission
 }
 
-function verifiedIdentity({ principal, permission }: VerifiedPresence) {
+function verifiedIdentity({ principal, permission }: VerifiedPresence): CloudPresence {
   return {
     kind: principal.kind,
     id: principal.kind === 'user' ? principal.userId : principal.guestId,

@@ -39,6 +39,7 @@ import { createConnectorDrawActions, createConnectorEndpointActions } from './co
 import { createConnectorRouting } from './connectors/routing'
 import { createConnectorStyleActions } from './connectors/style'
 import { createDesignTokenActions } from './design-tokens'
+import { createDocumentSettingsActions } from './document-settings'
 import { createFigCompressionActions } from './fig-compression'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
@@ -287,6 +288,7 @@ export function createEditor(options?: EditorOptions) {
   const components = createComponentActions(ctx)
   const clipboard = createClipboardActions(ctx)
   const colorSpace = createColorSpaceActions(ctx)
+  const documentSettings = createDocumentSettingsActions(ctx)
   const undoActions = createUndoActions(ctx)
   const text = createTextActions(ctx)
   const nodes = createNodeActions(ctx)
@@ -519,6 +521,8 @@ export function createEditor(options?: EditorOptions) {
     redoAction: () => text.runTextEditStep(undoBridge.redoAction),
 
     setDocumentColorSpace: colorSpace.setDocumentColorSpace,
+    updateEnabledLibraries: documentSettings.updateEnabledLibraries,
+    refreshDocumentSettings: documentSettings.refreshDocumentSettings,
     figCompression: figCompression.figCompression,
     setFigCompression: figCompression.setFigCompression,
 
