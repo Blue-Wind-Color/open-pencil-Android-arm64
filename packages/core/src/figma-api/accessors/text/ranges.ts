@@ -182,7 +182,9 @@ function fillsFromPaints(method: string, value: unknown): CharacterStyleOverride
     const problem = paintProblem(paint, index)
     if (problem) throw invalid(method, problem)
   }
-  return (value as FigmaPaint[]).map(figmaPaintToFill)
+  return (value as FigmaPaint[]).map((paint, index) =>
+    figmaPaintToFill(paint, index, method, 'value')
+  )
 }
 
 /**

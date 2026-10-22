@@ -19,6 +19,7 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import { parseFigmaEffects, toFigmaEffect, type FigmaEffect } from '#core/figma-api/effects'
+import { sceneTransforms, toFigmaPaint, type WithFigmaTransforms } from '#core/figma-api/paints'
 import { getTextStyle } from '#core/figma-api/text/style'
 import {
   paintBindings,
@@ -63,20 +64,30 @@ function paintDefaults(paint: Partial<Pick<Fill, 'opacity' | 'visible'>>) {
 type FigmaColor = Omit<Color, 'a'> & Partial<Pick<Color, 'a'>>
 
 /**
- * A paint as Figma's plugin API takes it: RGB colours, optional opacity and visibility, and the
- * variable its colour is bound to.
+ * A paint as Figma's plugin API takes it: RGB colours, optional opacity and visibility, transforms
+ * as two rows of three, and the variable its colour is bound to.
  */
-export type FigmaPaint = Omit<Fill, 'color' | 'opacity' | 'visible' | 'gradientStops'> &
+export type FigmaPaint = WithFigmaTransforms<
+  Omit<Fill, 'color' | 'opacity' | 'visible' | 'gradientStops'>
+> &
   Partial<Pick<Fill, 'opacity' | 'visible'>> & {
     color?: FigmaColor
     gradientStops?: Array<Omit<GradientStop, 'color'> & { color: FigmaColor }>
     boundVariables?: { color?: FigmaVariableAlias }
   }
 
-export function figmaPaintToFill({ boundVariables: _bound, ...fill }: FigmaPaint): Fill {
+/** The scene paint for a Figma paint at `index` in the list a script passes to `method`. */
+export function figmaPaintToFill(
+  paint: FigmaPaint,
+  index = 0,
+  method = 'set_fills',
+  property = 'fills'
+): Fill {
+  const { boundVariables: _bound, gradientTransform: _g, imageTransform: _i, ...fill } = paint
   return {
     ...fill,
     ...paintDefaults(fill),
+    ...sceneTransforms(paint, index, method, property),
     color: normalizeColor(fill.color),
     gradientStops: fill.gradientStops?.map((stop) => ({
       ...stop,
@@ -93,7 +104,7 @@ export function installVisualNodeProxyAccessors(
   Object.defineProperties(prototype, {
     fills: {
       // Text reads mixed while its characters are filled differently, and setting it fills them all.
-      get(this: ProxyThis): readonly Fill[] | symbol {
+      get(this: ProxyThis): readonly WithFigmaTransforms<Fill>[] | symbol {
         const node = raw(this, internals)
         if (node.type !== 'TEXT') {
           const bound = paintBindings(node, 'fills')
@@ -101,15 +112,20 @@ export function installVisualNodeProxyAccessors(
             ? (resolvedPaintBindings(graph(this, internals), node).fills ?? node.fills)
             : node.fills
           return Object.freeze(
-            copyFills(fills).map((fill, index) => withPaintBinding(fill, bound.get(index)))
+            copyFills(fills).map((fill, index) =>
+              toFigmaPaint(withPaintBinding(fill, bound.get(index)))
+            )
           )
         }
         const fills = getTextStyle(node, 'fills', mixed)
-        return typeof fills === 'symbol' ? fills : Object.freeze(fills as Fill[])
+        // Text styles read for scripts already give Figma's paints.
+        return typeof fills === 'symbol'
+          ? fills
+          : Object.freeze(fills as WithFigmaTransforms<Fill>[])
       },
       set(this: ProxyThis, value: readonly FigmaPaint[]) {
         const node = raw(this, internals)
-        const fills = value.map(figmaPaintToFill)
+        const fills = value.map((paint, index) => figmaPaintToFill(paint, index))
         updateNode(
           this,
           internals,
@@ -119,21 +135,23 @@ export function installVisualNodeProxyAccessors(
       }
     },
     strokes: {
-      get(this: ProxyThis): readonly Stroke[] {
+      get(this: ProxyThis): readonly WithFigmaTransforms<Stroke>[] {
         const owner = raw(strokeOwner(this, internals), internals)
         const bound = paintBindings(owner, 'strokes')
         const strokes = bound.size
           ? (resolvedPaintBindings(graph(this, internals), owner).strokes ?? owner.strokes)
           : owner.strokes
         return Object.freeze(
-          copyStrokes(strokes).map((stroke, index) => withPaintBinding(stroke, bound.get(index)))
+          copyStrokes(strokes).map((stroke, index) =>
+            toFigmaPaint(withPaintBinding(stroke, bound.get(index)))
+          )
         )
       },
       // Figma paints carry no geometry; a stroke takes the node's weight and alignment, which
       // outlast its strokes.
       set(
         this: ProxyThis,
-        value: readonly (Omit<Stroke, 'weight' | 'align'> &
+        value: readonly (WithFigmaTransforms<Omit<Stroke, 'weight' | 'align'>> &
           Partial<Pick<Stroke, 'weight' | 'align'>> & {
             boundVariables?: { color?: FigmaVariableAlias }
           })[]
@@ -142,13 +160,22 @@ export function installVisualNodeProxyAccessors(
         const geometry = newStrokeGeometry(raw(owner, internals))
         // The script keeps its paint objects; the node gets its own copies of every nested value.
         const strokes = copyStrokes(
-          value.map(({ boundVariables: _bound, ...stroke }) => ({
-            ...stroke,
-            ...paintDefaults(stroke),
-            weight: stroke.weight ?? geometry.weight,
-            align: stroke.align ?? geometry.align,
-            color: normalizeColor(stroke.color)
-          }))
+          value.map((paint, index) => {
+            const {
+              boundVariables: _bound,
+              gradientTransform: _g,
+              imageTransform: _i,
+              ...stroke
+            } = paint
+            return {
+              ...stroke,
+              ...paintDefaults(stroke),
+              ...sceneTransforms(paint, index, 'set_strokes', 'strokes'),
+              weight: stroke.weight ?? geometry.weight,
+              align: stroke.align ?? geometry.align,
+              color: normalizeColor(stroke.color)
+            }
+          })
         )
         const kept = newStrokeGeometry({
           strokes,

@@ -6,6 +6,7 @@ import { linearGradientTransform } from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { BLACK } from '#core/constants'
+import { toFigmaTransform } from '#core/figma-api/paints'
 import { toolNumber, nodeIdInput } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'
 
@@ -66,7 +67,7 @@ export const setFill = defineTool({
             { position: 0, color: c },
             { position: 1, color: cEnd }
           ],
-          gradientTransform: linearGradientTransform(start, end)
+          gradientTransform: toFigmaTransform(linearGradientTransform(start, end))
         }
       ]
       return { id, gradient, start: c, end: cEnd }

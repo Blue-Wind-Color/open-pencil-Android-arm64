@@ -11,6 +11,7 @@ import {
 import { copyFills } from '@open-pencil/scene-graph/copy'
 
 import { weightToStyleName } from '#core/figma-api/fonts'
+import { toFigmaPaint, type WithFigmaTransforms } from '#core/figma-api/paints'
 import { variableAlias } from '#core/figma-api/variables/values'
 import { characterStyles, nodeStyle, type CharacterStyle } from '#core/text/character-style'
 
@@ -60,7 +61,7 @@ function underlined(style: CharacterStyle): boolean {
 /** Figma's paint for an underline colour of its own, or automatic, following the text. */
 function decorationColor(style: CharacterStyle) {
   const paint = style.textDecorationFills.at(0)
-  return paint ? { value: copyFills([paint])[0] } : { value: 'AUTO' as const }
+  return paint ? { value: toFigmaPaint(copyFills([paint])[0]) } : { value: 'AUTO' as const }
 }
 
 function fontFeatureMap(style: CharacterStyle): Record<string, boolean> {
@@ -99,7 +100,7 @@ const FIELD_READERS: Record<TextSegmentField, (context: FieldContext) => unknown
   textCase: ({ style }) => style.textCase,
   lineHeight: ({ style }) => pixels(style.lineHeight),
   letterSpacing: ({ style }) => ({ unit: 'PIXELS', value: style.letterSpacing }),
-  fills: ({ style }) => copyFills(style.fills),
+  fills: ({ style }) => copyFills(style.fills).map(toFigmaPaint),
   textStyleId: ({ style }) => style.textStyleId ?? '',
   fillStyleId: ({ style }) => style.fillStyleId ?? '',
   listOptions: ({ node, paragraph }) => ({
@@ -249,4 +250,4 @@ export function rangeHasUnderline(node: SceneNode, start: number, end: number): 
   return characterStyles(node, start, end).some(underlined)
 }
 
-export type FigmaDecorationColor = { value: 'AUTO' } | { value: Fill }
+export type FigmaDecorationColor = { value: 'AUTO' } | { value: WithFigmaTransforms<Fill> }
