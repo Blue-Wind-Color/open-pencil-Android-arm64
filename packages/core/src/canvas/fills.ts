@@ -5,13 +5,11 @@ import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { isWholeArc } from '#core/geometry'
-
 import { figmaBlendModeToSkia } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'
 import { previewEdge } from './images/previews'
 import type { SkiaRenderer } from './renderer'
-import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
+import { drawOutline, withNodeOutline } from './shapes'
 
 interface PaintFillsOptions {
   readonly bindToNodeFills?: boolean
@@ -71,62 +69,10 @@ export function drawVectorMultiStyleFills(
   return true
 }
 
-export function drawNodeFill(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean,
-  fill?: Fill
-): void {
-  switch (node.type) {
-    case 'VECTOR': {
-      const fg = r.getFillGeometry(node)
-      if (fg) {
-        for (const p of fg) canvas.drawPath(p, r.fillPaint)
-      } else {
-        const vps = r.getVectorPaths(node)
-        if (vps) {
-          for (const vp of vps) canvas.drawPath(vp, r.fillPaint)
-        }
-      }
-      break
-    }
-    case 'ELLIPSE': {
-      const fg = r.getFillGeometry(node)
-      if (fg) {
-        for (const p of fg) canvas.drawPath(p, r.fillPaint)
-      } else if (node.arcData) {
-        r.drawArc(canvas, node, r.fillPaint)
-      } else {
-        canvas.drawOval(rect, r.fillPaint)
-      }
-      break
-    }
-    case 'TEXT':
-      r.renderText(canvas, node, fill)
-      break
-    case 'LINE':
-      canvas.drawLine(0, 0, node.width, node.height, r.fillPaint)
-      break
-    case 'POLYGON':
-    case 'STAR':
-    case 'SHAPE_WITH_TEXT': {
-      const path = r.makePolygonPath(node)
-      canvas.drawPath(path, r.fillPaint)
-      path.delete()
-      break
-    }
-    default:
-      if (nodeHasSmoothCorners(node)) {
-        const path = makeSmoothRRectPath(r, node)
-        canvas.drawPath(path, r.fillPaint)
-        path.delete()
-      } else if (hasRadius) {
-        canvas.drawRRect(r.makeRRect(node), r.fillPaint)
-      } else {
-        canvas.drawRect(rect, r.fillPaint)
-      }
+export function drawNodeFill(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
+  if (node.type === 'TEXT') r.renderText(canvas, node, fill)
+  else if (node.type !== 'LINE') {
+    withNodeOutline(r, node, (outline) => drawOutline(canvas, outline, r.fillPaint))
   }
 }
 
@@ -214,8 +160,6 @@ function recordPatternSource(
   const bounds = r.ck.LTRBRect(0, 0, layout.rect.width, layout.rect.height)
   const recorder = new r.ck.PictureRecorder()
   const canvas = recorder.beginRecording(bounds)
-  const rect = r.ck.LTRBRect(0, 0, source.width, source.height)
-  const hasRadius = nodeHasSmoothCorners(source) || source.cornerRadius > 0
 
   for (const position of layout.positions) {
     canvas.save()
@@ -227,7 +171,7 @@ function recordPatternSource(
         source.fills,
         source,
         graph,
-        (sourceFill) => drawNodeFill(r, canvas, source, rect, hasRadius, sourceFill),
+        (sourceFill) => drawNodeFill(r, canvas, source, sourceFill),
         { patternStack }
       )
     }
@@ -521,56 +465,4 @@ export function applyImageFill(
   } finally {
     if (temporary) img.delete()
   }
-}
-
-export function makeArcPath(r: SkiaRenderer, node: SceneNode) {
-  const arc = node.arcData
-  if (!arc) return null
-  const cx = node.width / 2
-  const cy = node.height / 2
-  const rx = node.width / 2
-  const ry = node.height / 2
-  const innerRx = rx * arc.innerRadius
-  const innerRy = ry * arc.innerRadius
-
-  const startDeg = arc.startingAngle * (180 / Math.PI)
-  const endDeg = arc.endingAngle * (180 / Math.PI)
-  const sweepDeg = endDeg - startDeg
-
-  const path = new r.ck.PathBuilder()
-  const oval = r.ck.LTRBRect(0, 0, node.width, node.height)
-
-  const isFullCircle = isWholeArc(arc)
-  if (arc.innerRadius > 0) {
-    const innerOval = r.ck.LTRBRect(cx - innerRx, cy - innerRy, cx + innerRx, cy + innerRy)
-    if (isFullCircle) {
-      // Two loops wound in opposite directions, so the hole stays empty under nonzero fill. A
-      // full-turn `addArc` from an angle off the axes draws nothing.
-      path.addOval(oval, false)
-      path.addOval(innerOval, true)
-    } else {
-      // One outline whose ends run straight across the ring; `addArc` would start a new contour
-      // for each edge and close them on their chords.
-      path.arcToOval(oval, startDeg, sweepDeg, true)
-      path.arcToOval(innerOval, startDeg + sweepDeg, -sweepDeg, false)
-    }
-    path.close()
-    return path.detachAndDelete()
-  }
-
-  if (isFullCircle) {
-    path.addOval(oval)
-  } else {
-    path.moveTo(cx, cy)
-    path.arcToOval(oval, startDeg, sweepDeg, false)
-    path.close()
-  }
-  return path.detachAndDelete()
-}
-
-export function drawArc(r: SkiaRenderer, canvas: Canvas, node: SceneNode, paint: Paint): void {
-  const path = makeArcPath(r, node)
-  if (!path) return
-  canvas.drawPath(path, paint)
-  path.delete()
 }

@@ -13,7 +13,12 @@ import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { applyGradientFill, applyImageFill } from './fills'
 import type { SkiaRenderer } from './renderer'
-import { makeShapeWithTextDetailsPath, makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
+import {
+  drawOutline,
+  makeShapeWithTextDetailsPath,
+  nodeHasSmoothCorners,
+  withNodeOutline
+} from './shapes'
 
 export function getStrokeCapEntity(r: SkiaRenderer, cap: string | undefined): EmbindEnumEntity {
   switch (cap) {
@@ -313,72 +318,23 @@ export function drawStyledRRectStroke(
   r.strokePaint.setPathEffect(null)
 }
 
-export function drawNodeStroke(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean
-): void {
-  switch (node.type) {
-    case 'VECTOR': {
-      const vps = r.getVectorPaths(node)
-      if (vps) {
-        for (const vp of vps) canvas.drawPath(vp, r.strokePaint)
-      }
-      break
-    }
-    case 'ELLIPSE': {
-      const fg = r.getFillGeometry(node)
-      if (fg) {
-        for (const p of fg) canvas.drawPath(p, r.strokePaint)
-      } else if (node.arcData) {
-        r.drawArc(canvas, node, r.strokePaint)
-      } else {
-        canvas.drawOval(rect, r.strokePaint)
-      }
-      break
-    }
-    case 'POLYGON':
-    case 'STAR': {
-      const path = r.makePolygonPath(node)
-      canvas.drawPath(path, r.strokePaint)
-      path.delete()
-      break
-    }
-    case 'SHAPE_WITH_TEXT': {
-      const path = r.makePolygonPath(node)
-      canvas.drawPath(path, r.strokePaint)
-      path.delete()
-      break
-    }
-    default:
-      if (nodeHasSmoothCorners(node)) {
-        const path = makeSmoothRRectPath(r, node)
-        canvas.drawPath(path, r.strokePaint)
-        path.delete()
-      } else if (hasRadius) {
-        canvas.drawRRect(r.makeRRect(node), r.strokePaint)
-      } else {
-        canvas.drawRect(rect, r.strokePaint)
-      }
-  }
+/** Strokes a layer's outline, or a vector's own paths, open ones included. */
+export function drawNodeStroke(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
+  strokeNodeShape(r, canvas, node, r.strokePaint)
 }
 
 export function drawStrokeWithAlign(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean,
   align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
 ): void {
   if (align === 'INSIDE') {
     canvas.save()
-    r.clipNodeShape(canvas, node, rect, hasRadius)
+    r.clipNodeShape(canvas, node)
     const origWidth = r.strokePaint.getStrokeWidth()
     r.strokePaint.setStrokeWidth(origWidth * 2)
-    r.drawNodeStroke(canvas, node, rect, hasRadius)
+    r.drawNodeStroke(canvas, node)
     r.strokePaint.setStrokeWidth(origWidth)
     canvas.restore()
   } else if (align === 'OUTSIDE') {
@@ -386,7 +342,7 @@ export function drawStrokeWithAlign(
     const bigRect = r.ck.LTRBRect(-node.width, -node.height, node.width * 2, node.height * 2)
     const outerPath = new r.ck.PathBuilder()
     outerPath.addRect(bigRect)
-    const innerPath = r.makeNodeShapePath(node, rect, hasRadius)
+    const innerPath = r.makeNodeShapePath(node)
     const immutableOuterPath = outerPath.detachAndDelete()
     const clipPath = r.ck.Path.MakeFromOp(immutableOuterPath, innerPath, r.ck.PathOp.Difference)
     immutableOuterPath.delete()
@@ -399,18 +355,18 @@ export function drawStrokeWithAlign(
     clipPath.delete()
     const origWidth = r.strokePaint.getStrokeWidth()
     r.strokePaint.setStrokeWidth(origWidth * 2)
-    r.drawNodeStroke(canvas, node, rect, hasRadius)
+    r.drawNodeStroke(canvas, node)
     r.strokePaint.setStrokeWidth(origWidth)
     canvas.restore()
   } else {
-    r.drawNodeStroke(canvas, node, rect, hasRadius)
+    r.drawNodeStroke(canvas, node)
   }
   // Inner lines, such as a database's front rim, lie inside the outline: they keep the stroke's
   // own weight whatever its alignment, and end where the outline does.
   const details = makeShapeWithTextDetailsPath(r, node)
   if (details) {
     canvas.save()
-    r.clipNodeShape(canvas, node, rect, hasRadius)
+    r.clipNodeShape(canvas, node)
     canvas.drawPath(details, r.strokePaint)
     canvas.restore()
     details.delete()
@@ -425,14 +381,7 @@ export function drawRRectStrokeWithAlign(
   stroke: Stroke
 ): void {
   if (nodeHasSmoothCorners(node)) {
-    drawStrokeWithAlign(
-      r,
-      canvas,
-      node,
-      r.ck.LTRBRect(0, 0, node.width, node.height),
-      true,
-      stroke.align
-    )
+    drawStrokeWithAlign(r, canvas, node, stroke.align)
     return
   }
 
@@ -473,67 +422,18 @@ export function drawRRectStrokeWithAlign(
   }
 }
 
+/** Strokes a layer's outline with `paint`: a vector's own paths, open ones included, and a line. */
 export function strokeNodeShape(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
   paint: Paint
 ): void {
-  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
-
-  switch (node.type) {
-    case 'ELLIPSE':
-      canvas.drawOval(rect, paint)
-      return
-    case 'VECTOR': {
-      const vps = r.getVectorPaths(node)
-      if (vps) {
-        for (const vp of vps) canvas.drawPath(vp, paint)
-      }
-      return
-    }
-    case 'LINE':
-      canvas.drawLine(0, 0, node.width, node.height, paint)
-      return
-    case 'POLYGON':
-    case 'STAR':
-    case 'SHAPE_WITH_TEXT': {
-      const path = r.makePolygonPath(node)
-      canvas.drawPath(path, paint)
-      path.delete()
-      return
-    }
-  }
-
-  const hasRadius =
-    node.cornerRadius > 0 ||
-    (node.independentCorners &&
-      (node.topLeftRadius > 0 ||
-        node.topRightRadius > 0 ||
-        node.bottomRightRadius > 0 ||
-        node.bottomLeftRadius > 0))
-
-  if (hasRadius) {
-    if (node.independentCorners) {
-      const rrect = new Float32Array([
-        0,
-        0,
-        node.width,
-        node.height,
-        node.topLeftRadius,
-        node.topLeftRadius,
-        node.topRightRadius,
-        node.topRightRadius,
-        node.bottomRightRadius,
-        node.bottomRightRadius,
-        node.bottomLeftRadius,
-        node.bottomLeftRadius
-      ])
-      canvas.drawRRect(rrect, paint)
-    } else {
-      canvas.drawRRect(r.ck.RRectXY(rect, node.cornerRadius, node.cornerRadius), paint)
-    }
+  if (node.type === 'VECTOR') {
+    for (const path of r.getVectorPaths(node) ?? []) canvas.drawPath(path, paint)
+  } else if (node.type === 'LINE') {
+    canvas.drawLine(0, 0, node.width, node.height, paint)
   } else {
-    canvas.drawRect(rect, paint)
+    withNodeOutline(r, node, (outline) => drawOutline(canvas, outline, paint))
   }
 }

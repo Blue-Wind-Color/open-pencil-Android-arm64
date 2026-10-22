@@ -4,9 +4,7 @@ import type { GroupFitOptions, SceneGraph, SceneNode } from '@open-pencil/scene-
 
 import { getTextOutlineSupport } from '#core/text/outlines'
 
-import { makeArcPath } from './fills'
 import type { SkiaRenderer } from './renderer'
-import { nodeHasRadius } from './shapes'
 import { makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines'
 
@@ -66,10 +64,7 @@ export function canMakeBooleanSourceNode(node: SceneNode, graph: SceneGraph): bo
 function baseShapePath(r: SkiaRenderer, node: SceneNode): Path | null {
   if (node.type === 'TEXT') return textNodeToOutlinePath(r, node)
   if (node.type === 'LINE') return makeLineStrokeOutline(r, node)
-  if (node.type === 'ELLIPSE' && node.arcData) return makeArcPath(r, node)
-
-  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
-  return r.makeNodeShapePath(node, rect, nodeHasRadius(node))
+  return r.makeNodeShapePath(node)
 }
 
 function nodeHasVisibleFill(node: SceneNode): boolean {
@@ -353,10 +348,7 @@ export function renderBooleanOperation(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
-  r.renderEffects(canvas, node, graph, rect, false, 'behind')
-  paintBooleanOperation(r, canvas, node, graph, () =>
-    r.renderEffects(canvas, node, graph, rect, false, 'inner')
-  )
-  r.renderEffects(canvas, node, graph, rect, false, 'front')
+  r.renderEffects(canvas, node, graph, 'behind')
+  paintBooleanOperation(r, canvas, node, graph, () => r.renderEffects(canvas, node, graph, 'inner'))
+  r.renderEffects(canvas, node, graph, 'front')
 }

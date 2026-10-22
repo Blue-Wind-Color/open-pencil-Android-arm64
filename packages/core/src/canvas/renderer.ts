@@ -372,33 +372,17 @@ export class SkiaRenderer {
     canvas: Canvas,
     node: SceneNode,
     graph: SceneGraph,
-    rect: Float32Array,
-    hasRadius: boolean,
     pass: EffectPass
   ) => void
   declare renderText: (canvas: Canvas, node: SceneNode, fill?: Fill) => void
-  declare drawNodeFill: (
-    canvas: Canvas,
-    node: SceneNode,
-    rect: Float32Array,
-    hasRadius: boolean,
-    fill?: Fill
-  ) => void
+  declare drawNodeFill: (canvas: Canvas, node: SceneNode, fill?: Fill) => void
   declare applyFill: (fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex?: number) => boolean
   declare applyGradientFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => boolean
   declare applyImageFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => boolean
-  declare drawArc: (canvas: Canvas, node: SceneNode, paint: Paint) => void
-  declare drawNodeStroke: (
-    canvas: Canvas,
-    node: SceneNode,
-    rect: Float32Array,
-    hasRadius: boolean
-  ) => void
+  declare drawNodeStroke: (canvas: Canvas, node: SceneNode) => void
   declare drawStrokeWithAlign: (
     canvas: Canvas,
     node: SceneNode,
-    rect: Float32Array,
-    hasRadius: boolean,
     align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
   ) => void
   declare drawRRectStrokeWithAlign: (
@@ -409,22 +393,11 @@ export class SkiaRenderer {
   ) => void
   declare drawIndividualSideStrokes: (canvas: Canvas, node: SceneNode, stroke: Stroke) => void
   declare strokeNodeShape: (canvas: Canvas, node: SceneNode, paint: Paint) => void
-  declare makeNodeShapePath: (node: SceneNode, rect: Float32Array, hasRadius: boolean) => Path
+  declare makeNodeShapePath: (node: SceneNode) => Path
   declare makePolygonPath: (node: SceneNode) => Path
   declare makeRRect: (node: SceneNode) => Float32Array
   declare makeRRectWithSpread: (node: SceneNode, spread: number) => Float32Array
-  declare makeRRectWithOffset: (
-    node: SceneNode,
-    ox: number,
-    oy: number,
-    spread: number
-  ) => Float32Array
-  declare clipNodeShape: (
-    canvas: Canvas,
-    node: SceneNode,
-    rect: Float32Array,
-    hasRadius: boolean
-  ) => void
+  declare clipNodeShape: (canvas: Canvas, node: SceneNode) => void
   declare getVectorPaths: (node: SceneNode) => Path[] | null
   declare getFillGeometry: (node: SceneNode) => Path[] | null
   declare getStrokeGeometry: (node: SceneNode) => Path[] | null
@@ -437,13 +410,7 @@ export class SkiaRenderer {
   declare getCachedBlur: (sigma: number) => ImageFilter
   declare getCachedDecalBlur: (sigma: number) => ImageFilter
   declare getCachedMaskBlur: (sigma: number) => MaskFilter
-  declare applyClippedBlur: (
-    canvas: Canvas,
-    node: SceneNode,
-    rect: Float32Array,
-    hasRadius: boolean,
-    sigma: number
-  ) => void
+  declare applyClippedBlur: (canvas: Canvas, node: SceneNode, sigma: number) => void
   color4f(r: number, g: number, b: number, a: number): Float32Array {
     const c = this._tmpColor
     c[0] = r

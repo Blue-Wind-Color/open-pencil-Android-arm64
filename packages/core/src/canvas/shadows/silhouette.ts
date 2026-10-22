@@ -143,12 +143,7 @@ function drawChildSilhouettes(
   canvas.save()
   try {
     if (clipsChildren(node)) {
-      r.clipNodeShape(
-        canvas,
-        node,
-        r.ck.LTRBRect(0, 0, node.width, node.height),
-        nodeHasRadius(node)
-      )
+      r.clipNodeShape(canvas, node)
     }
     renderMaskedChildIds(
       r,

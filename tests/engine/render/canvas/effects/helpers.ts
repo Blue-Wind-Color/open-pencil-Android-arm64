@@ -159,7 +159,6 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     getVectorPaths: mock(() => null),
     makeRRect: mock(() => new Float32Array(12)),
     makeRRectWithSpread: mock(() => new Float32Array(12)),
-    makeRRectWithOffset: mock(() => new Float32Array(12)),
     makePolygonPath: mock(function (this: SkiaRenderer) {
       return new this.ck.Path()
     }),

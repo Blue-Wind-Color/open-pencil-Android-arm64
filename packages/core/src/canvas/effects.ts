@@ -66,17 +66,16 @@ export function applyClippedBlur(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean,
   sigma: number
 ): void {
+  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
   // Entry guard: reset shared paint to known state
   r.effectLayerPaint.setImageFilter(null)
   r.effectLayerPaint.setColorFilter(null)
   r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
   canvas.save()
-  r.clipNodeShape(canvas, node, rect, hasRadius)
+  r.clipNodeShape(canvas, node)
   canvas.saveLayer(undefined, rect, r.getCachedBlur(sigma), undefined, r.ck.TileMode.Clamp)
   canvas.restore()
   // Exit guard: ensure shared paint is in clean state
@@ -122,8 +121,6 @@ function renderNoiseEffect(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean,
   effect: RawNoiseEffect
 ): void {
   const density = Math.max(0, Math.min(1, effect.density ?? 0.3))
@@ -136,7 +133,7 @@ function renderNoiseEffect(
   try {
     paint.setAntiAlias(false)
     canvas.save()
-    r.clipNodeShape(canvas, node, rect, hasRadius)
+    r.clipNodeShape(canvas, node)
     for (let y = 0; y < node.height; y += step) {
       for (let x = 0; x < node.width; x += step) {
         const value = seededNoise((x + 1) * 73856093 + (y + 1) * 19349663)
@@ -156,14 +153,8 @@ function renderNoiseEffect(
 }
 
 /** Draws the raw Figma noise effects a node carries, which the scene graph does not model. */
-export function renderNoiseEffects(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode,
-  rect: Float32Array,
-  hasRadius: boolean
-): void {
+export function renderNoiseEffects(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
   for (const effect of rawNoiseEffects(node)) {
-    renderNoiseEffect(r, canvas, node, rect, hasRadius, effect)
+    renderNoiseEffect(r, canvas, node, effect)
   }
 }
