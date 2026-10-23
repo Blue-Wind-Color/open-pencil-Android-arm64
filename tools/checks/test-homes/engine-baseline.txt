@@ -326,10 +326,6 @@ tests/engine/mcp/tools.test.ts
 tests/engine/mcp/transport/paths.test.ts
 tests/engine/mcp/webmcp/registration.test.ts
 tests/engine/mcp/webmcp/settings.test.ts
-tests/engine/pen/file.test.ts
-tests/engine/pen/layout.test.ts
-tests/engine/pen/var-padding.test.ts
-tests/engine/pen/variables.test.ts
 tests/engine/profiler/capture-stack.test.ts
 tests/engine/profiler/draw-call-counter.test.ts
 tests/engine/profiler/frame-stats.test.ts

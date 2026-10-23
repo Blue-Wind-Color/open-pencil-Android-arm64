@@ -48,8 +48,7 @@ export const UNIT_TEST_GROUPS = {
     'packages/design-jsx/tests',
     'packages/dom-css/tests',
     'packages/pen/tests',
-    'tests/engine/dom-css',
-    'tests/engine/pen'
+    'tests/engine/dom-css'
   ],
   fig: [
     'packages/fig/tests',

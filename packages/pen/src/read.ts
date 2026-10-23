@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import {
   SceneGraph,
   type AxisSizingMode,
@@ -14,12 +16,6 @@ import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import {
   applyCornerRadius,
   applyPadding,
-  bindIfVar,
-  buildVarContext,
-  convertEffects,
-  convertFill,
-  convertStroke,
-  isVarRef,
   mapAlignItems,
   mapFontWeight,
   mapJustifyContent,
@@ -27,11 +23,19 @@ import {
   mapNodeType,
   mapTextAlign,
   mapTextAlignVertical,
-  parseSize,
-  type PenDocument,
-  type PenNode,
-  type VarContext
+  parseSize
 } from './convert'
+import { convertEffects } from './effects'
+import { applyStroke, convertPaints, strokeFields } from './paints'
+import { penFileSchema, type PenNode, type PenOverride } from './schema'
+import {
+  bindIfVar,
+  buildVarContext,
+  isVarRef,
+  resolveBoolean,
+  resolveNumber,
+  type VarContext
+} from './variables'
 
 function scaleVectorNetwork(vn: VectorNetwork, targetW: number, targetH: number): void {
   if (vn.vertices.length === 0) return
@@ -67,18 +71,18 @@ function resolveFontFamily(raw: string | undefined, ctx: VarContext): string {
   return raw
 }
 
-function buildBaseOverrides(pen: PenNode): Partial<SceneNode> {
+function buildBaseOverrides(pen: PenNode, ctx: VarContext): Partial<SceneNode> {
   return {
     id: pen.id,
     name: pen.name ?? (pen.type === 'icon_font' ? (pen.iconFontName ?? 'Icon') : pen.type),
     x: pen.x ?? 0,
     y: pen.y ?? 0,
-    visible: pen.enabled !== false,
-    opacity: pen.opacity ?? 1,
-    rotation: pen.rotation ?? 0,
-    flipX: pen.flipX ?? false,
-    flipY: pen.flipY ?? false,
-    clipsContent: pen.clip ?? false,
+    visible: resolveBoolean(pen.enabled, ctx),
+    opacity: resolveNumber(pen.opacity, ctx, 1),
+    rotation: resolveNumber(pen.rotation, ctx),
+    flipX: resolveBoolean(pen.flipX, ctx, false),
+    flipY: resolveBoolean(pen.flipY, ctx, false),
+    clipsContent: resolveBoolean(pen.clip, ctx, false),
     boundVariables: {}
   }
 }
@@ -116,16 +120,17 @@ function applyTextProps(node: SceneNode, pen: PenNode, ctx: VarContext): void {
     pen.type === 'icon_font'
       ? (pen.iconFontFamily ?? 'Material Symbols Sharp')
       : resolveFontFamily(pen.fontFamily, ctx)
-  node.fontSize = pen.fontSize ?? 14
+  node.fontSize = resolveNumber(pen.fontSize, ctx, 14)
   node.fontWeight = mapFontWeight(
     pen.fontWeight ?? (pen.type === 'icon_font' ? pen.weight : undefined)
   )
   node.textAlignHorizontal = mapTextAlign(pen.textAlign)
   node.textAlignVertical = mapTextAlignVertical(pen.textAlignVertical)
   if (pen.lineHeight !== undefined) {
-    node.lineHeight = pen.lineHeight < 5 ? pen.lineHeight * node.fontSize : pen.lineHeight
+    const lineHeight = resolveNumber(pen.lineHeight, ctx)
+    node.lineHeight = lineHeight < 5 ? lineHeight * node.fontSize : lineHeight
   }
-  if (pen.letterSpacing !== undefined) node.letterSpacing = pen.letterSpacing
+  if (pen.letterSpacing !== undefined) node.letterSpacing = resolveNumber(pen.letterSpacing, ctx)
   node.textAutoResize = pen.textGrowth === 'fixed-width' ? 'HEIGHT' : 'WIDTH_AND_HEIGHT'
   if (pen.fontFamily && isVarRef(pen.fontFamily)) {
     bindIfVar(node, 'fontFamily', pen.fontFamily, ctx)
@@ -178,11 +183,9 @@ function applyRefVisuals(
   ctx: VarContext
 ): void {
   if (!compPen) return
-  if (pen.fill === undefined && compPen.fill !== undefined)
-    node.fills = convertFill(compPen.fill, ctx, node)
-  if (pen.stroke === undefined && compPen.stroke)
-    node.strokes = convertStroke(compPen.stroke, ctx, node)
-  if (pen.effect === undefined && compPen.effect) node.effects = convertEffects(compPen.effect)
+  if (pen.fill === undefined) node.fills = convertPaints(compPen.fill, 'fills', ctx, node)
+  applyStroke(node, strokeFields(pen, strokeFields(compPen)), ctx)
+  if (pen.effect === undefined) node.effects = convertEffects(compPen.effect, ctx)
   if (pen.cornerRadius === undefined) applyCornerRadius(node, compPen.cornerRadius, ctx)
 }
 
@@ -239,7 +242,7 @@ function createSceneNode(
   if (pen.theme) applyTheme(pen.theme, ctx)
 
   const { w, h, layout, isTextLike } = resolveSizing(pen, ctx)
-  const overrides = buildBaseOverrides(pen)
+  const overrides = buildBaseOverrides(pen, ctx)
   overrides.width = w.value
   overrides.height = h.value
   const hasChildren = (pen.children?.length ?? 0) > 0
@@ -257,9 +260,9 @@ function createSceneNode(
 
   const node = graph.createNode(mapNodeType(pen), parentId, overrides)
 
-  if (pen.fill !== undefined) node.fills = convertFill(pen.fill, ctx, node)
-  if (pen.stroke) node.strokes = convertStroke(pen.stroke, ctx, node)
-  node.effects = convertEffects(pen.effect)
+  node.fills = convertPaints(pen.fill, 'fills', ctx, node)
+  applyStroke(node, strokeFields(pen), ctx)
+  node.effects = convertEffects(pen.effect, ctx)
   applyCornerRadius(node, pen.cornerRadius, ctx)
   applyPadding(node, pen.padding, ctx)
 
@@ -339,21 +342,19 @@ function findCloneByNameFallback(
   return matches.length === 1 ? matches[0] : undefined
 }
 
-function applyOverrideProps(
-  target: SceneNode,
-  overrideData: Partial<PenNode>,
-  ctx: VarContext
-): void {
-  if (overrideData.fill !== undefined) target.fills = convertFill(overrideData.fill, ctx, target)
+function applyOverrideProps(target: SceneNode, overrideData: PenOverride, ctx: VarContext): void {
+  if (overrideData.fill !== undefined)
+    target.fills = convertPaints(overrideData.fill, 'fills', ctx, target)
   if (overrideData.content !== undefined) target.text = overrideData.content
   if (overrideData.x !== undefined) target.x = overrideData.x
   if (overrideData.y !== undefined) target.y = overrideData.y
-  if (overrideData.enabled !== undefined) target.visible = overrideData.enabled
+  if (overrideData.enabled !== undefined) target.visible = resolveBoolean(overrideData.enabled, ctx)
   if (overrideData.width !== undefined)
     target.width = parseSize(overrideData.width, target.width, ctx).value
   if (overrideData.height !== undefined)
     target.height = parseSize(overrideData.height, target.height, ctx).value
-  if (overrideData.rotation !== undefined) target.rotation = overrideData.rotation
+  if (overrideData.rotation !== undefined)
+    target.rotation = resolveNumber(overrideData.rotation, ctx)
   if (overrideData.name !== undefined) target.name = overrideData.name
 }
 
@@ -433,13 +434,10 @@ function resolveNodeVars(node: SceneNode, graph: SceneGraph, ctx: VarContext): v
     if (!variable) continue
     const modeVal =
       variable.valuesByMode[ctx.activeModeId] ?? Object.values(variable.valuesByMode)[0]
-    if (key.startsWith('fills[') && typeof modeVal === 'object' && 'r' in modeVal) {
-      const idx = Number.parseInt(key.match(/\d+/)?.[0] ?? '0', 10)
-      if (node.fills[idx]) node.fills[idx].color = modeVal
-    } else if (key.startsWith('strokes[') && typeof modeVal === 'object' && 'r' in modeVal) {
-      const idx = Number.parseInt(key.match(/\d+/)?.[0] ?? '0', 10)
-      if (node.strokes[idx]) node.strokes[idx].color = modeVal
-    }
+    const paint = /^(fills|strokes)\/(\d+)\/color$/.exec(key)
+    if (!paint || typeof modeVal !== 'object' || !('r' in modeVal)) continue
+    const target = node[paint[1] === 'fills' ? 'fills' : 'strokes'].at(Number(paint[2]))
+    if (target) target.color = modeVal
   }
   for (const childId of node.childIds) {
     const child = graph.getNode(childId)
@@ -472,7 +470,11 @@ function fixInstanceWidths(graph: SceneGraph): void {
 }
 
 export function parsePenFile(json: string): SceneGraph {
-  const doc: PenDocument = JSON.parse(json)
+  const parsed = v.safeParse(penFileSchema, json)
+  if (!parsed.success) {
+    throw new Error(`Not a .pen document: ${v.summarize(parsed.issues)}`)
+  }
+  const doc = parsed.output
   const graph = new SceneGraph()
 
   for (const page of graph.getPages(true)) {

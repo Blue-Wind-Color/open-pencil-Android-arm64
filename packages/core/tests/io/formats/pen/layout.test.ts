@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { layoutAuthoredNodes } from '@open-pencil/core/layout'
-import { parsePenFile, parseSize, type PenDocument, type PenNode } from '@open-pencil/pen'
+import { parsePenFile, type PenDocument, type PenNode } from '@open-pencil/pen'
 
 function parseLayoutDocument(children: PenNode[]) {
   const document: PenDocument = { version: '2.17', children }
@@ -135,23 +135,35 @@ describe('parsePenFile — Pen layout defaults (#564)', () => {
   })
 })
 
-describe('parseSize — Pen sizing fallbacks (#564)', () => {
-  test('preserves parameterized fill-container fallback values', () => {
-    expect(parseSize('fill_container(900)', 100)).toEqual({ value: 900, sizing: 'FILL' })
-  })
-
-  test('preserves parameterized fit-content fallback metadata', () => {
-    expect(parseSize('fit_content(900)', 100)).toEqual({
-      value: 900,
-      sizing: 'HUG',
-      fitContentFallback: 900
-    })
+describe('parsePenFile — Pen sizing fallbacks (#564)', () => {
+  test('sizes fill-container outside a layout by its fallback', () => {
+    const graph = parseLayoutDocument([
+      {
+        id: 'free',
+        type: 'frame',
+        layout: 'none',
+        width: 1000,
+        height: 400,
+        children: [{ id: 'filler', type: 'rectangle', width: 'fill_container(900)', height: 40 }]
+      }
+    ])
+    expect(graph.getNode('filler')?.width).toBe(900)
   })
 
   test.each(['fit_content()', 'fit_content(nope)', 'fit_content(100)garbage'])(
-    'rejects malformed sizing behavior %s',
-    (value) => {
-      expect(parseSize(value, 100)).toEqual({ value: 100, sizing: 'FIXED' })
+    'falls back to the default size for malformed sizing %s',
+    (width) => {
+      const graph = parseLayoutDocument([
+        {
+          id: 'free',
+          type: 'frame',
+          layout: 'none',
+          width: 1000,
+          height: 400,
+          children: [{ id: 'shape', type: 'rectangle', width, height: 40 }]
+        }
+      ])
+      expect(graph.getNode('shape')?.width).toBe(100)
     }
   )
 })

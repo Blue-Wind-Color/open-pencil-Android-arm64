@@ -1,2 +1,2 @@
 export { parsePenFile, readPenFile } from './read'
-export * from './convert'
+export type { PenDocument, PenNode, PenOverride } from './schema'

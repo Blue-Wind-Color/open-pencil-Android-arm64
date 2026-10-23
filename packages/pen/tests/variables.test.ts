@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { parsePenFile, type PenDocument, type PenNode } from '@open-pencil/pen'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from './helpers/assert'
 
 const BLUE = { r: 64 / 255, g: 148 / 255, b: 208 / 255, a: 1 }
 
@@ -35,8 +35,8 @@ test('keeps plain and double-dash variable names distinct in one document', () =
   const graph = parsePenFile(JSON.stringify(document))
   const plain = graph.getNode('plain')
   const dashed = graph.getNode('dashed')
-  const plainId = plain?.boundVariables['fills[0]']
-  const dashedId = dashed?.boundVariables['fills[0]']
+  const plainId = plain?.boundVariables['fills/0/color']
+  const dashedId = dashed?.boundVariables['fills/0/color']
 
   expect(plain?.fills[0]?.color).toEqual(BLUE)
   expect(dashed?.fills[0]?.color).toEqual({ r: 1, g: 1, b: 1, a: 1 })
@@ -82,8 +82,8 @@ describe.each(['', '--'])('parsePenFile — $%sname references (#563)', (prefix)
       expect(node?.fills[0]?.color).toEqual(BLUE)
       expect(node?.strokes[0]?.color).toEqual(BLUE)
       expect(node?.boundVariables).toEqual({
-        'fills[0]': variable.id,
-        'strokes[0]': variable.id
+        'fills/0/color': variable.id,
+        'strokes/0/color': variable.id
       })
       expect(graph.getNode('literal')?.boundVariables).toEqual({})
     }
