@@ -47,11 +47,14 @@ export const aiMessageDefaults = {
   connectProvider: 'Connect an AI provider to start chatting.',
   connectionTestSuccess: 'Connected successfully. Model is reachable.',
   connectionTestMissingAPIKey: 'Enter an API key before testing.',
+  connectionTestMissingSignIn: 'Sign in before testing.',
   connectionTestMissingBaseURL: 'Enter a base URL before testing.',
   connectionTestMissingModel: 'Enter a model ID before testing.',
   connectionTestInvalidBaseURL:
     'Base URL is invalid. Use a full URL like https://api.example.com/v1.',
   connectionTestAuthFailed: 'Authentication failed. Check your API key.',
+  connectionTestSignInExpired: 'The sign-in has expired. Sign in again.',
+  connectionTestPlanForbidden: 'Your plan can’t use this model. Choose another model.',
   connectionTestInsufficientCredit:
     'The provider account has insufficient credit or quota. Top it up and try again.',
   connectionTestModelNotFound: 'Model not found. Check the model ID.',
@@ -193,6 +196,8 @@ export const aiMessageDefaults = {
   outputLimitAutomatic: 'Automatic recommendation',
   maxOutputTokens: 'Max output tokens',
   chatAuthenticationFailed: 'Your provider API key is invalid or expired. Replace it in Settings.',
+  chatSignInExpired: 'Your sign-in has expired. Sign in again in Settings.',
+  chatPlanForbidden: 'Your plan can’t use the selected model. Choose another model in Settings.',
   chatForbidden: 'This API key cannot use the selected model. Check its model access.',
   chatInsufficientCredit:
     'The provider account has insufficient credit or quota. Top it up and try again.',
@@ -344,19 +349,35 @@ export const aiMessageDefaults = {
   aiSetupAlreadyConnected: 'Everything you selected is already connected.',
   aiSetupOpenRouterSignIn: 'Sign in with OpenRouter',
   aiSetupOpenRouterWaiting: 'Finish signing in to OpenRouter in your browser.',
-  aiSetupOpenRouterReopen: 'Open again',
+  aiSetupSignInReopen: 'Open again',
   aiSetupOpenRouterOrKey: 'Or paste an API key',
   aiSetupOpenRouterBlocked:
     'Your browser blocked the sign-in window. Allow pop-ups for OpenPencil and try again.',
-  aiSetupOpenRouterCancelled: 'Sign-in was cancelled.',
-  aiSetupOpenRouterExpired: 'Sign-in took too long. Try again.',
+  aiSetupSignInCancelled: 'Sign-in was cancelled.',
+  aiSetupSignInExpired: 'Sign-in took too long. Try again.',
   aiSetupOpenRouterFailed: 'Couldn’t sign in to OpenRouter. Try again or paste an API key.',
   aiSetupOpenRouterSignedInTitle: 'Signed in to OpenRouter',
   aiSetupOpenRouterKeyLabel: params('· key “{label}”'),
   aiSetupOpenRouterVerifying: 'Checking your OpenRouter key…',
   aiSetupOpenRouterNoCredits:
     'This OpenRouter account has no credits yet. Add credits on OpenRouter to use paid models such as the recommended one.',
-  aiSetupOpenRouterChange: 'Use a different account',
+  aiSetupSignInChange: 'Use a different account',
+  aiSetupSignOut: 'Sign out',
+  aiSetupAccessSubscriptions: 'Subscriptions',
+  aiSetupAccessChatGPT: 'Use your ChatGPT plan’s models in OpenPencil’s own agent.',
+  aiSetupChatGPTSignIn: 'Sign in with ChatGPT',
+  aiSetupChatGPTWaiting: 'Finish signing in to ChatGPT in your browser.',
+  aiSetupChatGPTSignedInTitle: 'Signed in to ChatGPT',
+  aiSetupChatGPTFailed: 'Couldn’t sign in to ChatGPT. Try again.',
+  aiSetupChatGPTPortInUse:
+    'Another sign-in, such as `codex login`, is using port 1455. Finish or close it, then try again.',
+  aiSetupChatGPTCallbackSignedIn:
+    'Signed in to ChatGPT. You can close this tab and return to OpenPencil.',
+  aiSetupChatGPTCallbackCancelled: 'ChatGPT sign-in was cancelled. You can close this tab.',
+  aiSetupChatGPTCallbackStale:
+    'This sign-in link belongs to an earlier attempt. Start again from OpenPencil.',
+  aiSetupChatGPTUsage: 'Replies count toward your ChatGPT plan’s usage limits.',
+  aiSetupSavedSignInHint: 'Your saved sign-in will be used.',
   aiSetupUseRecommended: 'Use recommended setup',
   aiSetupRolesDescription:
     'Choose a model for each kind of work. We picked recommended ones from what you connected; anything else you configured stays as it is.'

@@ -26,6 +26,7 @@ export const AI_PROVIDERS = [
   'openrouter',
   'anthropic',
   'openai',
+  'chatgpt',
   'google',
   'deepseek',
   'openai-compatible',

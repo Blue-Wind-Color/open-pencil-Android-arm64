@@ -6,6 +6,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { usePiSetup } from '@/app/ai/agents/setup/use'
 import { useModelProfileFeedback } from '@/app/ai/models/settings/profile-editor/feedback'
+import { useProfileSignIn } from '@/app/ai/models/settings/profile-editor/sign-in'
 import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
 import { thinkingLevelOptions as buildThinkingLevelOptions } from '@/app/ai/models/thinking'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
@@ -15,6 +16,7 @@ import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import ProviderSelect from '@/components/settings/provider-select/ProviderSelect.vue'
+import ChatGPTSignInField from '@/components/settings/provider/ChatGPTSignInField.vue'
 import ProviderConnectionTestButton from '@/components/settings/provider/ProviderConnectionTestButton.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
@@ -61,6 +63,7 @@ const {
   testConnection: runConnectionTest
 } = profile
 const pi = usePiSetup(isHarness)
+const signIn = useProfileSignIn(keyInput)
 const customModelPlaceholder = computed(() =>
   isHarness.value ? (pi.state.value?.defaultModel ?? 'provider/model') : 'e.g. llama-3.3-70b'
 )
@@ -72,6 +75,8 @@ useSettingsFormGuard({ dirty, busy, cancel: () => emit('done') })
 const CUSTOM_MODEL_VALUE = '__custom__'
 const advancedOpen = ref(Boolean(draft.customModelID.trim()))
 function updateProvider(id: AIProviderID) {
+  // A sign-in still waiting must not land in another provider's key.
+  signIn.cancel()
   profile.updateProvider(id)
   advancedOpen.value = id === 'harness:pi'
 }
@@ -232,7 +237,20 @@ async function remove() {
               />
             </ProviderSettingsField>
 
+            <ChatGPTSignInField
+              v-if="providerDef.signInOnly"
+              :saved="hasExistingKey"
+              :signed-in="signIn.signedIn.value"
+              :email="signIn.email.value"
+              :status="signIn.status.value"
+              :disabled="busy"
+              @sign-in="signIn.signIn()"
+              @reopen="signIn.reopen()"
+              @cancel="signIn.cancel()"
+              @sign-out="clearKey"
+            />
             <ProviderSettingsKeyField
+              v-else
               v-model="keyInput"
               :label="ai.apiKey"
               :saved="hasExistingKey"

@@ -4,6 +4,7 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
 
+import { chatGPTAdapter } from '@/app/ai/providers/chatgpt/adapter'
 import {
   createAnthropicCompatibleAdapter,
   createOpenAICompatibleAdapter
@@ -28,6 +29,7 @@ const MODEL_PROVIDER_ADAPTERS = {
   },
   anthropic: createAnthropicCompatibleAdapter(),
   openai: createOpenAICompatibleAdapter(),
+  chatgpt: chatGPTAdapter,
   google: {
     create(config, runtime) {
       return createGoogleGenerativeAI({ apiKey: config.apiKey, fetch: runtime.fetch })(

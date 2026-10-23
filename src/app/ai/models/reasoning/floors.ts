@@ -3,20 +3,9 @@ import * as v from 'valibot'
 import { AI_PROVIDERS, REASONING_EFFORTS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption, ReasoningEffort } from '@open-pencil/core/constants'
 
+import { modelOptionsSchema } from '@/app/ai/models/catalog/schema'
+import { cachedChatGPTModels } from '@/app/ai/providers/chatgpt/catalog'
 import { cachedRemoteJSON } from '@/app/cache/remote'
-
-const cachedModelOptionsSchema = v.array(
-  v.object({
-    id: v.string(),
-    name: v.string(),
-    tag: v.optional(v.string()),
-    capabilities: v.optional(v.array(v.picklist(['tools', 'vision']))),
-    recommendedMaxOutputTokens: v.optional(v.number()),
-    releaseDate: v.optional(v.string()),
-    status: v.optional(v.picklist(['active', 'beta', 'deprecated'])),
-    minReasoningEffort: v.optional(v.picklist(REASONING_EFFORTS))
-  })
-) satisfies v.GenericSchema<unknown, ModelOption[]>
 
 const openRouterModelSchema = v.looseObject({
   id: v.optional(v.unknown()),
@@ -104,7 +93,7 @@ async function fetchOpenRouterModels(fetcher: typeof fetch): Promise<ModelOption
 
 const openRouterModels = cachedRemoteJSON<ModelOption[]>({
   key: OPENROUTER_MODELS_CACHE_KEY,
-  schema: cachedModelOptionsSchema,
+  schema: modelOptionsSchema,
   maxAgeMs: OPENROUTER_MODELS_CACHE_TTL_MS,
   load: async (fetcher) => {
     const models = await fetchOpenRouterModels(fetcher)
@@ -118,6 +107,10 @@ export async function listProviderModels(
 ): Promise<ModelOption[]> {
   if (providerID === 'openrouter') {
     return (await openRouterModels.get(fetcher)) ?? curatedOpenRouterModels
+  }
+  // The picker fetches the account's list; a runtime reads that copy instead of asking again.
+  if (providerID === 'chatgpt') {
+    return (await cachedChatGPTModels()) ?? curatedProviderModels(providerID)
   }
   return curatedProviderModels(providerID)
 }

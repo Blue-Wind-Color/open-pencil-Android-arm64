@@ -142,12 +142,18 @@ const failureMessage = computed(() => {
       return ai.value.chatRateLimited
     case 'request-failed':
       return ai.value.chatRequestFailed
+    case 'sign-in-expired':
+      return ai.value.chatSignInExpired
+    case 'plan-forbidden':
+      return ai.value.chatPlanForbidden
     default:
       return null
   }
 })
 const failureHasSettingsAction = computed(() =>
-  ['authentication', 'forbidden', 'model-not-found'].includes(chatFailure.value?.reason ?? '')
+  ['authentication', 'forbidden', 'model-not-found', 'sign-in-expired', 'plan-forbidden'].includes(
+    chatFailure.value?.reason ?? ''
+  )
 )
 const status = computed(() => chat.value?.status ?? 'ready')
 const showContinue = computed(() => {

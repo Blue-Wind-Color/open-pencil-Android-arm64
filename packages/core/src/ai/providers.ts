@@ -63,6 +63,7 @@ export type AIProviderID =
   | 'openrouter'
   | 'anthropic'
   | 'openai'
+  | 'chatgpt'
   | 'google'
   | 'deepseek'
   | 'openai-compatible'
@@ -96,7 +97,27 @@ export interface AIProviderDef {
   defaultModel: string
   supportsCustomBaseURL?: boolean
   supportsCustomModel?: boolean
+  /** The credential comes from signing in to an account; there is no key to paste. */
+  signInOnly?: boolean
 }
+
+const OPENAI_MODELS: ModelOption[] = [
+  {
+    id: 'gpt-6.1-sol',
+    name: 'GPT-6.1 Sol',
+    tag: 'Best',
+    capabilities: ['tools', 'vision'],
+    minReasoningEffort: 'low'
+  },
+  {
+    id: 'gpt-6-astra',
+    name: 'GPT-6 Astra',
+    tag: 'Smartest',
+    capabilities: ['tools', 'vision'],
+    minReasoningEffort: 'low'
+  },
+  { id: 'gpt-6-luna', name: 'GPT-6 Luna', tag: 'Fast', capabilities: ['tools', 'vision'] }
+]
 
 export const HARNESS_PROVIDER_ID = 'harness:pi' as const
 
@@ -220,23 +241,17 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     keyPlaceholder: 'sk-…',
     keyURL: 'https://platform.openai.com/api-keys',
     defaultModel: 'gpt-6.1-sol',
-    models: [
-      {
-        id: 'gpt-6.1-sol',
-        name: 'GPT-6.1 Sol',
-        tag: 'Best',
-        capabilities: ['tools', 'vision'],
-        minReasoningEffort: 'low'
-      },
-      {
-        id: 'gpt-6-astra',
-        name: 'GPT-6 Astra',
-        tag: 'Smartest',
-        capabilities: ['tools', 'vision'],
-        minReasoningEffort: 'low'
-      },
-      { id: 'gpt-6-luna', name: 'GPT-6 Luna', tag: 'Fast', capabilities: ['tools', 'vision'] }
-    ]
+    models: OPENAI_MODELS
+  },
+  {
+    id: 'chatgpt',
+    name: 'ChatGPT',
+    keyPlaceholder: '',
+    keyURL: '',
+    defaultModel: 'gpt-6.1-sol',
+    signInOnly: true,
+    // The Codex backend rejects minimal effort on every model.
+    models: OPENAI_MODELS.map((model) => ({ ...model, minReasoningEffort: 'low' }))
   },
   {
     id: 'google',

@@ -1,11 +1,14 @@
 import { generateText } from 'ai'
 
+import { AI_PROVIDERS } from '@open-pencil/core/constants'
+
 import { isInsufficientCreditError, providerErrorStatus } from '@/app/ai/chat/failure'
 import {
   createLanguageModel,
   resolveLanguageModelID,
   type ModelConfig
 } from '@/app/ai/models/language-model'
+import type { ModelCredentialStore } from '@/app/ai/providers/types'
 import { isTauri } from '@/app/tauri/env'
 
 export type ProviderConnectionTestResult =
@@ -14,10 +17,13 @@ export type ProviderConnectionTestResult =
 
 export type ProviderConnectionTestFailureReason =
   | 'missing-api-key'
+  | 'missing-sign-in'
   | 'missing-base-url'
   | 'missing-model'
   | 'invalid-base-url'
   | 'auth'
+  | 'sign-in-expired'
+  | 'plan-forbidden'
   | 'insufficient-credit'
   | 'model-not-found'
   | 'api-type'
@@ -29,8 +35,14 @@ function isCompatibleProvider(providerID: ModelConfig['providerID']): boolean {
   return providerID === 'openai-compatible' || providerID === 'anthropic-compatible'
 }
 
+function isSignInOnly(providerID: ModelConfig['providerID']): boolean {
+  return AI_PROVIDERS.some((provider) => provider.id === providerID && provider.signInOnly)
+}
+
 function validateConfig(config: ModelConfig): ProviderConnectionTestFailureReason | null {
-  if (!config.apiKey.trim()) return 'missing-api-key'
+  if (!config.apiKey.trim()) {
+    return isSignInOnly(config.providerID) ? 'missing-sign-in' : 'missing-api-key'
+  }
   if (isCompatibleProvider(config.providerID)) {
     if (!config.customBaseURL.trim()) return 'missing-base-url'
     try {
@@ -93,21 +105,30 @@ function classifyError(error: unknown): ProviderConnectionTestFailureReason {
   return classifyStatus(providerErrorStatus(error), text) ?? classifyMessage(text) ?? 'unknown'
 }
 
+/**
+ * Sends a one-token request. A test of a saved credential passes its store, so a sign-in the
+ * request refreshes keeps the new tokens instead of leaving a spent refresh token saved.
+ */
 export async function testProviderConnection(
-  config: ModelConfig
+  config: ModelConfig,
+  credentials?: ModelCredentialStore
 ): Promise<ProviderConnectionTestResult> {
   const invalidReason = validateConfig(config)
   if (invalidReason) return { ok: false, reason: invalidReason }
 
   try {
     await generateText({
-      model: createLanguageModel(config),
+      model: createLanguageModel(config, credentials),
       prompt: 'Reply with OK.',
       maxOutputTokens: 1,
       abortSignal: AbortSignal.timeout(15_000)
     })
     return { ok: true }
   } catch (error) {
-    return { ok: false, reason: classifyError(error) }
+    const reason = classifyError(error)
+    if (reason !== 'auth' || !isSignInOnly(config.providerID)) return { ok: false, reason }
+    // A provider signed in to has no key: a 403 is the plan, anything else the sign-in.
+    const planForbidden = providerErrorStatus(error) === 403
+    return { ok: false, reason: planForbidden ? 'plan-forbidden' : 'sign-in-expired' }
   }
 }

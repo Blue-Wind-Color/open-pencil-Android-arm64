@@ -7,6 +7,7 @@ import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/models/lan
 import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { modelConnection, resolveAIModelRole } from '@/app/ai/models/store'
 import type { AIModelConnection, AIModelRole, ResolvedAIModelRole } from '@/app/ai/models/types'
+import type { ModelCredentialStore } from '@/app/ai/providers/types'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 import {
   initializeCredentialMigration,
@@ -68,6 +69,19 @@ export async function resolveModelConnectionAPIKey(connectionId: string): Promis
   return appCredentialServices.resolver.resolve(modelConnectionCredentialRef(connection))
 }
 
+/** The stored credential of a connection, for a model whose sign-in refreshes. */
+export function modelConnectionCredentialStore(connectionId: string): ModelCredentialStore {
+  return {
+    load: () => resolveModelConnectionAPIKey(connectionId),
+    // A refreshed sign-in is not a key change, so the open chat keeps its transport.
+    save: async (value) => {
+      const connection = modelConnection(connectionId)
+      if (!connection) return
+      await appCredentialServices.manager.set(modelConnectionCredentialRef(connection), value)
+    }
+  }
+}
+
 export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRuntime | null> {
   const resolved = resolveAIModelRole(role)
   if (!resolved) return null
@@ -101,13 +115,16 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
     kind: 'direct',
     role: resolved,
     minReasoningEffort: known?.minReasoningEffort,
-    model: createLanguageModel({
-      providerID: resolved.connection.providerID,
-      apiKey,
-      modelID: resolved.profile.modelID,
-      customModelID: resolved.profile.customModelID,
-      customBaseURL: resolved.connection.customBaseURL,
-      customAPIType: resolved.connection.customAPIType
-    })
+    model: createLanguageModel(
+      {
+        providerID: resolved.connection.providerID,
+        apiKey,
+        modelID: resolved.profile.modelID,
+        customModelID: resolved.profile.customModelID,
+        customBaseURL: resolved.connection.customBaseURL,
+        customAPIType: resolved.connection.customAPIType
+      },
+      modelConnectionCredentialStore(resolved.connection.id)
+    )
   }
 }

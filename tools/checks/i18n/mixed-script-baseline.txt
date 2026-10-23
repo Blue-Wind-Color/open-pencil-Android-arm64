@@ -1,5 +1,6 @@
 ja:ai.aiSetupAccessAPI
 ja:ai.aiSetupAccessAgentsDesktop
+ja:ai.aiSetupAccessChatGPT
 ja:ai.aiSetupAccessServerDescription
 ja:ai.aiSetupAgentAdapterMismatch
 ja:ai.aiSetupAgentDescription
@@ -14,6 +15,15 @@ ja:ai.aiSetupAgentPromptHint
 ja:ai.aiSetupAgentTools
 ja:ai.aiSetupAgentToolsFailed
 ja:ai.aiSetupAgentToolsHint
+ja:ai.aiSetupChatGPTCallbackCancelled
+ja:ai.aiSetupChatGPTCallbackSignedIn
+ja:ai.aiSetupChatGPTCallbackStale
+ja:ai.aiSetupChatGPTFailed
+ja:ai.aiSetupChatGPTPortInUse
+ja:ai.aiSetupChatGPTSignIn
+ja:ai.aiSetupChatGPTSignedInTitle
+ja:ai.aiSetupChatGPTUsage
+ja:ai.aiSetupChatGPTWaiting
 ja:ai.aiSetupConnectTitle
 ja:ai.aiSetupGapAddOpenRouter
 ja:ai.aiSetupGapCoveredByOpenRouter
@@ -213,6 +223,7 @@ ja:updates.unavailable
 ja:updates.upToDate
 zh-cn:ai.aiSetupAccessAPI
 zh-cn:ai.aiSetupAccessAgentsDesktop
+zh-cn:ai.aiSetupAccessChatGPT
 zh-cn:ai.aiSetupAccessServerDescription
 zh-cn:ai.aiSetupAgentAdapterMismatch
 zh-cn:ai.aiSetupAgentDescription
@@ -227,6 +238,15 @@ zh-cn:ai.aiSetupAgentPromptHint
 zh-cn:ai.aiSetupAgentTools
 zh-cn:ai.aiSetupAgentToolsFailed
 zh-cn:ai.aiSetupAgentToolsHint
+zh-cn:ai.aiSetupChatGPTCallbackCancelled
+zh-cn:ai.aiSetupChatGPTCallbackSignedIn
+zh-cn:ai.aiSetupChatGPTCallbackStale
+zh-cn:ai.aiSetupChatGPTFailed
+zh-cn:ai.aiSetupChatGPTPortInUse
+zh-cn:ai.aiSetupChatGPTSignIn
+zh-cn:ai.aiSetupChatGPTSignedInTitle
+zh-cn:ai.aiSetupChatGPTUsage
+zh-cn:ai.aiSetupChatGPTWaiting
 zh-cn:ai.aiSetupConnectTitle
 zh-cn:ai.aiSetupGapAddOpenRouter
 zh-cn:ai.aiSetupGapCoveredByOpenRouter

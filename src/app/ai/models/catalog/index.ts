@@ -6,6 +6,8 @@ import type { AIProviderID, ModelOption } from '@open-pencil/core/constants'
 
 import { cachedRemoteJSON } from '@/app/cache/remote'
 
+import { listChatGPTModels } from './chatgpt'
+
 const MODELS_DEV_URL = 'https://models.dev/api.json'
 const MODELS_DEV_CACHE_KEY = 'models-dev/catalog'
 const MODELS_DEV_CACHE_TTL_MS = 24 * 60 * 60 * 1000
@@ -125,11 +127,24 @@ function mergeCuratedModels(curated: ModelOption[], catalog: ModelOption[]): Mod
   return [...recommended, ...remaining]
 }
 
+/** The account's own list in its order; recommended models keep their names and tags. */
+function withCuratedNames(curated: ModelOption[], listed: ModelOption[]): ModelOption[] {
+  const curatedById = new Map(curated.map((model) => [model.id, model]))
+  return listed.map((model) => {
+    const known = curatedById.get(model.id)
+    return known ? { ...model, name: known.name, tag: known.tag } : model
+  })
+}
+
 export async function listCatalogModels(
   providerID: AIProviderID,
   fetcher?: typeof fetch
 ): Promise<ModelOption[]> {
   const curated = curatedProviderModels(providerID)
+  if (providerID === 'chatgpt') {
+    const listed = await listChatGPTModels()
+    return listed ? withCuratedNames(curated, listed) : curated
+  }
   const providerKeys = PROVIDER_KEYS[providerID]
   if (!providerKeys?.length) return curated
   const catalog = await modelsDevCatalog.get(fetcher)

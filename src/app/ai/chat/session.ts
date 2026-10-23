@@ -3,7 +3,7 @@ import type { ChatTransport, FinishReason, UIMessage } from 'ai'
 import type { ComputedRef, Ref } from 'vue'
 import { ref } from 'vue'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
@@ -263,7 +263,10 @@ export function createChatSessionManager({
         onError: (error) => {
           const reportedError = activeProviderError ?? error
           activeProviderError = null
-          failure.value = classifyAIChatError(reportedError)
+          const signInOnly = AI_PROVIDERS.some(
+            (provider) => provider.id === providerID.value && provider.signInOnly
+          )
+          failure.value = classifyAIChatError(reportedError, { signInOnly })
           const { errorName, errorCode, message, stack } = diagnosticErrorDetails(reportedError)
           recordChatFailed({ errorName, errorCode, message, stack }, diagnosticContext)
         },

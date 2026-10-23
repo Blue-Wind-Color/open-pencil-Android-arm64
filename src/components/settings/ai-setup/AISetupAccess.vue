@@ -11,6 +11,7 @@ import {
   ONBOARDING_API_PROVIDERS,
   ONBOARDING_MORE_API_PROVIDERS,
   ONBOARDING_SERVER_PROVIDER,
+  ONBOARDING_SUBSCRIPTIONS,
   type OnboardingAccess
 } from '@/app/ai/models/settings/onboarding/plan'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
@@ -76,6 +77,19 @@ function toggle(providerID: OnboardingAccess, checked: boolean): void {
         <SettingsLink :href="DESKTOP_DOWNLOAD_URL">{{ ai.aiSetupGetDesktop }}</SettingsLink>
       </template>
     </AppAlert>
+  </section>
+  <section v-if="agentsAvailable" :class="styles.group()">
+    <h3 :class="styles.groupHeading()">{{ ai.aiSetupAccessSubscriptions }}</h3>
+    <AppCheckboxCard
+      v-for="subscription in ONBOARDING_SUBSCRIPTIONS"
+      :key="subscription"
+      :label="modelProviderName(subscription)"
+      :description="ai.aiSetupAccessChatGPT"
+      :model-value="access.includes(subscription)"
+      @update:model-value="toggle(subscription, $event)"
+    >
+      <template #icon><ProviderLogo :provider="subscription" /></template>
+    </AppCheckboxCard>
   </section>
   <section :class="styles.group()">
     <h3 :class="styles.groupHeading()">{{ ai.aiSetupAccessAPI }}</h3>

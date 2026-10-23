@@ -17,7 +17,10 @@ import {
   ONBOARDING_SERVER_PROVIDER,
   type OnboardingAccess
 } from '@/app/ai/models/settings/onboarding/plan'
-import type { OnboardingSignInStatus } from '@/app/ai/models/settings/onboarding/sign-in'
+import {
+  isOnboardingSignInProvider,
+  type OnboardingSignInStatus
+} from '@/app/ai/models/settings/onboarding/sign-in'
 import AgentSetup from '@/components/settings/agents/AgentSetup.vue'
 import PiSetup from '@/components/settings/agents/PiSetup.vue'
 import ProviderConnectionTestButton from '@/components/settings/provider/ProviderConnectionTestButton.vue'
@@ -85,7 +88,9 @@ const agent = computed(() =>
 )
 const provider = computed(() => AI_PROVIDERS.find((candidate) => candidate.id === providerID))
 const server = computed(() => providerID === ONBOARDING_SERVER_PROVIDER)
-const supportsSignIn = computed(() => providerID === 'openrouter')
+const signInProvider = computed(() => (isOnboardingSignInProvider(providerID) ? providerID : null))
+/** The provider takes no pasted key; signing in is the only way to connect it. */
+const signInOnly = computed(() => provider.value?.signInOnly === true)
 const serverPreset = computed(() => serverPresetFor(state.customBaseURL))
 
 const keyHint = computed(() => {
@@ -122,8 +127,10 @@ const keyHint = computed(() => {
 
     <template v-else>
       <p v-if="recommended" :class="styles.help()">{{ ai.aiSetupMeteredNote }}</p>
+      <p v-if="providerID === 'chatgpt'" :class="styles.help()">{{ ai.aiSetupChatGPTUsage }}</p>
       <AISetupSignIn
-        v-if="supportsSignIn"
+        v-if="signInProvider"
+        :provider="signInProvider"
         :account="state.account"
         :status="signInStatus"
         :disabled="disabled"
@@ -139,8 +146,11 @@ const keyHint = computed(() => {
         @update="emit('update', $event)"
         @vision="emit('serverVision', $event)"
       />
+      <p v-if="signInOnly && hasSavedKey && !state.account" :class="styles.help()">
+        {{ ai.aiSetupSavedSignInHint }}
+      </p>
       <ProviderSettingsKeyField
-        v-if="!state.account"
+        v-if="!state.account && !signInOnly"
         :model-value="state.apiKey"
         :label="ai.apiKey"
         :saved="false"
@@ -152,7 +162,7 @@ const keyHint = computed(() => {
         @update:model-value="emit('update', { apiKey: $event })"
       />
       <ProviderConnectionTestButton
-        v-if="!state.account"
+        v-if="!state.account && !signInOnly"
         :status="state.test"
         :reason="state.reason"
         :disabled="disabled"

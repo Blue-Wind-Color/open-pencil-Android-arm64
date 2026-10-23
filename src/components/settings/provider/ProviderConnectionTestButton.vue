@@ -25,6 +25,8 @@ const resultMessage = computed(() => {
   switch (reason) {
     case 'missing-api-key':
       return ai.value.connectionTestMissingAPIKey
+    case 'missing-sign-in':
+      return ai.value.connectionTestMissingSignIn
     case 'missing-base-url':
       return ai.value.connectionTestMissingBaseURL
     case 'missing-model':
@@ -33,6 +35,10 @@ const resultMessage = computed(() => {
       return ai.value.connectionTestInvalidBaseURL
     case 'auth':
       return ai.value.connectionTestAuthFailed
+    case 'sign-in-expired':
+      return ai.value.connectionTestSignInExpired
+    case 'plan-forbidden':
+      return ai.value.connectionTestPlanForbidden
     case 'insufficient-credit':
       return ai.value.connectionTestInsufficientCredit
     case 'model-not-found':

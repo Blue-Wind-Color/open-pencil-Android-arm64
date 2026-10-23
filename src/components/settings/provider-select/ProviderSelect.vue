@@ -89,7 +89,8 @@ const groups = computed(() => {
 
   result.push({
     label: acpAgents.value.length ? ai.value.providerGroupProviders : undefined,
-    options: [...AI_PROVIDERS]
+    // Signing in returns to a port on this computer, which only the desktop app can open.
+    options: AI_PROVIDERS.filter((provider) => IS_TAURI || !provider.signInOnly)
       .sort((left, right) => left.name.localeCompare(right.name))
       .map((provider) => ({
         value: provider.id,
