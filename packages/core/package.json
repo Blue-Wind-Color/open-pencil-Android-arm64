@@ -109,6 +109,11 @@
       "import": "./dist/io/formats/fig/index.js",
       "default": "./dist/io/formats/fig/index.js"
     },
+    "./io/formats/html": {
+      "types": "./dist/io/formats/html/index.d.ts",
+      "import": "./dist/io/formats/html/index.js",
+      "default": "./dist/io/formats/html/index.js"
+    },
     "./io/formats/html/import": {
       "types": "./dist/io/formats/html/import.d.ts",
       "import": "./dist/io/formats/html/import.js",
