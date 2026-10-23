@@ -5,7 +5,6 @@ import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-gra
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
-import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
@@ -21,7 +20,6 @@ import {
 } from '#core/constants'
 import type { EditorState } from '#core/editor/types'
 import { RenderProfiler } from '#core/profiler'
-import type { TextEditor } from '#core/text/editor'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
 
 import { createImageCache } from './images/cache'
@@ -34,12 +32,11 @@ import { NodePathCaches } from './paths/cache'
 import * as RenderColors from './renderer/colors'
 import * as RendererFonts from './renderer/fonts'
 import { destroyRenderer, releaseLiveImages } from './renderer/lifecycle'
-import { installRendererDomainMethods } from './renderer/methods'
+import { installRendererDomainMethods, type RendererDomainMethods } from './renderer/methods'
 import { initializeRendererPaints, initializeSelectionPaintColors } from './renderer/paints'
 import * as RenderPipeline from './renderer/pipeline'
 import type { SceneBacking, SceneBackingBuild } from './renderer/retained-backing/types'
 import * as RendererState from './renderer/state'
-import type { EffectPass } from './shadows'
 import * as RenderText from './text'
 import type { SavedDecorationCache } from './text/decorations'
 import { createDerivedGlyphPathCache, createGlyphSilhouetteCache } from './text/derived'
@@ -53,7 +50,6 @@ export type {
   SelectionTheme
 } from './renderer/types'
 import type {
-  Path,
   CanvasKit,
   Surface,
   Canvas,
@@ -87,7 +83,7 @@ import type { PlacedStatusLabel } from './labels/status'
 import { EffectRasterCache } from './renderer/effect-raster-cache'
 import { TiledSceneController } from './renderer/tiles'
 import type { TransientCanvasPreview } from './renderer/transient-previews'
-import type { PresenceCursor, RenderOverlays, RulerTheme, SelectionTheme } from './renderer/types'
+import type { RenderOverlays, RulerTheme, SelectionTheme } from './renderer/types'
 
 /**
  * A picture uploaded as a texture that knows its size: an `ImageBitmap`, or a canvas, which
@@ -246,176 +242,63 @@ export class SkiaRenderer {
   readonly COMPONENT_SET_DASH = COMPONENT_SET_DASH
   readonly COMPONENT_SET_DASH_GAP = COMPONENT_SET_DASH_GAP
 
-  declare drawHoverHighlight: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    hoveredNodeId?: string | null,
-    preview?: RenderOverlays['rotationPreview']
-  ) => void
-  declare drawMeasurements: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    selectedIds: Set<string>,
-    targetId?: string | null
-  ) => void
-  declare drawEnteredContainer: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    enteredContainerId?: string | null,
-    preview?: RenderOverlays['rotationPreview']
-  ) => void
-  declare drawSelection: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    selectedIds: Set<string>,
-    overlays: RenderOverlays
-  ) => void
-  declare drawNodeSelection: (
-    canvas: Canvas,
-    node: SceneNode,
-    rotation: number,
-    graph: SceneGraph,
-    preview?: RenderOverlays['rotationPreview']
-  ) => void
-  declare drawSelectionLabels: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    selectedIds: Set<string>,
-    overlays?: RenderOverlays
-  ) => void
-  declare drawParentFrameOutlines: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    selectedIds: Set<string>,
-    preview?: RenderOverlays['rotationPreview']
-  ) => void
-  declare drawNodeOutline: (
-    canvas: Canvas,
-    node: SceneNode,
-    rotation: number,
-    graph: SceneGraph,
-    preview?: RenderOverlays['rotationPreview']
-  ) => void
-  declare drawGroupBounds: (
-    canvas: Canvas,
-    nodes: SceneNode[],
-    graph: SceneGraph,
-    preview?: RenderOverlays['rotationPreview']
-  ) => void
-  declare getRotatedCorners: (node: SceneNode, abs: Vector) => Vector[]
-  declare drawHandle: (canvas: Canvas, x: number, y: number) => void
-  declare drawSnapGuides: (canvas: Canvas, guides?: SnapGuide[]) => void
-  declare drawSnapMarks: (canvas: Canvas, guides?: SnapGuide[]) => void
-  declare drawMarquee: (canvas: Canvas, marquee?: Rect | null) => void
-  declare drawFlashes: (canvas: Canvas, graph: SceneGraph) => void
-  declare drawLayoutInsertIndicator: (
-    canvas: Canvas,
-    indicator?: RenderOverlays['layoutInsertIndicator']
-  ) => void
-  declare drawAutoLayoutHover: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    hover?: RenderOverlays['autoLayoutHover']
-  ) => void
-  declare drawTextEditOverlay: (canvas: Canvas, node: SceneNode, editor: TextEditor) => void
-  declare drawNodeEditOverlay: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    editState?: RenderOverlays['nodeEditState']
-  ) => void
-  declare drawPenOverlay: (canvas: Canvas, penState: RenderOverlays['penState']) => void
-  declare drawPencilOverlay: (canvas: Canvas, pencilState: RenderOverlays['pencilState']) => void
-  declare drawPresenceCursors: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    cursors?: PresenceCursor[]
-  ) => void
-  declare drawRulers: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    selectedIds: Set<string>,
-    guides?: RenderOverlays['guides']
-  ) => void
-  declare drawFrameTitles: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    selectedIds: ReadonlySet<string>,
-    overlays?: RenderOverlays
-  ) => void
-  declare drawSectionTitles: (canvas: Canvas, graph: SceneGraph, overlays?: RenderOverlays) => void
-  declare drawComponentLabels: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    overlays?: RenderOverlays
-  ) => void
-  declare renderNodeSelf: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    nodeId: string,
-    overlays?: RenderOverlays
-  ) => void
-  declare renderNode: (
-    canvas: Canvas,
-    graph: SceneGraph,
-    nodeId: string,
-    overlays: RenderOverlays,
-    parentAbsX?: number,
-    parentAbsY?: number,
-    hasTransformedAncestor?: boolean
-  ) => void
-  declare renderSection: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
-  declare renderComponentSet: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
-  declare renderShape: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
-  declare renderShapeUncached: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
-  declare paintShapeContent: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
-  declare renderEffects: (
-    canvas: Canvas,
-    node: SceneNode,
-    graph: SceneGraph,
-    pass: EffectPass
-  ) => void
-  declare renderText: (canvas: Canvas, node: SceneNode, fill?: Fill) => void
-  declare drawNodeFill: (canvas: Canvas, node: SceneNode, fill?: Fill) => void
-  declare applyFill: (fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex?: number) => boolean
-  declare applyGradientFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => boolean
-  declare applyImageFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => boolean
-  declare drawNodeStroke: (canvas: Canvas, node: SceneNode) => void
-  declare drawStrokeWithAlign: (
-    canvas: Canvas,
-    node: SceneNode,
-    align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
-  ) => void
-  declare drawRRectStrokeWithAlign: (
-    canvas: Canvas,
-    rrect: Float32Array,
-    node: SceneNode,
-    stroke: Stroke
-  ) => void
-  declare drawIndividualSideStrokes: (canvas: Canvas, node: SceneNode, stroke: Stroke) => void
-  declare strokeNodeShape: (canvas: Canvas, node: SceneNode, paint: Paint) => void
-  declare makeNodeShapePath: (node: SceneNode) => Path
-  declare makePolygonPath: (node: SceneNode) => Path
-  declare makeRRect: (node: SceneNode) => Float32Array
-  declare makeRRectWithSpread: (node: SceneNode, spread: number) => Float32Array
-  declare clipNodeShape: (canvas: Canvas, node: SceneNode) => void
-  declare getVectorPaths: (node: SceneNode) => Path[] | null
-  declare getFillGeometry: (node: SceneNode) => Path[] | null
-  declare getStrokeGeometry: (node: SceneNode) => Path[] | null
-  declare getCachedDropShadow: (
-    dx: number,
-    dy: number,
-    sigma: number,
-    color: Float32Array
-  ) => ImageFilter
-  declare getCachedBlur: (sigma: number) => ImageFilter
-  declare getCachedDecalBlur: (sigma: number) => ImageFilter
-  declare getCachedMaskBlur: (sigma: number) => MaskFilter
-  declare applyClippedBlur: (
-    canvas: Canvas,
-    node: SceneNode,
-    sigma: number,
-    shape?: Path | null
-  ) => void
+  declare drawHoverHighlight: RendererDomainMethods['drawHoverHighlight']
+  declare drawMeasurements: RendererDomainMethods['drawMeasurements']
+  declare drawEnteredContainer: RendererDomainMethods['drawEnteredContainer']
+  declare drawSelection: RendererDomainMethods['drawSelection']
+  declare drawNodeSelection: RendererDomainMethods['drawNodeSelection']
+  declare drawSelectionLabels: RendererDomainMethods['drawSelectionLabels']
+  declare drawParentFrameOutlines: RendererDomainMethods['drawParentFrameOutlines']
+  declare drawNodeOutline: RendererDomainMethods['drawNodeOutline']
+  declare drawGroupBounds: RendererDomainMethods['drawGroupBounds']
+  declare getRotatedCorners: RendererDomainMethods['getRotatedCorners']
+  declare drawHandle: RendererDomainMethods['drawHandle']
+  declare drawSnapGuides: RendererDomainMethods['drawSnapGuides']
+  declare drawSnapMarks: RendererDomainMethods['drawSnapMarks']
+  declare drawMarquee: RendererDomainMethods['drawMarquee']
+  declare drawFlashes: RendererDomainMethods['drawFlashes']
+  declare drawLayoutInsertIndicator: RendererDomainMethods['drawLayoutInsertIndicator']
+  declare drawAutoLayoutHover: RendererDomainMethods['drawAutoLayoutHover']
+  declare drawTextEditOverlay: RendererDomainMethods['drawTextEditOverlay']
+  declare drawNodeEditOverlay: RendererDomainMethods['drawNodeEditOverlay']
+  declare drawPenOverlay: RendererDomainMethods['drawPenOverlay']
+  declare drawPencilOverlay: RendererDomainMethods['drawPencilOverlay']
+  declare drawPresenceCursors: RendererDomainMethods['drawPresenceCursors']
+  declare drawRulers: RendererDomainMethods['drawRulers']
+  declare drawFrameTitles: RendererDomainMethods['drawFrameTitles']
+  declare drawSectionTitles: RendererDomainMethods['drawSectionTitles']
+  declare drawComponentLabels: RendererDomainMethods['drawComponentLabels']
+  declare renderNodeSelf: RendererDomainMethods['renderNodeSelf']
+  declare renderNode: RendererDomainMethods['renderNode']
+  declare renderSection: RendererDomainMethods['renderSection']
+  declare renderComponentSet: RendererDomainMethods['renderComponentSet']
+  declare renderShape: RendererDomainMethods['renderShape']
+  declare renderShapeUncached: RendererDomainMethods['renderShapeUncached']
+  declare paintShapeContent: RendererDomainMethods['paintShapeContent']
+  declare renderEffects: RendererDomainMethods['renderEffects']
+  declare renderText: RendererDomainMethods['renderText']
+  declare drawNodeFill: RendererDomainMethods['drawNodeFill']
+  declare applyFill: RendererDomainMethods['applyFill']
+  declare applyGradientFill: RendererDomainMethods['applyGradientFill']
+  declare applyImageFill: RendererDomainMethods['applyImageFill']
+  declare drawNodeStroke: RendererDomainMethods['drawNodeStroke']
+  declare drawStrokeWithAlign: RendererDomainMethods['drawStrokeWithAlign']
+  declare drawRRectStrokeWithAlign: RendererDomainMethods['drawRRectStrokeWithAlign']
+  declare drawIndividualSideStrokes: RendererDomainMethods['drawIndividualSideStrokes']
+  declare strokeNodeShape: RendererDomainMethods['strokeNodeShape']
+  declare makeNodeShapePath: RendererDomainMethods['makeNodeShapePath']
+  declare makePolygonPath: RendererDomainMethods['makePolygonPath']
+  declare makeRRect: RendererDomainMethods['makeRRect']
+  declare makeRRectWithSpread: RendererDomainMethods['makeRRectWithSpread']
+  declare clipNodeShape: RendererDomainMethods['clipNodeShape']
+  declare getVectorPaths: RendererDomainMethods['getVectorPaths']
+  declare getFillGeometry: RendererDomainMethods['getFillGeometry']
+  declare getStrokeGeometry: RendererDomainMethods['getStrokeGeometry']
+  declare getCachedDropShadow: RendererDomainMethods['getCachedDropShadow']
+  declare getCachedBlur: RendererDomainMethods['getCachedBlur']
+  declare getCachedDecalBlur: RendererDomainMethods['getCachedDecalBlur']
+  declare getCachedMaskBlur: RendererDomainMethods['getCachedMaskBlur']
+  declare applyClippedBlur: RendererDomainMethods['applyClippedBlur']
   color4f(r: number, g: number, b: number, a: number): Float32Array {
     const c = this._tmpColor
     c[0] = r
