@@ -105,6 +105,7 @@
   "shareRestricted": "アクセス権のあるユーザーのみ",
   "shareAnyoneWithLink": "リンクを知っている全員",
   "shareLinkDetail": "リンクを知っている人は誰でも、サインインせずにこのファイルを開けます。",
+  "shareLinkSignInDetail": "リンクを知っている人は、ここにサインインした後でこのファイルを開けます。",
   "shareRestrictedDetail": "このファイルを開けるのは、上記のユーザーとワークスペースだけです。",
   "shareRestrictedNoLinksDetail": "このファイルを開けるのは、上記のユーザーとワークスペースだけです。このワークスペースではリンクがオフになっています。",
   "shareLinkPermission": "リンクの権限",

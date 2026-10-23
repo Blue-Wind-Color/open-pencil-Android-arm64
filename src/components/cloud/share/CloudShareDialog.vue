@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 
 import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
+import type { CloudLinkPolicy } from '@/app/cloud/sharing/document'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
@@ -31,7 +32,7 @@ const {
   inviting = false,
   copied = false,
   sendsLink = false,
-  links = { allowed: true, edit: true }
+  links = { allowed: true, guestView: true, guestEdit: true }
 } = defineProps<{
   documentName: string
   /** The workspace the document lives in, when this account belongs to it. */
@@ -43,8 +44,8 @@ const {
   copied?: boolean
   /** Whether the link goes out through the system share sheet rather than the clipboard. */
   sendsLink?: boolean
-  /** What the workspace's plan allows for links: any link at all, and links that can edit. */
-  links?: { allowed: boolean; edit: boolean }
+  /** What the workspace's plan allows for links, and whether guests may follow them. */
+  links?: CloudLinkPolicy
 }>()
 
 const open = defineModel<boolean>('open', { default: false })
@@ -212,7 +213,9 @@ function submitInvite() {
             <p :class="ui.accessDetail()">
               {{
                 link.access === 'link'
-                  ? t.shareLinkDetail
+                  ? (link.permission === 'edit' ? links.guestEdit : links.guestView)
+                    ? t.shareLinkDetail
+                    : t.shareLinkSignInDetail
                   : links.allowed
                     ? t.shareRestrictedDetail
                     : t.shareRestrictedNoLinksDetail
@@ -223,11 +226,7 @@ function submitInvite() {
             v-if="link.access === 'link' && canManage"
             :model-value="link.permission"
             :label="t.shareLinkPermission"
-            :options="
-              links.edit
-                ? permissionOptions
-                : permissionOptions.filter((option) => option.value === 'view')
-            "
+            :options="permissionOptions"
             :ui="{ trigger: 'w-28' }"
             @update:model-value="emit('changeLink', { ...link, permission: $event })"
           />

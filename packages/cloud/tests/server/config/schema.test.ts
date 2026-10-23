@@ -29,17 +29,6 @@ describe('Cloud server configuration', () => {
     ).toThrow('requires TOTP or passkeys')
   })
 
-  test('requires passkey identity to match the Cloud origin', () => {
-    expect(() =>
-      parseCloudServerConfig({
-        ...baseConfig,
-        passkeysEnabled: true,
-        passkeyRPID: 'other.example.com',
-        passkeyOrigin: 'https://other.example.com'
-      })
-    ).toThrow('Passkey origin must match')
-  })
-
   test('requires email delivery when enabling email and password', () => {
     expect(() => parseCloudServerConfig({ ...baseConfig, emailPasswordEnabled: true })).toThrow(
       'requires transactional email delivery'

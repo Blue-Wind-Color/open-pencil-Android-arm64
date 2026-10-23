@@ -5,6 +5,8 @@ export const portalLayout = tv({
   slots: {
     page: 'flex h-full min-h-0 flex-col overflow-hidden bg-canvas text-surface',
     bar: 'flex h-11 shrink-0 items-center gap-2 border-b border-border bg-panel px-4',
+    barHome:
+      'flex items-center gap-2 rounded focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none',
     barTitle: 'text-xs font-semibold whitespace-nowrap',
     barHost: 'truncate text-[11px] text-muted max-sm:hidden',
     barEnd: 'ml-auto flex items-center gap-2',

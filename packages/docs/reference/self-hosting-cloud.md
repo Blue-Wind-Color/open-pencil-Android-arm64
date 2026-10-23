@@ -5,7 +5,7 @@ description: Run your own OpenPencil Cloud server with PostgreSQL and an S3-comp
 
 # Self-hosting OpenPencil Cloud
 
-OpenPencil Cloud is one Node 22+ process in front of PostgreSQL 15 or later and an S3-compatible object store, with optional SMTP for email. The same process serves the API, the collaboration relay, and the server's own pages for signing in, account security, and administration. It also runs on [Cloudflare Workers](#cloudflare-workers) with the same configuration. People connect to it from the editor as described in [OpenPencil Cloud](/user-guide/openpencil-cloud).
+OpenPencil Cloud is one Node 22+ process in front of PostgreSQL 15 or later and an S3-compatible object store, with optional SMTP for email. The same process serves the API, the collaboration relay, the editor, and the server's own pages for signing in, account security, and administration. It also runs on [Cloudflare Workers](#cloudflare-workers) with the same configuration. People connect to it from the editor as described in [OpenPencil Cloud](/user-guide/openpencil-cloud).
 
 ## Build
 
@@ -14,24 +14,23 @@ From a checkout of the repository:
 ```sh
 bun install
 bun run build:packages
-bun run build:cloud-portal                       # writes dist-cloud-portal/
+bunx playwright install --with-deps chromium     # draws the demo document's shader fills
+bun run build:cloud                              # writes dist-cloud/: the editor and the server's pages
 bun --filter @open-pencil/cloud build:standalone # writes packages/cloud/dist-standalone/
 ```
 
-`dist-standalone/` bundles the server's dependencies, so copy the whole directory, together with `dist-cloud-portal/`, to a host that has Node but no `node_modules`. Start the server with `node dist-standalone/server.mjs`.
+`dist-standalone/` bundles the server's dependencies, so copy the whole directory, together with `dist-cloud/`, to a host that has Node but no `node_modules`. Start the server with `node dist-standalone/server.mjs`.
 
 ## Configure
 
-Settings live in a TOML file; environment variables supply secrets and tell the server where that file and the portal are and where to listen.
+Settings live in a TOML file; environment variables supply secrets and tell the server where that file and the site build are and where to listen.
 
 1. Copy [`openpencil-cloud.example.toml`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/openpencil-cloud.example.toml) and set at least:
    - `deployment.public_url`: the address the server answers on, for example `https://cloud.example.com`;
-   - `deployment.app_url`: the editor that invitation and share links open (see [The editor address](#the-editor-address));
-   - `deployment.trusted_origins`: every editor origin that talks to the server, including `app_url`;
    - `[object_storage]`: the bucket's endpoint, region, and name.
 2. Copy [`.env.example`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/.env.example) and set:
    - `OPENPENCIL_CLOUD_CONFIG`: the path to the TOML file;
-   - `OPENPENCIL_CLOUD_PORTAL_DIR`: the path to `dist-cloud-portal/`. Without it the server still runs, but sign-in, account, and administration pages answer 404, and it warns at startup;
+   - `OPENPENCIL_CLOUD_SITE_DIR`: the path to `dist-cloud/`. Without it the server still runs its API, but the editor and the sign-in, account, and administration pages answer 404, and it warns at startup;
    - the secrets the TOML names, by default `DATABASE_URL`, `BETTER_AUTH_SECRET`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`, plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_PRIVATE_KEY`, `S3_SESSION_TOKEN`, `OPENPENCIL_CLOUD_SMTP_USER`, and `OPENPENCIL_CLOUD_SMTP_PASSWORD` when their sections are enabled.
 3. Start the server with the environment loaded, for example `node --env-file=.env dist-standalone/server.mjs`.
 
@@ -41,34 +40,33 @@ The server migrates the database before it accepts requests and listens on `PORT
 
 ## The editor address
 
-`deployment.app_url` is where invitation and share links send people. Either:
+The server serves the editor at its own address. Visitors who are not signed in get a welcome page there first, where they sign in or use the editor without an account. Signed-in people whose account may use the server get the editor, already connected to it; an account waiting for approval gets a page that says so. Invitation and share links open the editor too.
 
-- use the hosted editor, `https://app.openpencil.dev`, which connects to any server; people sign in by approving a code, as in the desktop app;
-- or serve your own build of the editor (after `bun run build:packages`, `bunx vite build` writes `dist/`) on your own domain. When it is the server's editor address, people sign in on the server's pages and come straight back.
+For a server only its members use, set `deployment.local_editor = false`: the welcome page then offers only signing in, and every editor page asks for it. To keep shared links to members too, turn off `guest_view`, `guest_edit`, and `guest_presence` under `[entitlements.sharing]`; links then open after signing in to the server.
 
-Either way, the desktop app connects to the server directly, and the web editor offers to open links there.
+To send links to an editor at another address instead, set `deployment.app_url` to it and list its origin in `deployment.trusted_origins`. People sign in there by approving a code, as in the desktop app, which connects to the server directly either way.
 
 ## Reverse proxy
 
 - Terminate TLS in front of the server and the object store, on stable hostnames.
 - Forward WebSocket upgrades for `/api/collaboration/relay`. Collaboration tickets name the relay at `public_url` with a `ws:` or `wss:` scheme; set `[collaboration] relay_url` when clients reach it elsewhere.
-- The object store must accept presigned uploads from the editor's origins: allow `PUT` and `GET` from `trusted_origins` in its CORS rules, with the `Range` request header, which Home uses to read a document's preview without downloading the whole file.
+- The object store must accept presigned uploads from the editor's origins: allow `PUT` and `GET` from `public_url` and any `trusted_origins` in its CORS rules, with the `Range` request header, which Home uses to read a document's preview without downloading the whole file.
 
 ## Cloudflare Workers
 
-On Cloudflare a Worker serves the API and the portal, a Durable Object for each document runs its collaboration rooms, Hyperdrive connects to PostgreSQL, and a Cron Trigger every five minutes runs cleanup and retries email. [`packages/cloud/deploy/cloudflare`](https://github.com/open-pencil/open-pencil/tree/master/packages/cloud/deploy/cloudflare) is the deployment to copy: a Wrangler configuration and the Worker's entry, which reads `openpencil-cloud.toml` from the same folder.
+On Cloudflare a Worker serves the API, the editor, and the server's own pages, a Durable Object for each document runs its collaboration rooms, Hyperdrive connects to PostgreSQL, and a Cron Trigger every five minutes runs cleanup and retries email. [`packages/cloud/deploy/cloudflare`](https://github.com/open-pencil/open-pencil/tree/master/packages/cloud/deploy/cloudflare) is the deployment to copy: a Wrangler configuration and the Worker's entry, which reads `openpencil-cloud.toml` from the same folder.
 
-1. Copy the folder beside it, for example to `packages/cloud/deploy/mine`, so its relative paths still reach the runtime and the portal build.
+1. Copy the folder beside it, for example to `packages/cloud/deploy/mine`, so the Worker's entry still reaches the runtime.
 2. Create a Hyperdrive configuration for the database with `wrangler hyperdrive create`, and put its ID, your domain, and a Worker name in the copy's `wrangler.jsonc`.
 3. Add your TOML as `openpencil-cloud.toml` in the copy; Wrangler bundles it as text. Leave `[database]` empty, since `DATABASE_URL` comes from Hyperdrive, and trust `cf-connecting-ip` under `[authentication.trusted_proxies]`.
 4. Migrate from a checkout, with that TOML as `OPENPENCIL_CLOUD_CONFIG` and a direct connection string as `DATABASE_URL`: `bun --filter @open-pencil/cloud migrate`. The Worker never migrates, so do this before every deploy.
-5. Build the portal with `bun run build:packages && bun run build:cloud-portal`, then deploy from the copy with `bunx wrangler deploy --secrets-file <file>`, where the JSON file holds the secrets the TOML names.
+5. Build the site with `bun run build:packages && bun run build:cloud`, then deploy from the copy with `bunx wrangler deploy --assets "$(git rev-parse --show-toplevel)/dist-cloud" --secrets-file secrets.json`, where `secrets.json` holds the secrets the TOML names.
 
 The operator commands below work the same way, from a checkout with a direct connection. The `[workers]` intervals don't apply: mail a request queues is sent when the request finishes, and the Cron Trigger handles the rest.
 
 ## The first administrator
 
-Set `authentication.enrollment_mode = "approval"` for a controlled deployment: a verified identity then creates a pending request that an administrator reviews. Startup never grants roles, so bootstrap the first operator from a repository checkout that reads the same configuration and secrets and can reach the server's database at `DATABASE_URL`:
+Set `[authentication.enrollment] mode = "approval"` for a controlled deployment: a verified identity then creates a pending request that an administrator reviews. Startup never grants roles, so bootstrap the first operator from a repository checkout that reads the same configuration and secrets and can reach the server's database at `DATABASE_URL`:
 
 ```sh
 bun --filter @open-pencil/cloud admin approve owner@example.com

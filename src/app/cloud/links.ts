@@ -1,4 +1,6 @@
+import { useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
+import { ref, watch } from 'vue'
 
 import { cloudDesktopLinkURL, type CloudLinkKind } from '@open-pencil/cloud/contract'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
@@ -9,7 +11,10 @@ import { isTauri } from '@/app/tauri/env'
 import { bindDesktopLinkQueue } from '@/app/tauri/link-queue'
 import { IS_BROWSER } from '@/constants'
 
+import { cloudSignedIn, openCloudConnect } from './connect/flow'
 import { beginCloudInvitation } from './invitations/flow'
+import { cloudServerHost, normalizeCloudServerURL } from './servers/address'
+import { cloudServerForLink, findCloudServer } from './servers/store'
 import { openCloudShareLink } from './sharing/link'
 
 /**
@@ -56,17 +61,53 @@ export function canOfferDesktopApp(): boolean {
   return IS_BROWSER && !isTauri() && !useViewportKind().isMobile.value
 }
 
-/** Opens an invitation's dialog, or a shared document as a guest. */
+/**
+ * A shared link this tab is opening while it signs in, kept for the tab so it survives leaving for
+ * the server's sign-in pages, as an invitation is.
+ */
+const signingIn = IS_BROWSER
+  ? useSessionStorage<string | null>('open-pencil:cloud-share-link', null)
+  : ref<string | null>(null)
+
+/** Drops a shared link kept while signing in, as when the tab opens with another link. */
+export function forgetCloudLink(): void {
+  signingIn.value = null
+}
+
+/** Signs in to the server a link names, then opens the link again; see `resumeCloudLink`. */
+async function signInForLink(link: CloudLink): Promise<void> {
+  const url = normalizeCloudServerURL(link.server)
+  const server = url ? await cloudServerForLink(url) : null
+  if (!url || !server) {
+    const host = url ? cloudServerHost(url) : link.server
+    toast.error(cloudMessages.get().documentLinkUnknownServer({ host }))
+    return
+  }
+  signingIn.value = JSON.stringify(link satisfies CloudLink)
+  openCloudConnect({ serverId: server.id })
+}
+
+/** Opens an invitation's dialog, or a shared document. */
 export async function openCloudLink(link: CloudLink): Promise<void> {
   if (link.kind === 'invitations') {
     beginCloudInvitation(link.id, link.server, link.secret)
     return
   }
   const messages = cloudMessages.get()
+  signingIn.value = null
+  let outcome: 'opened' | 'sign-in'
   try {
-    await openCloudShareLink({ shareId: link.id, server: link.server, secret: link.secret })
+    outcome = await openCloudShareLink({
+      shareId: link.id,
+      server: link.server,
+      secret: link.secret
+    })
   } catch {
     toast.error(messages.shareLinkFailed)
+    return
+  }
+  if (outcome === 'sign-in') {
+    await signInForLink(link)
     return
   }
   if (canOfferDesktopApp()) {
@@ -75,6 +116,20 @@ export async function openCloudLink(link: CloudLink): Promise<void> {
       run: () => openCloudLinkInDesktop(link)
     })
   }
+}
+
+/** Opens a shared link again once signing in for it finished. */
+export function resumeCloudLink(): () => void {
+  return watch(cloudSignedIn, (signedIn) => {
+    const parsed = v.safeParse(
+      v.pipe(v.string(), v.parseJson(), cloudLinkSchema),
+      signingIn.value ?? ''
+    )
+    if (!signedIn || !parsed.success) return
+    const url = normalizeCloudServerURL(parsed.output.server)
+    if (url !== findCloudServer(signedIn.serverId)?.url) return
+    void openCloudLink(parsed.output)
+  })
 }
 
 /**

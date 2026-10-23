@@ -84,7 +84,7 @@ function select(id: string) {
 async function signOut() {
   await portal.auth.signOut()
   await portal.refreshAccount()
-  await router.replace({ name: 'sign-in' })
+  await router.replace({ name: 'welcome' })
 }
 
 onMounted(() => void refreshWaiting())

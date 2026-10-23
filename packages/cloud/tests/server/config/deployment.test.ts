@@ -18,28 +18,27 @@ public_url = "https://cloud.example.com"
 app_url = "https://app.example.com"
 trusted_origins = ["https://app.example.com"]
 
-[authentication]
-enrollment_mode = "approval"
+[authentication.enrollment]
+mode = "approval"
+notification_emails = ["admin@example.com"]
 
 [authentication.mfa]
-deployment_admin_required = true
-totp_enabled = true
-passkeys_enabled = true
-recovery_codes_enabled = true
-trusted_device_days = 7
+required_for_admins = true
+totp = true
+recovery_codes = true
+trusted_device_lifetime_days = 7
 
 [authentication.passkeys]
-rp_id = "cloud.example.com"
-rp_name = "OpenPencil Cloud"
-origin = "https://cloud.example.com"
+enabled = true
+rp_name = "Example Cloud"
 
 [authentication.email_password]
 enabled = true
 sign_up = false
 minimum_password_length = 16
 maximum_password_length = 120
-verification_link_expires_minutes = 30
-password_reset_link_expires_minutes = 45
+verification_link_lifetime_minutes = 30
+password_reset_link_lifetime_minutes = 45
 compromised_password_check = true
 
 [authentication.captcha]
@@ -78,8 +77,16 @@ const environment = {
 
 const completeSource = `${minimalSource.replace(
   'trusted_origins = ["https://app.example.com"]',
-  'trusted_origins = ["https://app.example.com"]\nindexing = "allow"'
+  'trusted_origins = ["https://app.example.com"]\nindexing = "allow"\nlocal_editor = false'
 )}
+maximum_upload_bytes = 104857600
+
+[collaboration]
+maximum_message_bytes = 524288
+maximum_connections_per_room = 250
+
+[documents]
+retention_days = 14
 
 [authentication.trusted_proxies]
 headers = ["cf-connecting-ip"]
@@ -99,12 +106,6 @@ enabled = false
 batch_size = 40
 interval_ms = 45000
 lease_ms = 180000
-document_retention_days = 14
-
-[technical_limits]
-maximum_upload_bytes = 104857600
-maximum_collaboration_message_bytes = 524288
-maximum_connections_per_room = 250
 `
 
 describe('Cloud TOML deployment configuration', () => {
@@ -114,6 +115,8 @@ describe('Cloud TOML deployment configuration', () => {
       databaseURL: environment.DATABASE_URL,
       authSecret: environment.BETTER_AUTH_SECRET,
       enrollmentMode: 'approval',
+      enrollmentAdminNotificationEmails: ['admin@example.com'],
+      localEditor: true,
       emailPasswordEnabled: true,
       emailPasswordSignUpEnabled: false,
       emailPasswordMinimumLength: 16,
@@ -126,9 +129,7 @@ describe('Cloud TOML deployment configuration', () => {
       passkeysEnabled: true,
       recoveryCodesEnabled: true,
       mfaTrustedDeviceDays: 7,
-      passkeyRPID: 'cloud.example.com',
-      passkeyRPName: 'OpenPencil Cloud',
-      passkeyOrigin: 'https://cloud.example.com',
+      passkeyRPName: 'Example Cloud',
       captchaProvider: 'cloudflare-turnstile',
       captchaSiteKey: 'public-turnstile-site-key',
       captchaSecretKey: 'turnstile-secret',
@@ -147,6 +148,7 @@ describe('Cloud TOML deployment configuration', () => {
     })
     expect(config).toMatchObject({
       indexingPolicy: 'allow',
+      localEditor: false,
       authTrustedIPHeaders: ['cf-connecting-ip'],
       authTrustedProxies: ['192.0.2.10'],
       s3SessionToken: 'session-token',
@@ -234,6 +236,18 @@ portal_url = "https://billing.example.com"
     )
     expect(() => relay('https://relay.example.com')).toThrow()
     expect(parseCloudDeploymentTOML(minimalSource, environment).relayURL).toBeUndefined()
+  })
+
+  test('refuses keys it does not know rather than leaving their settings at defaults', () => {
+    const renamed = minimalSource.replace(
+      '[authentication.enrollment]\nmode = "approval"',
+      '[authentication]\nenrollment_mode = "approval"\n\n[authentication.enrollment]'
+    )
+    expect(renamed).not.toBe(minimalSource)
+    expect(() => parseCloudDeploymentTOML(renamed, environment)).toThrow()
+    expect(() =>
+      parseCloudDeploymentTOML(`${minimalSource}\n[technical_limits]\n`, environment)
+    ).toThrow()
   })
 
   test('supports explicit secret-reference names', () => {

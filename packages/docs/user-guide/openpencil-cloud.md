@@ -93,7 +93,7 @@ Select **Share** on a Cloud document.
 
 - Invite people by email with **Can edit** or **Can view**. They get an email with a link, and the invitation expires after seven days. Change someone's access or remove it from the list.
 - Everyone in the document's workspace has the access the workspace gives them.
-- Under **General access**, **Anyone with the link** lets people open the document without an account, with **Can view** or **Can edit**. Some workspaces' plans turn links off, and the dialog says so.
+- Under **General access**, **Anyone with the link** lets people open the document with **Can view** or **Can edit**. Where the server allows it, they need no account; otherwise they sign in to the server first, and the dialog says which. Some workspaces' plans turn links off, and the dialog says so too.
 
 The server keeps only a fingerprint of each link, so a link can be copied only on the device that created it. On other devices, **Reset link** makes a new one you can copy; the old link stops working.
 
@@ -107,4 +107,4 @@ Invitation and share links open in the browser. If you use the desktop app, choo
 
 Opening a Cloud document joins its live session: everyone who has it open sees each other's cursors and edits as they happen. One person's app saves the document for everyone, so editing together never makes your changes conflict with someone else's.
 
-People who open a link without an account join under the name OpenPencil gives them, or the one they chose. They edit when the link allows it, but their app never saves to the server; someone signed in who can edit saves for them.
+People who open a link without an account, where the server allows it, join under the name OpenPencil gives them, or the one they chose. They edit when the link allows it, but their app never saves to the server; someone signed in who can edit saves for them.

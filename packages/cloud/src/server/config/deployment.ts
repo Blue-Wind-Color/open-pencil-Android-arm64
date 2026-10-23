@@ -83,7 +83,7 @@ function workerConfig(config: CloudDeploymentConfig) {
     cleanupBatchSize: cleanup?.batch_size,
     cleanupIntervalMs: cleanup?.interval_ms,
     cleanupLeaseDurationMs: cleanup?.lease_ms,
-    documentRetentionMs: cleanup ? cleanup.document_retention_days * 86_400_000 : undefined
+    documentRetentionMs: config.documents.retention_days * 86_400_000
   }
 }
 
@@ -99,13 +99,12 @@ function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironm
   }
 }
 
+/** Hard limits, whatever a plan allows; each lives in the section it limits. */
 function technicalLimits(config: CloudDeploymentConfig) {
-  const limits = config.technical_limits
-  if (!limits) return undefined
   return {
-    maximumUploadBytes: limits.maximum_upload_bytes,
-    maximumCollaborationMessageBytes: limits.maximum_collaboration_message_bytes,
-    maximumConnectionsPerRoom: limits.maximum_connections_per_room
+    maximumUploadBytes: config.object_storage.maximum_upload_bytes,
+    maximumCollaborationMessageBytes: config.collaboration.maximum_message_bytes,
+    maximumConnectionsPerRoom: config.collaboration.maximum_connections_per_room
   }
 }
 
@@ -120,29 +119,27 @@ export function parseCloudDeploymentConfig(
     appURL: config.deployment.app_url,
     indexingPolicy: config.deployment.indexing,
     trustedOrigins: config.deployment.trusted_origins,
+    localEditor: config.deployment.local_editor,
     listingMinimumEditorVersion: config.deployment.listing?.minimum_editor_version,
     databaseURL: requiredSecret(environment, config.database.url),
     authSecret: requiredSecret(environment, config.authentication.secret),
-    enrollmentMode: config.authentication.enrollment_mode,
-    enrollmentAdminNotificationEmails: config.authentication.admin_notification_emails,
-    deploymentAdminUserIds: config.authentication.admin_user_ids,
+    enrollmentMode: config.authentication.enrollment.mode,
+    enrollmentAdminNotificationEmails: config.authentication.enrollment.notification_emails,
     emailPasswordEnabled: config.authentication.email_password.enabled,
     emailPasswordSignUpEnabled: config.authentication.email_password.sign_up,
     emailPasswordMinimumLength: config.authentication.email_password.minimum_password_length,
     emailPasswordMaximumLength: config.authentication.email_password.maximum_password_length,
     emailVerificationExpiresIn:
-      config.authentication.email_password.verification_link_expires_minutes * 60,
+      config.authentication.email_password.verification_link_lifetime_minutes * 60,
     passwordResetExpiresIn:
-      config.authentication.email_password.password_reset_link_expires_minutes * 60,
+      config.authentication.email_password.password_reset_link_lifetime_minutes * 60,
     compromisedPasswordCheck: config.authentication.email_password.compromised_password_check,
-    deploymentAdminMFARequired: config.authentication.mfa.deployment_admin_required,
-    totpEnabled: config.authentication.mfa.totp_enabled,
-    passkeysEnabled: config.authentication.mfa.passkeys_enabled,
-    recoveryCodesEnabled: config.authentication.mfa.recovery_codes_enabled,
-    mfaTrustedDeviceDays: config.authentication.mfa.trusted_device_days,
-    passkeyRPID: config.authentication.passkeys?.rp_id,
-    passkeyRPName: config.authentication.passkeys?.rp_name,
-    passkeyOrigin: config.authentication.passkeys?.origin,
+    deploymentAdminMFARequired: config.authentication.mfa.required_for_admins,
+    totpEnabled: config.authentication.mfa.totp,
+    recoveryCodesEnabled: config.authentication.mfa.recovery_codes,
+    mfaTrustedDeviceDays: config.authentication.mfa.trusted_device_lifetime_days,
+    passkeysEnabled: config.authentication.passkeys.enabled,
+    passkeyRPName: config.authentication.passkeys.rp_name,
     captchaProvider: config.authentication.captcha?.provider,
     captchaSiteKey: config.authentication.captcha?.site_key,
     captchaSecretKey: config.authentication.captcha
@@ -165,7 +162,7 @@ export function parseCloudDeploymentConfig(
     s3ChecksumVerification: config.object_storage.checksum_verification,
     s3ServerSideEncryption: config.object_storage.server_side_encryption,
     s3KmsKeyId: config.object_storage.kms_key_id,
-    relayURL: config.collaboration?.relay_url,
+    relayURL: config.collaboration.relay_url,
     staticEntitlements: staticEntitlements(config),
     ...emailConfig(config, environment),
     ...workerConfig(config),

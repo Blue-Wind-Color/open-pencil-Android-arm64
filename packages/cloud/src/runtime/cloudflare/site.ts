@@ -1,7 +1,7 @@
-import type { PortalFiles } from '#cloud/runtime/portal/server'
+import type { SiteFiles } from '#cloud/runtime/site/server'
 
-/** The built portal's files from the Worker's static assets. */
-export function assetPortalFiles(assets: Fetcher): PortalFiles {
+/** The built site's files from the Worker's static assets. */
+export function assetSiteFiles(assets: Fetcher): SiteFiles {
   return async (path, request) => {
     const file = await assets.fetch(new URL(path, request.url))
     if (!file.ok || !file.body) return null

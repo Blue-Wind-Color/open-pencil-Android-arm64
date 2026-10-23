@@ -340,13 +340,19 @@ jobs:
       - name: Generate package declarations
         run: bun run build:packages
 
-      # The Worker serves the portal as static assets, and every official deployment bundles it.
-      - name: Build the Cloud portal and bundle the official Workers
+      # The editor's demo document draws its shader fills at build time in a headless Chromium.
+      - name: Install Chromium for the demo document
+        if: matrix.worker
+        run: bunx playwright install --with-deps chromium
+
+      # The Worker serves the editor and the portal as static assets, and every official
+      # deployment bundles them.
+      - name: Build the Cloud site and bundle the official Workers
         if: matrix.worker
         run: |
-          bun run build:cloud-portal
+          bun run build:cloud
           for deployment in packages/cloud/deploy/openpencil/*/; do
-            (cd "$deployment" && bunx wrangler deploy --dry-run)
+            (cd "$deployment" && bunx wrangler deploy --dry-run --assets "$GITHUB_WORKSPACE/dist-cloud")
           done
 
       - name: Run Cloud end-to-end tests against ${{ matrix.store }}

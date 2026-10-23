@@ -39,8 +39,11 @@ export type CloudAPIServices = {
 
 export function createPublicCloudAPIRouter(services: CloudAPIServices) {
   return new Hono<CloudAPIEnvironment>()
-    .route('/', createPublicSharingRoutes(services.sharing))
-    .route('/', createPublicDocumentRoutes(services.sharing, services.documents))
+    .route('/', createPublicSharingRoutes(services.sharing, services.resolveSession))
+    .route(
+      '/',
+      createPublicDocumentRoutes(services.sharing, services.documents, services.resolveSession)
+    )
     .route('/', createPublicCollaborationRoutes(services.collaboration, services.resolveSession))
 }
 

@@ -11,6 +11,7 @@ export function cloudDiscoveryFixture(
     apiURL: `${origin}/api`,
     authURL: `${origin}/api/auth`,
     appURL,
+    localEditor: true,
     authentication: {
       socialProviders: ['google'],
       enterpriseSSO: false,

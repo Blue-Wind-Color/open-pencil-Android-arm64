@@ -9,6 +9,7 @@ const discovery: CloudDiscovery = {
   apiURL: 'https://cloud.example/api',
   authURL: 'https://cloud.example/api/auth',
   appURL: 'https://editor.example',
+  localEditor: true,
   authentication: { socialProviders: [], enterpriseSSO: false, enrollmentMode: 'open' },
   capabilities: { documents: true, workspaces: true, collaboration: true }
 }

@@ -106,6 +106,7 @@
   "shareRestricted": "Uniquement les personnes ayant accès",
   "shareAnyoneWithLink": "Toute personne disposant du lien",
   "shareLinkDetail": "Toute personne disposant du lien peut ouvrir ce fichier sans se connecter.",
+  "shareLinkSignInDetail": "Toute personne disposant du lien peut ouvrir ce fichier après s’être connectée ici.",
   "shareRestrictedDetail": "Seuls les personnes et l’espace de travail ci-dessus peuvent ouvrir ce fichier.",
   "shareRestrictedNoLinksDetail": "Seuls les personnes et l’espace de travail ci-dessus peuvent ouvrir ce fichier. Les liens sont désactivés pour cet espace de travail.",
   "shareLinkPermission": "Autorisation du lien",

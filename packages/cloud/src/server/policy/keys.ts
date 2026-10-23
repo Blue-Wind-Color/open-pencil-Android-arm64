@@ -1,7 +1,7 @@
 export const CLOUD_FEATURE_KEYS = {
-  capabilityLinks: 'cloud.sharing.capability-links',
-  anonymousView: 'cloud.sharing.anonymous-view',
-  anonymousEdit: 'cloud.sharing.anonymous-edit',
+  links: 'cloud.sharing.links',
+  guestView: 'cloud.sharing.guest-view',
+  guestEdit: 'cloud.sharing.guest-edit',
   guestPresence: 'cloud.sharing.guest-presence',
   collaboration: 'cloud.collaboration.enabled',
   serverEnforcedWrites: 'cloud.collaboration.server-enforced-writes',

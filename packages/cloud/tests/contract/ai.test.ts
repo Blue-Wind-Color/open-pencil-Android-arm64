@@ -57,9 +57,9 @@ describe('workspace entitlements contract', () => {
   test('reads entitlements from servers released before the AI service', () => {
     const entitlements = v.parse(workspaceEntitlementsSchema, {
       features: {
-        capabilityLinks: true,
-        anonymousView: true,
-        anonymousEdit: false,
+        links: true,
+        guestView: true,
+        guestEdit: false,
         guestPresence: true,
         collaboration: true,
         revisionHistory: true

@@ -6,14 +6,16 @@ import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 import BrandMark from '@/components/brand/BrandMark.vue'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { useAppButtonUI } from '@/theme/button/button'
 import { portalLayout } from '@/theme/cloud-portal/layout'
 import { sideList } from '@/theme/list/side-list'
 
 import type { PortalSection } from '../types'
 
 /**
- * Signed-in Cloud pages: account settings and, for operators, the deployment console. The side
- * list is drawn like the editor's Pages panel.
+ * Signed-in Cloud pages: account settings and, for operators, the deployment console. The bar
+ * leads back to the editor at the server's root; the side list is drawn like the editor's Pages
+ * panel.
  */
 const { host, account, sections, active, heading, description } = defineProps<{
   host: string
@@ -29,15 +31,19 @@ const ui = portalLayout()
 const messages = useCloudPortalMessages()
 const side = sideList()
 const groups = () => uniq(sections.map((section) => section.group))
+const editorLink = useAppButtonUI({ variant: 'outline', size: 'sm' })
 </script>
 
 <template>
   <div :class="ui.page()">
     <header :class="ui.bar()">
-      <BrandMark variant="micro" decorative />
-      <span :class="ui.barTitle()">{{ messages.productName }}</span>
+      <a href="/" :class="ui.barHome()">
+        <BrandMark variant="micro" decorative />
+        <span :class="ui.barTitle()">{{ messages.productName }}</span>
+      </a>
       <span :class="ui.barHost()">{{ host }}</span>
       <div :class="ui.barEnd()">
+        <a href="/" :class="editorLink.base">{{ messages.openEditor }}</a>
         <span :class="ui.barHost()">{{ account.email }}</span>
         <AccountAvatar :id="account.id" :name="account.name" />
         <IconButton :label="messages.signOut" @click="emit('signOut')">

@@ -25,9 +25,9 @@ export function createEntitlementService(
         deploymentMode: 'self-hosted' as const
       }
       const [
-        capabilityLinks,
-        anonymousView,
-        anonymousEdit,
+        links,
+        guestView,
+        guestEdit,
         guestPresence,
         collaboration,
         revisionHistory,
@@ -38,9 +38,9 @@ export function createEntitlementService(
         monthlyCreditAllowance,
         usage
       ] = await Promise.all([
-        policy.boolean(CLOUD_FEATURE_KEYS.capabilityLinks, false, context),
-        policy.boolean(CLOUD_FEATURE_KEYS.anonymousView, false, context),
-        policy.boolean(CLOUD_FEATURE_KEYS.anonymousEdit, false, context),
+        policy.boolean(CLOUD_FEATURE_KEYS.links, false, context),
+        policy.boolean(CLOUD_FEATURE_KEYS.guestView, false, context),
+        policy.boolean(CLOUD_FEATURE_KEYS.guestEdit, false, context),
         policy.boolean(CLOUD_FEATURE_KEYS.guestPresence, false, context),
         policy.boolean(CLOUD_FEATURE_KEYS.collaboration, false, context),
         policy.boolean(CLOUD_FEATURE_KEYS.revisionHistory, false, context),
@@ -59,9 +59,9 @@ export function createEntitlementService(
       const participants = Math.min(technicalMaximumParticipants, maximumParticipants)
       return {
         features: {
-          capabilityLinks,
-          anonymousView,
-          anonymousEdit,
+          links,
+          guestView,
+          guestEdit,
           guestPresence,
           collaboration,
           revisionHistory,

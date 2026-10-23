@@ -146,6 +146,7 @@ export const cloudMessageDefaults = {
   shareRestricted: 'Only people with access',
   shareAnyoneWithLink: 'Anyone with the link',
   shareLinkDetail: 'Anyone who has the link can open this file without signing in.',
+  shareLinkSignInDetail: 'Anyone who has the link can open this file after signing in here.',
   shareRestrictedDetail: 'Only the people and workspace above can open this file.',
   shareRestrictedNoLinksDetail:
     'Only the people and workspace above can open this file. Links are turned off for this workspace.',

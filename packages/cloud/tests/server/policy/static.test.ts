@@ -8,16 +8,16 @@ describe('structured static entitlements', () => {
       staticEntitlementValues({
         documents: { maximumFileBytes: 100, revisionHistory: true },
         storage: { maximumBytes: 1000 },
-        sharing: { capabilityLinks: true, anonymousView: true, anonymousEdit: false },
+        sharing: { links: true, guestView: true, guestEdit: false },
         collaboration: { enabled: true, maximumParticipants: 5 }
       })
     ).toEqual({
       'cloud.documents.maximum-file-bytes': 100,
       'cloud.documents.revision-history': true,
       'cloud.storage.maximum-bytes': 1000,
-      'cloud.sharing.capability-links': true,
-      'cloud.sharing.anonymous-view': true,
-      'cloud.sharing.anonymous-edit': false,
+      'cloud.sharing.links': true,
+      'cloud.sharing.guest-view': true,
+      'cloud.sharing.guest-edit': false,
       'cloud.collaboration.enabled': true,
       'cloud.collaboration.maximum-participants': 5
     })

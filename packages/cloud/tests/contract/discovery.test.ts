@@ -8,6 +8,7 @@ const discovery = {
   apiURL: 'https://pencil.example.com/api',
   authURL: 'https://pencil.example.com/api/auth',
   appURL: 'https://app.example.com',
+  localEditor: true,
   authentication: {
     socialProviders: ['google' as const],
     enterpriseSSO: true,

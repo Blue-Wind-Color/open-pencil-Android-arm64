@@ -33,9 +33,16 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      # The Worker serves the portal as static assets.
-      - name: Build the Cloud portal
-        run: bun run build:packages && bun run build:cloud-portal
+      # The editor's demo document draws its shader fills at build time in a headless Chromium.
+      - run: bunx playwright install --with-deps chromium
+
+      # The Worker serves the editor and the portal as static assets. The editor names this
+      # deployment as the official server and, like app.openpencil.dev, sends the daily ping.
+      - name: Build the Cloud site
+        env:
+          VITE_OPENPENCIL_OFFICIAL_CLOUD_URL: ${{ vars.CLOUD_URL }}
+          VITE_OPENPENCIL_FEEDBACK: "on"
+        run: bun run build:packages && bun run build:cloud
 
       # Migrations run before the new code, over the direct connection rather than Hyperdrive. The
       # config reads every secret it names, so only this step and the next one see them.
@@ -69,15 +76,22 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ${{ env.DEPLOYMENT }}
           packageManager: bun
-          command: deploy --secrets-file ${{ runner.temp }}/cloud-secrets.json
+          command: >-
+            deploy --assets ${{ github.workspace }}/dist-cloud
+            --secrets-file ${{ runner.temp }}/cloud-secrets.json
 
       - name: Check the deployment
         env:
           CLOUD_URL: ${{ vars.CLOUD_URL }}
         # Only a 200 counts: a redirect to a sign-in or access page would mean the Worker isn't there.
+        # Pages are asked for as a browser does; the API is not, so a missing route can't turn into
+        # the editor's page.
         run: |
-          for path in /health /ready /.well-known/openpencil /auth/sign-in; do
+          for path in /health /ready /.well-known/openpencil / /welcome /auth/sign-in; do
+            accept='application/json'
+            case "$path" in /|/welcome|/auth/*) accept='text/html' ;; esac
             status=$(curl --silent --show-error --retry 10 --retry-all-errors --retry-delay 3 \
+              --header "Accept: $accept" \
               --output /dev/null --write-out '%{http_code}' "$CLOUD_URL$path")
             if [ "$status" != 200 ]; then
               echo "::error::$path answered HTTP $status"

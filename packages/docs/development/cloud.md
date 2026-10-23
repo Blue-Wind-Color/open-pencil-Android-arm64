@@ -194,22 +194,34 @@ either role: the first operator is approved and promoted through the `admin` com
 
 ## Portal
 
-The server shows its own pages on its public address: sign-in and sign-up, email verification,
-password reset, two-step sign-in, desktop sign-in approval, account security, and the administration
-console. They are a separate Vite entry, `cloud.html`, in the app project, so they reuse the
-editor's components and theme without loading the editor; `bun run build:cloud-portal` writes them
-to `dist-cloud-portal/`. The editor never embeds these pages; when it needs them, for a social
-provider or a second sign-in step, it opens them in a browser and gets the person back through
-`/auth/return` or the device code. A verification link started in the editor lands on
-`/auth/verified`, which sends the person back to the editor.
+The server shows its own pages on its public address: a welcome page, sign-in and sign-up, email
+verification, password reset, two-step sign-in, desktop sign-in approval, account security, and the
+administration console. They are a separate Vite entry, `cloud.html`, in the app project, so they
+reuse the editor's components and theme without loading the editor. `bun run build:cloud` writes
+them to `dist-cloud/` beside the editor itself, which every Cloud server serves at its root. The
+editor never embeds these pages; when it needs them, for a social provider or a second sign-in
+step, it opens them in a browser and gets the person back through `/auth/return` or the device
+code. A verification link started in the editor lands on `/auth/verified`, which sends the person
+back to the editor.
 
 `CLOUD_PORTAL_PAGE_ROOTS` in the contract lists the page paths, and every runtime serves
 `cloud.html` at and below them with `frame-ancestors 'none'`, so the approval page cannot be
-framed. The server's root gets the page too, and the portal sends it on to its home. Both runtimes put the API behind the same Hono router, `createCloudServer` in
-`src/runtime/portal`, which answers portal pages before the API and portal assets only where the
-API returns 404; Node reads the build named by `OPENPENCIL_CLOUD_PORTAL_DIR`, and the Worker reads
-its static assets. `bun run cloud:dev` keeps a
-watched portal build next to the server.
+framed. Both runtimes put the API behind the same Hono router, `createCloudServer` in
+`src/runtime/site`, which answers portal pages before the API, and only where the API returns 404
+the site's files, then the editor's `index.html` for any other page, so the editor's router keeps
+its own addresses. Node reads the build named by `OPENPENCIL_CLOUD_SITE_DIR`, and the Worker reads
+its static assets. `bun run cloud:dev` keeps a watched site build next to the server.
+
+The editor a server serves knows it from the build (`__OPENPENCIL_CLOUD_SITE__`). Before it boots,
+it asks who is signed in: an account that may use the server gets the editor, and anyone else at
+the root goes to `/welcome`, which signs them in, sends an account waiting for review to its
+standing page, or opens the editor without an account; this browser then keeps that choice.
+`[deployment] local_editor = false` takes that choice away and sends every editor page there.
+Links to documents, shared files, and invitations always open the editor, which signs in for them,
+and an unreachable server does too, since the editor works without it. The editor adds its server at startup and reaches it with the
+server's own sign-in session, and the portal leaves for the editor as a page load, never through
+its router. An official deployment builds the editor with its own address as
+`VITE_OPENPENCIL_OFFICIAL_CLOUD_URL`, so staging is the official server in its own editor.
 
 ## Editor client
 
@@ -242,7 +254,7 @@ opening a document nobody edited uploads nothing.
 
 Operators author one schema-versioned TOML file. It owns URLs, trusted origins and proxies,
 authentication providers, enrollment, object storage, email, worker schedules, retention,
-entitlements, and technical limits. Environment variables only supply secrets, through references
+entitlements, and technical limits, each in the section it limits. Environment variables only supply secrets, through references
 such as `{ from_env = "DATABASE_URL" }`, and never override a value the file sets. TOML is parsed
 with `smol-toml` and then validated and normalised by Valibot.
 
@@ -251,8 +263,11 @@ looser.
 
 ## Policy, entitlements, and quotas
 
-OpenFeature answers concrete questions such as whether capability links, anonymous viewing, or
-full revision history is kept, and what a numeric limit is. Its provider reads one entitlement
+OpenFeature answers concrete questions such as whether links work, whether guests, people who
+follow a link without signing in, may view or edit through one, or whether full revision history
+is kept, and what a numeric limit is. Links always work for people signed in to the server: the
+share routes resolve the session, and a guest the server turns away gets `401` so the editor signs
+in and opens the link again. Its provider reads one entitlement
 source, chosen by `[entitlements] source`: the static table in the deployment TOML, which applies to
 every workspace, or per-workspace rows in the database that the `entitlements` command sets. The two
 are alternatives, not layers. Technical limits cap the file size and participant limits the source
@@ -426,3 +441,11 @@ document in one object lets a restore or a version change reach all its rooms in
 needs the document before the ticket arrives, so the ticket's relay URL names it. Objects keep their
 sockets without hibernation, so the relay runs unchanged; hibernating would need the relay to
 rebuild rooms and peers on every wake.
+
+**2026-10 · Every Cloud server serves the editor at its root.** The official web editor moves from
+app.openpencil.dev to the official server's own address, so one site holds the editor, sign-in,
+and documents, and a self-hosted server is a complete product too. On its own origin the editor
+signs in through the server's pages and its session, with no device code and no CORS. A welcome
+page meets visitors who are not signed in, and the editor stays usable without an account, as it
+is on app.openpencil.dev, which can then redirect there. Keeping the editor only on a separate
+static host left a signed-in person on account settings with no way to their files.

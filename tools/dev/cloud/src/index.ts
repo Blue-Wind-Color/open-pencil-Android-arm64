@@ -126,8 +126,8 @@ async function start(project: string): Promise<void> {
   ])
 
   const betterAuthSecret = await authSecret()
-  // The server serves the portal's pages from this build, rebuilt on every change.
-  const portal = Bun.spawn(['bun', 'run', 'build:cloud-portal', '--watch'], {
+  // The server serves the editor and its own pages from this build, rebuilt on every change.
+  const site = Bun.spawn(['bun', 'run', 'build:cloud', '--watch'], {
     cwd: root,
     stdout: 'inherit',
     stderr: 'inherit'
@@ -155,7 +155,7 @@ async function start(project: string): Promise<void> {
           ...process.env,
           HOST: '127.0.0.1',
           OPENPENCIL_CLOUD_CONFIG: generatedConfig,
-          OPENPENCIL_CLOUD_PORTAL_DIR: join(root, 'dist-cloud-portal'),
+          OPENPENCIL_CLOUD_SITE_DIR: join(root, 'dist-cloud'),
           DATABASE_URL: `postgresql://openpencil:${POSTGRES_PASSWORD}@127.0.0.1:${postgresPort}/openpencil`,
           BETTER_AUTH_SECRET: betterAuthSecret,
           S3_ACCESS_KEY_ID,
@@ -165,7 +165,7 @@ async function start(project: string): Promise<void> {
     )
   } finally {
     // The watcher stops with the server however the server ends.
-    portal.kill()
+    site.kill()
   }
 }
 

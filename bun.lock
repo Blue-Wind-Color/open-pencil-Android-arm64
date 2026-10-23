@@ -116,6 +116,7 @@
         "@open-pencil/brand-tools": "workspace:*",
         "@open-pencil/demo-tools": "workspace:*",
         "@open-pencil/mcp": "workspace:*",
+        "@open-pencil/vite-config": "workspace:*",
         "@oxlint/plugins": "1.57.0",
         "@playwright/test": "^1.63.0",
         "@storybook/addon-a11y": "^10.6.2",

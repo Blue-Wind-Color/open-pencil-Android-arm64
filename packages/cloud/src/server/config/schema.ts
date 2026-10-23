@@ -62,6 +62,8 @@ const rawCloudServerConfigSchema = v.object({
   databaseURL: v.pipe(v.string(), v.url()),
   authSecret: v.pipe(v.string(), v.minLength(32)),
   trustedOrigins: v.optional(v.array(httpURLSchema), []),
+  /** The server's editor works with files on this device without signing in to the server. */
+  localEditor: v.optional(v.boolean(), true),
   authTrustedIPHeaders: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   authTrustedProxies: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   enrollmentMode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),
@@ -70,7 +72,6 @@ const rawCloudServerConfigSchema = v.object({
     v.array(v.pipe(v.string(), v.trim(), v.email())),
     []
   ),
-  deploymentAdminUserIds: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   emailPasswordEnabled: v.optional(v.boolean(), false),
   emailPasswordSignUpEnabled: v.optional(v.boolean(), true),
   emailPasswordMinimumLength: v.optional(
@@ -89,9 +90,7 @@ const rawCloudServerConfigSchema = v.object({
   passkeysEnabled: v.optional(v.boolean(), false),
   recoveryCodesEnabled: v.optional(v.boolean(), false),
   mfaTrustedDeviceDays: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 14),
-  passkeyRPID: optionalTextSchema,
   passkeyRPName: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1)), 'OpenPencil Cloud'),
-  passkeyOrigin: v.optional(httpURLSchema),
   captchaProvider: v.optional(v.literal('cloudflare-turnstile')),
   captchaSiteKey: optionalTextSchema,
   captchaSecretKey: optionalTextSchema,
@@ -185,15 +184,6 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
   }
   if (config.recoveryCodesEnabled && !config.totpEnabled) {
     throw new CloudConfigError('MFA recovery codes require TOTP')
-  }
-  if (config.passkeysEnabled) {
-    const publicURL = new URL(config.publicURL)
-    if (config.passkeyOrigin && new URL(config.passkeyOrigin).origin !== publicURL.origin) {
-      throw new CloudConfigError('Passkey origin must match the Cloud public URL origin')
-    }
-    if (config.passkeyRPID && config.passkeyRPID !== publicURL.hostname) {
-      throw new CloudConfigError('Passkey RP ID must match the Cloud public URL hostname')
-    }
   }
   requireTogether(config, 'CAPTCHA', ['captchaProvider', 'captchaSiteKey', 'captchaSecretKey'])
   if (
@@ -301,13 +291,13 @@ const DEFAULT_SECRET_NAMES = {
 const urlSchema = v.pipe(v.string(), v.url())
 const textSchema = v.pipe(v.string(), v.trim(), v.minLength(1))
 const positiveIntegerSchema = v.pipe(v.number(), v.integer(), v.minValue(1))
-const secretReferenceSchema = v.object({ from_env: textSchema })
+const secretReferenceSchema = v.strictObject({ from_env: textSchema })
 const configurableTextSchema = v.union([textSchema, secretReferenceSchema])
 const defaultReference = (name: string) => v.optional(secretReferenceSchema, { from_env: name })
 
-const providerSchema = v.object({
+const providerSchema = v.strictObject({
   google: v.optional(
-    v.object({
+    v.strictObject({
       client_id: v.optional(configurableTextSchema, {
         from_env: DEFAULT_SECRET_NAMES.googleClientId
       }),
@@ -315,7 +305,7 @@ const providerSchema = v.object({
     })
   ),
   apple: v.optional(
-    v.object({
+    v.strictObject({
       client_id: textSchema,
       team_id: textSchema,
       key_id: textSchema,
@@ -327,11 +317,11 @@ const providerSchema = v.object({
 
 const emailSchema = v.optional(
   v.variant('transport', [
-    v.object({ transport: v.literal('none') }),
-    v.object({
+    v.strictObject({ transport: v.literal('none') }),
+    v.strictObject({
       transport: v.literal('smtp'),
       from: textSchema,
-      smtp: v.object({
+      smtp: v.strictObject({
         host: textSchema,
         port: positiveIntegerSchema,
         secure: v.optional(v.boolean()),
@@ -343,31 +333,44 @@ const emailSchema = v.optional(
         })
       })
     }),
-    v.object({ transport: v.literal('cloudflare'), from: textSchema })
+    v.strictObject({ transport: v.literal('cloudflare'), from: textSchema })
   ]),
   { transport: 'none' }
 )
 
-export const cloudDeploymentConfigSchema = v.object({
+/**
+ * Every table is strict: a key the schema doesn't know, such as one renamed since, stops startup
+ * instead of leaving its setting at a default the operator never chose.
+ */
+export const cloudDeploymentConfigSchema = v.strictObject({
   schema_version: v.literal(2),
-  deployment: v.object({
+  deployment: v.strictObject({
     mode: v.picklist(['official', 'self-hosted']),
     public_url: urlSchema,
     app_url: v.optional(urlSchema),
     indexing: v.optional(v.picklist(['allow', 'deny']), 'deny'),
     trusted_origins: v.optional(v.array(urlSchema), []),
-    listing: v.optional(v.object({ minimum_editor_version: cloudEditorVersionSchema }))
+    // The server's editor works with files on this device without signing in to the server.
+    local_editor: v.optional(v.boolean(), true),
+    listing: v.optional(v.strictObject({ minimum_editor_version: cloudEditorVersionSchema }))
   }),
-  database: v.optional(v.object({ url: defaultReference(DEFAULT_SECRET_NAMES.databaseURL) }), {
-    url: { from_env: DEFAULT_SECRET_NAMES.databaseURL }
-  }),
-  authentication: v.object({
+  database: v.optional(
+    v.strictObject({ url: defaultReference(DEFAULT_SECRET_NAMES.databaseURL) }),
+    {
+      url: { from_env: DEFAULT_SECRET_NAMES.databaseURL }
+    }
+  ),
+  authentication: v.strictObject({
     secret: defaultReference(DEFAULT_SECRET_NAMES.authSecret),
-    enrollment_mode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),
-    admin_notification_emails: v.optional(v.array(v.pipe(v.string(), v.email())), []),
-    admin_user_ids: v.optional(v.array(textSchema), []),
+    enrollment: v.optional(
+      v.strictObject({
+        mode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),
+        notification_emails: v.optional(v.array(v.pipe(v.string(), v.email())), [])
+      }),
+      { mode: 'open', notification_emails: [] }
+    ),
     email_password: v.optional(
-      v.object({
+      v.strictObject({
         enabled: v.optional(v.boolean(), false),
         sign_up: v.optional(v.boolean(), true),
         minimum_password_length: v.optional(
@@ -378,8 +381,8 @@ export const cloudDeploymentConfigSchema = v.object({
           v.pipe(v.number(), v.integer(), v.minValue(15), v.maxValue(128)),
           128
         ),
-        verification_link_expires_minutes: v.optional(positiveIntegerSchema, 60),
-        password_reset_link_expires_minutes: v.optional(positiveIntegerSchema, 60),
+        verification_link_lifetime_minutes: v.optional(positiveIntegerSchema, 60),
+        password_reset_link_lifetime_minutes: v.optional(positiveIntegerSchema, 60),
         compromised_password_check: v.optional(v.boolean(), false)
       }),
       {
@@ -387,36 +390,35 @@ export const cloudDeploymentConfigSchema = v.object({
         sign_up: true,
         minimum_password_length: 8,
         maximum_password_length: 128,
-        verification_link_expires_minutes: 60,
-        password_reset_link_expires_minutes: 60,
+        verification_link_lifetime_minutes: 60,
+        password_reset_link_lifetime_minutes: 60,
         compromised_password_check: false
       }
     ),
     mfa: v.optional(
-      v.object({
-        deployment_admin_required: v.optional(v.boolean(), false),
-        totp_enabled: v.optional(v.boolean(), false),
-        passkeys_enabled: v.optional(v.boolean(), false),
-        recovery_codes_enabled: v.optional(v.boolean(), false),
-        trusted_device_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 14)
+      v.strictObject({
+        required_for_admins: v.optional(v.boolean(), false),
+        totp: v.optional(v.boolean(), false),
+        recovery_codes: v.optional(v.boolean(), false),
+        trusted_device_lifetime_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 14)
       }),
       {
-        deployment_admin_required: false,
-        totp_enabled: false,
-        passkeys_enabled: false,
-        recovery_codes_enabled: false,
-        trusted_device_days: 14
+        required_for_admins: false,
+        totp: false,
+        recovery_codes: false,
+        trusted_device_lifetime_days: 14
       }
     ),
+    // Passkeys belong to public_url's host and origin.
     passkeys: v.optional(
-      v.object({
-        rp_id: textSchema,
-        rp_name: v.optional(textSchema, 'OpenPencil Cloud'),
-        origin: urlSchema
-      })
+      v.strictObject({
+        enabled: v.optional(v.boolean(), false),
+        rp_name: v.optional(textSchema, 'OpenPencil Cloud')
+      }),
+      { enabled: false, rp_name: 'OpenPencil Cloud' }
     ),
     captcha: v.optional(
-      v.object({
+      v.strictObject({
         provider: v.literal('cloudflare-turnstile'),
         site_key: textSchema,
         secret_key: defaultReference(DEFAULT_SECRET_NAMES.turnstileSecretKey),
@@ -424,7 +426,7 @@ export const cloudDeploymentConfigSchema = v.object({
       })
     ),
     trusted_proxies: v.optional(
-      v.object({
+      v.strictObject({
         headers: v.optional(v.array(textSchema), []),
         addresses: v.optional(v.array(textSchema), [])
       }),
@@ -432,12 +434,12 @@ export const cloudDeploymentConfigSchema = v.object({
     ),
     providers: v.optional(providerSchema, {})
   }),
-  object_storage: v.object({
+  object_storage: v.strictObject({
     endpoint: urlSchema,
     region: textSchema,
     bucket: textSchema,
     credentials: v.optional(
-      v.object({
+      v.strictObject({
         access_key_id: defaultReference(DEFAULT_SECRET_NAMES.s3AccessKeyId),
         secret_access_key: defaultReference(DEFAULT_SECRET_NAMES.s3SecretAccessKey),
         session_token: v.optional(secretReferenceSchema, {
@@ -452,14 +454,28 @@ export const cloudDeploymentConfigSchema = v.object({
     force_path_style: v.optional(v.boolean(), true),
     checksum_verification: v.optional(v.picklist(['native', 'metadata']), 'native'),
     server_side_encryption: v.optional(v.picklist(['AES256', 'aws:kms'])),
-    kms_key_id: v.optional(textSchema)
+    kms_key_id: v.optional(textSchema),
+    maximum_upload_bytes: v.optional(positiveIntegerSchema)
   }),
-  collaboration: v.optional(v.object({ relay_url: v.pipe(v.string(), v.url()) })),
+  collaboration: v.optional(
+    v.strictObject({
+      relay_url: v.optional(urlSchema),
+      maximum_message_bytes: v.optional(positiveIntegerSchema),
+      maximum_connections_per_room: v.optional(positiveIntegerSchema)
+    }),
+    {}
+  ),
+  documents: v.optional(
+    v.strictObject({
+      retention_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 30)
+    }),
+    { retention_days: 30 }
+  ),
   email: emailSchema,
   workers: v.optional(
-    v.object({
+    v.strictObject({
       email: v.optional(
-        v.object({
+        v.strictObject({
           batch_size: v.optional(positiveIntegerSchema, 50),
           interval_ms: v.optional(positiveIntegerSchema, 30_000),
           lease_ms: v.optional(positiveIntegerSchema, 300_000),
@@ -468,31 +484,24 @@ export const cloudDeploymentConfigSchema = v.object({
         { batch_size: 50, interval_ms: 30_000, lease_ms: 300_000, maximum_attempts: 5 }
       ),
       cleanup: v.optional(
-        v.object({
+        v.strictObject({
           enabled: v.optional(v.boolean(), true),
           batch_size: v.optional(positiveIntegerSchema, 100),
           interval_ms: v.optional(positiveIntegerSchema, 60_000),
-          lease_ms: v.optional(positiveIntegerSchema, 300_000),
-          document_retention_days: v.optional(v.pipe(v.number(), v.minValue(0)), 30)
+          lease_ms: v.optional(positiveIntegerSchema, 300_000)
         }),
-        {
-          enabled: true,
-          batch_size: 100,
-          interval_ms: 60_000,
-          lease_ms: 300_000,
-          document_retention_days: 30
-        }
+        { enabled: true, batch_size: 100, interval_ms: 60_000, lease_ms: 300_000 }
       )
     })
   ),
   entitlements: v.optional(
     v.variant('source', [
-      v.object({ source: v.literal('static'), ...staticEntitlementsTOMLSchema.entries }),
-      v.object({ source: v.literal('database') })
+      v.strictObject({ source: v.literal('static'), ...staticEntitlementsTOMLSchema.entries }),
+      v.strictObject({ source: v.literal('database') })
     ])
   ),
   ai: v.optional(
-    v.object({
+    v.strictObject({
       endpoint: urlSchema,
       signing_key: defaultReference(DEFAULT_SECRET_NAMES.aiSigningKey),
       token_lifetime_minutes: v.optional(
@@ -501,16 +510,9 @@ export const cloudDeploymentConfigSchema = v.object({
       )
     })
   ),
-  billing: v.optional(v.object({ portal_url: urlSchema })),
+  billing: v.optional(v.strictObject({ portal_url: urlSchema })),
   internal_api: v.optional(
-    v.object({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
-  ),
-  technical_limits: v.optional(
-    v.object({
-      maximum_upload_bytes: v.optional(positiveIntegerSchema),
-      maximum_collaboration_message_bytes: v.optional(positiveIntegerSchema),
-      maximum_connections_per_room: v.optional(positiveIntegerSchema)
-    })
+    v.strictObject({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
   )
 })
 

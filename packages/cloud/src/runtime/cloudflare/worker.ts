@@ -1,7 +1,7 @@
 import { defaultRelayURL, RELAY_PATH } from '#cloud/contract'
-import { createCloudServer } from '#cloud/runtime/portal/server'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
+import { createCloudServer } from '#cloud/runtime/site/server'
 import {
   cleanupPassOptions,
   createCleanupServices,
@@ -21,8 +21,8 @@ import {
   type CloudflareCloudEnvironment,
   type PreparedCloudflareCloud
 } from './environment'
-import { assetPortalFiles } from './portal'
 import { createCloudflareRelayObject, relayFor, routeToRelay } from './relay'
+import { assetSiteFiles } from './site'
 
 function emailTransport({ config }: PreparedCloudflareCloud, env: CloudflareCloudEnvironment) {
   if (config.emailTransport !== 'cloudflare') return undefined
@@ -92,7 +92,7 @@ function cloudServices(
 
 /**
  * OpenPencil Cloud on Cloudflare Workers, configured by a deployment TOML. The Worker serves the
- * API and portal per request, a Durable Object per document runs its collaboration rooms, and a
+ * API, the editor, and the portal per request, a Durable Object per document runs its collaboration rooms, and a
  * Cron Trigger runs cleanup and retries email.
  */
 export function createCloudflareCloud(configSource: string) {
@@ -125,7 +125,7 @@ export function createCloudflareCloud(configSource: string) {
             runInBackground(relayFor(c.env, documentId).announceVersions(documentId))
         })
         return await createCloudServer(app, {
-          portal: assetPortalFiles(c.env.ASSETS),
+          site: assetSiteFiles(c.env.ASSETS),
           indexingPolicy: config.indexingPolicy
         }).fetch(c.req.raw)
       } finally {

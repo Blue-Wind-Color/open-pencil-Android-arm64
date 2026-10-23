@@ -70,8 +70,8 @@ async function testApp() {
     policy: createDefaultCloudPolicy(
       new EntitlementOpenFeatureProvider(
         new StaticEntitlementSource({
-          [CLOUD_FEATURE_KEYS.capabilityLinks]: true,
-          [CLOUD_FEATURE_KEYS.anonymousView]: true
+          [CLOUD_FEATURE_KEYS.links]: true,
+          [CLOUD_FEATURE_KEYS.guestView]: true
         })
       )
     ),

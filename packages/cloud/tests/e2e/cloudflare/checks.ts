@@ -15,7 +15,7 @@ import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createCollaborationTicketService, createDocumentSharingService } from '#cloud/server'
 import * as Y from 'yjs'
 
-// Checks a running Cloud Worker (see run.ts): the API and portal answer, and the relay's
+// Checks a running Cloud Worker (see run.ts): the API, the editor, and the portal answer, and the relay's
 // Durable Object admits ticket holders, keeps the room, and saves it to PostgreSQL.
 const base = process.env.CLOUD_WORKER_URL ?? ''
 const databaseURL = process.env.DATABASE_URL ?? ''
@@ -140,15 +140,22 @@ for (const path of ['/health', '/ready', '/.well-known/openpencil']) {
   const response = await fetch(`${base}${path}`)
   check(response.ok, `${path} answered HTTP ${response.status}`)
 }
-const page = await fetch(`${base}/auth/sign-in`)
-check(
-  page.ok && (page.headers.get('content-type') ?? '').startsWith('text/html'),
-  `The portal page answered HTTP ${page.status}`
-)
-check(
-  page.headers.get('content-security-policy') === "frame-ancestors 'none'",
-  'The portal page is missing its headers'
-)
+for (const [path, title] of [
+  ['/auth/sign-in', 'OpenPencil Cloud'],
+  ['/', 'OpenPencil'],
+  ['/cloud/documents/missing', 'OpenPencil']
+]) {
+  const page = await fetch(`${base}${path}`, { headers: { Accept: 'text/html' } })
+  check(
+    page.ok && (page.headers.get('content-type') ?? '').startsWith('text/html'),
+    `The page at ${path} answered HTTP ${page.status}`
+  )
+  check(
+    page.headers.get('content-security-policy') === "frame-ancestors 'none'",
+    `The page at ${path} is missing its headers`
+  )
+  check((await page.text()).includes(`<title>${title}</title>`), `${path} is not the expected page`)
+}
 const missing = await fetch(`${base}/api/collaboration/relay`)
 check(missing.status === 426, `A plain request to the relay answered HTTP ${missing.status}`)
 

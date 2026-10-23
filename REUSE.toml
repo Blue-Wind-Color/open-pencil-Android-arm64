@@ -21,7 +21,8 @@ path = [
   "src/theme/cloud-portal/**",
   "src/views/cloud/**",
   "tests/app/cloud-portal/**",
-  "vite/cloud-portal.ts",
+  "vite/cloud-site.ts",
+  "vite/metrics.ts",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Danila Poyarkov and OpenPencil contributors"

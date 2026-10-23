@@ -2,9 +2,9 @@ import * as v from 'valibot'
 
 export const workspaceEntitlementsSchema = v.object({
   features: v.object({
-    capabilityLinks: v.boolean(),
-    anonymousView: v.boolean(),
-    anonymousEdit: v.boolean(),
+    links: v.boolean(),
+    guestView: v.boolean(),
+    guestEdit: v.boolean(),
     guestPresence: v.boolean(),
     collaboration: v.boolean(),
     revisionHistory: v.boolean(),

@@ -220,6 +220,7 @@ export {
   createPublicSharingRoutes,
   decryptContinuationToken,
   DocumentShareInvalidError,
+  DocumentShareSignInRequiredError,
   encryptContinuationToken,
   hashCapability,
   type DocumentShareCapability,

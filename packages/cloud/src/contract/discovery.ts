@@ -60,6 +60,8 @@ export const cloudDiscoverySchema = v.object({
   apiURL: v.pipe(v.string(), v.url()),
   authURL: v.pipe(v.string(), v.url()),
   appURL: v.optional(v.pipe(v.string(), v.url())),
+  /** Whether the server's own editor works with files on this device without signing in. */
+  localEditor: v.optional(v.boolean(), true),
   authentication: cloudAuthenticationSchema,
   capabilities: cloudCapabilitiesSchema,
   listing: v.optional(cloudListingSchema),

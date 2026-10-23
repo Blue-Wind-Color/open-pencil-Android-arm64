@@ -8,11 +8,11 @@ import { cloudMessages } from '@open-pencil/vue/i18n'
 import type { EditorStore } from '@/app/editor/session'
 import { toast } from '@/app/shell/ui'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
-import { IS_BROWSER, OFFICIAL_CLOUD_URL } from '@/constants'
+import { IS_BROWSER } from '@/constants'
 
 import { cloudSignedIn, openCloudConnect } from '../connect/flow'
 import { cloudServerHost, normalizeCloudServerURL } from '../servers/address'
-import { addCloudServer, cloudServers, findCloudServer } from '../servers/store'
+import { cloudServerForLink, findCloudServer } from '../servers/store'
 import { cloudAPIClient, cloudConnection } from '../sessions/connection'
 import { CLOUD_STORAGE_PROVIDER_ID } from '../sessions/token'
 import { openVersionHistory, previewVersion, versionHistoryOf } from '../versions/history'
@@ -107,9 +107,7 @@ export async function openCloudDocumentLink(link: CloudDocumentLink): Promise<vo
     toast.error(messages.documentLinkFailed)
     return
   }
-  let server = cloudServers.value.find((candidate) => candidate.url === url) ?? null
-  if (!server && url === OFFICIAL_CLOUD_URL)
-    server = await addCloudServer({ kind: 'official', url })
+  const server = await cloudServerForLink(url)
   if (!server) {
     toast.error(messages.documentLinkUnknownServer({ host: cloudServerHost(url) }))
     return

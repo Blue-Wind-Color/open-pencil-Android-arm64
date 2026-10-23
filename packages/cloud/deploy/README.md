@@ -42,7 +42,7 @@ bun --filter @open-pencil/cloud test:e2e:garage  # Garage S3 compatibility
 bun --filter @open-pencil/cloud test:e2e:cloudflare  # the Worker under wrangler dev
 ```
 
-The Cloudflare run needs `dist-cloud-portal/` (`bun run build:cloud-portal`), which the Worker serves.
+The Cloudflare run needs `dist-cloud/` (`bun run build:cloud`), which the Worker serves.
 
 Each runner starts an isolated Compose project and removes it with its volumes afterwards. The main
 suite checks object-store readiness, a presigned single PUT and a 33 MiB three-part multipart upload

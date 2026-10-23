@@ -14,7 +14,7 @@ export type CloudflareCloudBindings = {
   HYPERDRIVE: Hyperdrive
   /** The collaboration relay, one object per document. */
   RELAY: DurableObjectNamespace<CollaborationRelayRPC>
-  /** The built portal, `dist-cloud-portal`. */
+  /** The built site, `dist-cloud`: the editor and the portal. */
   ASSETS: Fetcher
   /** Required by `[email] transport = "cloudflare"`. */
   EMAIL?: SendEmail

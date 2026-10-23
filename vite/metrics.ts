@@ -4,14 +4,14 @@ import { resolve } from 'node:path'
 import type { Plugin, ResolvedConfig } from 'vite'
 
 /**
- * The Cloud portal and the metrics dashboard build without the editor's public directory
- * (fonts, CanvasKit, demo files) and copy only the brand artwork, which components load from
- * `/brand/`. `site` is the folder served at the site's root, when the page itself lives below it.
+ * The metrics dashboard builds without the editor's public directory (fonts, CanvasKit, demo
+ * files) and copies only the brand artwork, which components load from `/brand/`. `site` is the
+ * folder served at the site's root, when the page itself lives below it.
  */
-export function cloudPortalBrandPlugin(site?: (outDir: string) => string): Plugin {
+export function metricsBrandPlugin(site?: (outDir: string) => string): Plugin {
   let config: ResolvedConfig | undefined
   return {
-    name: 'open-pencil-cloud-portal-brand',
+    name: 'open-pencil-metrics-brand',
     apply: 'build',
     configResolved(resolved) {
       config = resolved

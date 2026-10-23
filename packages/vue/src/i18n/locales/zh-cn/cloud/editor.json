@@ -105,6 +105,7 @@
   "shareRestricted": "仅限有访问权限的人",
   "shareAnyoneWithLink": "任何拥有链接的人",
   "shareLinkDetail": "任何拥有链接的人无需登录即可打开此文件。",
+  "shareLinkSignInDetail": "任何拥有链接的人在此登录后都可以打开此文件。",
   "shareRestrictedDetail": "只有上方的成员和工作区可以打开此文件。",
   "shareRestrictedNoLinksDetail": "只有上方的成员和工作区可以打开此文件。此工作区已关闭链接分享。",
   "shareLinkPermission": "链接权限",

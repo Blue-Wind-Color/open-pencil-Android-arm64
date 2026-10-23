@@ -11,6 +11,12 @@ export const cloudPortalMessageDefaults = {
   unavailableDescription: 'Check the address, or try again in a moment.',
   tryAgain: 'Try again',
 
+  welcomeTitle: 'Design together in OpenPencil',
+  welcomeDescription: 'Keep your files on this server, share them, and edit them with others live.',
+  useWithoutAccount: 'Use without an account',
+  withoutAccountNote: 'Without an account, files stay on this device.',
+  openEditor: 'Open editor',
+
   signInTitle: 'Sign in to OpenPencil Cloud',
   signUpTitle: 'Create your account',
   returnsTo: params('Then you go back to {destination}.'),

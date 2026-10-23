@@ -82,8 +82,15 @@ export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
 export const PRIVACY_URL = 'https://openpencil.dev/overview/privacy'
 /** The OpenPencil Cloud section of the website, with its waitlist form. */
 export const CLOUD_WAITLIST_URL = 'https://openpencil.dev/#cloud'
-/** The hosted OpenPencil Cloud server, offered first when connecting. */
-export const OFFICIAL_CLOUD_URL = 'https://cloud.openpencil.dev'
+/**
+ * The hosted OpenPencil Cloud server, offered first when connecting. An official deployment's own
+ * editor build names that deployment, such as staging.
+ */
+export const OFFICIAL_CLOUD_URL =
+  import.meta.env.VITE_OPENPENCIL_OFFICIAL_CLOUD_URL || 'https://cloud.openpencil.dev'
+/** Whether this is the editor a Cloud server serves on its own address (`bun run build:cloud`). */
+export const IS_CLOUD_SITE =
+  typeof __OPENPENCIL_CLOUD_SITE__ === 'boolean' && __OPENPENCIL_CLOUD_SITE__
 /** Where the desktop app's installers are published. */
 export const DESKTOP_DOWNLOAD_URL = 'https://github.com/open-pencil/open-pencil/releases/latest'
 export const NODE_DOWNLOAD_URL = 'https://nodejs.org/en/download'

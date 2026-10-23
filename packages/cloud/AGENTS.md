@@ -26,7 +26,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 
 ## Portal
 
-- The portal's pages live in the app (`cloud.html`, `src/views/cloud/`, `src/components/cloud-portal/`); this package owns only their paths (`src/contract/portal.ts`) and serving them (`src/runtime/node/portal.ts`). Links the server sends to people point at portal paths on `publicURL`; only the editor itself is on `appURL` (`src/admin/enrollment/email.ts`).
+- The portal's pages live in the app (`cloud.html`, `src/views/cloud/`, `src/components/cloud-portal/`); this package owns only their paths (`src/contract/portal.ts`) and serving them beside the editor (`src/runtime/site/server.ts`). Links the server sends to people point at portal paths on `publicURL`; only the editor itself is on `appURL`, which defaults to `publicURL` (`src/admin/enrollment/email.ts`).
 
 ## Configuration
 
