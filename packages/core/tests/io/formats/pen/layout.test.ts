@@ -2,16 +2,19 @@ import { describe, expect, test } from 'bun:test'
 
 import { layoutAuthoredNodes } from '@open-pencil/core/layout'
 import { parsePenFile, type PenDocument, type PenNode } from '@open-pencil/pen'
+import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
+import Matrix from '@open-pencil/scene-graph/matrix'
 
 function parseLayoutDocument(children: PenNode[]) {
   const document: PenDocument = { version: '2.17', children }
-  const graph = parsePenFile(JSON.stringify(document))
-  // As the .pen reader lays out what it reads.
-  layoutAuthoredNodes(
-    graph,
-    graph.getPages().map((page) => page.id)
-  )
-  return graph
+  // As Core's .pen reader lays out what it reads.
+  return parsePenFile(JSON.stringify(document), {
+    layout: (graph) =>
+      layoutAuthoredNodes(
+        graph,
+        graph.getPages().map((page) => page.id)
+      )
+  })
 }
 
 function fixedChild(id: string): PenNode {
@@ -250,5 +253,30 @@ describe('parsePenFile — text without a width', () => {
       } satisfies PenDocument)
     )
     expect([...graph.getAllNodes()].find((node) => node.type === 'TEXT')?.width).toBe(0)
+  })
+})
+
+describe('parsePenFile — turned layers sized by layout', () => {
+  test('turns auto-width text about its corner after laying it out', () => {
+    const graph = parseLayoutDocument([
+      {
+        id: 'free',
+        type: 'frame',
+        layout: 'none',
+        width: 400,
+        height: 300,
+        children: [{ id: 'label', type: 'text', x: 100, y: 200, rotation: 90, content: 'Revenue', fontSize: 14 }]
+      }
+    ])
+    const label = graph.getNode('label')
+    if (!label) throw new Error('label missing')
+    expect(label.width).toBeGreaterThan(0)
+    const [cornerX, cornerY] = Matrix.mapPoints(getNodeLocalMatrix(label), [0, 0])
+    expect(cornerX).toBeCloseTo(100)
+    expect(cornerY).toBeCloseTo(200)
+    // Turned a quarter counter-clockwise, the text runs upwards from its corner.
+    const [endX, endY] = Matrix.mapPoints(getNodeLocalMatrix(label), [label.width, 0])
+    expect(endX).toBeCloseTo(100)
+    expect(endY).toBeCloseTo(200 - label.width)
   })
 })

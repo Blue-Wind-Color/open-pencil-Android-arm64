@@ -141,6 +141,8 @@ export function mapNodeType(pen: PenNode): NodeType {
   if (pen.type === 'frame') return pen.reusable ? 'COMPONENT' : 'FRAME'
   if (pen.type === 'rectangle') return 'RECTANGLE'
   if (pen.type === 'ellipse') return 'ELLIPSE'
+  if (pen.type === 'polygon') return 'POLYGON'
+  if (pen.type === 'group') return 'GROUP'
   if (pen.type === 'text' || pen.type === 'icon_font') return 'TEXT'
   if (pen.type === 'path') return 'VECTOR'
   if (pen.type === 'ref') return 'INSTANCE'

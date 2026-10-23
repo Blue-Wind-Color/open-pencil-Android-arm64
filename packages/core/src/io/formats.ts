@@ -228,12 +228,14 @@ export const penFormat: IOFormatAdapter<'pen'> = {
   },
   async readDocument(input) {
     const text = new TextDecoder().decode(input.data)
-    const graph = parsePenFile(text)
     // A .pen file stores its layout intent, not the sizes and positions it implies.
-    layoutAuthoredNodes(
-      graph,
-      graph.getPages().map((page) => page.id)
-    )
+    const graph = parsePenFile(text, {
+      layout: (target) =>
+        layoutAuthoredNodes(
+          target,
+          target.getPages().map((page) => page.id)
+        )
+    })
     return { graph, sourceFormat: 'pen' }
   }
 }

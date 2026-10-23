@@ -5,13 +5,11 @@ import {
   type AxisSizingMode,
   type LayoutMode,
   type LayoutSizing,
-  type SceneNode,
-  type VectorNetwork
+  type SceneNode
 } from '@open-pencil/scene-graph'
 import { copyEffects, copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 import { populateInstanceChildren } from '@open-pencil/scene-graph/instances'
 import { fillSizingFields } from '@open-pencil/scene-graph/layout'
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
 import {
   applyCornerRadius,
@@ -26,7 +24,9 @@ import {
   parseSize
 } from './convert'
 import { convertEffects } from './effects'
+import { ellipseArc, pathNetwork } from './geometry'
 import { applyStroke, convertPaints, strokeFields } from './paints'
+import { isPlain, placeLayers, type PenPlacement } from './placement'
 import { penFileSchema, type PenNode, type PenOverride } from './schema'
 import {
   bindIfVar,
@@ -37,32 +37,25 @@ import {
   type VarContext
 } from './variables'
 
-function scaleVectorNetwork(vn: VectorNetwork, targetW: number, targetH: number): void {
-  if (vn.vertices.length === 0) return
-  let minX = Infinity
-  let maxX = -Infinity
-  let minY = Infinity
-  let maxY = -Infinity
-  for (const v of vn.vertices) {
-    minX = Math.min(minX, v.x)
-    maxX = Math.max(maxX, v.x)
-    minY = Math.min(minY, v.y)
-    maxY = Math.max(maxY, v.y)
-  }
-  const vnW = maxX - minX
-  const vnH = maxY - minY
-  if (vnW < 0.01 || vnH < 0.01) return
-  const sx = targetW / vnW
-  const sy = targetH / vnH
-  if (Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) return
-  for (const v of vn.vertices) {
-    v.x = (v.x - minX) * sx
-    v.y = (v.y - minY) * sy
-  }
-  for (const s of vn.segments) {
-    s.tangentStart = { x: s.tangentStart.x * sx, y: s.tangentStart.y * sy }
-    s.tangentEnd = { x: s.tangentEnd.x * sx, y: s.tangentEnd.y * sy }
-  }
+/** Options for reading a document. */
+export interface PenReadOptions {
+  /**
+   * Lays out the graph's auto layout and text, as `layoutAuthoredNodes` in Core does. Turned and
+   * mirrored layers are placed after it, since where they land depends on their final size.
+   */
+  layout?(graph: SceneGraph): void
+}
+
+/** What reading one document builds up. */
+interface Build {
+  graph: SceneGraph
+  ctx: VarContext
+  componentIds: Map<string, string>
+  penSources: Map<string, PenNode>
+  /** pen.dev's placement of each turned or mirrored layer, and of every group. */
+  placements: Map<string, PenPlacement>
+  /** Groups in reading order. */
+  groupIds: string[]
 }
 
 function resolveFontFamily(raw: string | undefined, ctx: VarContext): string {
@@ -71,6 +64,17 @@ function resolveFontFamily(raw: string | undefined, ctx: VarContext): string {
   return raw
 }
 
+function penPlacement(pen: PenOverride, ctx: VarContext, base?: PenPlacement): PenPlacement {
+  return {
+    x: pen.x ?? base?.x ?? 0,
+    y: pen.y ?? base?.y ?? 0,
+    rotation: pen.rotation === undefined ? (base?.rotation ?? 0) : resolveNumber(pen.rotation, ctx),
+    flipX: pen.flipX === undefined ? (base?.flipX ?? false) : resolveBoolean(pen.flipX, ctx),
+    flipY: pen.flipY === undefined ? (base?.flipY ?? false) : resolveBoolean(pen.flipY, ctx)
+  }
+}
+
+/** A layer's own fields; it is built upright and placed once laid out. */
 function buildBaseOverrides(pen: PenNode, ctx: VarContext): Partial<SceneNode> {
   return {
     id: pen.id,
@@ -79,9 +83,6 @@ function buildBaseOverrides(pen: PenNode, ctx: VarContext): Partial<SceneNode> {
     y: pen.y ?? 0,
     visible: resolveBoolean(pen.enabled, ctx),
     opacity: resolveNumber(pen.opacity, ctx, 1),
-    rotation: resolveNumber(pen.rotation, ctx),
-    flipX: resolveBoolean(pen.flipX, ctx, false),
-    flipY: resolveBoolean(pen.flipY, ctx, false),
     clipsContent: resolveBoolean(pen.clip, ctx, false),
     boundVariables: {}
   }
@@ -189,14 +190,8 @@ function applyRefVisuals(
   if (pen.cornerRadius === undefined) applyCornerRadius(node, compPen.cornerRadius, ctx)
 }
 
-function applyRefProps(
-  node: SceneNode,
-  pen: PenNode,
-  graph: SceneGraph,
-  componentIds: Map<string, string>,
-  penSources: Map<string, PenNode>,
-  ctx: VarContext
-): void {
+function applyRefProps(node: SceneNode, pen: PenNode, build: Build): void {
+  const { graph, componentIds, penSources, ctx } = build
   if (!pen.ref) return
   const componentId = componentIds.get(pen.ref) ?? pen.ref
   node.componentId = componentId
@@ -208,19 +203,13 @@ function applyRefProps(
   applyRefVisuals(node, pen, penSources.get(pen.ref), ctx)
 }
 
-function applyAllRefProps(
-  penNodes: PenNode[],
-  graph: SceneGraph,
-  componentIds: Map<string, string>,
-  penSources: Map<string, PenNode>,
-  ctx: VarContext
-): void {
+function applyAllRefProps(penNodes: PenNode[], build: Build): void {
   for (const pen of penNodes) {
     if (pen.type === 'ref') {
-      const node = graph.getNode(pen.id)
-      if (node) applyRefProps(node, pen, graph, componentIds, penSources, ctx)
+      const node = build.graph.getNode(pen.id)
+      if (node) applyRefProps(node, pen, build)
     }
-    if (pen.children) applyAllRefProps(pen.children, graph, componentIds, penSources, ctx)
+    if (pen.children) applyAllRefProps(pen.children, build)
   }
 }
 
@@ -230,14 +219,8 @@ function applyTheme(theme: Record<string, string>, ctx: VarContext): void {
 }
 
 // eslint-disable-next-line complexity -- .pen node mapping touches many format-specific fields
-function createSceneNode(
-  pen: PenNode,
-  parentId: string,
-  graph: SceneGraph,
-  ctx: VarContext,
-  componentIds: Map<string, string>,
-  penSources: Map<string, PenNode>
-): string | null {
+function createSceneNode(pen: PenNode, parentId: string, build: Build): string | null {
+  const { graph, ctx } = build
   if (pen.type === 'prompt') return null
   if (pen.theme) applyTheme(pen.theme, ctx)
 
@@ -259,6 +242,9 @@ function createSceneNode(
   }
 
   const node = graph.createNode(mapNodeType(pen), parentId, overrides)
+  const placement = penPlacement(pen, ctx)
+  if (pen.type === 'group') build.groupIds.push(node.id)
+  if (pen.type === 'group' || !isPlain(placement)) build.placements.set(node.id, placement)
 
   node.fills = convertPaints(pen.fill, 'fills', ctx, node)
   applyStroke(node, strokeFields(pen), ctx)
@@ -269,10 +255,11 @@ function createSceneNode(
   // Text without a width resizes to its content, which laying out the document measures.
   if (isTextLike) applyTextProps(node, pen, ctx)
 
-  if (pen.type === 'path' && pen.geometry) {
-    const vectorNetwork = parseSVGPath(pen.geometry)
-    node.vectorNetwork = vectorNetwork
-    scaleVectorNetwork(vectorNetwork, node.width, node.height)
+  if (pen.type === 'ellipse') node.arcData = ellipseArc(pen, ctx)
+  if (pen.type === 'polygon') node.pointCount = Math.max(3, resolveNumber(pen.polygonCount, ctx, 3))
+  if (pen.type === 'path') {
+    const network = pathNetwork(pen, node.width, node.height)
+    if (network) node.vectorNetwork = network
   }
 
   if (parentLayout !== 'NONE') {
@@ -281,14 +268,12 @@ function createSceneNode(
   }
 
   if (pen.reusable) {
-    componentIds.set(pen.id, node.id)
-    penSources.set(pen.id, pen)
+    build.componentIds.set(pen.id, node.id)
+    build.penSources.set(pen.id, pen)
   }
 
   if (pen.children) {
-    for (const child of pen.children) {
-      createSceneNode(child, node.id, graph, ctx, componentIds, penSources)
-    }
+    for (const child of pen.children) createSceneNode(child, node.id, build)
   }
 
   return node.id
@@ -342,38 +327,42 @@ function findCloneByNameFallback(
   return matches.length === 1 ? matches[0] : undefined
 }
 
-function applyOverrideProps(target: SceneNode, overrideData: PenOverride, ctx: VarContext): void {
+function applyOverrideProps(target: SceneNode, overrideData: PenOverride, build: Build): void {
+  const { ctx } = build
   if (overrideData.fill !== undefined)
     target.fills = convertPaints(overrideData.fill, 'fills', ctx, target)
   if (overrideData.content !== undefined) target.text = overrideData.content
   if (overrideData.x !== undefined) target.x = overrideData.x
   if (overrideData.y !== undefined) target.y = overrideData.y
+  const base = build.placements.get(target.id)
+  const placement = penPlacement(overrideData, ctx, base ?? { ...target, rotation: 0 })
+  if (base || !isPlain(placement)) build.placements.set(target.id, placement)
   if (overrideData.enabled !== undefined) target.visible = resolveBoolean(overrideData.enabled, ctx)
   if (overrideData.width !== undefined)
     target.width = parseSize(overrideData.width, target.width, ctx).value
   if (overrideData.height !== undefined)
     target.height = parseSize(overrideData.height, target.height, ctx).value
-  if (overrideData.rotation !== undefined)
-    target.rotation = resolveNumber(overrideData.rotation, ctx)
   if (overrideData.name !== undefined) target.name = overrideData.name
 }
 
-function populateInstances(graph: SceneGraph): void {
+/** Fills empty instances from their components; a copied layer keeps its source's placement. */
+function populateInstances(build: Build): void {
+  const { graph, placements } = build
   for (const node of graph.getAllNodes()) {
-    if (node.type === 'INSTANCE' && node.componentId && node.childIds.length === 0) {
-      const component = graph.getNode(node.componentId)
-      if (component) populateInstanceChildren(graph, node.id, node.componentId)
+    if (node.type !== 'INSTANCE' || !node.componentId || node.childIds.length > 0) continue
+    if (!graph.getNode(node.componentId)) continue
+    populateInstanceChildren(graph, node.id, node.componentId)
+    const copies = [...graph.getChildren(node.id)]
+    for (const copy of copies) {
+      const source = copy.componentId ? placements.get(copy.componentId) : undefined
+      if (source && !placements.has(copy.id)) placements.set(copy.id, source)
+      copies.push(...graph.getChildren(copy.id))
     }
   }
 }
 
-function applyDescendantOverrides(
-  graph: SceneGraph,
-  pen: PenNode,
-  ctx: VarContext,
-  componentIds: Map<string, string>,
-  penSources: Map<string, PenNode>
-): void {
+function applyDescendantOverrides(pen: PenNode, build: Build): void {
+  const { graph } = build
   if (pen.type !== 'ref' || !pen.descendants) return
   const instanceNode = graph.getNode(pen.id)
   if (!instanceNode) return
@@ -387,37 +376,22 @@ function applyDescendantOverrides(
       if (overrideData.children) {
         const toDelete = clone.childIds.slice()
         for (const childId of toDelete) graph.deleteNode(childId)
-        for (const child of overrideData.children) {
-          createSceneNode(child, clone.id, graph, ctx, componentIds, penSources)
-        }
+        for (const child of overrideData.children) createSceneNode(child, clone.id, build)
       }
-      applyOverrideProps(clone, overrideData, ctx)
+      applyOverrideProps(clone, overrideData, build)
       continue
     }
 
     if (overrideData.type && overrideData.id) {
-      createSceneNode(
-        overrideData as PenNode,
-        instanceNode.id,
-        graph,
-        ctx,
-        componentIds,
-        penSources
-      )
+      createSceneNode(overrideData as PenNode, instanceNode.id, build)
     }
   }
 }
 
-function walkAndApplyOverrides(
-  nodes: PenNode[],
-  graph: SceneGraph,
-  ctx: VarContext,
-  componentIds: Map<string, string>,
-  penSources: Map<string, PenNode>
-): void {
+function walkAndApplyOverrides(nodes: PenNode[], build: Build): void {
   for (const pen of nodes) {
-    applyDescendantOverrides(graph, pen, ctx, componentIds, penSources)
-    if (pen.children) walkAndApplyOverrides(pen.children, graph, ctx, componentIds, penSources)
+    applyDescendantOverrides(pen, build)
+    if (pen.children) walkAndApplyOverrides(pen.children, build)
   }
 }
 
@@ -469,7 +443,16 @@ function fixInstanceWidths(graph: SceneGraph): void {
   }
 }
 
-export function parsePenFile(json: string): SceneGraph {
+/** Whether a group sits in an auto layout's flow, where fitting it changes the layout. */
+function groupsInFlow(graph: SceneGraph, groupIds: readonly string[]): boolean {
+  return groupIds.some((id) => {
+    const group = graph.getNode(id)
+    const parent = group?.parentId ? graph.getNode(group.parentId) : undefined
+    return parent !== undefined && parent.layoutMode !== 'NONE'
+  })
+}
+
+export function parsePenFile(json: string, options: PenReadOptions = {}): SceneGraph {
   const parsed = v.safeParse(penFileSchema, json)
   if (!parsed.success) {
     throw new Error(`Not a .pen document: ${v.summarize(parsed.issues)}`)
@@ -482,22 +465,30 @@ export function parsePenFile(json: string): SceneGraph {
   }
 
   const ctx = buildVarContext(graph, doc.variables ?? {}, doc.themes ?? {})
-  const componentIds = new Map<string, string>()
-  const penSources = new Map<string, PenNode>()
-
-  collectComponentIds(doc.children, componentIds)
-
-  const page = graph.addPage(doc.children[0]?.name ?? 'Page 1')
-  for (const child of doc.children) {
-    createSceneNode(child, page.id, graph, ctx, componentIds, penSources)
+  const build: Build = {
+    graph,
+    ctx,
+    componentIds: new Map(),
+    penSources: new Map(),
+    placements: new Map(),
+    groupIds: []
   }
 
-  applyAllRefProps(doc.children, graph, componentIds, penSources, ctx)
-  populateInstances(graph)
-  walkAndApplyOverrides(doc.children, graph, ctx, componentIds, penSources)
-  populateInstances(graph)
+  collectComponentIds(doc.children, build.componentIds)
+
+  const page = graph.addPage(doc.children[0]?.name ?? 'Page 1')
+  for (const child of doc.children) createSceneNode(child, page.id, build)
+
+  applyAllRefProps(doc.children, build)
+  populateInstances(build)
+  walkAndApplyOverrides(doc.children, build)
+  populateInstances(build)
   resolveThemeVariables(doc.children, graph, ctx)
   fixInstanceWidths(graph)
+
+  options.layout?.(graph)
+  placeLayers(graph, build.placements, build.groupIds)
+  if (groupsInFlow(graph, build.groupIds)) options.layout?.(graph)
 
   if (graph.getPages(true).length === 0) {
     graph.addPage('Page 1')
@@ -506,6 +497,6 @@ export function parsePenFile(json: string): SceneGraph {
   return graph
 }
 
-export async function readPenFile(file: File): Promise<SceneGraph> {
-  return parsePenFile(await file.text())
+export async function readPenFile(file: File, options?: PenReadOptions): Promise<SceneGraph> {
+  return parsePenFile(await file.text(), options)
 }
