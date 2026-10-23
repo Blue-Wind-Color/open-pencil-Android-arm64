@@ -225,6 +225,7 @@ export type PenVariableScalar = v.InferOutput<typeof variableScalarSchema>
 export type PenPaint = v.InferOutput<typeof paintSchema>
 export type PenPaints = v.InferOutput<typeof paintsSchema>
 export type PenGradientPaint = v.InferOutput<typeof gradientPaintSchema>
+export type PenImagePaint = v.InferOutput<typeof imagePaintSchema>
 export type PenLegacyStroke = v.InferOutput<typeof legacyStrokeSchema>
 export type PenEffect = v.InferOutput<typeof effectSchema>
 export type PenSides = v.InferOutput<typeof sidesSchema>

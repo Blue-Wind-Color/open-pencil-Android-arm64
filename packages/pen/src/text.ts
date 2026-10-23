@@ -1,7 +1,7 @@
 import type { SceneNode, TextAlignVertical, TextAutoResize } from '@open-pencil/scene-graph'
 
 import type { PenNode } from './schema'
-import { bindIfVar, isVarRef, resolveNumber, type VarContext } from './variables'
+import { bindIfVar, isVarRef, resolveNumber, resolveString, type VarContext } from './variables'
 
 const FONT_WEIGHTS: Partial<Record<string, number>> = {
   thin: 100,
@@ -47,10 +47,6 @@ const TEXT_GROWTH: Partial<Record<string, TextAutoResize>> = {
   auto: 'WIDTH_AND_HEIGHT',
   'fixed-width': 'HEIGHT',
   'fixed-width-height': 'NONE'
-}
-
-function resolveString(value: string | undefined, ctx: VarContext): string | undefined {
-  return value !== undefined && isVarRef(value) ? ctx.resolveString(value) : value
 }
 
 /**

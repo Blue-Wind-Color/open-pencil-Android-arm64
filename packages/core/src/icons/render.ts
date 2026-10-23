@@ -11,12 +11,14 @@ import {
   withIconTint,
   type IconPaint
 } from '@open-pencil/scene-graph/icons'
+import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
   createResizeSnapshot,
   scaledChildRect,
   scaledGeometryChanges
 } from '@open-pencil/scene-graph/resize'
+import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { createPathStroke, pathStrokeLineStyle } from '#core/icons/path-style'
 
@@ -98,6 +100,32 @@ export function placeIcon(
   for (const path of icon.paths) addPath(graph, frame.id, path, size, color)
   if (identity) recordIcon(graph, frame.id, name)
   return graph.getNode(frame.id) ?? frame
+}
+
+/** An icon's paths, scaled from the size they were built at to `size`. */
+function scaledPaths(icon: IconData, size: number): IconPath[] {
+  const scale = size / Math.max(icon.width, icon.height)
+  if (scale === 1) return icon.paths
+  return icon.paths.map((path) => ({
+    ...path,
+    vectorNetwork: transformVectorNetwork(Matrix.scaled(scale, scale), path.vectorNetwork),
+    strokeWidth: path.strokeWidth * scale
+  }))
+}
+
+/**
+ * Draws an icon into a frame that already exists, `size` square at its origin, and records the
+ * icon on it, as for one placed with {@link placeIcon}. The icon may have been built at any size.
+ */
+export function drawIcon(
+  graph: SceneGraph,
+  frameId: string,
+  icon: IconData,
+  size: number,
+  color: Color
+): void {
+  for (const path of scaledPaths(icon, size)) addPath(graph, frameId, path, size, color)
+  recordIcon(graph, frameId, `${icon.prefix}:${icon.name}`)
 }
 
 /** Writes the icon `name` on its frame with a fingerprint of the paths it draws now. */

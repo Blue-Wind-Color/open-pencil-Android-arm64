@@ -4,6 +4,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 
 import type { SkiaRenderer } from '#core/canvas'
+import type { IconProvider } from '#core/icons'
 
 import type { RasterExportFormat } from './formats/raster'
 
@@ -21,6 +22,11 @@ export interface ReadDocumentInput {
   name?: string
   mimeType?: string
   data: Uint8Array
+  /**
+   * Reads a file a document names relative to itself, such as a `.pen` document's images; null
+   * when it cannot. Hosts that know where the document lives pass it.
+   */
+  readAsset?(path: string): Promise<Uint8Array | null>
 }
 
 export interface ReadDocumentResult {
@@ -62,6 +68,8 @@ export interface ExportRequest {
 export interface IOContext {
   canvasKit?: CanvasKit
   renderer?: SkiaRenderer
+  /** Where documents' icons come from; Iconify unless a host passes its own. */
+  icons?: IconProvider
 }
 
 export interface FigWriteOptions {

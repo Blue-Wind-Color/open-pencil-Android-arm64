@@ -67,6 +67,37 @@ export function resolveBoolean(
   return isVarRef(value) ? ctx.resolveBoolean(value) : value !== 'false'
 }
 
+/** A string, or the value of the string variable it references. */
+export function resolveString(value: string | undefined, ctx: VarContext): string | undefined {
+  return value !== undefined && isVarRef(value) ? ctx.resolveString(value) : value
+}
+
+/**
+ * Every value a field can take: the value itself, or each value its variable has in any theme,
+ * through aliases. For loading what a document may draw before it is read in a theme.
+ */
+export function possibleValues(value: string | undefined, doc: PenDocument): string[] {
+  const found = new Set<string>()
+  const seen = new Set<string>()
+  const visit = (raw: PenVariableScalar | undefined) => {
+    if (raw === undefined) return
+    if (!isVarRef(raw)) {
+      found.add(String(raw))
+      return
+    }
+    const name = varName(raw)
+    const definition = doc.variables?.[name]
+    if (!definition || seen.has(name)) return
+    seen.add(name)
+    const entries = Array.isArray(definition.value)
+      ? definition.value
+      : [{ value: definition.value }]
+    for (const entry of entries) visit(entry.value)
+  }
+  visit(value)
+  return [...found]
+}
+
 /** A colour, or the value of the colour variable it references. */
 export function resolveColor(value: string, ctx: VarContext): Color {
   return isVarRef(value) ? ctx.resolveColor(value) : parseColor(value)

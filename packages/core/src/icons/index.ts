@@ -8,6 +8,7 @@ export {
 } from './provider'
 export {
   detachIcon,
+  drawIcon,
   iconColor,
   placeIcon,
   recolorIcon,

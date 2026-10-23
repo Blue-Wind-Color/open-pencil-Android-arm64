@@ -15,8 +15,10 @@ import {
 } from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import { imagePaint, type PenImages } from './images'
 import type {
   PenGradientPaint,
+  PenImagePaint,
   PenLegacyStroke,
   PenNode,
   PenOverride,
@@ -112,7 +114,8 @@ function convertPaint(
   index: number,
   field: PaintField,
   ctx: VarContext,
-  node: SceneNode | undefined
+  node: SceneNode | undefined,
+  images: PenImages | undefined
 ): Fill | null {
   if (typeof paint === 'string' || paint.type === 'color') {
     const raw = typeof paint === 'string' ? paint : paint.color
@@ -141,6 +144,17 @@ function convertPaint(
       gradientTransform: gradientTransform(gradient, type, ctx)
     }
   }
+  if (paint.type === 'image') {
+    const source = paint as PenImagePaint
+    const image = source.url ? images?.get(source.url) : undefined
+    if (!image) return null
+    const box = { width: node?.width ?? 0, height: node?.height ?? 0 }
+    return {
+      ...imagePaint(source, image, box, resolveNumber(source.opacity, ctx, 1)),
+      visible: resolveBoolean(source.enabled, ctx),
+      blendMode: mapBlendMode(source.blendMode)
+    }
+  }
   return null
 }
 
@@ -149,13 +163,14 @@ export function convertPaints(
   paints: PenPaints | undefined,
   field: PaintField,
   ctx: VarContext,
-  node?: SceneNode
+  node?: SceneNode,
+  images?: PenImages
 ): Fill[] {
   if (paints === undefined) return []
   const list = Array.isArray(paints) ? paints : [paints]
   const result: Fill[] = []
   for (const paint of list) {
-    const converted = convertPaint(paint, result.length, field, ctx, node)
+    const converted = convertPaint(paint, result.length, field, ctx, node, images)
     if (converted) result.push(converted)
   }
   return result
@@ -222,7 +237,12 @@ function sideWeights(sides: PenSides, ctx: VarContext) {
  * Sets a node's strokes. pen.dev draws a stroke only with both paints and a width: a missing side
  * of a per-side width is zero, and the alignment defaults to centred.
  */
-export function applyStroke(node: SceneNode, fields: PenStrokeFields, ctx: VarContext): void {
+export function applyStroke(
+  node: SceneNode,
+  fields: PenStrokeFields,
+  ctx: VarContext,
+  images?: PenImages
+): void {
   node.strokes = []
   node.independentStrokeWeights = false
   if (fields.paints === undefined || fields.width === undefined) return
@@ -247,7 +267,7 @@ export function applyStroke(node: SceneNode, fields: PenStrokeFields, ctx: VarCo
   const join = JOINS[fields.join ?? 'miter'] ?? 'MITER'
   node.strokeCap = cap
   node.strokeJoin = join
-  node.strokes = convertPaints(fields.paints, 'strokes', ctx, node).map((paint) => ({
+  node.strokes = convertPaints(fields.paints, 'strokes', ctx, node, images).map((paint) => ({
     ...paint,
     weight,
     align,

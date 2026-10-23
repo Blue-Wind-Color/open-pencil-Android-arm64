@@ -63,6 +63,10 @@
       "allow": [{ "path": "**" }]
     },
     {
+      "identifier": "fs:allow-lstat",
+      "allow": [{ "path": "**" }]
+    },
+    {
       "identifier": "fs:allow-open",
       "allow": [{ "path": "**" }],
       "deny": [

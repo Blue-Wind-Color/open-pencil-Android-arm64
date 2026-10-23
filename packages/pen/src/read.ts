@@ -2,11 +2,12 @@ import * as v from 'valibot'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { createImageStore } from './images'
 import { populateInstances } from './instances'
 import { spreadAround } from './layout'
-import { createSceneNode, type Build } from './nodes'
+import { createSceneNode, type Build, type PenIconSource } from './nodes'
 import { placeLayers } from './placement'
-import { penFileSchema, type PenNode } from './schema'
+import { penFileSchema, type PenDocument, type PenNode } from './schema'
 import { buildVarContext } from './variables'
 
 /** Options for reading a document. */
@@ -16,6 +17,10 @@ export interface PenReadOptions {
    * mirrored layers are placed after it, since where they land depends on their final size.
    */
   layout?(graph: SceneGraph): void
+  /** The image files the document's paints name, by their URL in it; see `penAssets`. */
+  images?: ReadonlyMap<string, Uint8Array>
+  /** Where icon glyphs come from; icons are empty frames without it. */
+  icons?: PenIconSource
 }
 
 function collectComponents(nodes: PenNode[], components: Map<string, PenNode>): void {
@@ -35,12 +40,17 @@ function groupsInFlow(graph: SceneGraph, groupIds: Iterable<string>): boolean {
   return false
 }
 
-export function parsePenFile(json: string, options: PenReadOptions = {}): SceneGraph {
+/** A `.pen` document's JSON, validated; throws for text that is not one. */
+export function parsePenDocument(json: string): PenDocument {
   const parsed = v.safeParse(penFileSchema, json)
   if (!parsed.success) {
     throw new Error(`Not a .pen document: ${v.summarize(parsed.issues)}`)
   }
-  const doc = parsed.output
+  return parsed.output
+}
+
+/** Builds the scene graph of a document `parsePenDocument` read. */
+export function buildPenGraph(doc: PenDocument, options: PenReadOptions = {}): SceneGraph {
   const graph = new SceneGraph()
 
   for (const page of graph.getPages(true)) {
@@ -50,6 +60,8 @@ export function parsePenFile(json: string, options: PenReadOptions = {}): SceneG
   const build: Build = {
     graph,
     ctx: buildVarContext(graph, doc),
+    images: createImageStore(graph, options.images),
+    icons: options.icons,
     components: new Map(),
     effective: new Map(),
     instances: new Map(),
@@ -73,6 +85,10 @@ export function parsePenFile(json: string, options: PenReadOptions = {}): SceneG
   }
 
   return graph
+}
+
+export function parsePenFile(json: string, options: PenReadOptions = {}): SceneGraph {
+  return buildPenGraph(parsePenDocument(json), options)
 }
 
 export async function readPenFile(file: File, options?: PenReadOptions): Promise<SceneGraph> {

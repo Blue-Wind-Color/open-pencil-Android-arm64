@@ -1,7 +1,14 @@
 import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
-import { parsePenFile } from '@open-pencil/pen'
+import {
+  buildPenGraph,
+  isDataURL,
+  parsePenDocument,
+  penAssets,
+  type PenIconSource
+} from '@open-pencil/pen'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { drawIcon, iconify, type IconData, type IconProvider } from '#core/icons'
 import { layoutAuthoredNodes } from '#core/layout'
 
 import { exportFigFile, parseFigFile } from './formats/fig'
@@ -19,6 +26,7 @@ import type {
   IOFormatExportOptions,
   IOFormatSupport,
   RasterExportOptions,
+  ReadDocumentInput,
   SVGExportOptions
 } from './types'
 
@@ -213,6 +221,56 @@ async function writeFig(
   return { format: 'fig', mimeType: 'application/octet-stream', extension: 'fig', data }
 }
 
+/** The size icons are fetched at; each is scaled to the box it is drawn in. */
+const PEN_ICON_SIZE = 24
+
+/**
+ * An image's bytes: a data URL decoded by the platform's own URL handling, a file through the
+ * host; null when either fails.
+ */
+async function loadPenImage(url: string, input: ReadDocumentInput): Promise<Uint8Array | null> {
+  try {
+    if (!isDataURL(url)) return (await input.readAsset?.(url)) ?? null
+    // Through `URL`, which lowercases the scheme for runtimes that only fetch `data:`.
+    return new Uint8Array(await (await fetch(new URL(url))).arrayBuffer())
+  } catch {
+    return null
+  }
+}
+
+async function loadPenImages(
+  urls: readonly string[],
+  input: ReadDocumentInput
+): Promise<Map<string, Uint8Array>> {
+  const images = new Map<string, Uint8Array>()
+  await Promise.all(
+    urls.map(async (url) => {
+      const bytes = await loadPenImage(url, input)
+      if (bytes) images.set(url, bytes)
+    })
+  )
+  return images
+}
+
+/** Icons from `provider`; a document whose icons cannot be fetched opens with empty icons. */
+async function loadPenIcons(
+  names: readonly string[],
+  provider: IconProvider
+): Promise<PenIconSource> {
+  const glyphs: Map<string, IconData> =
+    names.length > 0
+      ? await provider.icons(names, PEN_ICON_SIZE).catch(() => new Map<string, IconData>())
+      : new Map()
+  return {
+    draw(graph, frameId, name, size, color) {
+      const icon = glyphs.get(name)
+      if (!icon) return false
+      drawIcon(graph, frameId, icon, size, color)
+      return true
+    }
+  }
+}
+
 export const penFormat: IOFormatAdapter<'pen'> = {
   id: 'pen',
   label: 'Pencil Document',
@@ -226,10 +284,17 @@ export const penFormat: IOFormatAdapter<'pen'> = {
   matchesFile(fileName, mimeType) {
     return lowerExt(fileName) === 'pen' || mimeType === 'application/json'
   },
-  async readDocument(input) {
-    const text = new TextDecoder().decode(input.data)
+  async readDocument(input, context) {
+    const doc = parsePenDocument(new TextDecoder().decode(input.data))
+    const assets = penAssets(doc)
+    const [images, icons] = await Promise.all([
+      loadPenImages(assets.images, input),
+      loadPenIcons(assets.icons, context?.icons ?? iconify)
+    ])
     // A .pen file stores its layout intent, not the sizes and positions it implies.
-    const graph = parsePenFile(text, {
+    const graph = buildPenGraph(doc, {
+      images,
+      icons,
       layout: (target) =>
         layoutAuthoredNodes(
           target,
