@@ -1,3 +1,5 @@
+pub mod events;
+
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::Path;
@@ -67,7 +69,7 @@ struct AppMenuFile {
 #[cfg(target_os = "macos")]
 fn app_menu_file() -> tauri::Result<AppMenuFile> {
     Ok(serde_json::from_str(include_str!(
-        "../generated/app-menu.json"
+        "../../generated/app-menu.json"
     ))?)
 }
 
@@ -217,7 +219,7 @@ fn build_schema_menus<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     build: &MenuBuild,
 ) -> tauri::Result<Vec<Submenu<R>>> {
-    let groups: Vec<MenuGroup> = serde_json::from_str(include_str!("../generated/menu.json"))?;
+    let groups: Vec<MenuGroup> = serde_json::from_str(include_str!("../../generated/menu.json"))?;
     groups
         .iter()
         .map(|group| build_submenu(app, &group.label, &group.items, build))

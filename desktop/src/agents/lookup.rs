@@ -43,12 +43,7 @@ const VERSION_TIMEOUT: Duration = Duration::from_secs(5);
 /// The version line a companion prints for `--version`, or `None` for anything else.
 fn parse_version(output: &str) -> Option<String> {
     let line = output.lines().next()?.trim();
-    let mut core = line.split(['-', '+']).next()?.split('.');
-    let numeric = (0..3).all(|_| {
-        core.next()
-            .is_some_and(|part| !part.is_empty() && part.bytes().all(|b| b.is_ascii_digit()))
-    });
-    (numeric && core.next().is_none()).then(|| line.to_owned())
+    semver::Version::parse(line).ok().map(|_| line.to_owned())
 }
 
 /// Asks one of OpenPencil's own companions for its version. Asking the program reports what
@@ -185,7 +180,7 @@ fn lookup_with(
 pub async fn agent_lookup() -> Result<AgentLookup, String> {
     tauri::async_runtime::spawn_blocking(|| {
         let current = std::env::var("PATH").unwrap_or_default();
-        let search_path = crate::augment_path(&current, &crate::mcp_candidate_dirs());
+        let search_path = super::path::augment_path(&current, &super::path::candidate_dirs());
         let cwd = std::env::current_dir().unwrap_or_else(|_| Path::new("/").to_path_buf());
         lookup_with(
             search_path.clone(),

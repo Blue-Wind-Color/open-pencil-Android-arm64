@@ -70,7 +70,7 @@ export function cloudDocumentPath(documentId: string): string {
 
 /**
  * The desktop app's form of a Cloud link, `openpencil://cloud/<kind>/<id>?server=…#secret`, which
- * `desktop/src/deep_link.rs` validates before the editor sees it.
+ * `desktop/src/launch/links.rs` validates before the editor sees it.
  */
 export function cloudDesktopLinkURL(
   kind: CloudLinkKind,

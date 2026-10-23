@@ -3258,11 +3258,13 @@ version = "0.16.0"
 dependencies = [
  "fix-path-env",
  "fontique",
+ "httparse",
  "keyring",
  "objc2-core-foundation",
  "objc2-core-text",
  "reqwest 0.12.28",
  "security-framework",
+ "semver",
  "serde",
  "serde_json",
  "tauri",

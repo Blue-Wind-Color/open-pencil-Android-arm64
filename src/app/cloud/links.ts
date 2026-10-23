@@ -26,7 +26,7 @@ export type CloudLink = { kind: CloudLinkKind; id: string; server: string; secre
 
 const CLOUD_LINK_PATH = /^\/cloud\/(invitations|share)\/([^/]+)$/
 
-/** Desktop events and commands for `openpencil://cloud` links (`desktop/src/lib.rs`). */
+/** Desktop events and commands for `openpencil://cloud` links (`desktop/src/launch/mod.rs`). */
 const CLOUD_LINKS_EVENT = 'open-cloud-links'
 const TAKE_PENDING_CLOUD_LINKS = 'take_pending_cloud_links'
 
