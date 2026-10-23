@@ -3,16 +3,10 @@ import type {
   LayoutCounterAlign,
   LayoutMode,
   LayoutSizing,
-  NodeType,
-  SceneNode,
-  TextAlignVertical
+  SceneGraph,
+  SceneNode
 } from '@open-pencil/scene-graph'
-import {
-  paddingFromShorthand,
-  parseAutoLayoutDirection,
-  parseCounterAxisAlign,
-  parsePrimaryAxisAlign
-} from '@open-pencil/scene-graph/layout'
+import { paddingFromShorthand, parseAutoLayoutDirection } from '@open-pencil/scene-graph/layout'
 
 import type { PenNode, PenNumber } from './schema'
 import { isVarRef, resolveNumber, type VarContext } from './variables'
@@ -103,48 +97,70 @@ export function mapLayoutMode(pen: PenNode): LayoutMode {
   return pen.type === 'frame' && pen.layout === undefined ? 'HORIZONTAL' : 'NONE'
 }
 
+/** pen.dev's main axis alignments; `space_around` lays out as `start` until {@link spreadAround}. */
+const JUSTIFY_CONTENT: Partial<Record<string, LayoutAlign>> = {
+  start: 'MIN',
+  center: 'CENTER',
+  end: 'MAX',
+  space_between: 'SPACE_BETWEEN'
+}
+
+const ALIGN_ITEMS: Partial<Record<string, LayoutCounterAlign>> = {
+  start: 'MIN',
+  center: 'CENTER',
+  end: 'MAX'
+}
+
 export function mapJustifyContent(value: string | undefined): LayoutAlign {
-  return parsePrimaryAxisAlign(value) ?? 'MIN'
+  return JUSTIFY_CONTENT[value ?? 'start'] ?? 'MIN'
 }
 
 export function mapAlignItems(value: string | undefined): LayoutCounterAlign {
-  return parseCounterAxisAlign(value) ?? 'MIN'
+  return ALIGN_ITEMS[value ?? 'start'] ?? 'MIN'
 }
 
-export function mapTextAlign(value: string | undefined): SceneNode['textAlignHorizontal'] {
-  if (value === 'center') return 'CENTER'
-  if (value === 'right' || value === 'end') return 'RIGHT'
-  if (value === 'justified') return 'JUSTIFIED'
-  return 'LEFT'
+function flowChildren(graph: SceneGraph, frame: SceneNode): SceneNode[] {
+  return graph
+    .getChildren(frame.id)
+    .filter((child) => child.visible && child.layoutPositioning !== 'ABSOLUTE')
 }
 
-export function mapTextAlignVertical(value: string | undefined): TextAlignVertical {
-  if (value === 'center') return 'CENTER'
-  if (value === 'bottom' || value === 'end') return 'BOTTOM'
-  return 'TOP'
-}
-
-export function mapFontWeight(value: string | number | undefined): number {
-  if (typeof value === 'number') return value
-  if (value === 'thin') return 100
-  if (value === 'extralight') return 200
-  if (value === 'light') return 300
-  if (value === 'medium') return 500
-  if (value === 'semibold') return 600
-  if (value === 'bold') return 700
-  if (value === 'extrabold') return 800
-  if (value === 'black') return 900
-  return 400
-}
-
-export function mapNodeType(pen: PenNode): NodeType {
-  if (pen.type === 'frame') return pen.reusable ? 'COMPONENT' : 'FRAME'
-  if (pen.type === 'rectangle') return 'RECTANGLE'
-  if (pen.type === 'ellipse') return 'ELLIPSE'
-  if (pen.type === 'polygon') return 'POLYGON'
-  if (pen.type === 'group') return 'GROUP'
-  if (pen.type === 'text' || pen.type === 'icon_font') return 'TEXT'
-  if (pen.type === 'path') return 'VECTOR'
-  if (pen.type === 'ref') return 'INSTANCE'
-  return 'FRAME'
+/**
+ * Auto layout has no `space_around`, which gives every child an equal share of the free space,
+ * half of it on each side. Once laid out, the share goes into the gap and half of it into the
+ * padding at both ends, which draws the same. Returns whether any frame changed.
+ */
+export function spreadAround(graph: SceneGraph, frameIds: readonly string[]): boolean {
+  let changed = false
+  for (const id of frameIds) {
+    const frame = graph.getNode(id)
+    if (!frame || frame.layoutMode === 'NONE' || frame.primaryAxisSizing !== 'FIXED') continue
+    const children = flowChildren(graph, frame)
+    if (children.length === 0) continue
+    const horizontal = frame.layoutMode === 'HORIZONTAL'
+    const used = children.reduce(
+      (sum, child) => sum + (horizontal ? child.width : child.height),
+      frame.itemSpacing * (children.length - 1)
+    )
+    const free = horizontal
+      ? frame.width - frame.paddingLeft - frame.paddingRight - used
+      : frame.height - frame.paddingTop - frame.paddingBottom - used
+    if (free <= 0) continue
+    const share = free / children.length
+    if (horizontal) {
+      graph.updateNode(frame.id, {
+        itemSpacing: frame.itemSpacing + share,
+        paddingLeft: frame.paddingLeft + share / 2,
+        paddingRight: frame.paddingRight + share / 2
+      })
+    } else {
+      graph.updateNode(frame.id, {
+        itemSpacing: frame.itemSpacing + share,
+        paddingTop: frame.paddingTop + share / 2,
+        paddingBottom: frame.paddingBottom + share / 2
+      })
+    }
+    changed = true
+  }
+  return changed
 }

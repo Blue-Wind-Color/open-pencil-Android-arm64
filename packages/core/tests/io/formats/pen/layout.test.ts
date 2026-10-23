@@ -280,3 +280,21 @@ describe('parsePenFile — turned layers sized by layout', () => {
     expect(endY).toBeCloseTo(200 - label.width)
   })
 })
+
+describe('parsePenFile — space around', () => {
+  test('gives each child an equal share of the free space, half on each side', () => {
+    const graph = parseLayoutDocument([
+      {
+        id: 'row',
+        type: 'frame',
+        layout: 'horizontal',
+        justifyContent: 'space_around',
+        width: 300,
+        height: 50,
+        children: ['a', 'b', 'c'].map((id) => ({ id, type: 'rectangle', width: 30, height: 30 }))
+      }
+    ])
+    // 210 of free space: 70 per child, 35 on each side of each.
+    expect(['a', 'b', 'c'].map((id) => graph.getNode(id)?.x)).toEqual([35, 135, 235])
+  })
+})

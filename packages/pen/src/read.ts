@@ -5,33 +5,31 @@ import {
   type AxisSizingMode,
   type LayoutMode,
   type LayoutSizing,
+  type NodeType,
   type SceneNode
 } from '@open-pencil/scene-graph'
 import { copyEffects, copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 import { populateInstanceChildren } from '@open-pencil/scene-graph/instances'
 import { fillSizingFields } from '@open-pencil/scene-graph/layout'
 
+import { convertEffects } from './effects'
+import { ellipseArc, pathNetwork } from './geometry'
 import {
   applyCornerRadius,
   applyPadding,
   mapAlignItems,
-  mapFontWeight,
   mapJustifyContent,
   mapLayoutMode,
-  mapNodeType,
-  mapTextAlign,
-  mapTextAlignVertical,
-  parseSize
-} from './convert'
-import { convertEffects } from './effects'
-import { ellipseArc, pathNetwork } from './geometry'
+  parseSize,
+  spreadAround
+} from './layout'
 import { applyStroke, convertPaints, strokeFields } from './paints'
 import { isPlain, placeLayers, type PenPlacement } from './placement'
 import { penFileSchema, type PenNode, type PenOverride } from './schema'
+import { applyTextProps } from './text'
 import {
   bindIfVar,
   buildVarContext,
-  isVarRef,
   resolveBoolean,
   resolveNumber,
   type VarContext
@@ -56,12 +54,8 @@ interface Build {
   placements: Map<string, PenPlacement>
   /** Groups in reading order. */
   groupIds: string[]
-}
-
-function resolveFontFamily(raw: string | undefined, ctx: VarContext): string {
-  if (!raw) return 'Inter'
-  if (isVarRef(raw)) return ctx.resolveString(raw)
-  return raw
+  /** Frames spreading their children with `space_around`. */
+  aroundIds: string[]
 }
 
 function penPlacement(pen: PenOverride, ctx: VarContext, base?: PenPlacement): PenPlacement {
@@ -94,15 +88,13 @@ function applyAutoLayout(
   pen: PenNode,
   widthSizing: LayoutSizing,
   heightSizing: LayoutSizing,
-  ctx?: VarContext
+  ctx: VarContext
 ): void {
   overrides.layoutMode = layoutMode
   overrides.primaryAxisAlign = mapJustifyContent(pen.justifyContent)
   overrides.counterAxisAlign = mapAlignItems(pen.alignItems)
-  overrides.itemSpacing =
-    typeof pen.gap === 'string' && isVarRef(pen.gap) && ctx
-      ? ctx.resolveNumber(pen.gap)
-      : ((pen.gap ?? 0) as number)
+  overrides.itemSpacing = resolveNumber(pen.gap, ctx)
+  overrides.strokesIncludedInLayout = pen.layoutIncludeStroke ?? false
 
   // Fill is the child's grow or stretch, set with its parent; the frame itself stays fixed.
   const own = (sizing: LayoutSizing): AxisSizingMode => (sizing === 'HUG' ? 'HUG' : 'FIXED')
@@ -112,29 +104,6 @@ function applyAutoLayout(
   } else {
     overrides.primaryAxisSizing = own(widthSizing)
     overrides.counterAxisSizing = own(heightSizing)
-  }
-}
-
-function applyTextProps(node: SceneNode, pen: PenNode, ctx: VarContext): void {
-  node.text = pen.type === 'icon_font' ? (pen.iconFontName ?? '') : (pen.content ?? '')
-  node.fontFamily =
-    pen.type === 'icon_font'
-      ? (pen.iconFontFamily ?? 'Material Symbols Sharp')
-      : resolveFontFamily(pen.fontFamily, ctx)
-  node.fontSize = resolveNumber(pen.fontSize, ctx, 14)
-  node.fontWeight = mapFontWeight(
-    pen.fontWeight ?? (pen.type === 'icon_font' ? pen.weight : undefined)
-  )
-  node.textAlignHorizontal = mapTextAlign(pen.textAlign)
-  node.textAlignVertical = mapTextAlignVertical(pen.textAlignVertical)
-  if (pen.lineHeight !== undefined) {
-    const lineHeight = resolveNumber(pen.lineHeight, ctx)
-    node.lineHeight = lineHeight < 5 ? lineHeight * node.fontSize : lineHeight
-  }
-  if (pen.letterSpacing !== undefined) node.letterSpacing = resolveNumber(pen.letterSpacing, ctx)
-  node.textAutoResize = pen.textGrowth === 'fixed-width' ? 'HEIGHT' : 'WIDTH_AND_HEIGHT'
-  if (pen.fontFamily && isVarRef(pen.fontFamily)) {
-    bindIfVar(node, 'fontFamily', pen.fontFamily, ctx)
   }
 }
 
@@ -233,17 +202,23 @@ function createSceneNode(pen: PenNode, parentId: string, build: Build): string |
   if (!hasChildren && h.fitContentFallback !== undefined) overrides.minHeight = h.fitContentFallback
 
   const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
+  // An absolute layer leaves its parent's flow; fill sizing then falls back to its value.
+  const absolute = pen.layoutPosition === 'absolute' && parentLayout !== 'NONE'
+  if (absolute) overrides.layoutPositioning = 'ABSOLUTE'
+  const flowLayout = absolute ? 'NONE' : parentLayout
   if (layout !== 'NONE') {
     const widthSizing =
-      parentLayout === 'NONE' && w.sizing === 'FILL' ? ('FIXED' as LayoutSizing) : w.sizing
+      flowLayout === 'NONE' && w.sizing === 'FILL' ? ('FIXED' as LayoutSizing) : w.sizing
     const heightSizing =
-      parentLayout === 'NONE' && h.sizing === 'FILL' ? ('FIXED' as LayoutSizing) : h.sizing
+      flowLayout === 'NONE' && h.sizing === 'FILL' ? ('FIXED' as LayoutSizing) : h.sizing
     applyAutoLayout(overrides, layout, pen, widthSizing, heightSizing, ctx)
   }
 
   const node = graph.createNode(mapNodeType(pen), parentId, overrides)
   const placement = penPlacement(pen, ctx)
   if (pen.type === 'group') build.groupIds.push(node.id)
+  if (layout !== 'NONE' && pen.justifyContent === 'space_around') build.aroundIds.push(node.id)
+  bindIfVar(node, 'itemSpacing', pen.gap, ctx)
   if (pen.type === 'group' || !isPlain(placement)) build.placements.set(node.id, placement)
 
   node.fills = convertPaints(pen.fill, 'fills', ctx, node)
@@ -262,9 +237,9 @@ function createSceneNode(pen: PenNode, parentId: string, build: Build): string |
     if (network) node.vectorNetwork = network
   }
 
-  if (parentLayout !== 'NONE') {
-    if (w.sizing === 'FILL') Object.assign(node, fillSizingFields(parentLayout, 'HORIZONTAL'))
-    if (h.sizing === 'FILL') Object.assign(node, fillSizingFields(parentLayout, 'VERTICAL'))
+  if (flowLayout !== 'NONE') {
+    if (w.sizing === 'FILL') Object.assign(node, fillSizingFields(flowLayout, 'HORIZONTAL'))
+    if (h.sizing === 'FILL') Object.assign(node, fillSizingFields(flowLayout, 'VERTICAL'))
   }
 
   if (pen.reusable) {
@@ -443,6 +418,18 @@ function fixInstanceWidths(graph: SceneGraph): void {
   }
 }
 
+function mapNodeType(pen: PenNode): NodeType {
+  if (pen.type === 'frame') return pen.reusable ? 'COMPONENT' : 'FRAME'
+  if (pen.type === 'rectangle') return 'RECTANGLE'
+  if (pen.type === 'ellipse') return 'ELLIPSE'
+  if (pen.type === 'polygon') return 'POLYGON'
+  if (pen.type === 'group') return 'GROUP'
+  if (pen.type === 'text' || pen.type === 'icon_font') return 'TEXT'
+  if (pen.type === 'path') return 'VECTOR'
+  if (pen.type === 'ref') return 'INSTANCE'
+  return 'FRAME'
+}
+
 /** Whether a group sits in an auto layout's flow, where fitting it changes the layout. */
 function groupsInFlow(graph: SceneGraph, groupIds: readonly string[]): boolean {
   return groupIds.some((id) => {
@@ -471,7 +458,8 @@ export function parsePenFile(json: string, options: PenReadOptions = {}): SceneG
     componentIds: new Map(),
     penSources: new Map(),
     placements: new Map(),
-    groupIds: []
+    groupIds: [],
+    aroundIds: []
   }
 
   collectComponentIds(doc.children, build.componentIds)
@@ -487,8 +475,9 @@ export function parsePenFile(json: string, options: PenReadOptions = {}): SceneG
   fixInstanceWidths(graph)
 
   options.layout?.(graph)
+  const spread = options.layout ? spreadAround(graph, build.aroundIds) : false
   placeLayers(graph, build.placements, build.groupIds)
-  if (groupsInFlow(graph, build.groupIds)) options.layout?.(graph)
+  if (spread || groupsInFlow(graph, build.groupIds)) options.layout?.(graph)
 
   if (graph.getPages(true).length === 0) {
     graph.addPage('Page 1')
