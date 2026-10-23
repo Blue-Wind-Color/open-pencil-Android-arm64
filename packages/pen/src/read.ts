@@ -182,16 +182,21 @@ function applyAllRefProps(penNodes: PenNode[], build: Build): void {
   }
 }
 
-function applyTheme(theme: Record<string, string>, ctx: VarContext): void {
-  const themeName = Object.values(theme)[0]
-  if (themeName) ctx.setActiveTheme(themeName)
+/** Builds a layer and its children in the layer's theme, merged over its parent's. */
+function createSceneNode(pen: PenNode, parentId: string, build: Build): string | null {
+  const { ctx } = build
+  if (pen.type === 'prompt') return null
+  const leaveTheme = pen.theme ? ctx.enterTheme(pen.theme) : undefined
+  try {
+    return buildSceneNode(pen, parentId, build)
+  } finally {
+    leaveTheme?.()
+  }
 }
 
 // eslint-disable-next-line complexity -- .pen node mapping touches many format-specific fields
-function createSceneNode(pen: PenNode, parentId: string, build: Build): string | null {
+function buildSceneNode(pen: PenNode, parentId: string, build: Build): string {
   const { graph, ctx } = build
-  if (pen.type === 'prompt') return null
-  if (pen.theme) applyTheme(pen.theme, ctx)
 
   const { w, h, layout, isTextLike } = resolveSizing(pen, ctx)
   const overrides = buildBaseOverrides(pen, ctx)
@@ -215,6 +220,11 @@ function createSceneNode(pen: PenNode, parentId: string, build: Build): string |
   }
 
   const node = graph.createNode(mapNodeType(pen), parentId, overrides)
+  if (pen.theme) node.variableModes = { [ctx.collectionId]: ctx.modeId() }
+  bindIfVar(node, 'visible', pen.enabled, ctx)
+  bindIfVar(node, 'opacity', pen.opacity, ctx)
+  bindIfVar(node, 'width', pen.width, ctx)
+  bindIfVar(node, 'height', pen.height, ctx)
   const placement = penPlacement(pen, ctx)
   if (pen.type === 'group') build.groupIds.push(node.id)
   if (layout !== 'NONE' && pen.justifyContent === 'space_around') build.aroundIds.push(node.id)
@@ -377,32 +387,6 @@ function collectComponentIds(nodes: PenNode[], map: Map<string, string>): void {
   }
 }
 
-function resolveNodeVars(node: SceneNode, graph: SceneGraph, ctx: VarContext): void {
-  for (const [key, varId] of Object.entries(node.boundVariables)) {
-    const variable = graph.variables.get(varId)
-    if (!variable) continue
-    const modeVal =
-      variable.valuesByMode[ctx.activeModeId] ?? Object.values(variable.valuesByMode)[0]
-    const paint = /^(fills|strokes)\/(\d+)\/color$/.exec(key)
-    if (!paint || typeof modeVal !== 'object' || !('r' in modeVal)) continue
-    const target = node[paint[1] === 'fills' ? 'fills' : 'strokes'].at(Number(paint[2]))
-    if (target) target.color = modeVal
-  }
-  for (const childId of node.childIds) {
-    const child = graph.getNode(childId)
-    if (child) resolveNodeVars(child, graph, ctx)
-  }
-}
-
-function resolveThemeVariables(penNodes: PenNode[], graph: SceneGraph, ctx: VarContext): void {
-  for (const pen of penNodes) {
-    if (pen.theme) applyTheme(pen.theme, ctx)
-    const node = graph.getNode(pen.id)
-    if (node) resolveNodeVars(node, graph, ctx)
-    if (pen.children) resolveThemeVariables(pen.children, graph, ctx)
-  }
-}
-
 function fixInstanceWidths(graph: SceneGraph): void {
   for (const node of graph.getAllNodes()) {
     if (node.type !== 'INSTANCE' || !node.componentId) continue
@@ -451,7 +435,7 @@ export function parsePenFile(json: string, options: PenReadOptions = {}): SceneG
     graph.deleteNode(page.id)
   }
 
-  const ctx = buildVarContext(graph, doc.variables ?? {}, doc.themes ?? {})
+  const ctx = buildVarContext(graph, doc)
   const build: Build = {
     graph,
     ctx,
@@ -471,7 +455,6 @@ export function parsePenFile(json: string, options: PenReadOptions = {}): SceneG
   populateInstances(build)
   walkAndApplyOverrides(doc.children, build)
   populateInstances(build)
-  resolveThemeVariables(doc.children, graph, ctx)
   fixInstanceWidths(graph)
 
   options.layout?.(graph)

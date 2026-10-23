@@ -146,3 +146,123 @@ describe.each(['', '--'])('parsePenFile — $%sname references (#563)', (prefix)
     expect(graph.getNode('text')).toMatchObject({ fontFamily: '', boundVariables: {} })
   })
 })
+
+// Measured on pen.dev 2.21 with two theme axes.
+describe('parsePenFile — themes', () => {
+  const themes = { mode: ['light', 'dark'], density: ['compact', 'cozy'] }
+  const variables: PenDocument['variables'] = {
+    accent: {
+      type: 'color',
+      value: [
+        { value: '#CC0000', theme: { mode: 'light', density: 'compact' } },
+        { value: '#00CC00', theme: { mode: 'dark' } },
+        { value: '#0000CC', theme: { mode: 'light', density: 'cozy' } }
+      ]
+    },
+    alias: { type: 'color', value: '$accent' },
+    gap: {
+      type: 'number',
+      value: [
+        { value: 4, theme: { density: 'compact' } },
+        { value: 16, theme: { density: 'cozy' } }
+      ]
+    },
+    shown: {
+      type: 'boolean',
+      value: [
+        { value: true, theme: { mode: 'light' } },
+        { value: false, theme: { mode: 'dark' } }
+      ]
+    },
+    darkOnly: { type: 'number', value: [{ value: 10, theme: { mode: 'dark' } }] }
+  }
+
+  function swatches(theme?: Record<string, string>, inner?: Record<string, string>) {
+    const graph = parsePenFile(
+      JSON.stringify({
+        version: '2.21',
+        themes,
+        variables,
+        children: [
+          {
+            id: 'outer',
+            type: 'frame',
+            layout: 'vertical',
+            gap: '$darkOnly',
+            ...(theme ? { theme } : {}),
+            children: [
+              {
+                id: 'inner',
+                type: 'frame',
+                layout: 'vertical',
+                gap: '$gap',
+                ...(inner ? { theme: inner } : {}),
+                children: [
+                  { id: 'accent', type: 'rectangle', width: 10, height: 10, fill: '$accent' },
+                  { id: 'alias', type: 'rectangle', width: 10, height: 10, fill: '$alias' },
+                  { id: 'shown', type: 'rectangle', width: 10, height: 10, enabled: '$shown' }
+                ]
+              }
+            ]
+          }
+        ]
+      })
+    )
+    const node = (id: string) => expectDefined(graph.getNode(id), id)
+    return {
+      graph,
+      accent: node('accent').fills[0]?.color,
+      alias: node('alias').fills[0]?.color,
+      shown: node('shown').visible,
+      gap: node('inner').itemSpacing,
+      outerGap: node('outer').itemSpacing
+    }
+  }
+
+  test('puts every combination of axis values in one collection', () => {
+    const { graph } = swatches()
+    const collection = expectDefined([...graph.variableCollections.values()][0], 'collection')
+    expect(collection.modes.map((mode) => mode.name)).toEqual([
+      'light / compact',
+      'light / cozy',
+      'dark / compact',
+      'dark / cozy'
+    ])
+  })
+
+  test('reads an unthemed layer in the first value of each axis', () => {
+    expect(swatches()).toMatchObject({
+      accent: { r: 0.8, g: 0, b: 0 },
+      gap: 4,
+      shown: true,
+      outerGap: 0
+    })
+  })
+
+  test('resolves aliases in the layer theme', () => {
+    const { accent, alias } = swatches({ mode: 'dark' })
+    expect(alias).toEqual(accent)
+    expect(accent).toMatchObject({ r: 0, g: 0.8, b: 0 })
+  })
+
+  test('merges a nested theme over its parent, axis by axis', () => {
+    expect(swatches({ mode: 'dark' }, { density: 'cozy' })).toMatchObject({
+      accent: { r: 0, g: 0.8, b: 0 },
+      gap: 16,
+      shown: false,
+      outerGap: 10
+    })
+  })
+
+  test('gives themed layers their mode, which their children inherit', () => {
+    const { graph } = swatches({ mode: 'dark' }, { density: 'cozy' })
+    const collection = expectDefined([...graph.variableCollections.values()][0], 'collection')
+    const id = collection.id
+    const modeName = (nodeId: string) =>
+      collection.modes.find((mode) => mode.modeId === graph.getNode(nodeId)?.variableModes[id])
+        ?.name
+    expect(modeName('outer')).toBe('dark / compact')
+    expect(modeName('inner')).toBe('dark / cozy')
+    expect(graph.getNode('accent')?.variableModes[id]).toBeUndefined()
+  })
+})

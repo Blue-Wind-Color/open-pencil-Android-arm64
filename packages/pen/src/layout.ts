@@ -6,10 +6,18 @@ import type {
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
-import { paddingFromShorthand, parseAutoLayoutDirection } from '@open-pencil/scene-graph/layout'
+import { parseAutoLayoutDirection } from '@open-pencil/scene-graph/layout'
 
 import type { PenNode, PenNumber } from './schema'
-import { isVarRef, resolveNumber, type VarContext } from './variables'
+import { bindIfVar, isVarRef, resolveNumber, type VarContext } from './variables'
+
+const CORNERS = [
+  'topLeftRadius',
+  'topRightRadius',
+  'bottomRightRadius',
+  'bottomLeftRadius'
+] as const
+const PADDING = ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'] as const
 
 export function applyCornerRadius(
   node: SceneNode,
@@ -18,24 +26,31 @@ export function applyCornerRadius(
 ): void {
   if (radius === undefined) return
   if (Array.isArray(radius)) {
-    const values = radius.map((value) => parseSize(value, 0, ctx).value)
     node.independentCorners = true
-    node.topLeftRadius = values[0] ?? 0
-    node.topRightRadius = values[1] ?? 0
-    node.bottomRightRadius = values[2] ?? 0
-    node.bottomLeftRadius = values[3] ?? 0
+    for (const [index, field] of CORNERS.entries()) {
+      node[field] = resolveNumber(radius[index], ctx)
+      bindIfVar(node, field, radius[index], ctx)
+    }
     return
   }
-  node.cornerRadius = parseSize(radius, 0, ctx).value
+  node.cornerRadius = resolveNumber(radius, ctx)
+  bindIfVar(node, 'cornerRadius', radius, ctx)
+}
+
+/** pen.dev padding: one value, vertical and horizontal, or top, right, bottom, and left. */
+function paddingSides(padding: NonNullable<PenNode['padding']>): PenNumber[] {
+  if (!Array.isArray(padding)) return [padding, padding, padding, padding]
+  if (padding.length === 2) return [padding[0], padding[1], padding[0], padding[1]]
+  return padding
 }
 
 export function applyPadding(node: SceneNode, padding: PenNode['padding'], ctx: VarContext): void {
   if (padding === undefined) return
-  const resolve = (value: PenNumber): number => resolveNumber(value, ctx)
-  Object.assign(
-    node,
-    paddingFromShorthand(Array.isArray(padding) ? padding.map(resolve) : [resolve(padding)])
-  )
+  const sides = paddingSides(padding)
+  for (const [index, field] of PADDING.entries()) {
+    node[field] = resolveNumber(sides[index], ctx)
+    bindIfVar(node, field, sides[index], ctx)
+  }
 }
 
 interface ParsedSize {
