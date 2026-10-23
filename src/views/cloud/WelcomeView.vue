@@ -40,7 +40,7 @@ const ui = portalPublic()
         size="lg"
         variant="outline"
         class="w-full"
-        @click="openLocalEditor"
+        @click="openLocalEditor()"
       >
         {{ messages.useWithoutAccount }}
       </AppButton>

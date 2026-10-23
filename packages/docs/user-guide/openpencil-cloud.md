@@ -22,14 +22,14 @@ Each server in **Settings → Cloud** shows who is signed in to it:
 
 - **Sign-in expired** keeps your account, so **Sign in** goes back to the same one.
 - **Account and security** in the server's **…** menu opens the server's own account page, where you change your password, two-step sign-in, and passkeys.
-- **Sign out** ends the session on the server. If the server can't be reached, you stay signed in so you can try again.
+- **Sign out** ends the session on the server. If the server can't be reached, you stay signed in so you can try again. At the server's own editor address, signing out of that server goes back to its welcome page, unless the server lets you use its editor without an account and you chose to on this browser.
 - **Disconnect server** signs you out and forgets the server on this device; your documents stay on it, and you can connect again anytime. It warns you when documents still have changes that haven't reached the server, because disconnecting discards them.
 
 The desktop app keeps its sign-in in the system credential store. In the browser, a sign-in through the server's page lasts as long as the server's session; a sign-in with a code follows **Settings → General → Remember API keys on this device**.
 
 ## Find Documents on Home
 
-Home lists places in a sidebar: **Recent**, the workspaces of the server Home shows, **Shared with you**, and your storage bucket. On a phone the same places are in a menu above the documents. With more than one server connected, choose which one Home shows with **Show on Home** in Settings.
+Home lists places in a sidebar: **Recent**, the workspaces of the server Home shows, **Shared with you**, and your storage bucket. On a phone the same places are in a menu above the documents. With more than one server connected, choose which one Home shows with **Show on Home** in Settings. At the server's own editor address, OpenPencil opens on Home, in your first workspace until you pick another place.
 
 A workspace lists its documents with where each one stands, how much of the workspace's storage they use, and your role in it. Every account starts with a workspace of its own. **New design** creates a document in the workspace you are looking at, and says which one; in **Shared with you** it creates in your own workspace, and in Recent, or a workspace you can only view, it creates a file on your device. **Shared with you** lists documents people invited you to in workspaces you are not a member of.
 

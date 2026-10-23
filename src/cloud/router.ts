@@ -91,16 +91,20 @@ export function createCloudPortalRouter(context: PortalContext) {
         name: 'admin',
         component: () => import('@/views/cloud/ConsoleView.vue'),
         meta: { account: true, admin: true }
-      },
-      // A stale or mistyped portal address, which the server still answers with this page.
-      { path: '/:pathMatch(.*)*', redirect: PORTAL_HOME }
+      }
     ]
   })
 
+  // Guards rather than a catch-all route: a redirect record runs before them, and the editor's
+  // own address, which they send on, would match it again.
   router.beforeEach((to) => {
-    if (isCloudPortalPage(to.path)) return portalDestination(to, context.account.value)
-    globalThis.location.assign(to.fullPath)
-    return false
+    if (!isCloudPortalPage(to.path)) {
+      globalThis.location.assign(to.fullPath)
+      return false
+    }
+    // A stale or mistyped portal address, which the server still answers with this page.
+    if (to.matched.length === 0) return PORTAL_HOME
+    return portalDestination(to, context.account.value)
   })
 
   return router

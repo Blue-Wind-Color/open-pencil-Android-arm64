@@ -61,6 +61,7 @@ export async function cloudUploadFailure(): Promise<SaveFailure | null> {
 export function useHomeCloud() {
   return {
     signedIn: computed(() => false),
+    checking: computed(() => false),
     account: computed<(CloudAccount & { host: string }) | null>(() => null),
     workspaces: computed<WorkspaceSummary[]>(() => []),
     serverId: computed<string | null>(() => null),

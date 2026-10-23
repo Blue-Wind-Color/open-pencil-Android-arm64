@@ -2,7 +2,13 @@ import { describe, expect, test } from 'bun:test'
 
 import type { CloudAccountStatus } from '@open-pencil/cloud/contract'
 
-import { isCloudLink, siteDestination, type SiteAccount } from '@/app/cloud-portal/site'
+import {
+  isCloudLink,
+  leaveAfterSignOut,
+  openLocalEditor,
+  siteDestination,
+  type SiteAccount
+} from '@/app/cloud-portal/site'
 
 function account(state: CloudAccountStatus['state']): CloudAccountStatus {
   return {
@@ -58,5 +64,22 @@ describe('Cloud server editor pages', () => {
 
   test('open the editor when the server cannot say, since the editor works without it', () => {
     expect(visit('/', 'unreachable', { localEditor: false })).toBeNull()
+  })
+})
+
+describe('signing out of the server that serves the editor', () => {
+  function leave(serverAllowsLocalEditor: boolean): string[] {
+    const assigned: string[] = []
+    leaveAfterSignOut(serverAllowsLocalEditor, { assign: (url) => assigned.push(String(url)) })
+    return assigned
+  }
+
+  // One test, since the browser's choice of the local editor is kept for the module's lifetime.
+  test('leaves for the welcome page unless this browser chose the local editor the server allows', () => {
+    expect(leave(false)).toEqual(['/welcome'])
+    expect(leave(true)).toEqual(['/welcome'])
+    openLocalEditor({ assign: () => undefined })
+    expect(leave(true)).toEqual([])
+    expect(leave(false)).toEqual(['/welcome'])
   })
 })

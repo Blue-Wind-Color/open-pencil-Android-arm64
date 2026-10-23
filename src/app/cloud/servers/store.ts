@@ -116,6 +116,11 @@ export async function addCloudSiteServer(
     : addCloudServer({ kind: 'self-hosted', url: origin })
 }
 
+/** Whether a server is the one that serves this editor on its own address. */
+export function isCloudSiteServer(id: string, origin = globalThis.location.origin): boolean {
+  return findCloudServer(id)?.url === normalizeCloudServerURL(origin)
+}
+
 /**
  * The server a link names: one this app knows, or the official one, which a link may add. Null
  * for any other, so a link alone never connects the app anywhere new.

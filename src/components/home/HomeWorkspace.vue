@@ -265,8 +265,10 @@ function formattedDate(updatedAt: string): string {
     />
 
     <p v-if="openError" class="mb-4 text-xs text-error" role="alert">{{ openError }}</p>
+    <!-- Nothing until Cloud says which workspace Home opens on. -->
+    <template v-if="places.settling.value" />
     <CloudWorkspaceSection
-      v-if="places.workspace.value && places.serverId.value"
+      v-else-if="places.workspace.value && places.serverId.value"
       :server-id="places.serverId.value"
       :workspace="places.workspace.value"
       :query="normalizedQuery"

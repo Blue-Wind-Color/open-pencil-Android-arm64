@@ -40,7 +40,7 @@ async function signOut() {
         size="lg"
         variant="outline"
         class="w-full"
-        @click="openLocalEditor"
+        @click="openLocalEditor()"
       >
         {{ messages.useWithoutAccount }}
       </AppButton>

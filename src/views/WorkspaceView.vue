@@ -53,7 +53,7 @@ import FontStatusBanner from '@/components/font-status/FontStatusBanner.vue'
 import HomeWorkspace from '@/components/home/HomeWorkspace.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import TabBar from '@/components/TabBar.vue'
-import { IS_BROWSER } from '@/constants'
+import { IS_BROWSER, IS_CLOUD_SITE } from '@/constants'
 
 const route = useRoute()
 /**
@@ -77,8 +77,13 @@ watch(
 )
 const router = useRouter()
 const createdInitialTab = tabCount() === 0
+// Home opens first where it lists something: recent files, or the workspaces of the Cloud server
+// that serves the editor.
 const shouldCreateHome =
-  route.path === '/' && !appRuntimeConfig.test && !route.meta.demo && recentFilesAvailable()
+  route.path === '/' &&
+  !appRuntimeConfig.test &&
+  !route.meta.demo &&
+  (recentFilesAvailable() || IS_CLOUD_SITE)
 const { collaboration } = useI18n()
 const joinRoomFromInput = useJoinRoom()
 

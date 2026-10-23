@@ -35,9 +35,9 @@ const localEditor = useLocalStorage('open-pencil:cloud-site-local', false, {
 })
 
 /** Opens the server's editor without an account, now and on later visits from this browser. */
-export function openLocalEditor(): void {
+export function openLocalEditor(location: Pick<Location, 'assign'> = globalThis.location): void {
   localEditor.value = true
-  globalThis.location.assign('/')
+  location.assign('/')
 }
 
 /** Who is signed in to the server, or `unreachable` when it cannot say. */
@@ -60,6 +60,23 @@ export function siteDestination(visit: {
   if (account === 'unreachable' || account?.state === 'active') return null
   if (visit.localEditor && (path !== '/' || visit.choseLocalEditor)) return null
   return WELCOME_PATH
+}
+
+/**
+ * After signing out of the server that serves this editor: the welcome page, as for any visit
+ * without an account, unless the server allows the local editor and this browser chose it.
+ */
+export function leaveAfterSignOut(
+  serverAllowsLocalEditor: boolean,
+  location: Pick<Location, 'assign'> = globalThis.location
+): void {
+  const destination = siteDestination({
+    path: '/',
+    account: null,
+    localEditor: serverAllowsLocalEditor,
+    choseLocalEditor: localEditor.value
+  })
+  if (destination) location.assign(destination)
 }
 
 async function signedInAccount(api: CloudPortalClient): Promise<SiteAccount> {

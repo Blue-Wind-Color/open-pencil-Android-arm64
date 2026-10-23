@@ -1,5 +1,7 @@
 import { computed } from 'vue'
 
+import { IS_CLOUD_SITE } from '@/constants'
+
 import { openCloudConnect } from './connect/flow'
 import { cloudServerHost } from './servers/address'
 import { homeCloudServer } from './servers/store'
@@ -18,6 +20,10 @@ export function useHomeCloud() {
   )
   return {
     signedIn: computed(() => signedIn.value !== null),
+    // On a Cloud site the server's own connection is on its way before startup adds it.
+    checking: computed(() =>
+      connection.value ? connection.value.state === 'checking' : IS_CLOUD_SITE
+    ),
     account: computed(() => {
       const current = signedIn.value
       if (!current?.account) return null
