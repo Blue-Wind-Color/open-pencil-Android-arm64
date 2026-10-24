@@ -59,7 +59,6 @@ export const cloudDiscoverySchema = v.object({
   deployment: cloudDeploymentSchema,
   apiURL: v.pipe(v.string(), v.url()),
   authURL: v.pipe(v.string(), v.url()),
-  appURL: v.optional(v.pipe(v.string(), v.url())),
   /** Whether the server's own editor works with files on this device without signing in. */
   localEditor: v.optional(v.boolean(), true),
   authentication: cloudAuthenticationSchema,
@@ -71,6 +70,11 @@ export const cloudDiscoverySchema = v.object({
   billing: v.optional(cloudBillingDiscoverySchema)
 })
 export type CloudDiscovery = v.InferOutput<typeof cloudDiscoverySchema>
+
+/** The server's own address, where its editor and pages are, from its auth API's. */
+export function cloudServerOrigin(discovery: CloudDiscovery): string {
+  return new URL(discovery.authURL).origin
+}
 
 export function parseCloudDiscovery(input: unknown): CloudDiscovery {
   return v.parse(cloudDiscoverySchema, input)

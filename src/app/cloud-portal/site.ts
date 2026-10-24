@@ -6,7 +6,7 @@ import {
   discoverCloud,
   type CloudPortalClient
 } from '@open-pencil/cloud/client'
-import type { CloudAccountStatus } from '@open-pencil/cloud/contract'
+import { parseCloudLinkPath, type CloudAccountStatus } from '@open-pencil/cloud/contract'
 
 /**
  * A Cloud server serves the editor to signed-in people and, where the server allows the local
@@ -15,16 +15,14 @@ import type { CloudAccountStatus } from '@open-pencil/cloud/contract'
  */
 export const WELCOME_PATH = '/welcome'
 
-const CLOUD_LINK_PATH = /^\/cloud\/(documents|share|invitations)\/[^/]+$/
-
 /**
  * Whether an address is a link to a document, a shared file, or an invitation, which sign in on
- * their own: it names its server, and a shared file or invitation carries its secret.
+ * their own; a shared file or invitation carries its secret.
  */
 export function isCloudLink(url: URL): boolean {
-  const [, kind] = url.pathname.match(CLOUD_LINK_PATH) ?? []
-  if (!kind || !url.searchParams.get('server')) return false
-  return kind === 'documents' || url.hash.length > 1
+  const path = parseCloudLinkPath(url.pathname)
+  if (!path) return false
+  return path.kind === 'documents' || url.hash.length > 1
 }
 
 /** Whether this browser chose to use the server's editor without an account. */

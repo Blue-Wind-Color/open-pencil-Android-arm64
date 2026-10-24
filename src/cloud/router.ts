@@ -63,7 +63,7 @@ export function createCloudPortalRouter(context: PortalContext) {
         meta: { account: true }
       },
       {
-        path: '/cloud/device',
+        path: '/auth/device',
         name: 'device',
         component: () => import('@/views/cloud/DeviceView.vue'),
         meta: { account: true }

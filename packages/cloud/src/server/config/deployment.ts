@@ -116,7 +116,6 @@ export function parseCloudDeploymentConfig(
   return parseCloudServerConfig({
     deployment: config.deployment.mode,
     publicURL: config.deployment.public_url,
-    appURL: config.deployment.app_url,
     indexingPolicy: config.deployment.indexing,
     trustedOrigins: config.deployment.trusted_origins,
     localEditor: config.deployment.local_editor,

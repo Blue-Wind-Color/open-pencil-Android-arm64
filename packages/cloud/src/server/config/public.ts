@@ -48,7 +48,6 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
     deployment: config.deployment,
     apiURL: withoutTrailingSlash(new URL('/api', config.publicURL).href),
     authURL: withoutTrailingSlash(new URL('/api/auth', config.publicURL).href),
-    appURL: config.appURL ?? config.publicURL,
     localEditor: config.localEditor,
     authentication,
     capabilities: {

@@ -203,7 +203,7 @@ For documentation-aware agents, the docs site publishes [llms.txt](https://openp
 Share a link to co-edit in real time. No server, no account — peers connect directly via WebRTC.
 
 1. Click the share button in the top-right panel
-2. Share the generated link (`app.openpencil.dev/share/<room-id>`)
+2. Share the generated link (`app.openpencil.dev/rooms/<room-id>`)
 3. Collaborators see your cursor, selection, and edits in real time
 4. Click a peer's avatar to follow their viewport
 5. Click the headphones beside the avatars to start or join the room's voice call

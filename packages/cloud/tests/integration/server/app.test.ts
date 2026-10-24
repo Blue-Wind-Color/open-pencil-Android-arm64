@@ -368,7 +368,6 @@ describe('createCloudApp', () => {
       deployment: 'self-hosted',
       apiURL: 'https://pencil.example.com/api',
       authURL: 'https://pencil.example.com/api/auth',
-      appURL: 'https://pencil.example.com',
       localEditor: true,
       authentication: {
         socialProviders: ['google'],

@@ -4,9 +4,8 @@ schema_version = 2
 mode = "self-hosted"
 public_url = "http://localhost:8787"
 indexing = "deny"
-# The server serves the editor itself. Name another editor only when people use one elsewhere,
-# and trust every editor origin besides public_url.
-# app_url = "https://editor.example.com"
+# The server serves the editor itself, and its links point there. Trust any other editor origin
+# that connects to it, such as a development build.
 # trusted_origins = ["https://editor.example.com"]
 # The editor works with files on the device without signing in; false asks everyone to sign in.
 local_editor = true

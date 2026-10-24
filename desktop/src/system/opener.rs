@@ -64,7 +64,7 @@ mod tests {
 
     #[test]
     fn opens_web_and_mail_links_only() {
-        assert!(external_url("https://cloud.example.com/cloud/device?user_code=ABCD").is_ok());
+        assert!(external_url("https://cloud.example.com/auth/device?user_code=ABCD").is_ok());
         assert!(external_url("http://192.168.1.20:3000/account").is_ok());
         assert!(external_url("mailto:team@example.com").is_ok());
         for url in [

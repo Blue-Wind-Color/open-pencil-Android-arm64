@@ -33,7 +33,7 @@ const navigate = (path: string) => request(path, { headers: { Accept: 'text/html
 
 describe('Cloud server', () => {
   test('serves the portal at portal paths, never framed and never cached', async () => {
-    const page = await request('/cloud/device?user_code=ABCD')
+    const page = await request('/auth/device?user_code=ABCD')
     expect(await page.text()).toContain('Portal')
     expect(page.headers.get('Content-Security-Policy')).toBe("frame-ancestors 'none'")
     expect(page.headers.get('Cache-Control')).toBe('no-cache')
@@ -42,7 +42,7 @@ describe('Cloud server', () => {
   })
 
   test('serves the editor at the root and at any other page, never framed', async () => {
-    for (const path of ['/', '/demo', '/cloud/documents/abc?server=x']) {
+    for (const path of ['/', '/demo', '/documents/abc', '/share/abc']) {
       const page = await navigate(path)
       expect(await page.text()).toContain('Editor')
       expect(page.headers.get('Content-Security-Policy')).toBe("frame-ancestors 'none'")

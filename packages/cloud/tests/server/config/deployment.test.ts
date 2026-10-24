@@ -15,7 +15,6 @@ schema_version = 2
 [deployment]
 mode = "self-hosted"
 public_url = "https://cloud.example.com"
-app_url = "https://app.example.com"
 trusted_origins = ["https://app.example.com"]
 
 [authentication.enrollment]

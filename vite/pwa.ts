@@ -9,7 +9,7 @@ export const NOT_EDITOR_PAGES = [
   /^\/oauth\//,
   /^\/api\//,
   /^\/\.well-known\//,
-  /^\/(?:welcome|auth|cloud\/device|account|admin)(?:\/|$)/
+  /^\/(?:welcome|auth|account|admin)(?:\/|$)/
 ]
 
 export function openPencilPwaPlugin() {

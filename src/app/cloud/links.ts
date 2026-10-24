@@ -2,7 +2,11 @@ import { useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { ref, watch } from 'vue'
 
-import { cloudDesktopLinkURL, type CloudLinkKind } from '@open-pencil/cloud/contract'
+import {
+  cloudDesktopLinkURL,
+  parseCloudLinkPath,
+  type CloudLinkKind
+} from '@open-pencil/cloud/contract'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { cloudMessages } from '@open-pencil/vue/i18n'
 
@@ -18,13 +22,11 @@ import { cloudServerForLink, findCloudServer } from './servers/store'
 import { openCloudShareLink } from './sharing/link'
 
 /**
- * An invitation, `/cloud/invitations/:id?server=…#token`, or a document shared by link,
- * `/cloud/share/:id?server=…#secret`. The desktop app gets the same link as
- * `openpencil://cloud/<kind>/<id>?server=…#secret`.
+ * An invitation, `/invitations/:id#token`, or a document shared by link, `/share/:id#secret`, on
+ * the server they belong to. The desktop app gets the same link as
+ * `openpencil://cloud?url=<link>#secret`.
  */
 export type CloudLink = { kind: CloudLinkKind; id: string; server: string; secret: string }
-
-const CLOUD_LINK_PATH = /^\/cloud\/(invitations|share)\/([^/]+)$/
 
 /** Desktop events and commands for `openpencil://cloud` links (`desktop/src/launch/mod.rs`). */
 const CLOUD_LINKS_EVENT = 'open-cloud-links'
@@ -37,18 +39,12 @@ const cloudLinkSchema = v.object({
   secret: v.string()
 })
 
-/** The Cloud link a web address carries, if it is one. */
+/** The Cloud link a web address carries, if it is one; its server is the address's own. */
 export function readCloudLink(url: URL): CloudLink | null {
-  const [, kind, id] = url.pathname.match(CLOUD_LINK_PATH) ?? []
-  const server = url.searchParams.get('server')
+  const path = parseCloudLinkPath(url.pathname)
   const secret = url.hash.slice(1)
-  if ((kind !== 'invitations' && kind !== 'share') || !id || !server || !secret) return null
-  try {
-    return { kind, id: decodeURIComponent(id), server, secret }
-  } catch {
-    // A broken escape such as `%E0` is no link; it must not stop the app from starting.
-    return null
-  }
+  if (!path || path.kind === 'documents' || !secret) return null
+  return { kind: path.kind, id: path.id, server: url.origin, secret }
 }
 
 /** Hands a Cloud link to the desktop app; the browser asks before it opens the app. */

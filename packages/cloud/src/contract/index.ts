@@ -52,6 +52,7 @@ export {
   cloudDiscoverySchema,
   cloudEditorVersionSchema,
   cloudListingSchema,
+  cloudServerOrigin,
   parseCloudDiscovery,
   type CloudAuthentication,
   type CloudCapabilities,
@@ -189,7 +190,9 @@ export {
   cloudDocumentURL,
   cloudInvitationURL,
   cloudShareURL,
-  type CloudLinkKind
+  parseCloudLinkPath,
+  type CloudLinkKind,
+  type CloudLinkPathKind
 } from './links'
 export { CLOUD_PORTAL_PAGE_ROOTS, isCloudPortalPage } from './portal'
 export * from './versions'

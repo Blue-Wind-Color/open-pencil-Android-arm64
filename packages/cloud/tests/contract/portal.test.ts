@@ -7,7 +7,7 @@ describe('Cloud portal pages', () => {
     for (const path of [
       '/welcome',
       '/auth/sign-in',
-      '/cloud/device',
+      '/auth/device',
       '/account',
       '/account/pending',
       '/admin',
@@ -20,12 +20,13 @@ describe('Cloud portal pages', () => {
     for (const path of [
       '/',
       '/demo',
-      '/cloud/documents/abc',
+      '/documents/abc',
+      '/share/abc',
       '/api/auth/sign-in/email',
       '/.well-known/openpencil-cloud',
       '/accounts',
       '/administrator',
-      '/cloud/devices'
+      '/authors'
     ])
       expect(isCloudPortalPage(path)).toBe(false)
   })

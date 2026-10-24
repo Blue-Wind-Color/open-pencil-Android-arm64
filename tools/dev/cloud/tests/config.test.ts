@@ -26,7 +26,6 @@ describe('local Cloud development configuration', () => {
     expect(config).toMatchObject({
       deployment: 'self-hosted',
       publicURL: 'https://feature.cloud.open-pencil.localhost',
-      appURL: 'https://feature.open-pencil.localhost',
       trustedOrigins: [
         'https://feature.open-pencil.localhost',
         'https://feature.cloud.open-pencil.localhost'

@@ -170,22 +170,19 @@ export function createCloudApp(services: CloudServices) {
   const workspaces = createWorkspaceService(services.database)
   const workspaceMembers = createWorkspaceMemberService(services.database, {
     email: services.transactionalEmail,
-    publicURL: services.config.publicURL,
-    appURL: services.config.appURL ?? services.config.publicURL
+    publicURL: services.config.publicURL
   })
   const enrollment =
     services.enrollment ??
     createEnrollmentService(services.database, {
-      appURL: services.config.appURL ?? services.config.publicURL,
-      portalURL: services.config.publicURL,
+      publicURL: services.config.publicURL,
       adminRecipients: services.config.enrollmentAdminNotificationEmails,
       email: services.transactionalEmail
     })
   const admin = createCloudAdminRoutes(
     {
       email: createAdminEmailService(services.database, services.transactionalEmail, {
-        appURL: services.config.appURL ?? services.config.publicURL,
-        portalURL: services.config.publicURL
+        publicURL: services.config.publicURL
       }),
       enrollment,
       users: createAdminUserService(services.database, services.auth, {
@@ -229,7 +226,6 @@ export function createCloudApp(services: CloudServices) {
     outbox: services.invitationOutbox,
     continuationSecret: services.config.authSecret,
     publicURL: services.config.publicURL,
-    appURL: services.config.appURL ?? services.config.publicURL,
     policy,
     deploymentMode: services.config.deployment,
     workspaceInvitations: workspaceMembers

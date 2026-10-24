@@ -43,9 +43,9 @@ describe('portal access rules', () => {
   })
 
   test('account pages ask for a session and come back after it', () => {
-    expect(portalDestination(target('/cloud/device', { account: true }), null)).toEqual({
+    expect(portalDestination(target('/auth/device', { account: true }), null)).toEqual({
       name: 'sign-in',
-      query: { redirect: '/cloud/device' }
+      query: { redirect: '/auth/device' }
     })
   })
 

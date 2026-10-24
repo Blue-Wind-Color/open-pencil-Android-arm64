@@ -8,19 +8,19 @@ import { activeRoom } from '@/app/collab/rooms'
 
 import { activeTab } from './index'
 
-export const SHARE_ROUTE_PREFIX = '/share/'
-const CLOUD_DOCUMENT_PREFIX = '/cloud/documents/'
+export const ROOM_ROUTE_PREFIX = '/rooms/'
+const CLOUD_DOCUMENT_PREFIX = '/documents/'
 /** The query a Cloud document's address adds, and leaving it takes away. */
-const CLOUD_DOCUMENT_QUERY = ['server', 'version']
+const CLOUD_DOCUMENT_QUERY = ['version']
 
 export type TabAddress = { path: string; query: LocationQuery }
 
-export function shareRoutePath(roomId: string): string {
-  return `${SHARE_ROUTE_PREFIX}${roomId}`
+export function roomRoutePath(roomId: string): string {
+  return `${ROOM_ROUTE_PREFIX}${roomId}`
 }
 
 /**
- * The address for the active tab: its Cloud document's, its shared room's link, or `/` after
+ * The address for the active tab: its Cloud document's, its room's link, or `/` after
  * leaving either. A Cloud document's room is the server's relay channel, so its ID never goes in
  * the address. On `opening`, a document address stays for startup to open.
  */
@@ -32,8 +32,8 @@ export function tabAddressFor(
 ): TabAddress {
   const query = omit(current.query, CLOUD_DOCUMENT_QUERY)
   if (cloud) return { path: cloud.path, query: { ...query, ...cloud.query } }
-  if (roomId && isRoomId(roomId)) return { path: shareRoutePath(roomId), query }
-  if (current.path.startsWith(SHARE_ROUTE_PREFIX)) return { path: '/', query }
+  if (roomId && isRoomId(roomId)) return { path: roomRoutePath(roomId), query }
+  if (current.path.startsWith(ROOM_ROUTE_PREFIX)) return { path: '/', query }
   if (current.path.startsWith(CLOUD_DOCUMENT_PREFIX) && !opening) return { path: '/', query }
   return current
 }

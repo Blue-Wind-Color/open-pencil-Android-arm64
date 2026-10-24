@@ -181,7 +181,7 @@ function openDocumentPaths(): string[] {
  * Drops the link params through the router, not through `history` directly: the router
  * keeps its own copy of the current URL in `history.state` and re-applies it on the next
  * navigation, which would put `file` and `node` back into the entry. Route and hash are
- * preserved, so the link works on `/`, `/share/:id` and `/demo` alike.
+ * preserved, so the link works on `/`, `/rooms/:id` and `/demo` alike.
  */
 function stripWebLinkParams(): void {
   void router.replace({

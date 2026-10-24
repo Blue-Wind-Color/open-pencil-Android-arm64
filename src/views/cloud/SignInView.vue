@@ -24,7 +24,7 @@ const emailPassword = computed(() => {
   return { signUp: credentials.signUp, minimumPasswordLength: credentials.minimumPasswordLength }
 })
 const returnsTo = computed(() => {
-  if (redirect.value.startsWith('/cloud/device')) return 'desktop'
+  if (redirect.value.startsWith('/auth/device')) return 'desktop'
   if (redirect.value.startsWith('/auth/return')) return 'editor'
   return null
 })

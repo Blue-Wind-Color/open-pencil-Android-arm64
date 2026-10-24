@@ -16,7 +16,6 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
     deployment: {
       mode: 'self-hosted',
       public_url: endpoints.cloudURL,
-      app_url: endpoints.editorURL,
       indexing: 'deny',
       trusted_origins: [endpoints.editorURL, endpoints.cloudURL]
     },

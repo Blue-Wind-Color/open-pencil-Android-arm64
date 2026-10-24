@@ -80,7 +80,6 @@ export class WorkspaceInvitationInvalidError extends Error {
 export type WorkspaceMemberServiceOptions = {
   email?: TransactionalEmailService
   publicURL: string
-  appURL: string
 }
 
 function invitationContract(row: {
@@ -164,7 +163,7 @@ export function createWorkspaceMemberService(
   }
 
   function acceptanceURL(invitationId: string, token: string): string {
-    return cloudInvitationURL(options.appURL, options.publicURL, invitationId, token)
+    return cloudInvitationURL(options.publicURL, invitationId, token)
   }
 
   return {

@@ -7,7 +7,7 @@ import {
   AdminDomainError
 } from '#cloud/server'
 
-const CLOUD_LINKS = { appURL: 'https://cloud.example.com', portalURL: 'https://cloud.example.com' }
+const CLOUD_LINKS = { publicURL: 'https://cloud.example.com' }
 
 describe('admin email regeneration', () => {
   test('regenerates an enrollment message from authoritative enrollment state', async () => {

@@ -14,7 +14,6 @@ import * as v from 'valibot'
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
   publicURL: 'https://cloud.example.com',
-  appURL: 'https://app.example.com',
   trustedOrigins: ['https://app.example.com'],
   databaseURL: 'postgresql://test:test@localhost/test',
   authSecret: 'integration-test-secret-at-least-32-characters',
@@ -96,8 +95,8 @@ describe('workspace members', () => {
       )
       expect(invited.invitation).toMatchObject({ email: 'bob@example.com', role: 'editor' })
       const link = new URL(invited.acceptanceURL)
-      expect(link.origin).toBe('https://app.example.com')
-      expect(link.pathname).toBe(`/cloud/invitations/${invited.invitation.id}`)
+      expect(link.origin).toBe('https://cloud.example.com')
+      expect(link.pathname).toBe(`/invitations/${invited.invitation.id}`)
       const token = link.hash.slice(1)
 
       const listed = await responseJSON(

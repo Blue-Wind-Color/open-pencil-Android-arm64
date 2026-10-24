@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert'
 
 import { invokeNative } from '#tests/helpers/tauri/invoke'
 
-const SIGN_IN_URL = 'https://cloud.example.test/cloud/device?user_code=ABCD-EFGH'
+const SIGN_IN_URL = 'https://cloud.example.test/auth/device?user_code=ABCD-EFGH'
 const INVITATION = '0b6f4f9e-3c1a-4d7e-9a52-6f1c2d3e4f50'
 // Shaped like a share secret, 64 hex characters, and obviously not one.
 const SECRET = 'ab'.repeat(32)
@@ -10,7 +10,7 @@ const SECRET = 'ab'.repeat(32)
 const SERVER = 'http://127.0.0.1:9'
 
 function invitationLink(secret: string): string {
-  return `openpencil://cloud/invitations/${INVITATION}?server=${encodeURIComponent(SERVER)}#${secret}`
+  return `openpencil://cloud?url=${encodeURIComponent(`${SERVER}/invitations/${INVITATION}`)}#${secret}`
 }
 
 describe('native Cloud links', () => {

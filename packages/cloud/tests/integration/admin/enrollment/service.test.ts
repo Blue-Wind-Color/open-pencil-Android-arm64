@@ -62,8 +62,7 @@ describe('Cloud enrollment integration', () => {
         from: 'cloud@example.com'
       })
       const enrollment = createEnrollmentService(runtime.database, {
-        appURL: 'https://cloud.example.com',
-        portalURL: 'https://cloud.example.com',
+        publicURL: 'https://cloud.example.com',
         adminRecipients: ['admin@example.com'],
         email
       })

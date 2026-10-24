@@ -38,8 +38,7 @@ async function runtime(authenticationEmail?: AuthenticationEmailService) {
     from: config.emailFrom ?? ''
   })
   const enrollment = createEnrollmentService(databaseRuntime.database, {
-    appURL: config.publicURL,
-    portalURL: config.publicURL,
+    publicURL: config.publicURL,
     adminRecipients: [],
     email
   })

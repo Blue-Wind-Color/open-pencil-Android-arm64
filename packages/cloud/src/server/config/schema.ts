@@ -34,7 +34,6 @@ const optionalTextSchema = v.optional(v.pipe(v.string(), v.trim(), v.minLength(1
 const rawCloudServerConfigSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
   publicURL: httpURLSchema,
-  appURL: v.optional(httpURLSchema),
   listingMinimumEditorVersion: v.optional(cloudEditorVersionSchema),
   relayURL: v.optional(websocketURLSchema),
   technicalLimits: v.optional(
@@ -257,14 +256,6 @@ function validateObjectStorageConfig(config: CloudServerConfig): void {
 
 export function parseCloudServerConfig(input: unknown): CloudServerConfig {
   const config = v.parse(rawCloudServerConfigSchema, input)
-  if (
-    config.appURL &&
-    !config.trustedOrigins.some(
-      (origin) => new URL(origin).origin === new URL(config.appURL ?? '').origin
-    )
-  ) {
-    throw new CloudConfigError('Cloud app URL must be included in trusted origins')
-  }
   validateAuthenticationConfig(config)
   validateEmailConfig(config)
   validateServiceConfig(config)
@@ -347,7 +338,6 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   deployment: v.strictObject({
     mode: v.picklist(['official', 'self-hosted']),
     public_url: urlSchema,
-    app_url: v.optional(urlSchema),
     indexing: v.optional(v.picklist(['allow', 'deny']), 'deny'),
     trusted_origins: v.optional(v.array(urlSchema), []),
     // The server's editor works with files on this device without signing in to the server.

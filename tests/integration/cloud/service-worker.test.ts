@@ -16,7 +16,14 @@ describe('editor service worker on a Cloud server', () => {
   })
 
   test('serves the editor’s own pages offline', () => {
-    for (const path of ['/', '/demo', '/share/abc', '/cloud/documents/abc', '/cloud/share/abc']) {
+    for (const path of [
+      '/',
+      '/demo',
+      '/rooms/abc',
+      '/documents/abc',
+      '/share/abc',
+      '/invitations/abc'
+    ]) {
       expect(servedByEditor(path)).toBe(true)
     }
   })

@@ -116,7 +116,7 @@ export function releaseNotesURL(version: string): string {
 
 export function getShareURL(roomId: string): string {
   const base = IS_TAURI || !IS_BROWSER ? WEB_APP_ORIGIN : window.location.origin
-  return `${base}/share/${roomId}`
+  return `${base}/rooms/${roomId}`
 }
 
 export const PEER_COLORS: Color[] = [

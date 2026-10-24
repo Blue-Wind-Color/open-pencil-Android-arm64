@@ -290,7 +290,7 @@ export function createBetterAuthAdapter(
       // Device authorization returns opaque database session tokens, not signed cookies.
       bearer(),
       deviceAuthorization({
-        verificationUri: new URL('/cloud/device', config.publicURL).href,
+        verificationUri: new URL('/auth/device', config.publicURL).href,
         validateClient: (clientId) => clientId.startsWith('openpencil-desktop:')
       })
     ],

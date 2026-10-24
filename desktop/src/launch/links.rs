@@ -15,8 +15,8 @@ pub struct DeepLinkJoin {
 }
 
 /// An OpenPencil Cloud invitation or a document shared by link, from
-/// `openpencil://cloud/<invitations|share>/<id>?server=<url>#<secret>`: the same path, server, and
-/// secret as the web link on the server's editor address.
+/// `openpencil://cloud?url=<link>#<secret>`: the web link on its server, `/<invitations|share>/<id>`,
+/// with its secret in the deep link's fragment. The server is the web link's origin.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct CloudLink {
     pub kind: CloudLinkKind,
@@ -89,9 +89,25 @@ fn parse_join_url(url: &Url) -> Result<DeepLinkJoin, DeepLinkError> {
 }
 
 /// Invitation and share IDs are UUIDs, and their secrets 32 to 128 hex characters (the Cloud
-/// sharing contract); the server must be an `http` or `https` address without credentials.
+/// sharing contract); the web link must be an `http` or `https` address without credentials,
+/// query, or fragment.
 fn parse_cloud_url(url: &Url) -> Option<CloudLink> {
-    let mut segments = url.path_segments()?;
+    if !matches!(url.path(), "" | "/") {
+        return None;
+    }
+    let link = url
+        .query_pairs()
+        .find(|(key, _)| key == "url")
+        .and_then(|(_, value)| Url::parse(&value).ok())
+        .filter(|link| {
+            matches!(link.scheme(), "http" | "https")
+                && link.host_str().is_some()
+                && link.username().is_empty()
+                && link.password().is_none()
+                && link.query().is_none()
+                && link.fragment().is_none()
+        })?;
+    let mut segments = link.path_segments()?;
     let kind = match segments.next()? {
         "invitations" => CloudLinkKind::Invitations,
         "share" => CloudLinkKind::Share,
@@ -105,21 +121,10 @@ fn parse_cloud_url(url: &Url) -> Option<CloudLink> {
         .fragment()
         .filter(|secret| is_secret(secret))?
         .to_owned();
-    let server = url
-        .query_pairs()
-        .find(|(key, _)| key == "server")
-        .and_then(|(_, value)| Url::parse(&value).ok())
-        .filter(|server| {
-            matches!(server.scheme(), "http" | "https")
-                && server.host_str().is_some()
-                && server.username().is_empty()
-                && server.password().is_none()
-        })?
-        .to_string();
     Some(CloudLink {
         kind,
         id,
-        server,
+        server: link.origin().ascii_serialization(),
         secret,
     })
 }
@@ -234,47 +239,48 @@ mod tests {
     fn cloud_links_carry_kind_id_server_and_secret() {
         assert_eq!(
             cloud(&format!(
-                "openpencil://cloud/invitations/{CLOUD_ID}?server=https%3A%2F%2Fcloud.example.com#{CLOUD_SECRET}"
+                "openpencil://cloud?url=https%3A%2F%2Fcloud.example.com%2Finvitations%2F{CLOUD_ID}#{CLOUD_SECRET}"
             )),
             Ok(DeepLink::Cloud(CloudLink {
                 kind: CloudLinkKind::Invitations,
                 id: CLOUD_ID.into(),
-                server: "https://cloud.example.com/".into(),
+                server: "https://cloud.example.com".into(),
                 secret: CLOUD_SECRET.into(),
             }))
         );
         assert!(matches!(
             cloud(&format!(
-                "openpencil://cloud/share/{CLOUD_ID}?server=http%3A%2F%2F192.168.1.20%3A3000#{CLOUD_SECRET}"
+                "openpencil://cloud?url=http%3A%2F%2F192.168.1.20%3A3000%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"
             )),
-            Ok(DeepLink::Cloud(CloudLink {
-                kind: CloudLinkKind::Share,
-                ..
-            }))
+            Ok(DeepLink::Cloud(CloudLink { kind: CloudLinkKind::Share, ref server, .. }))
+                if server == "http://192.168.1.20:3000"
         ));
-        // The editor builds links with ufo, which leaves `:` in a query value as it is.
+        // The editor builds links with ufo, which leaves `:` and `/` in a query value as they are.
         assert!(matches!(
             cloud(&format!(
-                "openpencil://cloud/share/{CLOUD_ID}?server=https:%2F%2Fcloud.example.com#{CLOUD_SECRET}"
+                "openpencil://cloud?url=https://cloud.example.com/share/{CLOUD_ID}#{CLOUD_SECRET}"
             )),
-            Ok(DeepLink::Cloud(CloudLink { ref server, .. })) if server == "https://cloud.example.com/"
+            Ok(DeepLink::Cloud(CloudLink { ref server, .. })) if server == "https://cloud.example.com"
         ));
     }
 
     #[test]
     fn cloud_links_refuse_anything_else() {
-        let server = "server=https%3A%2F%2Fcloud.example.com";
+        let site = "https%3A%2F%2Fcloud.example.com";
         for url in [
-            format!("openpencil://cloud/documents/{CLOUD_ID}?{server}#{CLOUD_SECRET}"),
-            format!("openpencil://cloud/share/not-a-uuid?{server}#{CLOUD_SECRET}"),
-            format!("openpencil://cloud/share/{CLOUD_ID}/extra?{server}#{CLOUD_SECRET}"),
-            format!("openpencil://cloud/share/{CLOUD_ID}?{server}"),
-            format!("openpencil://cloud/share/{CLOUD_ID}?{server}#short"),
-            format!("openpencil://cloud/share/{CLOUD_ID}?{server}#{}", "g".repeat(64)),
-            format!("openpencil://cloud/share/{CLOUD_ID}#{CLOUD_SECRET}"),
-            format!("openpencil://cloud/share/{CLOUD_ID}?server=file%3A%2F%2F%2Fetc#{CLOUD_SECRET}"),
+            format!("openpencil://cloud?url={site}%2Fdocuments%2F{CLOUD_ID}#{CLOUD_SECRET}"),
+            format!("openpencil://cloud?url={site}%2Fshare%2Fnot-a-uuid#{CLOUD_SECRET}"),
+            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}%2Fextra#{CLOUD_SECRET}"),
+            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}"),
+            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}#short"),
+            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}#{}", "g".repeat(64)),
+            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}%3Fx%3D1#{CLOUD_SECRET}"),
+            format!("openpencil://cloud?url={site}%2Fshare%2F{CLOUD_ID}%23{CLOUD_SECRET}"),
+            format!("openpencil://cloud/share/{CLOUD_ID}?url={site}%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"),
+            format!("openpencil://cloud#{CLOUD_SECRET}"),
+            format!("openpencil://cloud?url=file%3A%2F%2F%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"),
             format!(
-                "openpencil://cloud/share/{CLOUD_ID}?server=https%3A%2F%2Fa%3Ab%40cloud.example.com#{CLOUD_SECRET}"
+                "openpencil://cloud?url=https%3A%2F%2Fa%3Ab%40cloud.example.com%2Fshare%2F{CLOUD_ID}#{CLOUD_SECRET}"
             ),
         ] {
             assert_eq!(cloud(&url), Err(DeepLinkError::BadCloudLink), "{url}");
