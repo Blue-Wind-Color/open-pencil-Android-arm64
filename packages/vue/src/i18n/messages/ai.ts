@@ -148,6 +148,11 @@ export const aiMessageDefaults = {
   selectDesignModel: 'Select design model',
   modelNeedsCredential: 'Needs key',
   modelAgentConnection: 'Agent',
+  modelConnectionChecking: 'Checking…',
+  modelNotInstalled: 'Not installed',
+  modelInstalled: 'Installed',
+  modelSignedOut: 'Signed out',
+  modelToolsUnreachable: 'Tools unreachable',
   thinkingLevel: 'Thinking level',
   thinkingLevelDescription:
     'How much the model reasons before answering. You can change it for each message in the chat.',

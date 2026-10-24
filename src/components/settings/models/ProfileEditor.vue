@@ -4,12 +4,13 @@ import { computed, ref, useTemplateRef } from 'vue'
 import type { AIProviderID } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import { usePiSetup } from '@/app/ai/agents/setup/use'
+import { useCodingAgentSetup, usePiSetup } from '@/app/ai/agents/setup/use'
 import { useModelProfileFeedback } from '@/app/ai/models/settings/profile-editor/feedback'
 import { useProfileSignIn } from '@/app/ai/models/settings/profile-editor/sign-in'
 import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
 import { thinkingLevelOptions as buildThinkingLevelOptions } from '@/app/ai/models/thinking'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
+import AgentSetup from '@/components/settings/agents/AgentSetup.vue'
 import PiSetup from '@/components/settings/agents/PiSetup.vue'
 import { focusInvalidField } from '@/components/settings/layout/focus'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
@@ -63,6 +64,7 @@ const {
   testConnection: runConnectionTest
 } = profile
 const pi = usePiSetup(isHarness)
+const codingAgent = useCodingAgentSetup(() => draft.providerID)
 const signIn = useProfileSignIn(keyInput)
 const customModelPlaceholder = computed(() =>
   isHarness.value ? (pi.state.value?.defaultModel ?? 'provider/model') : 'e.g. llama-3.3-70b'
@@ -146,6 +148,23 @@ async function remove() {
               @update:model-value="updateProvider"
             />
           </ProviderSettingsField>
+
+          <div
+            v-if="codingAgent.agent.value && codingAgent.state.value"
+            class="flex flex-col gap-2"
+            data-test-id="settings-agent-setup"
+          >
+            <AgentSetup
+              :agent="codingAgent.agent.value"
+              :setup="codingAgent.state.value"
+              @check="codingAgent.check()"
+              @install-agent="codingAgent.install()"
+              @install-bridge="codingAgent.installBridge()"
+              @sign-in="codingAgent.signIn()"
+              @cancel-sign-in="codingAgent.cancelSignIn()"
+              @submit-sign-in-code="codingAgent.submitSignInCode($event)"
+            />
+          </div>
 
           <div v-if="pi.state.value" class="flex flex-col gap-2" data-test-id="settings-pi-setup">
             <PiSetup
