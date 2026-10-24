@@ -18,8 +18,8 @@ const external = Object.keys({ ...packageJSON.dependencies, ...packageJSON.peerD
   .flatMap((name) => [name, new RegExp(`^${name.replaceAll('/', '\\/')}/`)])
 
 /**
- * Where an unbundled module is written: bundled packages keep their install path, and npm never
- * packs a folder named `node_modules`, so they go under `vendor/` instead.
+ * Where an unbundled module is written: bundled packages would keep their install path under
+ * `node_modules`, which installed copies of the package did not carry, so they go under `vendor/`.
  */
 function outputPath(chunk: { name: string }): string {
   // A `?raw` import is a module of its own; its query would read as a URL query to Node.
@@ -138,6 +138,9 @@ export default defineConfig({
     'testing/index': './src/testing/index.ts',
     'variables/index': './src/variables/index.ts'
   },
+  // The workspace tsconfig maps Core to its source so unbuilt code runs under Bun; the build
+  // resolves Core as a consumer does, so declarations import its types instead of copying them.
+  tsconfig: 'tsconfig.build.json',
   platform: 'browser',
   format: ['esm'],
   dts: {

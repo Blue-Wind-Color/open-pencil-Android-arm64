@@ -547,4 +547,10 @@ export function createEditor(options?: EditorOptions) {
   return guardReadOnly(editor, () => state.readOnly)
 }
 
-export type Editor = ReturnType<typeof createEditor>
+/**
+ * The editor `createEditor` returns. An interface rather than an alias, so declarations that
+ * mention it, such as a Vue composable's inferred return type, name it instead of spelling out
+ * its members, some of whose types are internal to Core.
+ */
+// eslint-disable-next-line typescript/no-empty-object-type -- The interface is the point: an alias's members are spelled out in emitted declarations.
+export interface Editor extends ReturnType<typeof createEditor> {}

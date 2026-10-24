@@ -138,7 +138,7 @@ async function listTestFilesInPath(path: string): Promise<string[]> {
     entries.map(async (entry) => {
       const childPath = join(path, entry.name)
       if (entry.isDirectory()) return listTestFilesInPath(childPath)
-      if (entry.isFile() && entry.name.endsWith('.test.ts')) return [normalizePath(childPath)]
+      if (entry.isFile() && /\.test\.tsx?$/.test(entry.name)) return [normalizePath(childPath)]
       return []
     })
   )

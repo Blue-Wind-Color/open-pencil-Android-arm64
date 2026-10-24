@@ -221,5 +221,13 @@
     "@types/rbush": "^4.0.0",
     "typescript": "~5.8.3",
     "unplugin-raw": "^0.7.0"
+  },
+  "peerDependencies": {
+    "ai": "^7.0.127"
+  },
+  "peerDependenciesMeta": {
+    "ai": {
+      "optional": true
+    }
   }
 }

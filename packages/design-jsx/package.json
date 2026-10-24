@@ -5,9 +5,9 @@
   "type": "module",
   "imports": {
     "#design-jsx/*": {
-      "types": "./src/*",
-      "bun": "./src/*",
-      "default": "./dist/*"
+      "types": "./src/*.ts",
+      "bun": "./src/*.ts",
+      "default": "./dist/*.js"
     }
   },
   "exports": {

@@ -21,10 +21,10 @@ async function discover(pattern: string): Promise<string[]> {
 
 test('every app, engine and package-local test belongs to exactly one shard', async () => {
   const discovered = [
-    ...(await discover('tests/app/**/*.test.ts')),
-    ...(await discover('tests/integration/**/*.test.ts')),
-    ...(await discover('tests/engine/**/*.test.ts')),
-    ...(await discover('packages/*/tests/**/*.test.ts'))
+    ...(await discover('tests/app/**/*.test.{ts,tsx}')),
+    ...(await discover('tests/integration/**/*.test.{ts,tsx}')),
+    ...(await discover('tests/engine/**/*.test.{ts,tsx}')),
+    ...(await discover('packages/*/tests/**/*.test.{ts,tsx}'))
   ].filter((file) => !OWN_SUITES.some((suite) => file.startsWith(suite)))
   const paths = pathsForUnitTestGroup('all')
   const invalidAssignments = discovered.flatMap((file) => {

@@ -302,6 +302,12 @@
         "typescript": "~5.8.3",
         "unplugin-raw": "^0.7.0",
       },
+      "peerDependencies": {
+        "ai": "^7.0.127",
+      },
+      "optionalPeers": [
+        "ai",
+      ],
     },
     "packages/design-jsx": {
       "name": "@open-pencil/design-jsx",
