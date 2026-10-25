@@ -109,35 +109,41 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   return tab
 }
 
+/**
+ * Shows Home, the one tab pinned first that never closes and never turns into a design, as in
+ * Figma's desktop app; it is made the first time it is asked for.
+ */
 export function createHomeTab(): Tab {
+  const existing = tabsRef.value.find((tab) => tab.kind === 'home')
+  if (existing) {
+    activateTab(existing)
+    return existing
+  }
   const tab: Tab = { id: generateTabId(), store: createEditorStore(), kind: 'home' }
-  tabsRef.value = [...tabsRef.value, tab]
+  tabsRef.value = [tab, ...tabsRef.value]
   activateTab(tab)
   return tab
 }
 
-export function leaveHome(tabId: string): void {
-  const tabIndex = tabsRef.value.findIndex((candidate) => candidate.id === tabId)
-  if (tabIndex === -1) return
-  const tab = tabsRef.value[tabIndex]
-  if (tab.kind !== 'home') return
-  tabsRef.value = tabsRef.value.with(tabIndex, { ...tab, kind: 'document' })
-}
-
-export function createDocumentInCurrentTab(): Tab {
-  const current = activeTab.value
-  if (current?.kind !== 'home') return createTab()
-  leaveHome(current.id)
-  return getTabById(current.id) ?? current
-}
-
 export function showNewTab(): void {
-  const homeTab = tabsRef.value.find((tab) => tab.kind === 'home')
-  if (homeTab) {
-    switchTab(homeTab.id)
-    return
-  }
   createHomeTab()
+}
+
+/** `tabs` with Home first: as they are when it is, with their Home moved there, or `home()` added. */
+export function withHomePinned(tabs: readonly Tab[], home: () => Tab): readonly Tab[] {
+  if (tabs[0]?.kind === 'home') return tabs
+  const existing = tabs.find((tab) => tab.kind === 'home')
+  return existing ? [existing, ...tabs.filter((tab) => tab !== existing)] : [home(), ...tabs]
+}
+
+/** Pins Home first when it is missing, leaving the tab in front where it is. */
+export function ensureHomeTab(): void {
+  const pinned = withHomePinned(tabsRef.value, () => ({
+    id: generateTabId(),
+    store: createEditorStore(),
+    kind: 'home'
+  }))
+  if (pinned !== tabsRef.value) tabsRef.value = [...pinned]
 }
 
 function activateTab(tab: Tab) {
@@ -175,7 +181,7 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   if (idx === -1) return
 
   const closingTab = tabsRef.value[idx]
-  if (closingTab.kind === 'home' && tabsRef.value.length === 1) return
+  if (closingTab.kind === 'home') return
   const choice = unsaved
     ? await confirmDocumentClose(closingTab.store, async () => unsaved)
     : await requestDocumentClose(closingTab.store, closingTab.store.state.documentName)
@@ -216,53 +222,53 @@ function isDOMImportFile(file: File): boolean {
   return /\.(html?|xhtml)$/i.test(file.name)
 }
 
-/** A tab a document opens in: a new one, Home, or an untouched empty document. */
-type OpeningTab = { store: EditorStore; created: boolean; fromHome: boolean }
+/**
+ * A tab a document opens in: a new one, or an untouched empty design in front; never Home. `from`
+ * is the tab in front when the open began, which comes back to the front if the open fails.
+ */
+type OpeningTab = { store: EditorStore; created: boolean; from: Tab | undefined }
 
 function reusableTabStore(): OpeningTab {
   const current = activeTab.value
-  if (current?.kind === 'home') {
-    leaveHome(current.id)
-    return { store: current.store, created: false, fromHome: true }
-  }
+  const source = current?.store.getSourceIdentity()
   const isUntouched =
-    current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
-  if (isUntouched) {
-    leaveHome(current.id)
-    return { store: current.store, created: false, fromHome: false }
-  }
-  return { store: createTab().store, created: true, fromHome: false }
+    current?.kind === 'document' &&
+    current.store.state.documentName === 'Untitled' &&
+    !current.store.undo.canUndo &&
+    current.store.getStorageBinding() === null &&
+    source?.path === null &&
+    source.handle === null
+  if (current && isUntouched) return { store: current.store, created: false, from: current }
+  return { store: createTab().store, created: true, from: current }
 }
 
 /**
- * After a document failed to open: a tab opened for it closes, and Home is Home again, with a
- * fresh store, so nothing of the failed document stays for the next one opened there.
+ * After a document failed to open, a tab opened for it closes and the tab in front before it, such
+ * as Home, comes back; an empty design it reused stays. `keepRecovery` leaves the recovery copy,
+ * as a failed restore must: that copy is the work being restored.
  */
-async function releaseOpeningTab(opening: OpeningTab): Promise<void> {
+async function releaseOpeningTab(
+  opening: OpeningTab,
+  { keepRecovery = false }: { keepRecovery?: boolean } = {}
+): Promise<void> {
+  if (!opening.created) return
   const tab = getTabForStore(opening.store)
   if (!tab) return
-  if (!opening.created && !opening.fromHome) return
-  // The tab goes, or Home comes back, even when the recovery copy stays behind, which the next
-  // start offers again; the open's own error is the one to report.
-  await tab.store.discardRecovery().catch((error: unknown) => {
+  // The tab goes even when the recovery copy stays behind, which the next start offers again;
+  // the open's own error is the one to report.
+  if (!keepRecovery) await discardFailedRecovery(tab.store)
+  const wasActive = activeTabId.value === tab.id
+  removeTab(tab)
+  if (wasActive && opening.from && tabsRef.value.includes(opening.from)) activateTab(opening.from)
+}
+
+async function discardFailedRecovery(store: EditorStore): Promise<void> {
+  await store.discardRecovery().catch((error: unknown) => {
     console.warn(
       '[Tabs] Failed to discard the recovery copy of a document that failed to open',
       error
     )
   })
-  if (opening.created) {
-    removeTab(tab)
-    return
-  }
-  // Tabs may have closed meanwhile, so the tab is found again, and only while it still holds this store.
-  const tabIndex = tabsRef.value.findIndex(
-    (candidate) => candidate.id === tab.id && candidate.store === tab.store
-  )
-  if (tabIndex === -1) return
-  const home: Tab = { ...tab, kind: 'home', store: createEditorStore() }
-  tabsRef.value = tabsRef.value.with(tabIndex, home)
-  if (activeTabId.value === tab.id) activateTab(home)
-  disposeTabStore(tab.store)
 }
 
 async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGraph> {
@@ -599,7 +605,8 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
   const snapshot = await getRecoveryStore().read(id)
   if (!snapshot) throw new Error('Recovery snapshot is no longer available')
 
-  const { store } = reusableTabStore()
+  const opening = reusableTabStore()
+  const { store } = opening
   const load = store.preparationController.begin({
     kind: 'recovery-restore',
     subject: snapshot.documentName
@@ -626,6 +633,7 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
     succeeded = true
   } catch (error) {
     failPreparation(load, 'decode-failed', error)
+    await releaseOpeningTab(opening, { keepRecovery: true })
     throw error
   } finally {
     if (succeeded) load.complete()
@@ -651,9 +659,7 @@ export function useTabsStore() {
     tabs: allTabs,
     activeTabId,
     createHomeTab,
-    createDocumentInCurrentTab,
     createTab,
-    leaveHome,
     switchTab,
     closeTab,
     getActiveTabId,

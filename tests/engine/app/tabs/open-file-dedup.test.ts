@@ -6,15 +6,20 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
+import { getRecoveryStore, resetRecoveryStoreForTests } from '@/app/document/recovery'
+import { createMemoryRecoveryStore } from '@/app/document/recovery/memory'
 import {
-  createDocumentInCurrentTab,
+  closeTab,
   createHomeTab,
   createTab,
   getActiveStore,
   getTabsSnapshot,
   openFileInNewTab,
   showNewTab,
-  tabCount
+  restoreRecoverySnapshot,
+  tabCount,
+  withHomePinned,
+  type Tab
 } from '@/app/tabs'
 import { fileIdentitiesMatch, findTabByFileIdentity } from '@/app/tabs/open/identity'
 
@@ -173,72 +178,84 @@ describe('openFileInNewTab deduplication', () => {
     expect(getTabsSnapshot().filter((tab) => tab.kind === 'home')).toHaveLength(1)
   })
 
-  test('converts the current New tab into a blank document', () => {
-    createHomeTab()
-    const home = getTabsSnapshot().at(-1)
-    const count = tabCount()
-
-    const document = createDocumentInCurrentTab()
-
-    expect(tabCount()).toBe(count)
-    expect(document.id).toBe(expectDefined(home, 'home tab').id)
-    expect(document.kind).toBe('document')
+  test('keeps one Home pinned first, which never closes', async () => {
+    createTab()
+    const home = createHomeTab()
+    expect(createHomeTab().id).toBe(home.id)
+    expect(getTabsSnapshot()[0]?.id).toBe(home.id)
+    await closeTab(home.id)
+    expect(getTabsSnapshot().filter((tab) => tab.kind === 'home')).toEqual([home])
   })
 
-  test('opens a file in the current New tab', async () => {
-    createHomeTab()
-    const home = getTabsSnapshot().at(-1)
+  test('pins Home first, moving it there or adding it when the tabs have none', () => {
+    const design = createTab()
+    const home = createHomeTab()
+    const ids = (tabs: readonly Tab[]) => tabs.map((tab) => tab.id)
+    expect(ids(withHomePinned([design], () => home))).toEqual([home.id, design.id])
+    const pinned = [home, design]
+    expect(withHomePinned(pinned, () => createTab())).toBe(pinned)
+    expect(ids(withHomePinned([design, home], () => createTab()))).toEqual([home.id, design.id])
+  })
+
+  test('a failed recovery restore closes its tab and keeps the snapshot', async () => {
+    resetRecoveryStoreForTests(createMemoryRecoveryStore())
+    await getRecoveryStore().write({
+      id: 'broken',
+      documentName: 'Broken',
+      figBytes: new Uint8Array([1])
+    })
+    ;(figModule.readFigFile as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('read failed')
+    )
+    const home = createHomeTab()
+    const count = tabCount()
+
+    await expect(restoreRecoverySnapshot('broken')).rejects.toThrow('read failed')
+
+    expect(tabCount()).toBe(count)
+    expect(getActiveStore()).toBe(home.store)
+    expect(await getRecoveryStore().read('broken')).not.toBeNull()
+    resetRecoveryStoreForTests()
+  })
+
+  test('opens a file from Home in a tab of its own, leaving Home as it is', async () => {
+    const home = createHomeTab()
     const count = tabCount()
 
     await settleFileOpen(
       openFileInNewTab(new File([], 'design.fig'), undefined, '/tmp/from-home.fig')
     )
 
-    expect(tabCount()).toBe(count)
-    expect(getTabsSnapshot().at(-1)?.id).toBe(home?.id)
+    expect(tabCount()).toBe(count + 1)
     expect(getTabsSnapshot().at(-1)?.kind).toBe('document')
+    expect(
+      expectDefined(
+        getTabsSnapshot().find((tab) => tab.id === home.id),
+        'home'
+      ).kind
+    ).toBe('home')
   })
 
-  test('leaves Home as it was when a file opened from it fails', async () => {
+  test('closes the tab a file opened from Home got when it fails, leaving Home as it was', async () => {
     ;(figModule.readFigFile as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new Error('read failed')
     )
-    createHomeTab()
-    const home = expectDefined(getTabsSnapshot().at(-1), 'home tab')
+    createTab()
+    const home = createHomeTab()
     const count = tabCount()
 
     await expect(
       settleFileOpen(openFileInNewTab(new File([], 'broken.fig'), undefined, '/tmp/broken.fig'))
     ).rejects.toThrow('read failed')
 
-    const after = expectDefined(getTabsSnapshot().at(-1), 'home tab')
     expect(tabCount()).toBe(count)
-    expect(after.id).toBe(home.id)
-    expect(after.kind).toBe('home')
-    expect(after.store).not.toBe(home.store)
-    expect(after.store.state.documentName).toBe('Untitled')
-    expect(getActiveStore()).toBe(after.store)
-  })
-
-  test('brings Home back and reports the open failure when its recovery copy stays', async () => {
-    ;(figModule.readFigFile as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-      new Error('read failed')
+    const after = expectDefined(
+      getTabsSnapshot().find((tab) => tab.id === home.id),
+      'home tab'
     )
-    createHomeTab()
-    const home = expectDefined(getTabsSnapshot().at(-1), 'home tab')
-    vi.spyOn(home.store, 'discardRecovery').mockRejectedValueOnce(new Error('disk full'))
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
-
-    await expect(
-      settleFileOpen(openFileInNewTab(new File([], 'broken.fig'), undefined, '/tmp/broken.fig'))
-    ).rejects.toThrow('read failed')
-
-    const after = expectDefined(getTabsSnapshot().at(-1), 'home tab')
-    expect(after.id).toBe(home.id)
-    expect(after.kind).toBe('home')
-    expect(after.store).not.toBe(home.store)
-    expect(warn).toHaveBeenCalled()
-    warn.mockRestore()
+    expect([after.kind, after.store]).toEqual(['home', home.store])
+    // Home was in front when the open began, so it is again, not the other design.
+    expect(getActiveStore()).toBe(home.store)
   })
 
   test('activates the existing tab when the same path is opened again', async () => {

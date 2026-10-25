@@ -1,0 +1,1 @@
+- Home is one tab pinned first that never closes; designs open in tabs of their own, + starts a new design, and ⌘T shows Home.
