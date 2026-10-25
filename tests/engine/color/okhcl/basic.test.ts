@@ -13,9 +13,9 @@ import {
   rgbaToOkHCL
 } from '@open-pencil/scene-graph/color'
 
-import { solidFill, solidStroke } from '#tests/engine/figma/api/helpers'
 import { expectDefined } from '#tests/helpers/assert'
 import { uint8ArrayToArrayBuffer } from '#tests/helpers/fig/fixtures'
+import { solidFill, solidStroke } from '#tests/helpers/plugin-api'
 
 describe('OkHCL metadata', () => {
   test('applies rgba rendering color while preserving fill metadata', () => {

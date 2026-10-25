@@ -107,7 +107,7 @@ Pixel-affecting features need committed visual coverage, not only mock or geomet
 
 ## Figma API
 
-`FigmaAPI` mimics Figma's Plugin API over the SceneGraph. `openpencil eval`, the AI and MCP tools, and the app bind to it. Tests live under `tests/engine/figma/api/` and mirror the API surface.
+`FigmaAPI` mimics Figma's Plugin API over the SceneGraph. `openpencil eval`, the AI and MCP tools, and the app bind to it. Tests live under `packages/core/tests/figma-api/` and mirror `packages/core/src/figma-api/`.
 
 - **Shape follows Figma.** Match `@figma/plugin-typings` at the version pinned in the root `package.json`, and add every new member to `SupportedPluginAPI`. `compatibility.ts` fails the typecheck on a member Figma's types lack or type differently, and `packages/core/tests/figma-api/surface.test.ts` on one a script can reach; the lists in `packages/core/src/figma-api/surface.ts` only shrink.
 - **Behavior follows Figma.** Read the Plugin API documentation for the member, and for anything observable (geometry, ordering, defaults, errors) run the same script in live Figma and record the observed result in the test. `figma-use` and `tests/figma/` are the live oracle; `tests/fixtures/figma-oracles/` holds recorded values.

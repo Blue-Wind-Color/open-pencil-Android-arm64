@@ -149,7 +149,12 @@ const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
   },
   {
     from: 'tests/engine/figma-api/',
-    to: 'tests/engine/figma/api/',
+    to: 'packages/core/tests/figma-api/',
+    source: 'packages/core/src/figma-api/'
+  },
+  {
+    from: 'tests/engine/figma/',
+    to: 'packages/core/tests/figma-api/',
     source: 'packages/core/src/figma-api/'
   }
 ]

@@ -83,11 +83,7 @@ describe('a gradient transform', () => {
         }
       ] as never
     }).toThrow(
-      failure(
-        'fills',
-        '[0].gradientTransform',
-        'Too small: expected array to have exactly 2 items'
-      )
+      failure('fills', '[0].gradientTransform', 'Too small: expected array to have exactly 2 items')
     )
     expect(() => {
       rectangle.fills = [
