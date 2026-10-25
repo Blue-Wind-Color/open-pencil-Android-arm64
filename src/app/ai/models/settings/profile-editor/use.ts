@@ -1,6 +1,6 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 import { isEqual } from 'es-toolkit'
-import { computed, reactive, ref, shallowRef, toRaw, watch } from 'vue'
+import { computed, reactive, ref, toRaw, watch } from 'vue'
 import type { Ref } from 'vue'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
@@ -30,7 +30,7 @@ interface ProfileEditorOptions {
 export function useModelProfileEditor({ profileId, keyInput, labels: ai }: ProfileEditorOptions) {
   const draft = reactive(createModelProfileDraft(profileId))
 
-  const selection = useProfileModelSelection(draft, ai, { applyCatalogDetails })
+  const selection = useProfileModelSelection(draft, ai)
   const {
     providerDef,
     isACP,
@@ -56,18 +56,7 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
   const saveResult = ref<SettingsSaveResult | null>(null)
   const busy = ref(false)
   /** What the draft was when the editor opened, which unsaved changes are measured against. */
-  const baseline = shallowRef(structuredClone(toRaw(draft)))
-
-  /**
-   * The catalog's capabilities and output limit land after the editor opens. On an unchanged
-   * draft they are not the person's edits, so they move the baseline with them; a key typed
-   * meanwhile is not part of the draft and stays an edit of its own.
-   */
-  function applyCatalogDetails(apply: () => void): void {
-    const untouched = isEqual(draft, baseline.value)
-    apply()
-    if (untouched) baseline.value = structuredClone(toRaw(draft))
-  }
+  const baseline = structuredClone(toRaw(draft))
   tryOnScopeDispose(() => {
     keyInput.value = ''
   })
@@ -84,7 +73,7 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
   } = useProfileConnection({ draft, keyInput })
 
   const dirty = computed(
-    () => !isEqual(draft, baseline.value) || keyInput.value.length > 0 || keyCleared.value
+    () => !isEqual(draft, baseline) || keyInput.value.length > 0 || keyCleared.value
   )
 
   const canDelete = computed(() => (profileId ? canRemoveModelProfile(profileId) : false))

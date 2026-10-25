@@ -123,19 +123,17 @@ const snapToPixelGrid = computed({
       <template #title>{{ recovery.settingsTitle }}</template>
 
       <SettingsGroup>
-        <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-          <span>
-            <span class="block text-xs text-surface">{{ recovery.preserveUnsavedWork }}</span>
-            <span class="block text-[10px] text-muted">{{
-              recovery.preserveUnsavedWorkDescription
-            }}</span>
-          </span>
+        <SettingsRow
+          as="label"
+          :label="recovery.preserveUnsavedWork"
+          :description="recovery.preserveUnsavedWorkDescription"
+        >
           <AppSwitch
             v-model="preserveUnsavedWork"
             :label="recovery.preserveUnsavedWork"
             data-test-id="settings-recovery-enabled"
           />
-        </label>
+        </SettingsRow>
       </SettingsGroup>
     </SettingsSection>
 
@@ -144,45 +142,39 @@ const snapToPixelGrid = computed({
       <template #description>{{ settings.snappingDescription }}</template>
 
       <SettingsGroup>
-        <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-          <span>
-            <span class="block text-xs text-surface">{{ settings.snapToGeometry }}</span>
-            <span class="block text-[10px] text-muted">{{
-              settings.snapToGeometryDescription
-            }}</span>
-          </span>
+        <SettingsRow
+          as="label"
+          :label="settings.snapToGeometry"
+          :description="settings.snapToGeometryDescription"
+        >
           <AppSwitch
             v-model="snapToGeometry"
             :label="settings.snapToGeometry"
             data-test-id="settings-snap-geometry"
           />
-        </label>
-        <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-          <span>
-            <span class="block text-xs text-surface">{{ settings.snapToObjects }}</span>
-            <span class="block text-[10px] text-muted">{{
-              settings.snapToObjectsDescription
-            }}</span>
-          </span>
+        </SettingsRow>
+        <SettingsRow
+          as="label"
+          :label="settings.snapToObjects"
+          :description="settings.snapToObjectsDescription"
+        >
           <AppSwitch
             v-model="snapToObjects"
             :label="settings.snapToObjects"
             data-test-id="settings-snap-objects"
           />
-        </label>
-        <label class="flex items-center justify-between gap-4 px-3 py-2.5">
-          <span>
-            <span class="block text-xs text-surface">{{ settings.snapToPixelGrid }}</span>
-            <span class="block text-[10px] text-muted">{{
-              settings.snapToPixelGridDescription
-            }}</span>
-          </span>
+        </SettingsRow>
+        <SettingsRow
+          as="label"
+          :label="settings.snapToPixelGrid"
+          :description="settings.snapToPixelGridDescription"
+        >
           <AppSwitch
             v-model="snapToPixelGrid"
             :label="settings.snapToPixelGrid"
             data-test-id="settings-snap-pixel-grid"
           />
-        </label>
+        </SettingsRow>
       </SettingsGroup>
 
       <p class="text-[11px] text-muted">{{ settings.temporaryDisableSnappingHint }}</p>

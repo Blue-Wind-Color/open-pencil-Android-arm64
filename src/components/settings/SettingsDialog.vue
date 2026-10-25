@@ -18,6 +18,7 @@ import { CloudSettingsSection } from '@/components/cloud/integration'
 import ChatSettingsSection from '@/components/settings/chat/ChatSettingsSection.vue'
 import DiagnosticsSettingsPanel from '@/components/settings/diagnostics/DiagnosticsSettingsPanel.vue'
 import GeneralSettingsPanel from '@/components/settings/general/GeneralSettingsPanel.vue'
+import SettingsBreadcrumb from '@/components/settings/layout/SettingsBreadcrumb.vue'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import MCPWorkspacePanel from '@/components/settings/mcp/MCPWorkspacePanel.vue'
 import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.vue'
@@ -94,28 +95,15 @@ function onOpenChange(open: boolean): void {
       :description="settings.description"
       :close-label="common.close"
     >
-      <!-- An open editor turns the title into the path back to where it was opened from. -->
+      <!-- An open editor turns the title into the path back to where it was opened from. On a
+           phone the section picker below already names the section, so the path starts at the
+           list. -->
       <template v-if="crumb" #title>
-        <span class="flex min-w-0 items-center gap-1.5" data-test-id="settings-breadcrumb">
-          <button
-            type="button"
-            class="cursor-pointer rounded-sm text-muted hover:text-surface focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none"
-            @click="navigation.back()"
-          >
-            {{ settings.title }}
-          </button>
-          <icon-lucide-chevron-right class="size-3.5 shrink-0 text-muted" aria-hidden="true" />
-          <button
-            type="button"
-            class="cursor-pointer rounded-sm text-muted hover:text-surface focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none"
-            data-test-id="settings-editor-back"
-            @click="navigation.back()"
-          >
-            {{ crumb.parent }}
-          </button>
-          <icon-lucide-chevron-right class="size-3.5 shrink-0 text-muted" aria-hidden="true" />
-          <span class="truncate" aria-current="page">{{ crumb.title }}</span>
-        </span>
+        <SettingsBreadcrumb
+          :steps="isMobile ? [crumb.parent] : [settings.title, crumb.parent]"
+          :current="crumb.title"
+          @back="navigation.back()"
+        />
       </template>
     </AppDialogHeader>
 

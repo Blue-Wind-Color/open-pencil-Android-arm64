@@ -71,7 +71,7 @@ test('selection immediately applies loaded catalog metadata and display name', a
   }
 })
 
-test('catalog details read after opening go through the editor, which decides they are not edits', async () => {
+test('catalog details read after opening show without editing the draft until saved', async () => {
   const originalFetch = globalThis.fetch
   globalThis.fetch = fetchStub(
     async () =>
@@ -98,21 +98,22 @@ test('catalog details read after opening go through the editor, which decides th
     draft.providerID = 'openai'
     draft.modelID = 'catalog-model'
     draft.capabilities = ['tools']
-    const applied: string[][] = []
-    scope.run(() =>
-      useProfileModelSelection(draft, labels, {
-        applyCatalogDetails: (apply) => {
-          apply()
-          applied.push([...draft.capabilities])
-        }
-      })
-    )
-    for (let attempt = 0; attempt < 20 && applied.length === 0; attempt++) {
+    draft.maxOutputTokens = 16384
+    const selection = scope.run(() => useProfileModelSelection(draft, labels))
+    if (!selection) throw new Error('Missing selection scope')
+    for (let attempt = 0; attempt < 20; attempt++) {
       await new Promise((resolve) => {
         setTimeout(resolve, 0)
       })
+      if (selection.knownCapabilities.value.includes('vision')) break
     }
-    expect(applied).toEqual([['tools', 'vision']])
+    expect(selection.knownCapabilities.value).toEqual(['tools', 'vision'])
+    expect(selection.outputTokenRecommendation.value).toBe(32000)
+    expect(draft.capabilities).toEqual(['tools'])
+    expect(draft.maxOutputTokens).toBe(16384)
+
+    selection.applyKnownModelMetadata()
+    expect(draft.capabilities).toEqual(['tools', 'vision'])
     expect(draft.maxOutputTokens).toBe(32000)
   } finally {
     scope.stop()

@@ -6,9 +6,9 @@ import { useStorageMessages } from '@open-pencil/vue/i18n'
 import { useWaitlistSignup } from '@/app/cloud/waitlist/signup'
 import { openExternalLink } from '@/app/shell/ui'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
+import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import AppInput from '@/components/ui/input/AppInput.vue'
 import { CLOUD_WAITLIST_URL, IS_TAURI } from '@/constants'
 import { cloudServers } from '@/theme/cloud/servers'
 
@@ -67,12 +67,11 @@ const failure = computed(() => {
           :label="storage.waitlistEmail"
           :error="status === 'invalid' ? storage.waitlistInvalid : undefined"
         >
-          <AppInput
+          <ProviderSettingsInput
             v-bind="control"
             v-model="email"
             type="email"
             autocomplete="email"
-            tone="panel"
             :placeholder="storage.waitlistPlaceholder"
             :disabled="submitting"
             @update:model-value="edit"

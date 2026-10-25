@@ -195,7 +195,6 @@ export const aiMessageDefaults = {
   customModelID: 'Custom model ID',
   customModel: 'Custom model…',
   customModelGroup: 'Custom model',
-  advancedModelSettings: 'Advanced settings',
   outputLimit: 'Output limit',
   outputLimitAutomatic: 'Automatic recommendation',
   maxOutputTokens: 'Max output tokens',

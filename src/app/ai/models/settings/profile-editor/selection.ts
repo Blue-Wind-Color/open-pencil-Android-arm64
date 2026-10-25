@@ -18,16 +18,7 @@ import { useCloudModelSelection } from './cloud'
 
 export function useProfileModelSelection(
   draft: AIModelProfileDraft,
-  ai: Readonly<Ref<ModelPickerLabels & { customModel: string }>>,
-  {
-    applyCatalogDetails = (apply) => apply()
-  }: {
-    /**
-     * Applies what the catalog says about the model once it has been read. The read finishes
-     * after the editor opens, so the editor decides whether its changes count as edits.
-     */
-    applyCatalogDetails?: (apply: () => void) => void
-  } = {}
+  ai: Readonly<Ref<ModelPickerLabels & { customModel: string }>>
 ) {
   const CUSTOM_MODEL_VALUE = '__custom__'
   const DEFAULT_MAX_OUTPUT_TOKENS = 16384
@@ -122,11 +113,9 @@ export function useProfileModelSelection(
     const modelID = effectiveModelID()
     const resolved = await resolveModelsDevModel(providerID, modelID)
     if (providerID !== draft.providerID || modelID !== effectiveModelID()) return
-
-    applyCatalogDetails(() => {
-      catalogModel.value = resolved
-      applyKnownModelMetadata()
-    })
+    // Shown at once, written into the profile on save: a read that finishes after the editor
+    // opens is not an edit.
+    catalogModel.value = resolved
   }
 
   function applyKnownModelMetadata(): void {

@@ -12,6 +12,7 @@ import { useMediaSettingsEditor, type MediaSettingsService } from '@/app/setting
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
+import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
@@ -57,16 +58,20 @@ async function save() {
   <form class="flex min-h-0 min-w-0 flex-1 flex-col" :aria-busy="busy" @submit.prevent="save">
     <SettingsPage>
       <div class="flex flex-col gap-5">
-        <fieldset :disabled="busy" class="flex w-full min-w-0 max-w-md flex-col gap-5">
-          <label v-if="service === 'vectorize'" class="flex flex-col gap-1.5 text-xs text-surface">
-            {{ media.vectorizeProvider }}
+        <fieldset :disabled="busy" class="flex w-full min-w-0 flex-col gap-5">
+          <ProviderSettingsField
+            v-if="service === 'vectorize'"
+            v-slot="{ control }"
+            :label="media.vectorizeProvider"
+          >
             <AppSelect
+              v-bind="control"
               v-model="providerID"
               :options="providerOptions"
               :label="media.vectorizeProvider"
               :disabled="busy"
             />
-          </label>
+          </ProviderSettingsField>
           <ProviderSettingsKeyField
             v-model="key"
             :label="keyLabel"

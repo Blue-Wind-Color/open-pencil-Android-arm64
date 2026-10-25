@@ -8,15 +8,14 @@ import { useCodingAgentSetup, usePiSetup } from '@/app/ai/agents/setup/use'
 import { useModelProfileFeedback } from '@/app/ai/models/settings/profile-editor/feedback'
 import { useProfileSignIn } from '@/app/ai/models/settings/profile-editor/sign-in'
 import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
-import { thinkingLevelOptions as buildThinkingLevelOptions } from '@/app/ai/models/thinking'
 import { useSettingsFormGuard } from '@/app/settings/navigation/use'
 import AgentSetup from '@/components/settings/agents/AgentSetup.vue'
 import PiSetup from '@/components/settings/agents/PiSetup.vue'
 import { focusInvalidField } from '@/components/settings/layout/focus'
-import SettingsDisclosure from '@/components/settings/layout/SettingsDisclosure.vue'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
+import ProfileCapabilities from '@/components/settings/models/ProfileCapabilities.vue'
 import ProviderSelect from '@/components/settings/provider-select/ProviderSelect.vue'
 import ChatGPTSignInField from '@/components/settings/provider/ChatGPTSignInField.vue'
 import ProviderConnectionTestButton from '@/components/settings/provider/ProviderConnectionTestButton.vue'
@@ -25,10 +24,8 @@ import ProviderSettingsInput from '@/components/settings/provider/ProviderSettin
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
-import AppInput from '@/components/ui/input/AppInput.vue'
 import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 const { profileId } = defineProps<{ profileId?: string }>()
 const emit = defineEmits<{ done: []; deleted: [] }>()
 const { ai, common, credentials, settings } = useI18n()
@@ -76,7 +73,6 @@ const customModelPlaceholder = computed(() =>
 const feedback = useModelProfileFeedback(profile, keyInput, settings)
 const { errors: fieldErrors } = feedback
 const busy = computed(() => saving.value || connectionTestStatus.value === 'testing')
-const thinkingLevelOptions = computed(() => buildThinkingLevelOptions(ai.value))
 const cloudWorkspaceOptions = computed(() =>
   cloudWorkspaces.value.map((workspace) => ({ value: workspace.id, label: workspace.name }))
 )
@@ -97,17 +93,12 @@ useSettingsFormGuard({
   }
 })
 const CUSTOM_MODEL_VALUE = '__custom__'
-const advancedOpen = ref(Boolean(draft.customModelID.trim()))
 function updateProvider(id: AIProviderID) {
   // A sign-in still waiting must not land in another provider's key.
   signIn.cancel()
   profile.updateProvider(id)
-  advancedOpen.value = id === 'harness:pi'
 }
-function updateModel(id: string) {
-  profile.updateModel(id)
-  if (id === CUSTOM_MODEL_VALUE) advancedOpen.value = true
-}
+
 async function save() {
   if (busy.value) return
   if (!(await feedback.validate('save'))) {
@@ -149,13 +140,12 @@ async function remove() {
           :error="fieldErrors.name"
           @blur="feedback.blur('name')"
         >
-          <AppInput
+          <ProviderSettingsInput
             ref="nameInput"
             v-bind="control"
             v-model="draft.name"
             :aria-label="ai.modelName"
             :placeholder="modelDisplayName"
-            size="sm"
           />
         </ProviderSettingsField>
 
@@ -200,7 +190,7 @@ async function remove() {
             class="flex items-start justify-between gap-2"
             data-test-id="settings-cloud-ai-notice"
           >
-            <p class="text-[11px] leading-relaxed text-muted">{{ cloudNotice }}</p>
+            <p class="text-xs leading-relaxed text-muted">{{ cloudNotice }}</p>
             <AppButton
               v-if="cloudState === 'catalog-failed' || cloudState === 'workspaces-failed'"
               variant="outline"
@@ -242,7 +232,7 @@ async function remove() {
                 :placeholder="ai.selectModel"
                 :search-placeholder="ai.searchModels"
                 :empty-label="common.noResults"
-                @update:model-value="updateModel(String($event))"
+                @update:model-value="profile.updateModel(String($event))"
               />
             </ProviderSettingsField>
 
@@ -337,68 +327,17 @@ async function remove() {
             />
           </SettingsSection>
 
-          <SettingsDisclosure v-model:open="advancedOpen">
-            <template #label>{{ ai.advancedModelSettings }}</template>
-            <div class="flex flex-col gap-3">
-              <div>
-                <p class="text-[11px] font-medium text-surface">{{ ai.modelCapabilities }}</p>
-                <p class="mt-0.5 text-[10px] text-muted">
-                  {{ knownModel ? ai.modelCapabilitiesDetected : ai.modelCapabilitiesManual }}
-                </p>
-              </div>
-
-              <div class="flex flex-col gap-2">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-[11px] text-muted">{{ ai.modelCapabilityTools }}</span>
-                  <span v-if="knownModel" class="text-[10px] text-surface">
-                    {{
-                      knownCapabilities.includes('tools') ? common.supported : common.unsupported
-                    }}
-                  </span>
-                  <AppSwitch v-else v-model="toolsEnabled" :label="ai.modelCapabilityTools" />
-                </div>
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-[11px] text-muted">{{ ai.modelCapabilityVision }}</span>
-                  <span v-if="knownModel" class="text-[10px] text-surface">
-                    {{
-                      knownCapabilities.includes('vision') ? common.supported : common.unsupported
-                    }}
-                  </span>
-                  <AppSwitch v-else v-model="visionEnabled" :label="ai.modelCapabilityVision" />
-                </div>
-              </div>
-
-              <ProviderSettingsField v-if="supportsThinking" :label="ai.thinkingLevel">
-                <AppSelect
-                  v-model="draft.thinkingLevel"
-                  :label="ai.thinkingLevel"
-                  :options="thinkingLevelOptions"
-                />
-                <p class="mt-1 text-[10px] text-muted">{{ ai.thinkingLevelDescription }}</p>
-              </ProviderSettingsField>
-
-              <ProviderSettingsField v-if="isHarness" :label="ai.harnessToolPermissions">
-                <AppSelect
-                  v-model="draft.harnessPermissionMode"
-                  :label="ai.harnessToolPermissions"
-                  :options="[
-                    { value: 'allow-reads', label: ai.harnessPermissionReads },
-                    { value: 'allow-edits', label: ai.harnessPermissionEdits },
-                    { value: 'allow-all', label: ai.harnessPermissionAll }
-                  ]"
-                />
-              </ProviderSettingsField>
-
-              <div class="border-t border-border pt-2.5">
-                <p class="text-[11px] font-medium text-surface">{{ ai.outputLimit }}</p>
-                <p class="mt-0.5 text-[10px] text-muted">
-                  {{ ai.outputLimitAutomatic }} ·
-                  {{ outputTokenRecommendation.toLocaleString() }}
-                  {{ common.tokens }}
-                </p>
-              </div>
-            </div>
-          </SettingsDisclosure>
+          <ProfileCapabilities
+            v-model:tools="toolsEnabled"
+            v-model:vision="visionEnabled"
+            v-model:thinking-level="draft.thinkingLevel"
+            v-model:permission-mode="draft.harnessPermissionMode"
+            :detected="knownModel !== null"
+            :capabilities="knownCapabilities"
+            :output-tokens="outputTokenRecommendation"
+            :thinking="supportsThinking"
+            :harness="isHarness"
+          />
         </template>
 
         <SettingsSaveFeedback :error="saveError" :result="saveResult" />

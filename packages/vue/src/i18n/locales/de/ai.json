@@ -136,7 +136,6 @@
   "customModelID": "Benutzerdefinierte Modell-ID",
   "customModel": "Benutzerdefiniertes Modell…",
   "customModelGroup": "Eigenes Modell",
-  "advancedModelSettings": "Erweiterte Einstellungen",
   "outputLimit": "Ausgabelimit",
   "outputLimitAutomatic": "Automatische Empfehlung",
   "maxOutputTokens": "Maximale Ausgabetoken",
