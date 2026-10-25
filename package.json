@@ -195,6 +195,7 @@
     "nanostores": "^1.5.4",
     "opentype.js": "^2.0.0",
     "partial-json": "^0.1.7",
+    "pathe": "^2.0.3",
     "qrcode": "1.5.4",
     "reka-ui": "^2.10.5",
     "svg2pdf.js": "^2.8.1",

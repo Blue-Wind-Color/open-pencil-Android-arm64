@@ -51,6 +51,14 @@ describe('Tauri file actions', () => {
     await expect(file.text()).resolves.toBe('{"a":1}')
   })
 
+  test('names a file read from a Windows path by its last segment', async () => {
+    await mockTauriIPC(() => [123, 125])
+
+    const file = await readTauriDesignFile('C:\\Users\\me\\Design File.pen')
+
+    expect(file.name).toBe('Design File.pen')
+  })
+
   test('saves exports through Tauri dialog and fs APIs', async () => {
     const calls: Array<{ cmd: string; args: unknown; options: unknown }> = []
     await mockTauriIPC((cmd, args, options) => {

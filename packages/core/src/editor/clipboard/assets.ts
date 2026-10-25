@@ -1,4 +1,5 @@
 import { sumBy } from 'es-toolkit'
+import { filename } from 'pathe/utils'
 
 import type { Fill } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
@@ -82,7 +83,7 @@ export function createClipboardAssetActions(
         ? {
             kind: 'svg',
             data,
-            name: file.name.replace(/\.svg$/i, '') || undefined,
+            name: filename(file.name) || undefined,
             width: data.width,
             height: data.height
           }
@@ -117,7 +118,7 @@ export function createClipboardAssetActions(
       visible: true
     }
     return ctx.graph.createNode('RECTANGLE', parentId, {
-      name: asset.name.replace(/\.[^.]+$/, ''),
+      name: filename(asset.name) ?? asset.name,
       x,
       y,
       width: asset.width,

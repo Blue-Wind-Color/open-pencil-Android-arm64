@@ -1,4 +1,5 @@
 import { groupBy } from 'es-toolkit'
+import { filename } from 'pathe/utils'
 
 import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
 import { isDrawIOExportFileName } from '@open-pencil/drawio'
@@ -221,7 +222,7 @@ async function writeFig(
     renderer: context?.renderer,
     pageId,
     renderHeadlessThumbnail: options?.renderThumbnail ?? false,
-    documentName: options?.documentName ?? fileName?.replace(/\.fig$/i, '')
+    documentName: options?.documentName ?? (fileName && filename(fileName))
   })
   return { format: 'fig', mimeType: 'application/octet-stream', extension: 'fig', data }
 }
