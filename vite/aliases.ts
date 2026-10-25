@@ -28,6 +28,7 @@ export function createOpenPencilAliases(rootDir: string, options: { cloud?: bool
   return [
     { find: /^fs$/, replacement: emptyNodeModule },
     { find: /^path$/, replacement: emptyNodeModule },
+    { find: /^node:process$/, replacement: resolve(rootDir, 'vite/node-process.ts') },
     ...(options.cloud === false ? cloudOffAliases(rootDir) : []),
     { find: '@', replacement: resolve(rootDir, 'src') },
     { find: '#vue', replacement: resolve(rootDir, 'packages/vue/src') },
