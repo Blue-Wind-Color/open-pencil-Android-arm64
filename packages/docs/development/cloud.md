@@ -490,6 +490,14 @@ send them to. Peer-to-peer rooms move to `/rooms/:id` so "share" names a shared 
 cost is that a browser editor at any other address cannot keep a Cloud document in its address
 bar; every server serves its own editor, and the desktop app gets links through `openpencil://`.
 
+**2026-10 · A link shows nothing until its document does.** A document link asks someone signed
+out to sign in on the server's page before the editor loads, and comes back to the document. A
+link that opens, or a sign-in the tab comes back from, keeps the boot splash's look over the
+window until the document is drawn, over Home rather than an empty document, so a link that
+fails or waits for a sign-in leaves the person on Home. A tab that holds its document never shows
+the room's joining screen, since the room's state can arrive in parts. The cost is a longer
+splash on a slow connection in place of an editor that fills in.
+
 **2026-10 · Workspaces are deleted at once, not after a grace period.** GitLab keeps a deleted group
 for 30 days so it can be restored; a Cloud workspace can only be deleted once it holds no
 documents, and deleted documents already have their own retention, so a delay would protect

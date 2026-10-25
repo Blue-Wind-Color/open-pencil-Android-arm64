@@ -100,9 +100,9 @@ export function createCanvasSurfaceManager({
   function createSurface(
     canvas: HTMLCanvasElement,
     { reloadFonts = false }: { reloadFonts?: boolean } = {}
-  ) {
+  ): boolean {
     const ck = getCanvasKit()
-    if (!ck) return
+    if (!ck) return false
 
     if (state.renderer) editor.removeCanvasRenderer(state.renderer)
     state.renderer?.destroy()
@@ -126,7 +126,7 @@ export function createCanvasSurfaceManager({
     const surface = result.surface
     if (!surface) {
       canvas.dataset.surfaceError = 'webgl'
-      return
+      return false
     }
 
     const glCtx = canvas.getContext('webgl2') ?? null
@@ -152,6 +152,7 @@ export function createCanvasSurfaceManager({
         return undefined
       })
     }
+    return true
   }
 
   function acknowledgePresentation() {
@@ -276,7 +277,8 @@ export function useCanvasSurfaceLifecycle({
   setCanvasKit,
   getCanvasKitValue,
   lifecycle,
-  onReady
+  onReady,
+  onFailed
 }: {
   canvasRef: Ref<HTMLCanvasElement | null>
   surface: ReturnType<typeof createCanvasSurfaceManager>
@@ -284,6 +286,7 @@ export function useCanvasSurfaceLifecycle({
   getCanvasKitValue: () => CanvasKit | null
   lifecycle: { destroyed: boolean }
   onReady?: () => void
+  onFailed?: (error: unknown) => void
 }) {
   useCanvasKitLoader({
     canvasRef,
@@ -292,7 +295,8 @@ export function useCanvasSurfaceLifecycle({
     createSurface: surface.createSurface,
     loadFonts: () => surface.getRenderer()?.loadFonts(surface.renderNow),
     renderNow: surface.renderNow,
-    onReady
+    onReady,
+    onFailed
   })
 
   const { cancelResize } = useCanvasResizeObserver({

@@ -157,6 +157,13 @@ export function switchTab(tabId: string): boolean {
   return true
 }
 
+function disposeTabStore(store: EditorStore): void {
+  coverThumbnailListeners.get(store)?.()
+  coverThumbnailListeners.delete(store)
+  store.preparationController.dispose()
+  store.dispose()
+}
+
 /**
  * Close a tab, asking whether to save unsaved changes. Pass `unsaved` to decide without
  * asking, as automation must: nobody may be there to answer.
@@ -175,12 +182,16 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   else await closingTab.store.persistRecoveryNow()
   if (!tabsRef.value.includes(closingTab)) return
   if (choice !== 'discard' && closingTab.store.hasUnsavedChanges()) return
-  const wasActive = activeTabId.value === tabId
-  coverThumbnailListeners.get(closingTab.store)?.()
-  coverThumbnailListeners.delete(closingTab.store)
-  closingTab.store.preparationController.dispose()
-  closingTab.store.dispose()
-  tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
+  removeTab(closingTab)
+}
+
+/** Takes a tab out of the window and disposes its store, showing a neighbour or a new Home. */
+function removeTab(closingTab: Tab): void {
+  const idx = tabsRef.value.indexOf(closingTab)
+  if (idx === -1) return
+  const wasActive = activeTabId.value === closingTab.id
+  disposeTabStore(closingTab.store)
+  tabsRef.value = tabsRef.value.filter((t) => t !== closingTab)
 
   if (tabsRef.value.length === 0) {
     createHomeTab()
@@ -203,19 +214,53 @@ function isDOMImportFile(file: File): boolean {
   return /\.(html?|xhtml)$/i.test(file.name)
 }
 
-function reusableTabStore(): { store: EditorStore; created: boolean } {
+/** A tab a document opens in: a new one, Home, or an untouched empty document. */
+type OpeningTab = { store: EditorStore; created: boolean; fromHome: boolean }
+
+function reusableTabStore(): OpeningTab {
   const current = activeTab.value
   if (current?.kind === 'home') {
     leaveHome(current.id)
-    return { store: current.store, created: false }
+    return { store: current.store, created: false, fromHome: true }
   }
   const isUntouched =
     current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
   if (isUntouched) {
     leaveHome(current.id)
-    return { store: current.store, created: false }
+    return { store: current.store, created: false, fromHome: false }
   }
-  return { store: createTab().store, created: true }
+  return { store: createTab().store, created: true, fromHome: false }
+}
+
+/**
+ * After a document failed to open: a tab opened for it closes, and Home is Home again, with a
+ * fresh store, so nothing of the failed document stays for the next one opened there.
+ */
+async function releaseOpeningTab(opening: OpeningTab): Promise<void> {
+  const tab = getTabForStore(opening.store)
+  if (!tab) return
+  if (!opening.created && !opening.fromHome) return
+  // The tab goes, or Home comes back, even when the recovery copy stays behind, which the next
+  // start offers again; the open's own error is the one to report.
+  await tab.store.discardRecovery().catch((error: unknown) => {
+    console.warn(
+      '[Tabs] Failed to discard the recovery copy of a document that failed to open',
+      error
+    )
+  })
+  if (opening.created) {
+    removeTab(tab)
+    return
+  }
+  // Tabs may have closed meanwhile, so the tab is found again, and only while it still holds this store.
+  const tabIndex = tabsRef.value.findIndex(
+    (candidate) => candidate.id === tab.id && candidate.store === tab.store
+  )
+  if (tabIndex === -1) return
+  const home: Tab = { ...tab, kind: 'home', store: createEditorStore() }
+  tabsRef.value = tabsRef.value.with(tabIndex, home)
+  if (activeTabId.value === tab.id) activateTab(home)
+  disposeTabStore(tab.store)
 }
 
 async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGraph> {
@@ -393,7 +438,8 @@ export async function openStorageDocumentInNewTab(
     return existing.store
   }
 
-  const { store, created } = reusableTabStore()
+  const opening = reusableTabStore()
+  const { store } = opening
   store.state.documentName = document.name
   const load = store.preparationController.begin({
     kind: 'storage-open',
@@ -420,10 +466,7 @@ export async function openStorageDocumentInNewTab(
         })
       )
     }
-    if (created) {
-      const tab = getTabForStore(store)
-      if (tab) await closeTab(tab.id)
-    }
+    await releaseOpeningTab(opening)
     throw error
   } finally {
     if (succeeded) load.complete()
@@ -460,7 +503,8 @@ export async function openFileInNewTab(
       return { kind: 'existing' as const, store: existing.store }
     }
 
-    const { store, created } = reusableTabStore()
+    const opening = reusableTabStore()
+    const { store } = opening
     store.state.documentName = file.name.replace(/\.[^.]+$/i, '')
     const load = store.preparationController.begin({
       kind: isDOMImportFile(file) ? 'dom-import' : 'document-open',
@@ -471,7 +515,7 @@ export async function openFileInNewTab(
     void completion.promise.catch(() => undefined)
     const pendingOpen = { completion: completion.promise, identity, store }
     fileOpenCoordinator.add(pendingOpen)
-    return { kind: 'owner' as const, completion, pendingOpen, store, created, load }
+    return { kind: 'owner' as const, completion, pendingOpen, store, opening, load }
   })
 
   if (decision.kind === 'existing') return decision.store
@@ -480,7 +524,7 @@ export async function openFileInNewTab(
     return decision.store
   }
 
-  const { completion, pendingOpen, store, created, load } = decision
+  const { completion, pendingOpen, store, opening, load } = decision
   let succeeded = false
   try {
     if (isDOMImportFile(file)) {
@@ -530,10 +574,7 @@ export async function openFileInNewTab(
   } catch (error) {
     failPreparation(load, 'decode-failed', error)
     completion.reject(error)
-    if (created) {
-      const tab = getTabForStore(store)
-      if (tab) await closeTab(tab.id)
-    }
+    await releaseOpeningTab(opening)
     throw error
   } finally {
     if (succeeded) load.complete()

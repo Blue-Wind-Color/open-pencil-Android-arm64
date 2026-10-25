@@ -57,7 +57,6 @@ tests/engine/app/document/recovery/controller.test.ts
 tests/engine/app/document/recovery/store.test.ts
 tests/engine/app/editor/fonts/browser-fetch.test.ts
 tests/engine/app/editor/panes.test.ts
-tests/engine/app/editor/preparation/controller.test.ts
 tests/engine/app/editor/preparation/multi-tab.test.ts
 tests/engine/app/editor/selection/focus.test.ts
 tests/engine/app/editor/store-path.test.ts

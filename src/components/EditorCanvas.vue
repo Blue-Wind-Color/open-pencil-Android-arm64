@@ -94,8 +94,14 @@ const shouldSuspendRender = () =>
 /** The pan and zoom of the scene's last drawn frame, which preview islands follow. */
 const drawnView = shallowRef<ViewportTransform | null>(null)
 
-// The tab's scene is presented only here, so waiting for it times out only while it is shown.
-onUnmounted(store.preparationController.attachCanvas())
+// The tab's scene is presented only here once the canvas can draw, so waiting for it times out
+// only while it is shown and drawing, not while the renderer and its fonts download.
+let detachCanvas: (() => void) | null = null
+onUnmounted(() => detachCanvas?.())
+function canvasReady() {
+  store.markCanvasReady()
+  detachCanvas ??= store.preparationController.attachCanvas()
+}
 
 useCanvas(sceneCanvasRef, store, {
   layer: 'scene',
@@ -103,7 +109,11 @@ useCanvas(sceneCanvasRef, store, {
     drawnView.value = view
   },
   sceneRenderer: appRuntimeConfig.sceneRenderer,
-  onReady: store.markCanvasReady,
+  onReady: canvasReady,
+  onFailed: (error) =>
+    store.preparationController.failCanvas(
+      new Error('The canvas could not start', { cause: error })
+    ),
   shouldSuspendRender,
   showRulers: false,
   getRenderState,
@@ -122,6 +132,8 @@ const {
   hitTestStatusLabel
 } = useCanvas(canvasRef, store, {
   layer: 'overlays',
+  // The scene canvas reports a canvas that cannot start.
+  onFailed: () => undefined,
   get showRulers() {
     return appRuntimeConfig.showRulers && store.state.showRulers && paneView.value.play === null
   },

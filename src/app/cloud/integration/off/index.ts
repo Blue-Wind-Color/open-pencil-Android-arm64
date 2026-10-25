@@ -18,6 +18,9 @@ export const CLOUD_INCLUDED: boolean = false
 // Still the identifier Home and Save to compare locations with; no provider registers it.
 export { CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/sessions/token'
 
+/** Nothing opens from a Cloud link without Cloud. */
+export const openingCloudLink = computed(() => false)
+
 export type { CloudAIWorkspace } from '@/app/cloud/ai/access'
 
 export const cloudAIAvailable = computed(() => false)
