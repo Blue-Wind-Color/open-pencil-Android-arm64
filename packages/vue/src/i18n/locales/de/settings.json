@@ -60,7 +60,6 @@
   "edit": "Bearbeiten",
   "configured": "Konfiguriert",
   "notConfigured": "Nicht konfiguriert",
-  "saveChangesDescription": "Änderungen werden beim Speichern übernommen.",
   "partialSaveWarning": "Einige Änderungen sind möglicherweise bereits gespeichert. Prüfe die Einstellungen und versuche es erneut.",
   "requiredField": "Dieses Feld ist erforderlich.",
   "invalidURL": "Gib eine gültige HTTP- oder HTTPS-URL ohne eingebettete Zugangsdaten ein.",

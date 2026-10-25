@@ -82,7 +82,6 @@
   "modelsDescription": "Skonfiguruj modele wielokrotnego użytku i połączenia z dostawcami.",
   "addModel": "Dodaj model",
   "editModel": "Edytuj model",
-  "modelEditorDescription": "Dostawca, model, dane logowania i możliwości.",
   "modelName": "Nazwa",
   "modelConfiguration": "Model",
   "connectionSettings": "Połączenie",

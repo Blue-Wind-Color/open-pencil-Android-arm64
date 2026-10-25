@@ -67,7 +67,6 @@ export const automationMessageDefaults = {
   addConnection: 'Add connection',
   addServerConnection: 'Add MCP connection',
   editConnection: 'Edit MCP connection',
-  connectionEditorDescription: 'Configure a Streamable HTTP server and optional authentication.',
   connectionName: 'Connection name',
   connectionNameHint: 'Use a unique name, up to 80 characters. The name open-pencil is reserved.',
   connectionNameInvalid: 'Choose a unique name of at most 80 characters, other than open-pencil.',

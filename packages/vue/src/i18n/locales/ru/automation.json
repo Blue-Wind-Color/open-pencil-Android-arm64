@@ -13,7 +13,6 @@
   "connectionsDescription": "Предоставьте ACP-агентам доступ к доверенным удалённым инструментам и сервисам.",
   "addServerConnection": "Добавить подключение MCP",
   "editConnection": "Изменить подключение MCP",
-  "connectionEditorDescription": "Настройте сервер Streamable HTTP и необязательную аутентификацию.",
   "serverURL": "URL сервера MCP",
   "enableConnection": "Включить для ACP-агентов",
   "bearerAuthentication": "Использовать Bearer-аутентификацию",

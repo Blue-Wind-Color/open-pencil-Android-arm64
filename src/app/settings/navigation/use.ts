@@ -1,9 +1,25 @@
-import { computed, inject, provide, shallowRef, watch, type InjectionKey, type Ref } from 'vue'
+import { noop } from 'es-toolkit'
+import {
+  computed,
+  inject,
+  provide,
+  shallowRef,
+  toValue,
+  watch,
+  type InjectionKey,
+  type MaybeRefOrGetter,
+  type Ref
+} from 'vue'
 
 interface SettingsFormGuard {
   dirty: Readonly<Ref<boolean>>
   busy: Readonly<Ref<boolean>>
   cancel: () => void
+  /**
+   * An editor that replaces a list names itself and the list, and the window's header shows them
+   * as a breadcrumb with the way back, instead of the editor drawing its own title and back row.
+   */
+  crumb?: { parent: MaybeRefOrGetter<string>; title: MaybeRefOrGetter<string> }
 }
 
 /** One navigation policy for every editor in the Settings window. */
@@ -17,8 +33,20 @@ export function createSettingsNavigation() {
     action()
   }
 
+  function request(action: () => void) {
+    const form = active.value
+    if (form?.busy.value) return
+    if (form?.dirty.value) pending.value = { form, action }
+    else leave(form, action)
+  }
+
   return {
     editing: computed(() => active.value !== null),
+    crumb: computed(() => {
+      const crumb = active.value?.crumb
+      if (!crumb) return null
+      return { parent: toValue(crumb.parent), title: toValue(crumb.title) }
+    }),
     confirming: computed(() => pending.value !== null),
     register(form: SettingsFormGuard) {
       active.value = form
@@ -27,11 +55,10 @@ export function createSettingsNavigation() {
         if (pending.value?.form === form) pending.value = null
       }
     },
-    request(action: () => void) {
-      const form = active.value
-      if (form?.busy.value) return
-      if (form?.dirty.value) pending.value = { form, action }
-      else leave(form, action)
+    request,
+    /** Leaves the open editor for its list, asking first when it holds unsaved changes. */
+    back() {
+      request(noop)
     },
     keepEditing() {
       pending.value = null

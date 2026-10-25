@@ -17,7 +17,6 @@ import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSaveFeedback from '@/components/settings/layout/SettingsSaveFeedback.vue'
-import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -63,11 +62,7 @@ defineExpose({ focusInvalid: () => focusInvalidField(formElement.value) })
     @submit.prevent="$emit('save')"
   >
     <SettingsPage>
-      <SettingsSection>
-        <template #title>{{
-          draft.id ? automation.editConnection : automation.addServerConnection
-        }}</template>
-        <template #description>{{ automation.connectionEditorDescription }}</template>
+      <div class="flex flex-col gap-3">
         <fieldset :disabled="busy" class="flex min-w-0 flex-col gap-3">
           <ProviderSettingsField
             v-slot="{ control }"
@@ -143,7 +138,7 @@ defineExpose({ focusInvalid: () => focusInvalidField(formElement.value) })
           />
         </fieldset>
         <SettingsSaveFeedback :error="error" :result="saveResult" />
-      </SettingsSection>
+      </div>
       <template #footer>
         <AppButton
           v-if="draft.id"

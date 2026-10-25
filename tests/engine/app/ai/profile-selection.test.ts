@@ -70,3 +70,53 @@ test('selection immediately applies loaded catalog metadata and display name', a
     resetModelsDevCatalogForTests()
   }
 })
+
+test('catalog details read after opening go through the editor, which decides they are not edits', async () => {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = fetchStub(
+    async () =>
+      new Response(
+        JSON.stringify({
+          openai: {
+            models: {
+              'catalog-model': {
+                name: 'Catalog model',
+                tool_call: true,
+                attachment: true,
+                modalities: { output: ['text'] },
+                limit: { output: 32000 }
+              }
+            }
+          }
+        })
+      )
+  )
+  resetModelsDevCatalogForTests()
+  const scope = effectScope()
+  try {
+    const draft = reactive(createModelProfileDraft())
+    draft.providerID = 'openai'
+    draft.modelID = 'catalog-model'
+    draft.capabilities = ['tools']
+    const applied: string[][] = []
+    scope.run(() =>
+      useProfileModelSelection(draft, labels, {
+        applyCatalogDetails: (apply) => {
+          apply()
+          applied.push([...draft.capabilities])
+        }
+      })
+    )
+    for (let attempt = 0; attempt < 20 && applied.length === 0; attempt++) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0)
+      })
+    }
+    expect(applied).toEqual([['tools', 'vision']])
+    expect(draft.maxOutputTokens).toBe(32000)
+  } finally {
+    scope.stop()
+    globalThis.fetch = originalFetch
+    resetModelsDevCatalogForTests()
+  }
+})

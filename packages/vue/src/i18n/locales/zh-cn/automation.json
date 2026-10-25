@@ -13,7 +13,6 @@
   "connectionsDescription": "允许 ACP 代理访问受信任的远程工具和服务。",
   "addServerConnection": "添加 MCP 连接",
   "editConnection": "编辑 MCP 连接",
-  "connectionEditorDescription": "配置 Streamable HTTP 服务器和可选身份验证。",
   "serverURL": "MCP 服务器 URL",
   "enableConnection": "为 ACP 代理启用",
   "bearerAuthentication": "使用 Bearer 身份验证",

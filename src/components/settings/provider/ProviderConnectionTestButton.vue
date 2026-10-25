@@ -62,6 +62,7 @@ const statusStyles = computed(() => tv(statusTheme)({ tone: resultTone.value }))
 <template>
   <div class="flex flex-col gap-1">
     <AppButton
+      class="self-start"
       variant="outline"
       data-test-id="provider-test-connection"
       :loading="isTesting"

@@ -44,7 +44,7 @@ const { isMobile } = useViewportKind()
 const { settings, common } = useI18n()
 const navigation = provideSettingsNavigation()
 tryOnScopeDispose(registerSettingsNavigation(navigation.request))
-const { editing, confirming } = navigation
+const { editing, confirming, crumb } = navigation
 const sections = computed(
   () =>
     [
@@ -90,7 +90,31 @@ function onOpenChange(open: boolean): void {
       :heading="settings.title"
       :description="settings.description"
       :close-label="common.close"
-    />
+    >
+      <!-- An open editor turns the title into the path back to where it was opened from. -->
+      <template v-if="crumb" #title>
+        <span class="flex min-w-0 items-center gap-1.5" data-test-id="settings-breadcrumb">
+          <button
+            type="button"
+            class="cursor-pointer rounded-sm text-muted hover:text-surface focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none"
+            @click="navigation.back()"
+          >
+            {{ settings.title }}
+          </button>
+          <icon-lucide-chevron-right class="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+          <button
+            type="button"
+            class="cursor-pointer rounded-sm text-muted hover:text-surface focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none"
+            data-test-id="settings-editor-back"
+            @click="navigation.back()"
+          >
+            {{ crumb.parent }}
+          </button>
+          <icon-lucide-chevron-right class="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+          <span class="truncate" aria-current="page">{{ crumb.title }}</span>
+        </span>
+      </template>
+    </AppDialogHeader>
 
     <AppTabsRoot
       :model-value="settingsDialogSection"

@@ -60,7 +60,6 @@
   "edit": "編集",
   "configured": "設定済み",
   "notConfigured": "未設定",
-  "saveChangesDescription": "保存すると変更が適用されます。",
   "partialSaveWarning": "一部の変更はすでに保存されている可能性があります。設定を確認して、もう一度お試しください。",
   "requiredField": "この項目は必須です。",
   "invalidURL": "認証情報を含まない有効な HTTP または HTTPS URL を入力してください。",

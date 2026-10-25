@@ -89,6 +89,7 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
     :open="editing"
     :back="common.back"
     :parent="ai.modelsTitle"
+    back-in-detail
     @back="closeEditor"
     @open-auto-focus="focusEditor"
   >

@@ -13,7 +13,6 @@
   "connectionsDescription": "ACPエージェントに信頼できるリモートツールやサービスへのアクセスを許可します。",
   "addServerConnection": "MCP接続を追加",
   "editConnection": "MCP接続を編集",
-  "connectionEditorDescription": "Streamable HTTPサーバーと任意の認証を設定します。",
   "serverURL": "MCPサーバーURL",
   "enableConnection": "ACPエージェントで有効にする",
   "bearerAuthentication": "Bearer認証を使用",

@@ -13,7 +13,6 @@
   "connectionsDescription": "Da acceso a los agentes ACP a herramientas y servicios remotos de confianza.",
   "addServerConnection": "Añadir conexión MCP",
   "editConnection": "Editar conexión MCP",
-  "connectionEditorDescription": "Configura un servidor Streamable HTTP y autenticación opcional.",
   "serverURL": "URL del servidor MCP",
   "enableConnection": "Activar para agentes ACP",
   "bearerAuthentication": "Usar autenticación Bearer",

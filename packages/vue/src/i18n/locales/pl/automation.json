@@ -13,7 +13,6 @@
   "connectionsDescription": "Zapewnij agentom ACP dostęp do zaufanych zdalnych narzędzi i usług.",
   "addServerConnection": "Dodaj połączenie MCP",
   "editConnection": "Edytuj połączenie MCP",
-  "connectionEditorDescription": "Skonfiguruj serwer Streamable HTTP i opcjonalne uwierzytelnianie.",
   "serverURL": "URL serwera MCP",
   "enableConnection": "Włącz dla agentów ACP",
   "bearerAuthentication": "Użyj uwierzytelniania Bearer",

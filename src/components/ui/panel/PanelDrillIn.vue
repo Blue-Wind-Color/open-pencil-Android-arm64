@@ -13,12 +13,23 @@ import drillInTheme from '@/theme/panel/drill-in'
  * to, like "‹ Models". Focus moves into the detail as it opens, to the back control unless
  * `open-auto-focus` is prevented to focus a field instead, and back to what opened it.
  */
-const { open, back, parent, ui } = defineProps<{
+const {
+  open,
+  back,
+  parent,
+  backInDetail = false,
+  ui
+} = defineProps<{
   open: boolean
   /** The accessible verb, "Back". */
   back: string
   /** What Back returns to, shown on the control: "Models". */
   parent: string
+  /**
+   * The way back is drawn elsewhere, such as a window's breadcrumb, so no bar is drawn above
+   * the detail.
+   */
+  backInDetail?: boolean
   ui?: ComponentUI<typeof drillInTheme>
 }>()
 const emit = defineEmits<{ back: []; openAutoFocus: [event: Event] }>()
@@ -46,7 +57,7 @@ function uncover(element: Element) {
         :class="styles.detail({ class: ui?.detail })"
         @mount-auto-focus="emit('openAutoFocus', $event)"
       >
-        <div data-slot="header" :class="styles.header({ class: ui?.header })">
+        <div v-if="!backInDetail" data-slot="header" :class="styles.header({ class: ui?.header })">
           <AppButton variant="ghost" size="sm" data-slot="back" @click="emit('back')">
             <template #leading><icon-lucide-chevron-left class="size-4" /></template>
             <span class="sr-only">{{ back }}:</span>

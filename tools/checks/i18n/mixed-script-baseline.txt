@@ -92,7 +92,6 @@ ja:automation.bearerToken
 ja:automation.bearerTokenPlaceholder
 ja:automation.bearerTokenRequired
 ja:automation.builtInAI
-ja:automation.connectionEditorDescription
 ja:automation.connectionNameHint
 ja:automation.connectionNameInvalid
 ja:automation.connections
@@ -317,7 +316,6 @@ zh-cn:automation.bearerToken
 zh-cn:automation.bearerTokenPlaceholder
 zh-cn:automation.bearerTokenRequired
 zh-cn:automation.builtInAI
-zh-cn:automation.connectionEditorDescription
 zh-cn:automation.connectionNameHint
 zh-cn:automation.connectionNameInvalid
 zh-cn:automation.connections

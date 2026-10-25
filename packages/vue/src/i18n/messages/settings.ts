@@ -59,7 +59,6 @@ export const settingsMessageDefaults = {
   edit: 'Edit',
   configured: 'Configured',
   notConfigured: 'Not configured',
-  saveChangesDescription: 'Changes apply when you save.',
   requiredField: 'This field is required.',
   invalidURL: 'Enter a valid HTTP or HTTPS URL without embedded credentials.',
   saveFailed: 'Could not save these changes. Check the settings and try again.',

@@ -82,7 +82,6 @@
   "modelsDescription": "Configura modelli riutilizzabili e le connessioni ai provider.",
   "addModel": "Aggiungi modello",
   "editModel": "Modifica modello",
-  "modelEditorDescription": "Provider, modello, credenziali e funzionalità.",
   "modelName": "Nome",
   "modelConfiguration": "Modello",
   "connectionSettings": "Connessione",

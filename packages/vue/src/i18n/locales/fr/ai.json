@@ -82,7 +82,6 @@
   "modelsDescription": "Configurez des modèles réutilisables et leurs connexions fournisseur.",
   "addModel": "Ajouter un modèle",
   "editModel": "Modifier le modèle",
-  "modelEditorDescription": "Fournisseur, modèle, identifiants et capacités.",
   "modelName": "Nom",
   "modelConfiguration": "Modèle",
   "connectionSettings": "Connexion",

@@ -44,7 +44,19 @@ const dirty = computed(
   () => form.dirty.value || tokenDraft.value.length > 0 || connection.credentialCleared.value
 )
 const busy = computed(() => connection.busy.value || form.isSubmitting.value)
-useSettingsFormGuard({ dirty, busy, cancel }, editing)
+useSettingsFormGuard(
+  {
+    dirty,
+    busy,
+    cancel,
+    crumb: {
+      parent: () => automation.value.connections,
+      title: () =>
+        draft.value.id ? automation.value.editConnection : automation.value.addServerConnection
+    }
+  },
+  editing
+)
 function startAdd() {
   connection.startAdd()
   editing.value = true

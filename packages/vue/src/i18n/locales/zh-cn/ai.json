@@ -82,7 +82,6 @@
   "modelsDescription": "配置可复用模型及其提供商连接。",
   "addModel": "添加模型",
   "editModel": "编辑模型",
-  "modelEditorDescription": "提供商、模型、凭据和能力。",
   "modelName": "名称",
   "modelConfiguration": "模型",
   "connectionSettings": "连接",

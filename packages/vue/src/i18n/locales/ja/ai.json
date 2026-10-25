@@ -82,7 +82,6 @@
   "modelsDescription": "再利用可能なモデルとプロバイダー接続を設定します。",
   "addModel": "モデルを追加",
   "editModel": "モデルを編集",
-  "modelEditorDescription": "プロバイダー、モデル、認証情報、機能。",
   "modelName": "名前",
   "modelConfiguration": "モデル",
   "connectionSettings": "接続",

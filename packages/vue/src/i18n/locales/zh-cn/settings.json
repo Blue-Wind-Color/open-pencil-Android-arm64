@@ -60,7 +60,6 @@
   "edit": "编辑",
   "configured": "已配置",
   "notConfigured": "未配置",
-  "saveChangesDescription": "保存后更改才会生效。",
   "partialSaveWarning": "部分更改可能已保存。请检查设置后重试。",
   "requiredField": "此字段为必填项。",
   "invalidURL": "请输入有效的 HTTP 或 HTTPS 地址，且不要包含凭据。",

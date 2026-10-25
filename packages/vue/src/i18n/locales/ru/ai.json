@@ -82,7 +82,6 @@
   "modelsDescription": "Настройте переиспользуемые модели и подключения к провайдерам.",
   "addModel": "Добавить модель",
   "editModel": "Изменить модель",
-  "modelEditorDescription": "Провайдер, модель, учётные данные и возможности.",
   "modelName": "Название",
   "modelConfiguration": "Модель",
   "connectionSettings": "Подключение",

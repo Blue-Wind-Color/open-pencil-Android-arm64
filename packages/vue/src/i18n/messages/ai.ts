@@ -134,7 +134,6 @@ export const aiMessageDefaults = {
   modelsDescription: 'Configure reusable models and their provider connections.',
   addModel: 'Add model',
   editModel: 'Edit model',
-  modelEditorDescription: 'Provider, model, credentials, and capabilities.',
   modelName: 'Name',
   modelConfiguration: 'Model',
   connectionSettings: 'Connection',

@@ -15,7 +15,16 @@ import { supportsThinkingLevel } from '@/app/ai/models/thinking'
 
 export function useProfileModelSelection(
   draft: AIModelProfileDraft,
-  ai: Readonly<Ref<ModelPickerLabels & { customModel: string }>>
+  ai: Readonly<Ref<ModelPickerLabels & { customModel: string }>>,
+  {
+    applyCatalogDetails = (apply) => apply()
+  }: {
+    /**
+     * Applies what the catalog says about the model once it has been read. The read finishes
+     * after the editor opens, so the editor decides whether its changes count as edits.
+     */
+    applyCatalogDetails?: (apply: () => void) => void
+  } = {}
 ) {
   const CUSTOM_MODEL_VALUE = '__custom__'
   const DEFAULT_MAX_OUTPUT_TOKENS = 16384
@@ -107,8 +116,10 @@ export function useProfileModelSelection(
     const resolved = await resolveModelsDevModel(providerID, modelID)
     if (providerID !== draft.providerID || modelID !== effectiveModelID()) return
 
-    catalogModel.value = resolved
-    applyKnownModelMetadata()
+    applyCatalogDetails(() => {
+      catalogModel.value = resolved
+      applyKnownModelMetadata()
+    })
   }
 
   function applyKnownModelMetadata(): void {

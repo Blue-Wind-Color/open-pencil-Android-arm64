@@ -82,7 +82,6 @@
   "modelsDescription": "Wiederverwendbare Modelle und ihre Anbieter-Verbindungen konfigurieren.",
   "addModel": "Modell hinzufügen",
   "editModel": "Modell bearbeiten",
-  "modelEditorDescription": "Anbieter, Modell, Zugangsdaten und Fähigkeiten.",
   "modelName": "Name",
   "modelConfiguration": "Modell",
   "connectionSettings": "Verbindung",
