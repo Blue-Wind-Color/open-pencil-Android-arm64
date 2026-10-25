@@ -8,6 +8,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { portalForm } from '@/theme/cloud-portal/form'
 import { portalList } from '@/theme/cloud-portal/list'
@@ -55,8 +56,9 @@ function detail(request: AccessRequest) {
 /** Declining or taking access away is asked once more, with a note for the other administrators. */
 const confirming = ref<{ kind: 'reject' | 'revoke'; request: AccessRequest } | null>(null)
 const note = ref('')
+const confirmingShown = useHeldContent(confirming)
 const confirmation = computed(() => {
-  const pending = confirming.value
+  const pending = confirmingShown.value
   if (!pending) return null
   const words = messages.value
   const name = pending.request.name ?? pending.request.email
@@ -161,7 +163,7 @@ function confirm() {
       <template #icon><icon-lucide-inbox class="size-5" /></template>
     </AppPlaceholder>
     <AppConfirmationDialog
-      :open="confirmation !== null"
+      :open="confirming !== null"
       tone="danger"
       :heading="confirmation?.heading ?? ''"
       :description="confirmation?.description"

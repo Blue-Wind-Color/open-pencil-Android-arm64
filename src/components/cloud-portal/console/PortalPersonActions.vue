@@ -16,6 +16,7 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import { menu } from '@/components/ui/menu/menu'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import { portalForm } from '@/theme/cloud-portal/form'
 
 import type { PortalPerson, PortalPersonAction } from '../types'
@@ -42,8 +43,9 @@ const form = portalForm()
 const confirming = ref<PortalPersonAction | null>(null)
 const reason = ref('')
 
+const confirmingShown = useHeldContent(confirming)
 const confirmation = computed(() => {
-  const action = confirming.value
+  const action = confirmingShown.value
   if (!action) return null
   const words = messages.value
   const name = person.name
@@ -159,7 +161,7 @@ function confirm() {
     </DropdownMenuPortal>
   </DropdownMenuRoot>
   <AppConfirmationDialog
-    :open="confirmation !== null"
+    :open="confirming !== null"
     :tone="confirmation?.tone"
     :heading="confirmation?.heading ?? ''"
     :description="confirmation?.description"
@@ -168,7 +170,7 @@ function confirm() {
     @update:open="(open) => !open && (confirming = null)"
     @confirm="confirm"
   >
-    <div v-if="confirming === 'suspend'" :class="[form.field(), 'mt-3']">
+    <div v-if="confirmingShown === 'suspend'" :class="[form.field(), 'mt-3']">
       <label for="portal-suspend-reason" :class="form.label()">{{ messages.suspendReason }}</label>
       <AppTextarea id="portal-suspend-reason" v-model="reason" :rows="2" maxlength="500" />
     </div>

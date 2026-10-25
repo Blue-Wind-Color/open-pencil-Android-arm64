@@ -10,6 +10,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 
 import type { PortalLinkedMethod, PortalSignInMethod } from '../types'
 
@@ -63,8 +64,9 @@ const confirming = ref<
   | { kind: 'passkey'; id: string; name: string }
   | null
 >(null)
+const confirmingShown = useHeldContent(confirming)
 const confirmation = computed(() => {
-  const pending = confirming.value
+  const pending = confirmingShown.value
   if (!pending) return null
   const words = messages.value
   return pending.kind === 'unlink'
@@ -211,7 +213,7 @@ function confirm() {
     </SettingsSection>
 
     <AppConfirmationDialog
-      :open="confirmation !== null"
+      :open="confirming !== null"
       tone="danger"
       :heading="confirmation?.heading ?? ''"
       :description="confirmation?.description"

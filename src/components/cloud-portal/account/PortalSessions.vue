@@ -9,6 +9,7 @@ import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import { portalList } from '@/theme/cloud-portal/list'
 
 import type { PortalDevice, PortalSession, PortalSignIn } from '../types'
@@ -37,8 +38,9 @@ const messages = useCloudPortalMessages()
 const labels = usePortalDeviceLabels()
 const others = computed(() => sessions.filter((session) => !session.current))
 const confirming = ref<{ kind: 'one'; session: PortalSession } | { kind: 'others' } | null>(null)
+const confirmingShown = useHeldContent(confirming)
 const confirmation = computed(() => {
-  const pending = confirming.value
+  const pending = confirmingShown.value
   if (!pending) return null
   const words = messages.value
   return pending.kind === 'others'
@@ -139,7 +141,7 @@ function confirm() {
     </SettingsSection>
 
     <AppConfirmationDialog
-      :open="confirmation !== null"
+      :open="confirming !== null"
       tone="danger"
       :heading="confirmation?.heading ?? ''"
       :description="confirmation?.description"

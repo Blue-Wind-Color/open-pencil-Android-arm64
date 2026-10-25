@@ -18,6 +18,7 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import { useHeldContent } from '@/components/ui/overlay/held'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
 import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
@@ -153,8 +154,9 @@ function invitationDetail(invitation: WorkspaceMembers['invitations'][number]): 
 const confirming = ref<
   { kind: 'leave' } | { kind: 'delete' } | { kind: 'remove'; userId: string; name: string } | null
 >(null)
+const confirmingShown = useHeldContent(confirming)
 const confirmation = computed(() => {
-  const pending = confirming.value
+  const pending = confirmingShown.value
   if (!pending) return null
   if (pending.kind === 'delete') {
     return {
@@ -177,11 +179,14 @@ const confirmation = computed(() => {
 })
 /** Deleting can't be undone, so it waits for the workspace's name. */
 const typedName = ref('')
-watch(confirming, () => {
-  typedName.value = ''
-})
+watch(
+  () => confirming.value !== null,
+  (isOpen) => {
+    if (isOpen) typedName.value = ''
+  }
+)
 const confirmBlocked = computed(
-  () => confirming.value?.kind === 'delete' && typedName.value.trim() !== workspaceName.trim()
+  () => confirmingShown.value?.kind === 'delete' && typedName.value.trim() !== workspaceName.trim()
 )
 function confirm() {
   const pending = confirming.value
@@ -214,7 +219,8 @@ function invite() {
           <AppTabsList :label="t.membersSections">
             <AppTabsTrigger value="members">
               {{ t.membersTab }}
-              <template #trailing>
+              <!-- Counted once known; "0" while loading would be a wrong first frame. -->
+              <template v-if="members" #trailing>
                 <span class="text-muted tabular-nums">{{ allMembers.length }}</span>
               </template>
             </AppTabsTrigger>
@@ -434,7 +440,7 @@ function invite() {
     </AppDialogFooter>
   </AppDialogRoot>
   <AppConfirmationDialog
-    :open="confirmation !== null"
+    :open="confirming !== null"
     tone="danger"
     :heading="confirmation?.heading ?? ''"
     :description="confirmation?.description"
@@ -444,7 +450,7 @@ function invite() {
     @update:open="(isOpen) => !isOpen && (confirming = null)"
     @confirm="confirm"
   >
-    <div v-if="confirming?.kind === 'delete'" :class="ui.confirmName()">
+    <div v-if="confirmingShown?.kind === 'delete'" :class="ui.confirmName()">
       <label for="cloud-workspace-delete-name" :class="ui.label()">
         {{ t.deleteWorkspaceTypeName({ workspace: workspaceName }) }}
       </label>
