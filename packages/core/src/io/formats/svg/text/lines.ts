@@ -1,4 +1,5 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import { lineHeightPixels } from '@open-pencil/scene-graph/text'
 
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import { round } from '#core/io/formats/svg/paths'
@@ -126,7 +127,7 @@ function resolvedLineHeight(fontSize: number, lineHeight: number | null): number
 function runLineHeight(node: SceneNode, style: CharacterStyleOverride | null): number {
   const fontSize = style?.fontSize ?? node.fontSize
   const lineHeight = style?.lineHeight !== undefined ? style.lineHeight : node.lineHeight
-  return resolvedLineHeight(fontSize, lineHeight)
+  return resolvedLineHeight(fontSize, lineHeightPixels(lineHeight, fontSize))
 }
 
 /**
@@ -165,7 +166,9 @@ function explicitLineHeight(
     covered = true
     height = Math.max(height, runLineHeight(node, piece.style))
   }
-  return covered ? height : resolvedLineHeight(node.fontSize, node.lineHeight)
+  return covered
+    ? height
+    : resolvedLineHeight(node.fontSize, lineHeightPixels(node.lineHeight, node.fontSize))
 }
 
 /**

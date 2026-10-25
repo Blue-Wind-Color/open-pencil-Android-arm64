@@ -6,7 +6,7 @@ import { applyFontFeaturesToKiwi } from '../font/features'
 import { weightToFigmaStyle } from '../font/style'
 import { stringToFigmaAxisTag } from '../font/variations'
 import { exportTextLines } from './lines'
-import { FIGMA_AUTO_LINE_HEIGHT } from './values'
+import { figmaLetterSpacing, figmaLineHeight } from './values'
 
 export function fontVariationToKiwi(variation: SceneNode['fontVariations'][number]) {
   const axisTag = stringToFigmaAxisTag(variation.axis)
@@ -57,14 +57,9 @@ function textStyleOverrideToKiwi(
     applyFontFeaturesToKiwi(override as NodeChange, style.fontFeatures)
   }
   if (style.letterSpacing !== undefined) {
-    override.letterSpacing = { value: style.letterSpacing, units: 'PIXELS' }
+    override.letterSpacing = figmaLetterSpacing(style.letterSpacing)
   }
-  if (style.lineHeight !== undefined) {
-    override.lineHeight =
-      style.lineHeight === null
-        ? { ...FIGMA_AUTO_LINE_HEIGHT }
-        : { value: style.lineHeight, units: 'PIXELS' }
-  }
+  if (style.lineHeight !== undefined) override.lineHeight = figmaLineHeight(style.lineHeight)
   applyTextDecorationOverrideFields(override, style, fillToKiwiPaint)
   if (style.textCase) override.textCase = style.textCase
   if (style.fills && style.fills.length > 0) {

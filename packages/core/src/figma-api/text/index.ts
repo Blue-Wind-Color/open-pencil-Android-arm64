@@ -1,9 +1,11 @@
+import { compact } from 'es-toolkit/array'
 import { upperFirst } from 'es-toolkit/string'
 
 import type {
   SceneGraph,
   SceneNode,
   StyleRun,
+  TextLength,
   TextParagraphSpacingField,
   TextParagraphStyle
 } from '@open-pencil/scene-graph'
@@ -14,6 +16,7 @@ import {
   paragraphStyleAt,
   paragraphStylesAfterEdit,
   paragraphStylesInRange,
+  pixelLength,
   sharedParagraphSpacing,
   textParagraphRanges,
   trimParagraphStyles,
@@ -22,7 +25,7 @@ import {
   withParagraphSpacing
 } from '@open-pencil/scene-graph/text'
 
-import { invalid } from '#core/figma-api/accessors/text/messages'
+import { invalid, received } from '#core/figma-api/accessors/text/messages'
 import { adjustRunsForDelete, getStyleAt, insertRunsWithStyle } from '#core/text/style-runs'
 
 import { assertTextRange } from './style'
@@ -35,26 +38,58 @@ export interface FigmaLetterSpacing {
   value: number
 }
 
-/** The node keeps sizes in pixels; a percent is of its font size when set, as Figma resolves it. */
-function pixels(value: { unit: 'PIXELS' | 'PERCENT'; value: number }, fontSize: number) {
-  return value.unit === 'PERCENT' ? (value.value / 100) * fontSize : value.value
+/** Figma's complaint about a length's `.value`, or null when it is a number. */
+function amountProblem(amount: unknown): string | null {
+  if (amount === undefined) return 'Required value missing at .value'
+  // NaN is a number to typeof, but not to Figma's check.
+  return typeof amount === 'number' && !Number.isNaN(amount)
+    ? null
+    : `Expected number, received ${received(amount)} at .value`
+}
+
+/** A length object a script passes to `method`, checked as Figma checks it. */
+function lengthObject(method: string, property: string, value: unknown) {
+  if (typeof value !== 'object' || value === null) {
+    throw invalid(method, `Expected object, received ${received(value)}`, property)
+  }
+  return value as { unit?: unknown; value?: unknown }
 }
 
 /**
- * Accepts Figma's object, or a bare number of pixels or `null` for automatic, as earlier
- * OpenPencil scripts wrote it.
+ * Accepts Figma's object, kept in its unit so a percent follows the font size as in Figma, or a
+ * bare number of pixels or `null` for automatic, as earlier OpenPencil scripts wrote it.
  */
-export function lineHeightValue(
-  node: SceneNode,
-  value: FigmaLineHeight | number | null
-): number | null {
-  if (value === null || typeof value === 'number') return value
-  return value.unit === 'AUTO' ? null : pixels(value, node.fontSize)
+export function lineHeightValue(value: unknown): TextLength | null {
+  if (value === null) return null
+  if (typeof value === 'number') return pixelLength(value)
+  const length = lengthObject('set_lineHeight', 'lineHeight', value)
+  if (length.unit === 'AUTO') return null
+  if (length.unit !== 'PIXELS' && length.unit !== 'PERCENT') {
+    throw invalid(
+      'set_lineHeight',
+      'Expected .unit to be one of the following: PIXELS, PERCENT, AUTO',
+      'lineHeight'
+    )
+  }
+  const problem = amountProblem(length.value)
+  if (problem) throw invalid('set_lineHeight', problem, 'lineHeight')
+  return { unit: length.unit, value: length.value as number }
 }
 
-/** Accepts Figma's object, or a bare number of pixels as earlier OpenPencil scripts wrote it. */
-export function letterSpacingValue(node: SceneNode, value: FigmaLetterSpacing | number): number {
-  return typeof value === 'number' ? value : pixels(value, node.fontSize)
+/** Accepts Figma's object, in its unit, or a bare number of pixels as earlier scripts wrote it. */
+export function letterSpacingValue(value: unknown): TextLength {
+  if (typeof value === 'number') return pixelLength(value)
+  const length = lengthObject('set_letterSpacing', 'letterSpacing', value)
+  const unitKnown = length.unit === 'PIXELS' || length.unit === 'PERCENT'
+  // Figma lists every problem, the value's before the unit's.
+  const problems = compact([
+    amountProblem(length.value),
+    unitKnown ? null : 'Invalid option: expected one of "PIXELS"|"PERCENT" at .unit'
+  ])
+  if (problems.length > 0) {
+    throw invalid('set_letterSpacing', problems.join('\n'), 'letterSpacing')
+  }
+  return { unit: length.unit as TextLength['unit'], value: length.value as number }
 }
 
 /** Which neighbour inserted characters copy their style from, as Figma's `insertCharacters` takes it. */

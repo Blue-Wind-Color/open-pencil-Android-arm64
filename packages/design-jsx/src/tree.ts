@@ -170,8 +170,10 @@ export type StyleProps = {
 
   size?: number | DesignVariable
   fontSize?: number | DesignVariable
-  lineHeight?: number | 'auto' | DesignVariable
-  letterSpacing?: number | DesignVariable
+  /** Pixels, or a percent of the font size such as `'150%'`. */
+  lineHeight?: number | `${number}%` | 'auto' | DesignVariable
+  /** Pixels, or a percent of the font size such as `'5%'`. */
+  letterSpacing?: number | `${number}%` | DesignVariable
   font?: string
   fontFamily?: string
   weight?: number | 'bold' | 'medium' | 'normal'

@@ -9,6 +9,7 @@ import type {
 import { localTransformFromWorld } from '@open-pencil/scene-graph/coordinate'
 import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import type { SVGElementLayer } from '#core/icons/types'
 import { measureTextForLayout } from '#core/layout/text-measurement'
@@ -46,7 +47,7 @@ function runStyle(
     fontSize: run.fontSize * scale,
     fontWeight: run.fontWeight,
     italic: run.italic,
-    letterSpacing: run.letterSpacing * scale,
+    letterSpacing: pixelLength(run.letterSpacing * scale),
     textDecoration: run.textDecoration,
     fills: run.fills
   }

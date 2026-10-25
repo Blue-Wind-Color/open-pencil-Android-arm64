@@ -29,7 +29,7 @@ function appendTextProps(obj: Record<string, unknown>, n: SceneNode): void {
   obj.textAutoResize = n.textAutoResize
   obj.textDirection = n.textDirection
   if (n.lineHeight != null) obj.lineHeight = n.lineHeight
-  if (n.letterSpacing !== 0) obj.letterSpacing = n.letterSpacing
+  if (n.letterSpacing.value !== 0) obj.letterSpacing = n.letterSpacing
   if (n.textCase !== 'ORIGINAL') obj.textCase = n.textCase
   if (n.textDecoration !== 'NONE') obj.textDecoration = n.textDecoration
   if (n.maxLines != null) obj.maxLines = n.maxLines

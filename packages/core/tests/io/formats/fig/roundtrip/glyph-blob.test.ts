@@ -12,6 +12,7 @@ import { fontManager } from '@open-pencil/core/text'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 const INTER_ASSETS = corePackagePath('assets')
 
@@ -125,7 +126,7 @@ heavy('roundtrip: text glyph blobs', () => {
       fontFamily: 'Inter',
       fontWeight: 400,
       fontSize: 13,
-      lineHeight: 16,
+      lineHeight: pixelLength(16),
       textAutoResize: 'HEIGHT'
     })
 

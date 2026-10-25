@@ -1,9 +1,12 @@
+import { isEqual } from 'es-toolkit/predicate'
+
 import type { VariableModeFallback } from '.'
 import { copyFills, copyStrokes } from '../copy'
 import type { SceneGraph } from '../graph'
 import { hasInstanceOverride } from '../instances'
 import type { Color } from '../primitives'
-import type { Fill, SceneNode, Stroke, StyleRun } from '../types'
+import { pixelLength } from '../text/lengths'
+import type { Fill, SceneNode, Stroke, StyleRun, TextLength } from '../types'
 import { NUMERIC_FIELDS, isNumericVariableBindingField } from './fields'
 import { variableText, variableTruthy } from './text'
 import { variableValueReferences } from './value'
@@ -38,6 +41,14 @@ export function assignVariableBindingUnits(
   }
 }
 
+/** Fields a bound number sets as a length in pixels, as Figma's do, whatever unit they held. */
+const TEXT_LENGTH_FIELDS: ReadonlySet<string> = new Set(['lineHeight', 'letterSpacing'])
+
+/** A bound number as the field stores it. */
+function boundValue(field: string, value: number): number | TextLength {
+  return TEXT_LENGTH_FIELDS.has(field) ? pixelLength(value) : value
+}
+
 /**
  * The values a node's numeric bindings resolve to in its mode, in scene units, for the fields
  * whose stored value differs. A width or height an instance overrides keeps its own value.
@@ -57,8 +68,11 @@ export function resolvedNumericBindings(
     const scale = node.variableBindingScales[field] ?? 1
     const effective = value * scale
     if (!Number.isFinite(effective)) continue
-    const next = field === 'opacity' ? Math.max(0, Math.min(1, effective)) : effective
-    if (node[field as keyof SceneNode] !== next) Object.assign(updates, { [field]: next })
+    const next = boundValue(
+      field,
+      field === 'opacity' ? Math.max(0, Math.min(1, effective)) : effective
+    )
+    if (!isEqual(node[field as keyof SceneNode], next)) Object.assign(updates, { [field]: next })
   }
   return updates
 }
@@ -109,8 +123,10 @@ export function resolvedRunBindings(
       const variableId = bound[field]
       if (!variableId) continue
       const value = graph.resolveNumberVariableForNode(node.id, variableId, fallback)
-      if (value === undefined || !Number.isFinite(value) || style[field] === value) continue
-      style = { ...style, [field]: value }
+      if (value === undefined || !Number.isFinite(value)) continue
+      const next = boundValue(field, value)
+      if (isEqual(style[field], next)) continue
+      style = { ...style, [field]: next }
     }
     return style === run.style ? run : { ...run, style }
   })

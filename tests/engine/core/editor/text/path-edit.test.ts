@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { pathTextEditChanges, resizedPathTextGlyphs } from '#core/editor/text/path-edit'
 import { fontManager } from '#core/text/fonts'
@@ -102,7 +103,7 @@ describe('pathTextEditChanges — reflow on character edit', () => {
         fontWeight: 400,
         italic: false,
         fontSize: 40,
-        letterSpacing,
+        letterSpacing: pixelLength(letterSpacing),
         textPathBox: { ...box },
         derivedTextGlyphs: [
           { commandsBlob: new Uint8Array(4), x: 50, y: 50, fontSize: 40, rotation: 0 },

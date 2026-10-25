@@ -5,6 +5,7 @@ import { describe, test, expect, mock, spyOn } from 'bun:test'
 import { SkiaRenderer as SkiaRendererClass } from '@open-pencil/core/canvas'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 import { detectTextDirection, resolveTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { initCanvasKit } from '#cli/headless'
@@ -109,7 +110,7 @@ function textNode(overrides: Partial<SceneNode> = {}): SceneNode {
     fontFamily: 'Arial',
     fontWeight: 400,
     italic: false,
-    letterSpacing: 0,
+    letterSpacing: pixelLength(0),
     lineHeight: null,
     textAlignHorizontal: 'LEFT',
     textAlignVertical: 'TOP',

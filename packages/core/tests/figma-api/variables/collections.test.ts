@@ -289,7 +289,7 @@ describe('node variable bindings', () => {
     rect.fills = [paint]
     expect(rect.boundVariables).toEqual({ fills: [{ type: 'VARIABLE_ALIAS', id: color.id }] })
     const [fill] = rect.fills as readonly { color: unknown; boundVariables?: unknown }[]
-    expect(fill.color).toEqual({ r: 0, g: 0, b: 1, a: 1 })
+    expect(fill.color).toEqual({ r: 0, g: 0, b: 1 })
     expect(fill.boundVariables).toEqual({ color: { type: 'VARIABLE_ALIAS', id: color.id } })
     rect.fills = [solid]
     expect(rect.boundVariables).toEqual({})

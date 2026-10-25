@@ -1,8 +1,7 @@
 import { mapValues, pickBy } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
-import { copyFills } from '@open-pencil/scene-graph/copy'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   paragraphIndexAt,
   paragraphSpacingAt,
@@ -10,7 +9,7 @@ import {
 } from '@open-pencil/scene-graph/text'
 
 import { readVariationSettings, weightToStyleName } from '#core/figma-api/fonts'
-import { toFigmaPaint, type WithFigmaTransforms } from '#core/figma-api/paints'
+import { toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
 import { variableAlias } from '#core/figma-api/variables/values'
 import { characterStyles, nodeStyle, type CharacterStyle } from '#core/text/character-style'
 
@@ -60,7 +59,7 @@ function underlined(style: CharacterStyle): boolean {
 /** Figma's paint for an underline colour of its own, or automatic, following the text. */
 function decorationColor(style: CharacterStyle) {
   const paint = style.textDecorationFills.at(0)
-  return paint ? { value: toFigmaPaint(copyFills([paint])[0]) } : { value: 'AUTO' as const }
+  return paint ? { value: toFigmaPaint(paint) } : { value: 'AUTO' as const }
 }
 
 function fontFeatureMap(style: CharacterStyle): Record<string, boolean> {
@@ -68,6 +67,22 @@ function fontFeatureMap(style: CharacterStyle): Record<string, boolean> {
 }
 
 type FieldContext = { node: SceneNode; style: CharacterStyle; paragraph: number }
+
+/**
+ * A character's fills as Figma reads them. Fills a range sets draw at the colour's alpha times the
+ * paint's opacity, so a solid reads that product as its opacity; the layer's own fills, which
+ * characters without fills of their own share, draw at their opacity alone.
+ */
+function rangeFills(node: SceneNode, style: CharacterStyle): FigmaPaint[] {
+  if (style.fills === node.fills) return style.fills.map((paint) => toFigmaPaint(paint))
+  return style.fills.map((paint) =>
+    toFigmaPaint(
+      paint.type === 'SOLID'
+        ? { ...paint, opacity: paint.opacity * paint.color.a, color: { ...paint.color, a: 1 } }
+        : paint
+    )
+  )
+}
 
 /** The decoration's own style reads null where the text is not underlined. */
 function whenUnderlined(read: (style: CharacterStyle) => unknown) {
@@ -107,9 +122,9 @@ const FIELD_READERS: Record<TextSegmentField, (context: FieldContext) => unknown
   textDecorationThickness: whenUnderlined((style) => pixels(style.textDecorationThickness)),
   textDecorationColor: whenUnderlined(decorationColor),
   textCase: ({ style }) => style.textCase,
-  lineHeight: ({ style }) => pixels(style.lineHeight),
-  letterSpacing: ({ style }) => ({ unit: 'PIXELS', value: style.letterSpacing }),
-  fills: ({ style }) => copyFills(style.fills).map(toFigmaPaint),
+  lineHeight: ({ style }) => (style.lineHeight ? { ...style.lineHeight } : { unit: 'AUTO' }),
+  letterSpacing: ({ style }) => ({ ...style.letterSpacing }),
+  fills: ({ node, style }) => rangeFills(node, style),
   textStyleId: ({ style }) => style.textStyleId ?? '',
   fillStyleId: ({ style }) => style.fillStyleId ?? '',
   listOptions: ({ node, paragraph }) => ({
@@ -259,4 +274,4 @@ export function rangeHasUnderline(node: SceneNode, start: number, end: number): 
   return characterStyles(node, start, end).some(underlined)
 }
 
-export type FigmaDecorationColor = { value: 'AUTO' } | { value: WithFigmaTransforms<Fill> }
+export type FigmaDecorationColor = { value: 'AUTO' } | { value: FigmaPaint }

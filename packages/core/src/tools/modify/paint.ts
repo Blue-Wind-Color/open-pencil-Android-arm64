@@ -5,7 +5,6 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 import { gradientTransformRows, linearGradientTransform } from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { BLACK } from '#core/constants'
 import { storeImage } from '#core/figma-api/images'
 import { defineTool, nodeIdInputSchema, toolNumber } from '#core/tools/schema'
 
@@ -59,9 +58,6 @@ export const setFill = defineTool({
       node.fills = [
         {
           type: 'GRADIENT_LINEAR',
-          color: c,
-          opacity: 1,
-          visible: true,
           gradientStops: [
             { position: 0, color: c },
             { position: 1, color: cEnd }
@@ -72,7 +68,8 @@ export const setFill = defineTool({
       return { id, gradient, start: c, end: cEnd }
     }
 
-    node.fills = [{ type: 'SOLID', color: c, opacity: 1, visible: true }]
+    // A colour's alpha becomes the paint's opacity, as Figma takes it.
+    node.fills = [{ type: 'SOLID', color: c }]
     return { id, color: c }
   }
 })
@@ -99,16 +96,9 @@ export const setStroke = defineTool({
     if (!node) return { error: `Node "${id}" not found` }
 
     const c = parseColor(color)
-    node.strokes = [
-      {
-        type: 'SOLID',
-        color: c,
-        weight: weight,
-        opacity: 1,
-        visible: true,
-        align
-      }
-    ]
+    node.strokes = [{ type: 'SOLID', color: c }]
+    node.strokeWeight = weight
+    node.strokeAlign = align
     return { id, color: c, weight: weight }
   }
 })
@@ -136,16 +126,7 @@ export const setImageFill = defineTool({
     const bytes = toUint8Array(image_data)
     const imageHash = storeImage(figma.graph, bytes)
     const mode = scale_mode
-    node.fills = [
-      {
-        type: 'IMAGE',
-        color: BLACK,
-        opacity: 1,
-        visible: true,
-        imageHash,
-        imageScaleMode: mode
-      }
-    ]
+    node.fills = [{ type: 'IMAGE', imageHash, scaleMode: mode }]
     return { id, imageHash, scaleMode: mode }
   }
 })

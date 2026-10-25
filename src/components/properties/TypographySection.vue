@@ -11,6 +11,7 @@ import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import FontPicker from '@/components/font-picker/FontPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
+import LetterSpacingField from '@/components/properties/typography/LetterSpacingField.vue'
 import LineHeightField from '@/components/properties/typography/LineHeightField.vue'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
@@ -152,20 +153,11 @@ function picked<T>(value: MixedValue<T>): T | '' {
           />
         </PanelFieldGroup>
         <PanelFieldGroup :label="panels.letterSpacing">
-          <VariableNumberField
-            suffix="px"
-            :model-value="ctx.merged('letterSpacing')"
-            :aria-label="panels.letterSpacing"
-            :node-id="ctx.node.value.id"
-            :node-ids="ctx.nodes.value.map((text) => text.id)"
-            binding-path="letterSpacing"
-            @update:model-value="ctx.actions.updateProp('letterSpacing', $event)"
-            @commit="(v: number, p: number) => ctx.actions.commitProp('letterSpacing', v, p)"
-          >
-            <template #icon>
-              <icon-lucide-a-large-small class="size-3" />
-            </template>
-          </VariableNumberField>
+          <LetterSpacingField
+            :nodes="ctx.nodes.value"
+            @update="ctx.actions.updateProp('letterSpacing', $event)"
+            @commit="(v, p) => ctx.actions.commitProp('letterSpacing', v, p)"
+          />
         </PanelFieldGroup>
       </PanelGrid>
 

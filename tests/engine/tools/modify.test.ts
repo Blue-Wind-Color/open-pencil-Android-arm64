@@ -17,10 +17,7 @@ describe('set_fill', () => {
     tool.execute(figma, { id: frame.id, color: '#ff0000' })
 
     const fills = expectFills(expectDefined(figma.getNodeById(frame.id), 'frame node').fills)
-    expect(fills.length).toBe(1)
-    expect(fills[0].color.r).toBeCloseTo(1)
-    expect(fills[0].color.g).toBeCloseTo(0)
-    expect(fills[0].color.b).toBeCloseTo(0)
+    expect(fills).toEqual([expect.objectContaining({ color: { r: 1, g: 0, b: 0 } })])
   })
 
   test('returns error for missing node', () => {
@@ -40,10 +37,9 @@ describe('set_stroke', () => {
     const tool = getTool('set_stroke')
     tool.execute(figma, { id: rect.id, color: '#0000ff', weight: 2 })
 
-    const strokes = expectDefined(figma.getNodeById(rect.id), 'rectangle node').strokes
-    expect(strokes.length).toBe(1)
-    expect(strokes[0].color.b).toBeCloseTo(1)
-    expect(strokes[0].weight).toBe(2)
+    const node = expectDefined(figma.getNodeById(rect.id), 'rectangle node')
+    expect(node.strokes).toEqual([expect.objectContaining({ color: { r: 0, g: 0, b: 1 } })])
+    expect(node.strokeWeight).toBe(2)
   })
 })
 

@@ -118,3 +118,14 @@ describe('variant properties through the Plugin API', () => {
     expect(names(set)).toEqual(['State=Default, Size=sm', 'State=Hover, Size=sm'])
   })
 })
+
+// Recorded in Figma 126: an instance reads its own variant, as its main component names it.
+test("an instance's componentProperties report its own variant", () => {
+  const { hover } = variants()
+  const instance = hover.createInstance()
+  expect(instance.componentProperties.State?.value).toBe('Hover')
+  expect(instance.componentProperties.State?.type).toBe('VARIANT')
+
+  instance.setProperties({ State: 'Default' })
+  expect(instance.componentProperties.State?.value).toBe('Default')
+})

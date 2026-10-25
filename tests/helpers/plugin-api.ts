@@ -1,5 +1,5 @@
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { SceneGraph, type Fill, type Stroke } from '@open-pencil/scene-graph'
+import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 // Plugin API support for the render and colour suites still under tests/engine. Core's own Plugin
@@ -22,11 +22,4 @@ type SolidFill = Omit<Fill, 'gradientTransform' | 'imageTransform'> & SolidPaint
 
 export function solidFill(color: Color): SolidFill {
   return { type: 'SOLID', color, opacity: 1, visible: true }
-}
-
-export function solidStroke(
-  color: Color,
-  stroke: { weight: number; align: Stroke['align'] }
-): SolidFill & Pick<Stroke, 'weight' | 'align'> {
-  return { ...solidFill(color), weight: stroke.weight, align: stroke.align }
 }

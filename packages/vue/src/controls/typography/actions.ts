@@ -6,6 +6,7 @@ import { fontManager, nearestFamilyFace } from '@open-pencil/core/text'
 import type {
   SceneNode,
   TextDecoration,
+  TextLength,
   TextListType,
   TextParagraphSpacingField
 } from '@open-pencil/scene-graph'
@@ -30,6 +31,8 @@ type TextDirection = SceneNode['textDirection']
 type TextVerticalAlign = SceneNode['textAlignVertical']
 type TextCase = SceneNode['textCase']
 type TextTruncation = SceneNode['textTruncation']
+/** A value the panel previews and commits on every selected text. */
+type PropValue = number | string | TextLength | null
 
 function sharedValue<T>(values: readonly T[]): MixedValue<T> {
   const [first] = values
@@ -362,7 +365,7 @@ export function createTypographyActions({
     }
   }
 
-  function updateProp(key: keyof SceneNode, value: number | string | null) {
+  function updateProp(key: keyof SceneNode, value: PropValue) {
     if (previewKey !== key) {
       previewKey = key
       beforePreview.clear()
@@ -374,11 +377,7 @@ export function createTypographyActions({
     }
   }
 
-  function commitProp(
-    key: keyof SceneNode,
-    _value: number | string | null,
-    previous: number | string | null
-  ) {
+  function commitProp(key: keyof SceneNode, _value: PropValue, previous: PropValue) {
     const targets = nodes.value
     if (targets.length === 0) return
     const snapshots = previewKey === key ? beforePreview : new Map<string, Preview>()

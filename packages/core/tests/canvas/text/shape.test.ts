@@ -8,6 +8,7 @@ import type { TypefaceFontProvider } from 'canvaskit-wasm'
 import type { ShapedText } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { withFigExportRuntime, withTextShaper } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
@@ -24,7 +25,7 @@ async function shape(props: Partial<SceneNode>): Promise<ShapedText | null> {
   const node = graph.createNode('TEXT', graph.getPages()[0].id, {
     fontFamily: 'Inter',
     fontSize: 13,
-    lineHeight: 16,
+    lineHeight: pixelLength(16),
     width: 230,
     height: 32,
     textAutoResize: 'HEIGHT',

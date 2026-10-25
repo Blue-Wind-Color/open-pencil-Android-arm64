@@ -4,6 +4,7 @@ import {
   type FigmaClipboardAssetType
 } from '@open-pencil/fig/clipboard'
 import {
+  figmaLineHeight,
   placeSlotContent,
   relinkConnectorEnds,
   type FigNodeChangeExportRuntime,
@@ -245,10 +246,7 @@ async function writeFigmaClipboardHTML(
     if (change.type !== 'TEXT' || !change.guid) continue
     const source = sourceByGuid.get(`${change.guid.sessionID}:${change.guid.localID}`)
     if (!source) continue
-    change.lineHeight = {
-      value: source.lineHeight ?? 100,
-      units: source.lineHeight ? 'PIXELS' : 'PERCENT'
-    }
+    change.lineHeight = figmaLineHeight(source.lineHeight)
   }
   embedClipboardImages(nodeChanges, blobs, graph.images)
   return encodeFigmaClipboard(nodeChanges, blobs, randomInt(), assetType)

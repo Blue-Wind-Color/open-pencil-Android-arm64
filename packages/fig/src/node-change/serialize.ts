@@ -27,7 +27,7 @@ import { applyFontFeaturesToKiwi } from './font/features'
 import { weightToFigmaStyle } from './font/style'
 import { fillToKiwiPaint, safeColor } from './paint'
 import { exportTextData, fontVariationToKiwi } from './text/data-export'
-import { FIGMA_AUTO_LINE_HEIGHT } from './text/values'
+import { figmaLetterSpacing, figmaLineHeight } from './text/values'
 import {
   exportedVariableConsumptionEntries,
   mergeVariableConsumptionMaps
@@ -133,11 +133,8 @@ function serializeTextProps(
     })
   }
   if (node.leadingTrim !== 'NONE') nc.leadingTrim = node.leadingTrim
-  nc.lineHeight =
-    node.lineHeight === null
-      ? { ...FIGMA_AUTO_LINE_HEIGHT }
-      : { value: node.lineHeight, units: 'PIXELS' }
-  nc.letterSpacing = { value: node.letterSpacing, units: 'PIXELS' }
+  nc.lineHeight = figmaLineHeight(node.lineHeight)
+  nc.letterSpacing = figmaLetterSpacing(node.letterSpacing)
   if (node.textDecoration !== 'NONE') {
     nc.textDecoration = node.textDecoration === 'UNDERLINE' ? 'UNDERLINE' : 'STRIKETHROUGH'
   }

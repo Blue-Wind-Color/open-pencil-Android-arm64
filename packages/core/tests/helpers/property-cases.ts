@@ -1,4 +1,5 @@
 import type { SceneGraph, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 import { expectDefined } from './assert'
 
@@ -258,8 +259,8 @@ export const PROPERTY_CASES: RoundTripCase[] = [
     textAlignHorizontal: 'CENTER',
     textAlignVertical: 'BOTTOM',
     textAutoResize: 'NONE',
-    letterSpacing: 1,
-    lineHeight: 28,
+    letterSpacing: pixelLength(1),
+    lineHeight: pixelLength(28),
     textCase: 'UPPER',
     textDecoration: 'UNDERLINE'
   }),

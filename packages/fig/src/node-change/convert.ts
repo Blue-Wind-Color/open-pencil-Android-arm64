@@ -12,6 +12,7 @@ import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defau
 import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
 import { isShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
@@ -50,12 +51,19 @@ import { decodeVectorNetworkBlob, textPathStartSegment, type StyleOverride } fro
 
 export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
 export { importStyleRuns } from './style/runs'
-export { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text/values'
+export {
+  convertLetterSpacing,
+  convertLineHeight,
+  figmaLetterSpacing,
+  figmaLineHeight,
+  mapTextDecoration
+} from './text/values'
 export { resolveGeometryPaths } from './vector/geometry'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type {
   SceneNode,
+  TextLength,
   NodeType,
   Fill,
   StrokeCap,
@@ -326,7 +334,7 @@ function convertPolygonProps(
  * larger of its line height and its tallest font's height, so a first line shorter than the
  * text's height in pixels was laid out at another one, which a style the text uses set.
  */
-function importedTextLineHeight(nc: NodeChange): number | null {
+function importedTextLineHeight(nc: NodeChange): TextLength | null {
   if (!nc.lineHeight || isFigmaAutoLineHeight(nc.lineHeight)) return null
   const derivedLineHeight = nc.derivedTextData?.baselines?.[0]?.lineHeight
   if (
@@ -335,8 +343,8 @@ function importedTextLineHeight(nc: NodeChange): number | null {
     Number.isFinite(derivedLineHeight) &&
     derivedLineHeight < nc.lineHeight.value
   )
-    return derivedLineHeight
-  return convertLineHeight(nc.lineHeight, nc.fontSize)
+    return pixelLength(derivedLineHeight)
+  return convertLineHeight(nc.lineHeight)
 }
 
 type TextProps = Pick<
@@ -448,7 +456,7 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
     ...convertTextDecorationProps(nc),
     leadingTrim: (nc.leadingTrim ?? 'NONE') as SceneNode['leadingTrim'],
     lineHeight: importedTextLineHeight(nc),
-    letterSpacing: convertLetterSpacing(nc.letterSpacing, nc.fontSize),
+    letterSpacing: convertLetterSpacing(nc.letterSpacing),
     maxLines: (nc.maxLines ?? null) as number | null,
     ...convertParagraphProps(nc),
     styleRuns: importStyleRuns(nc),

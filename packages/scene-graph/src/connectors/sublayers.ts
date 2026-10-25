@@ -2,6 +2,7 @@ import { BLACK } from '../constants'
 import type { GeneratedFrameKind } from '../generated/kind'
 import type { SceneGraph } from '../graph'
 import type { Color, Vector } from '../primitives'
+import { pixelLength } from '../text/lengths'
 import type { ConnectorEndpoint, Fill, SceneNode, Stroke, VectorNetwork } from '../types'
 
 /**
@@ -140,7 +141,7 @@ export function buildConnectorSublayers(
     fontFamily: 'Inter',
     fontWeight: 500,
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: pixelLength(24),
     textAlignHorizontal: 'CENTER',
     textAutoResize: 'WIDTH_AND_HEIGHT',
     fills: [solid(BLACK)],

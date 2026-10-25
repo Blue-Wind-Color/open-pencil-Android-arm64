@@ -22,13 +22,13 @@ test('places lines of mixed sizes as Figma does', async () => {
         x: 40,
         y: 220,
         text: 'one\ntwo with a tall line\nthree',
-        styleRuns: [{ start: 4, length: 20, style: { lineHeight: 48 } }]
+        styleRuns: [{ start: 4, length: 20, style: { lineHeight: { value: 48, unit: 'PIXELS' } } }]
       },
       {
         x: 280,
         y: 220,
         text: 'Small LARGE\nunder a fixed line height',
-        lineHeight: 24,
+        lineHeight: { value: 24, unit: 'PIXELS' },
         styleRuns: [big(6, 5)]
       },
       {

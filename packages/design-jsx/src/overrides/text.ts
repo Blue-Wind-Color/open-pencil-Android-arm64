@@ -1,7 +1,8 @@
 import * as v from 'valibot'
 
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneNode, TextLength } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 import { TEXT_DECORATION_STYLE } from '../enums'
 import { parseScriptInput } from '../schema'
@@ -11,6 +12,21 @@ import { fillFromValue, isFillValue } from './fills'
 export const AUTO = 'auto'
 /** The decoration colour that follows the text's, as in CSS. */
 export const CURRENT_COLOR = 'currentColor'
+
+/** A percent of the font size, such as `'150%'`, which follows the size as in Figma. */
+const PERCENT_LENGTH = /^(-?\d+(?:\.\d+)?)%$/
+
+/** A line height or letter spacing a prop gives: pixels as a number, or a percent string. */
+export function textLengthProp(value: unknown): TextLength | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return pixelLength(value)
+  const match = typeof value === 'string' ? PERCENT_LENGTH.exec(value.trim()) : null
+  return match ? percentLength(Number(match[1])) : undefined
+}
+
+/** A line height or letter spacing as a prop writes it. */
+export function textLengthJSX(length: TextLength): number | `${number}%` {
+  return length.unit === 'PIXELS' ? length.value : `${length.value}%`
+}
 
 const lengthSchema = v.pipe(v.number(), v.finite())
 const autoLengthSchema = v.union([lengthSchema, v.literal(AUTO)])

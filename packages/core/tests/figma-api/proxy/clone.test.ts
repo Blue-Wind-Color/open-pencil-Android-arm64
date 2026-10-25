@@ -16,7 +16,7 @@ describe('clone', () => {
     const cloned = frame.clone()
     expect(cloned.id).not.toBe(frame.id)
     expect(cloned.name).toBe('Original')
-    expect(expectFills(cloned.fills)[0].color.r).toBe(1)
+    expect(expectFills(cloned.fills)[0]).toMatchObject({ color: { r: 1 } })
     expect(cloned.children.length).toBe(1)
     expect(cloned.children[0].name).toBe('Child')
     expect(cloned.children[0].id).not.toBe(child.id)

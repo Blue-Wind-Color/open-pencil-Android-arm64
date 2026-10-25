@@ -4,6 +4,7 @@ import { designJSXElement, sceneNodeToJSX } from '#design-jsx/index'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 function exportText(fields: Partial<SceneNode>): string {
   const graph = new SceneGraph()
@@ -56,8 +57,8 @@ describe('rich text export', () => {
             fontFamily: 'Roboto',
             fontWeight: 500,
             italic: true,
-            lineHeight: 30,
-            letterSpacing: 1,
+            lineHeight: pixelLength(30),
+            letterSpacing: pixelLength(1),
             textDecoration: 'STRIKETHROUGH'
           }
         },
@@ -113,10 +114,22 @@ describe('rich text export', () => {
     )
   })
 
+  test('writes a percent of the font size as a percent string', () => {
+    const code = exportText({
+      text: 'ab',
+      lineHeight: percentLength(150),
+      letterSpacing: percentLength(5),
+      styleRuns: [{ start: 1, length: 1, style: { letterSpacing: percentLength(-2) } }]
+    })
+    expect(code).toBe(
+      '<Text name="Note" color="#000000" lineHeight="150%" letterSpacing="5%">a<Span letterSpacing="-2%">b</Span></Text>'
+    )
+  })
+
   test('writes auto line height and no fills in a span', () => {
     const code = exportText({
       text: 'ab',
-      lineHeight: 20,
+      lineHeight: pixelLength(20),
       styleRuns: [{ start: 1, length: 1, style: { lineHeight: null, fills: [] } }]
     })
     expect(code).toBe(

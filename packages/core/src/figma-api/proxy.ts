@@ -4,8 +4,6 @@ import type {
   SceneGraph,
   SceneNode,
   NodeType,
-  Fill,
-  Stroke,
   LayoutGrid,
   LayoutMode
 } from '@open-pencil/scene-graph'
@@ -37,18 +35,14 @@ import {
   type FigmaVectorNetwork,
   type FigmaVectorPath
 } from './accessors/vector'
-import {
-  figmaPaintToFill,
-  installVisualNodeProxyAccessors,
-  type FigmaPaint
-} from './accessors/visual'
+import { installVisualNodeProxyAccessors } from './accessors/visual'
 import { installComponentPropertyAccessors } from './components'
 import { installDevStatusAccessors, type FigmaDevStatusValue } from './dev-status'
 import type { FigmaFontName } from './fonts'
 import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
 import { installInstanceOverrideAccessors, type FigmaInstanceOverride } from './overrides'
 import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
-import { toFigmaPaint, type WithFigmaTransforms } from './paints'
+import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from './paints'
 import { installPluginDataMethods, type PluginDataMethods } from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
 import { installShapeWithTextAccessors } from './shape-with-text'
@@ -110,8 +104,8 @@ export class FigmaNodeProxy {
   declare readonly absoluteBoundingBox: Rect
   declare readonly absoluteRenderBounds: Rect | null
 
-  declare fills: readonly WithFigmaTransforms<Fill>[] | symbol
-  declare strokes: readonly WithFigmaTransforms<Stroke>[]
+  declare fills: readonly FigmaPaint[] | symbol
+  declare strokes: readonly FigmaPaint[]
   declare effects: readonly FigmaEffect[]
   declare opacity: number
   declare visible: boolean
@@ -342,14 +336,18 @@ export class FigmaNodeProxy {
 
   // --- Components ---
 
-  get backgrounds(): readonly WithFigmaTransforms<Fill>[] {
-    return Object.freeze(getPageBackgrounds(this._raw()).map(toFigmaPaint))
+  get backgrounds(): readonly FigmaPaint[] {
+    // A page draws its background colour's alpha times the paint's opacity, which Figma reads as
+    // the opacity alone.
+    return Object.freeze(
+      getPageBackgrounds(this._raw()).map((paint) =>
+        toFigmaPaint({ ...paint, opacity: paint.opacity * paint.color.a })
+      )
+    )
   }
 
   set backgrounds(value: readonly FigmaPaint[]) {
-    const fills = value.map((paint, index) =>
-      figmaPaintToFill(paint, index, 'set_backgrounds', 'backgrounds')
-    )
+    const fills = parseFigmaPaints(value, 'set_backgrounds', 'backgrounds')
     setPageBackgrounds(this[INTERNAL_GRAPH], this._raw(), fills)
   }
 

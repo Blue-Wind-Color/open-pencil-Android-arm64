@@ -26,6 +26,6 @@ describe('frozen arrays', () => {
     } catch (error) {
       expect(error).toBeInstanceOf(TypeError)
     }
-    expect(rect.fills[0].color.r).toBe(1)
+    expect(rect.fills).toEqual([expect.objectContaining({ color: { r: 1, g: 0, b: 0 } })])
   })
 })

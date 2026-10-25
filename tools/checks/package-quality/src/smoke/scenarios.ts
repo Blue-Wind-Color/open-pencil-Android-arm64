@@ -18,7 +18,7 @@ export const runtimeScenarios: RuntimeScenario[] = [
   },
   {
     name: 'FIG NodeChange API',
-    code: "const { convertLineHeight, sceneNodeToKiwi } = await import('@open-pencil/fig/node-change'); if (convertLineHeight({ value: 120, units: 'PERCENT' }, 20) !== 24 || typeof sceneNodeToKiwi !== 'function') throw new Error('Fig NodeChange subpath failed')"
+    code: "const { convertLineHeight, sceneNodeToKiwi } = await import('@open-pencil/fig/node-change'); const lineHeight = convertLineHeight({ value: 1.5, units: 'RAW' }); if (lineHeight?.unit !== 'PERCENT' || lineHeight.value !== 150 || typeof sceneNodeToKiwi !== 'function') throw new Error('Fig NodeChange subpath failed')"
   },
   {
     name: 'FIG instance override API',

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { solidStroke } from '#core-tests/helpers/figma-api'
+import { solidFill } from '#core-tests/helpers/figma-api'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -12,7 +12,9 @@ describe('absoluteRenderBounds', () => {
     rect.x = 3
     rect.y = 4
     rect.resize(10, 20)
-    rect.strokes = [solidStroke({ r: 1, g: 0, b: 0, a: 1 }, { weight: 4, align: 'OUTSIDE' })]
+    rect.strokes = [solidFill({ r: 1, g: 0, b: 0, a: 1 })]
+    rect.strokeWeight = 4
+    rect.strokeAlign = 'OUTSIDE'
     rect.effects = [
       {
         type: 'DROP_SHADOW',

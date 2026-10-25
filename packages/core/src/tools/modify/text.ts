@@ -143,9 +143,7 @@ export const setFontRange = defineTool({
         )
       }
       if (args.color) {
-        node.setRangeFills(start, end, [
-          { type: 'SOLID', color: parseColor(args.color), opacity: 1, visible: true }
-        ])
+        node.setRangeFills(start, end, [{ type: 'SOLID', color: parseColor(args.color) }])
       }
     } catch (error) {
       return toolFailure(error)

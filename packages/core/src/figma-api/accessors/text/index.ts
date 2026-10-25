@@ -1,5 +1,4 @@
 import type {
-  CharacterStyleOverride,
   HyperlinkTarget,
   SceneNode,
   TextCase,
@@ -57,8 +56,7 @@ function characterStyle<T>(
   internals: NodeProxyInternals,
   field: TextSegmentField,
   mixed: symbol,
-  changes: (node: SceneNode, value: T) => Partial<SceneNode>,
-  sized?: (value: T) => ((fontSize: number) => CharacterStyleOverride) | undefined
+  changes: (node: SceneNode, value: T) => Partial<SceneNode>
 ) {
   return {
     get(this: ProxyThis): unknown {
@@ -66,16 +64,9 @@ function characterStyle<T>(
     },
     set(this: ProxyThis, value: T) {
       const node = raw(this, internals)
-      updateNode(this, internals, textStyleChanges(node, changes(node, value), sized?.(value)))
+      updateNode(this, internals, textStyleChanges(node, changes(node, value)))
     }
   }
-}
-
-/** A length given in percent of the font size, which characters of each size resolve. */
-function percentOf(value: unknown): number | null {
-  if (!value || typeof value !== 'object') return null
-  const length = value as { unit?: unknown; value?: unknown }
-  return length.unit === 'PERCENT' && typeof length.value === 'number' ? length.value / 100 : null
 }
 
 /** Getter/setter pair for a text property stored verbatim on the node. */
@@ -127,21 +118,13 @@ export function installTextNodeProxyAccessors(
       internals,
       'letterSpacing',
       mixed,
-      (node, value) => ({ letterSpacing: letterSpacingValue(node, value) }),
-      (value) => {
-        const percent = percentOf(value)
-        return percent === null ? undefined : (fontSize) => ({ letterSpacing: percent * fontSize })
-      }
+      (_node, value) => ({ letterSpacing: letterSpacingValue(value) })
     ),
     lineHeight: characterStyle<FigmaLineHeight | number | null>(
       internals,
       'lineHeight',
       mixed,
-      (node, value) => ({ lineHeight: lineHeightValue(node, value) }),
-      (value) => {
-        const percent = percentOf(value)
-        return percent === null ? undefined : (fontSize) => ({ lineHeight: percent * fontSize })
-      }
+      (_node, value) => ({ lineHeight: lineHeightValue(value) })
     ),
     textCase: characterStyle<TextCase>(internals, 'textCase', mixed, (_node, textCase) => ({
       textCase

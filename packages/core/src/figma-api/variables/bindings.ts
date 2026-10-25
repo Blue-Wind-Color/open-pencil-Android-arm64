@@ -9,6 +9,7 @@ import {
   type VariableType
 } from '@open-pencil/scene-graph'
 
+import type { FigmaPaint } from '#core/figma-api/paints'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
 import { variableAlias, type FigmaVariableAlias } from './values'
@@ -206,12 +207,12 @@ export function setPaintBindings(
   graph: SceneGraph,
   node: SceneNode,
   key: 'fills' | 'strokes',
-  paints: readonly { boundVariables?: { color?: FigmaVariableAlias } }[]
+  paints: readonly FigmaPaint[]
 ): void {
   const current = paintBindings(node, key)
   const wanted = new Map<number, string>()
   paints.forEach((paint, index) => {
-    const id = paint.boundVariables?.color?.id
+    const id = 'boundVariables' in paint ? paint.boundVariables?.color?.id : undefined
     if (id && graph.variables.get(id)?.type === 'COLOR') wanted.set(index, id)
   })
   for (const index of current.keys()) {
@@ -221,11 +222,6 @@ export function setPaintBindings(
     if (current.get(index) !== id) graph.bindVariable(node.id, `${key}/${index}/color`, id)
   }
   if (current.size > 0 || wanted.size > 0) reconcileVariableLayouts(graph, { subtrees: [node.id] })
-}
-
-/** A paint as Figma reads it, carrying the reference its colour is bound to. */
-export function withPaintBinding<T extends object>(paint: T, variableId: string | undefined): T {
-  return variableId ? { ...paint, boundVariables: { color: variableAlias(variableId) } } : paint
 }
 
 type FigmaBoundVariables = Record<string, FigmaVariableAlias | FigmaVariableAlias[]>

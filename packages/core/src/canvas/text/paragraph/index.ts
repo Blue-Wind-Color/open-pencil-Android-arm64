@@ -13,6 +13,7 @@ import type {
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
 import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import {
@@ -50,7 +51,7 @@ export function buildTruncateOpts(
   if (node.maxLines != null && node.maxLines > 0) {
     opts.maxLines = node.maxLines
   } else if (node.height > 0) {
-    const lineH = node.lineHeight || baseFontSize * 1.2
+    const lineH = lineHeightPixels(node.lineHeight, baseFontSize) || baseFontSize * 1.2
     opts.maxLines = Math.max(1, Math.floor(node.height / lineH))
   }
   return opts
@@ -170,8 +171,12 @@ function pushStyleRun(
 ): void {
   const ck = r.ck
   const style = run.style
-  const runLineHeight = style.lineHeight !== undefined ? style.lineHeight : node.lineHeight
   const runFontSize = style.fontSize ?? baseFontSize
+  // A percent follows the run's own font size, as in Figma.
+  const runLineHeight = lineHeightPixels(
+    style.lineHeight !== undefined ? style.lineHeight : node.lineHeight,
+    runFontSize
+  )
   const runFamily = style.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY)
   const runWeight = style.fontWeight ?? node.fontWeight
   const runItalic = style.italic ?? node.italic
@@ -193,7 +198,7 @@ function pushStyleRun(
       })
     ),
     fontFeatures: textFontFeatures(style.fontFeatures ?? node.fontFeatures),
-    letterSpacing: style.letterSpacing ?? (node.letterSpacing || 0),
+    letterSpacing: textLengthPixels(style.letterSpacing ?? node.letterSpacing, runFontSize),
     heightMultiplier: runLineHeight ? runLineHeight / runFontSize : undefined,
     halfLeading
   })
@@ -272,6 +277,7 @@ export function buildSkParagraph(
   const ck = r.ck
   const baseColor = color ?? ck.BLACK
   const baseFontSize = node.fontSize || DEFAULT_FONT_SIZE
+  const baseLineHeight = lineHeightPixels(node.lineHeight, baseFontSize)
   const cjkFallbacks = fontManager.getCJKFallbackFamilies()
   const arabicFallbacks = fontManager.getArabicFallbackFamilies()
   const textDirection = resolveNodeTextDirection(node)
@@ -312,8 +318,8 @@ export function buildSkParagraph(
       })
     ),
     fontFeatures: textFontFeatures(node.fontFeatures),
-    letterSpacing: node.letterSpacing || 0,
-    heightMultiplier: node.lineHeight ? node.lineHeight / baseFontSize : undefined,
+    letterSpacing: textLengthPixels(node.letterSpacing, baseFontSize),
+    heightMultiplier: baseLineHeight ? baseLineHeight / baseFontSize : undefined,
     halfLeading
   }
   const paraStyle = new ck.ParagraphStyle({

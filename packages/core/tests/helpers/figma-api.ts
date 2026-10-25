@@ -1,5 +1,5 @@
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { SceneGraph, type Fill, type Stroke } from '@open-pencil/scene-graph'
+import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export function createAPI(): FigmaAPI {
@@ -45,18 +45,6 @@ export function solidFill(
     color,
     opacity: overrides.opacity ?? 1,
     visible: overrides.visible ?? true
-  }
-}
-
-/** The stroke counterpart of {@link solidFill}. */
-export function solidStroke(
-  color: Color,
-  stroke: { weight: number; align: Stroke['align']; opacity?: number; visible?: boolean }
-): SolidFill & Pick<Stroke, 'weight' | 'align'> {
-  return {
-    ...solidFill(color, stroke),
-    weight: stroke.weight,
-    align: stroke.align
   }
 }
 

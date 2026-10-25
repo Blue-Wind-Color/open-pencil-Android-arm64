@@ -1,12 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI, solidStroke } from '#core-tests/helpers/figma-api'
+import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
 
 describe('stroke details', () => {
   test('strokeWeight and strokeAlign', () => {
     const api = createAPI()
     const rect = api.createRectangle()
-    rect.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 2, align: 'CENTER' })]
+    rect.strokes = [solidFill({ r: 0, g: 0, b: 0, a: 1 })]
+    rect.strokeWeight = 2
+    rect.strokeAlign = 'CENTER'
     expect(rect.strokeWeight).toBe(2)
     expect(rect.strokeAlign).toBe('CENTER')
     rect.strokeWeight = 4
@@ -16,14 +18,16 @@ describe('stroke details', () => {
   test('strokeCap and strokeJoin', () => {
     const api = createAPI()
     const line = api.createLine()
-    line.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 2, align: 'CENTER' })]
+    line.strokes = [solidFill({ r: 0, g: 0, b: 0, a: 1 })]
+    line.strokeWeight = 2
+    line.strokeAlign = 'CENTER'
     expect(line.strokeCap).toBe('NONE')
     expect(line.strokeJoin).toBe('MITER')
     line.strokeCap = 'ROUND'
     line.strokeJoin = 'BEVEL'
     expect(line.strokeCap).toBe('ROUND')
     expect(line.strokeJoin).toBe('BEVEL')
-    expect(line.strokes[0]).toMatchObject({ cap: 'ROUND', join: 'BEVEL' })
+    expect(api.graph.getNode(line.id)?.strokes[0]).toMatchObject({ cap: 'ROUND', join: 'BEVEL' })
   })
 
   test('strokeMiterLimit', () => {

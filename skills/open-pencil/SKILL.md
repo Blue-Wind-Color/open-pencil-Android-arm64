@@ -177,7 +177,7 @@ openpencil eval design.fig -w -c '
 '
 ```
 
-Text styles follow Figma's per-character model: `getStyledTextSegments(fields)` reads runs, `getRange…`/`setRange…` read and set font, size, fills, letter spacing, line height, decorations, text case, hyperlinks, text and fill style IDs, and bound variables for `[start, end)`, and a text's `fontSize`, `fontName`, `fills`, and similar read `figma.mixed` while characters differ. Check for it before using the value.
+Text styles follow Figma's per-character model: `getStyledTextSegments(fields)` reads runs, `getRange…`/`setRange…` read and set font, size, fills, letter spacing, line height, decorations, text case, hyperlinks, text and fill style IDs, and bound variables for `[start, end)`, and a text's `fontSize`, `fontName`, `fills`, and similar read `figma.mixed` while characters differ. Check for it before using the value. Paints everywhere take Figma's shape: a solid `color` is `{ r, g, b }` with the alpha in `opacity`, and an image is `{ type: "IMAGE", imageHash, scaleMode: "FILL" | "FIT" | "CROP" | "TILE" }` with optional `rotation` and `scalingFactor`.
 
 Next to `figma`, scripts get `openpencil`: what OpenPencil adds to the Figma API, in its style. A main component can behave as a Reka UI control, by its own property and slot names:
 

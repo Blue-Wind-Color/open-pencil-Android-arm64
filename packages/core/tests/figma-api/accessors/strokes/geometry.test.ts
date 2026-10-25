@@ -38,10 +38,11 @@ describe('plugin API stroke geometry', () => {
   })
 
   test('the weight applies to every stroke and outlasts them', () => {
-    const rect = api().createRectangle()
+    const graph = new SceneGraph()
+    const rect = new FigmaAPI(graph).createRectangle()
     Reflect.set(rect, 'strokes', [...red, ...red])
     rect.strokeWeight = 4
-    expect(rect.strokes.map((stroke) => stroke.weight)).toEqual([4, 4])
+    expect(graph.getNode(rect.id)?.strokes.map((stroke) => stroke.weight)).toEqual([4, 4])
     rect.strokes = []
     expect(rect.strokeWeight).toBe(4)
     Reflect.set(rect, 'strokes', red)
@@ -50,12 +51,27 @@ describe('plugin API stroke geometry', () => {
 
   test('a node keeps its own copy of the strokes a script sets', () => {
     const rect = api().createRectangle()
-    const paint = { type: 'SOLID', color: { r: 1, g: 0, b: 0 }, dashPattern: [4, 2] }
+    const stops = [
+      { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+      { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
+    ]
+    const paint = {
+      type: 'GRADIENT_LINEAR',
+      gradientStops: stops,
+      gradientTransform: [
+        [1, 0, 0],
+        [0, 1, 0]
+      ]
+    }
     Reflect.set(rect, 'strokes', [paint])
-    paint.color.g = 1
-    paint.dashPattern.push(9)
-    expect(rect.strokes[0]?.color).toMatchObject({ r: 1, g: 0, b: 0 })
-    expect(rect.strokes[0]?.dashPattern).toEqual([4, 2])
+    stops[0].color.g = 1
+    stops.push({ position: 0.5, color: { r: 0, g: 1, b: 0, a: 1 } })
+    expect(rect.strokes[0]).toMatchObject({
+      gradientStops: [
+        { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+        { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
+      ]
+    })
   })
 
   test('rescale scales the weight a node keeps without strokes', () => {

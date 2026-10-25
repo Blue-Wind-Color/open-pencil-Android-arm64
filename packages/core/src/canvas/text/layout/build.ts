@@ -9,6 +9,7 @@ import {
   paragraphStyleAt,
   textListItems,
   textParagraphRanges,
+  lineHeightPixels,
   topLevelNumberDigits,
   type TextListItem,
   type TextParagraphRange
@@ -60,7 +61,8 @@ function sliceStyleRuns(runs: readonly StyleRun[], start: number, end: number): 
 
 /** Line heights by paragraph index, `lead` places before the text: each run's, the text's elsewhere. */
 function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
-  const own = node.lineHeight || null
+  // A percent line height follows the font size of the characters it spaces.
+  const own = (fontSize = node.fontSize) => lineHeightPixels(node.lineHeight, fontSize) || null
   const runs: LineHeightRun[] = []
   const add = (start: number, end: number, lineHeight: number | null) => {
     const last = runs.at(-1)
@@ -70,12 +72,16 @@ function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
   }
   let position = 0
   for (const run of node.styleRuns) {
-    if (position < run.start) add(position + lead, run.start + lead, own)
-    const lineHeight = run.style.lineHeight !== undefined ? run.style.lineHeight || null : own
+    if (position < run.start) add(position + lead, run.start + lead, own())
+    const runSize = run.style.fontSize ?? node.fontSize
+    const lineHeight =
+      run.style.lineHeight !== undefined
+        ? lineHeightPixels(run.style.lineHeight, runSize) || null
+        : own(runSize)
     add(run.start + lead, run.start + run.length + lead, lineHeight)
     position = run.start + run.length
   }
-  if (position < node.text.length) add(position + lead, node.text.length + lead, own)
+  if (position < node.text.length) add(position + lead, node.text.length + lead, own())
   return runs
 }
 

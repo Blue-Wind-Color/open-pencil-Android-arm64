@@ -114,7 +114,7 @@ describe('vector paths', () => {
     const network = vector.vectorNetwork
     expect(vector.x).toBe(10)
     expect(vector.y).toBe(20)
-    expect(network.regions?.[0]?.fills?.[0]?.color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
+    expect(network.regions?.[0]?.fills?.[0]).toMatchObject({ color: { r: 1, g: 0, b: 0 } })
     expect(Object.isFrozen(network.vertices)).toBe(true)
     expect(Object.isFrozen(network.vertices[0])).toBe(true)
     expect(Object.isFrozen(network.segments[0]?.tangentStart)).toBe(true)

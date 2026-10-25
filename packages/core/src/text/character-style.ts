@@ -7,7 +7,8 @@ import {
   type HyperlinkTarget,
   type SceneNode,
   type StyleRun,
-  type TextBoundVariables
+  type TextBoundVariables,
+  type TextLength
 } from '@open-pencil/scene-graph'
 import {
   SHARED_TEXT_STYLE_FIELDS,
@@ -33,7 +34,7 @@ export type CharacterStyle = Required<
     | 'textCase'
   >
 > & {
-  lineHeight: number | null
+  lineHeight: TextLength | null
   textDecorationThickness: number | null
   textUnderlineOffset: number | null
   hyperlink: HyperlinkTarget | null

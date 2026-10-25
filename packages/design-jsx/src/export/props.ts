@@ -7,6 +7,7 @@ import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { BLEND_MODE, TEXT_ALIGN, TEXT_ALIGN_VERTICAL, TEXT_CASE, TEXT_DECORATION } from '../enums'
+import { textLengthJSX } from '../overrides/text'
 import { collectDecorationProps } from './decoration'
 import {
   collectCornerRadii,
@@ -252,8 +253,10 @@ function collectTextNodeProps(node: SceneNode, props: JSXProp[]): void {
   if (node.textAlignVertical !== 'TOP') {
     props.push(['textAlignVertical', TEXT_ALIGN_VERTICAL.print(node.textAlignVertical)])
   }
-  if (node.lineHeight != null) props.push(['lineHeight', node.lineHeight])
-  if (node.letterSpacing !== 0) props.push(['letterSpacing', node.letterSpacing])
+  if (node.lineHeight != null) props.push(['lineHeight', textLengthJSX(node.lineHeight)])
+  if (node.letterSpacing.value !== 0) {
+    props.push(['letterSpacing', textLengthJSX(node.letterSpacing)])
+  }
   if (node.textDecoration !== 'NONE')
     props.push(['textDecoration', TEXT_DECORATION.print(node.textDecoration)])
   collectDecorationProps(

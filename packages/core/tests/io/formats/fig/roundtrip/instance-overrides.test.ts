@@ -6,6 +6,7 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { hasInstanceOverride, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 
 beforeAll(async () => {
   await initCodec()
@@ -22,7 +23,7 @@ test('instance style overrides come back as overrides after saving and reopening
   graph.updateNode(bar.id, { strokeWeight: 6, cornerSmoothing: 0.6 })
   recordInstanceOverride(graph, bar.id, ['strokeWeight', 'cornerSmoothing'])
   graph.updateNode(label.id, {
-    letterSpacing: 2,
+    letterSpacing: pixelLength(2),
     styleRuns: [{ start: 0, length: 5, style: { fontSize: 30 } }]
   })
   recordInstanceOverride(graph, label.id, ['letterSpacing', 'styleRuns'])
@@ -38,7 +39,7 @@ test('instance style overrides come back as overrides after saving and reopening
   expect(reopenedBar.strokeWeight).toBe(6)
   // Kiwi stores it as a 32-bit float, as Figma does.
   expect(reopenedBar.cornerSmoothing).toBeCloseTo(0.6)
-  expect(reopenedLabel.letterSpacing).toBe(2)
+  expect(reopenedLabel.letterSpacing).toEqual(pixelLength(2))
   expect(reopenedLabel.styleRuns).toEqual([
     expect.objectContaining({
       start: 0,
@@ -57,10 +58,10 @@ test('instance style overrides come back as overrides after saving and reopening
   // The reopened overrides hold through an edit to the component; the rest follows it.
   const [componentBar, componentLabel] = reopened.getChildren(component.id)
   reopened.updateNode(componentBar.id, { strokeWeight: 3, strokeAlign: 'OUTSIDE' })
-  reopened.updateNode(componentLabel.id, { letterSpacing: 5, textCase: 'UPPER' })
+  reopened.updateNode(componentLabel.id, { letterSpacing: pixelLength(5), textCase: 'UPPER' })
   reopened.syncInstances(component.id)
   expect([reopenedBar.strokeWeight, reopenedBar.strokeAlign]).toEqual([6, 'OUTSIDE'])
-  expect([reopenedLabel.letterSpacing, reopenedLabel.textCase]).toEqual([2, 'UPPER'])
+  expect([reopenedLabel.letterSpacing, reopenedLabel.textCase]).toEqual([pixelLength(2), 'UPPER'])
 })
 
 test('an instance that clears its component’s fill style keeps it cleared after reopening', async () => {

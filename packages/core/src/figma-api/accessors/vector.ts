@@ -6,7 +6,6 @@ import type {
   VectorVertex,
   WindingRule
 } from '@open-pencil/scene-graph'
-import { copyFills } from '@open-pencil/scene-graph/copy'
 import { parsePluginVectorPath } from '@open-pencil/scene-graph/parse-path'
 import {
   mergeVectorNetworks,
@@ -23,8 +22,7 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { figmaPaintToFill, type FigmaPaint } from '#core/figma-api/accessors/visual'
-import { toFigmaPaint } from '#core/figma-api/paints'
+import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
 import { geometryBlobToSVGPath, vectorNetworkToSVGPaths } from '#core/io/formats/svg/paths'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 import { regenerateFillGeometry } from '#core/vector/fill-geometry'
@@ -116,9 +114,7 @@ function geometryForRegions(regions: readonly FigmaVectorRegion[]): GeometryPath
   return regions.map((region) => ({
     windingRule: region.windingRule,
     commandsBlob: new Uint8Array(),
-    fills: (region.fills ?? []).map((paint, index) =>
-      figmaPaintToFill(paint, index, 'set_vectorNetwork', 'vectorNetwork')
-    ),
+    fills: parseFigmaPaints(region.fills ?? [], 'set_vectorNetwork', 'vectorNetwork'),
     fillStyleId: region.fillStyleId ?? ''
   }))
 }
@@ -248,7 +244,7 @@ function readVectorNetwork(target: ProxyThis, internals: NodeProxyInternals): Fi
       windingRule: region.windingRule,
       loops: Object.freeze(region.loops.map((loop) => Object.freeze([...loop]))),
       fillStyleId: geometry?.fillStyleId ?? '',
-      fills: Object.freeze(copyFills(geometry?.fills ?? []).map(toFigmaPaint))
+      fills: Object.freeze((geometry?.fills ?? []).map((paint) => toFigmaPaint(paint)))
     })
   })
   return Object.freeze({

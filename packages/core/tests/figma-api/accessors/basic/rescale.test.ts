@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
-import { solidStroke } from '#core-tests/helpers/figma-api'
+import { solidFill } from '#core-tests/helpers/figma-api'
 
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -24,7 +24,9 @@ describe('rescale', () => {
     frame.paddingBottom = 8
     frame.itemSpacing = 5
     frame.cornerRadius = 7
-    frame.strokes = [solidStroke({ r: 0, g: 0, b: 0, a: 1 }, { weight: 3, align: 'CENTER' })]
+    frame.strokes = [solidFill({ r: 0, g: 0, b: 0, a: 1 })]
+    frame.strokeWeight = 3
+    frame.strokeAlign = 'CENTER'
     frame.effects = [
       {
         type: 'DROP_SHADOW',

@@ -87,16 +87,7 @@ export async function applyPhoto(
   }
 
   const imageHash = storeImage(figma.graph, imageBytes)
-  node.fills = [
-    {
-      type: 'IMAGE',
-      color: { r: 1, g: 1, b: 1, a: 1 },
-      imageHash,
-      imageScaleMode: 'FILL',
-      visible: true,
-      opacity: 1
-    }
-  ]
+  node.fills = [{ type: 'IMAGE', imageHash, scaleMode: 'FILL' }]
 
   return {
     id: node.id,
