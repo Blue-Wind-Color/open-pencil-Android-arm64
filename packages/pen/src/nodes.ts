@@ -30,10 +30,18 @@ import { bindIfVar, resolveBoolean, resolveNumber, type VarContext } from './var
 /** Where icon glyphs come from, as the host loaded them. */
 export interface PenIconSource {
   /**
-   * Draws the Iconify icon `name` into the frame, `size` square at its origin, painted `color`
-   * where the icon takes its colour. False when the source does not have it.
+   * Draws the icon `name` into the frame, `size` square at its origin, painted `color` where the
+   * icon takes its colour and drawn with `options` where its set has them. False when the source
+   * does not have it.
    */
-  draw(graph: SceneGraph, frameId: string, name: string, size: number, color: Color): boolean
+  draw(
+    graph: SceneGraph,
+    frameId: string,
+    name: string,
+    size: number,
+    color: Color,
+    options?: Record<string, number>
+  ): boolean
 }
 
 /** What reading one document builds up. */

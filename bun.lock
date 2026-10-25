@@ -835,6 +835,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "opentype.js@2.0.0": "patches/opentype.js@2.0.0.patch",
+  },
   "overrides": {
     "@codemirror/view": "6.43.9",
     "protobufjs": "7.5.5",
