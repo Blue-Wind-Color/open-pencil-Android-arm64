@@ -6,9 +6,9 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { TypographyControlsRoot } from '@open-pencil/vue/primitives/TypographyControls'
 
 import { loadFont } from '@/app/editor/fonts'
+import { openSettingsDialog } from '@/app/settings/dialog'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import FontPicker from '@/components/font-picker/FontPicker.vue'
-import FontSettingsPopover from '@/components/font-settings/FontSettingsPopover.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
 import LineHeightField from '@/components/properties/typography/LineHeightField.vue'
@@ -22,7 +22,7 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-const { panels, menu } = useI18n()
+const { panels, menu, fonts } = useI18n()
 const fontLoader = { load: loadFont }
 const alignmentOptions = computed(() => [
   { value: 'LEFT', label: panels.value.alignLeft },
@@ -87,7 +87,15 @@ function picked<T>(value: MixedValue<T>): T | '' {
           :placeholder="panels.mixed"
           @select="ctx.actions.setFamily"
         />
-        <FontSettingsPopover />
+        <!-- Where fonts come from is an app preference; it lives in Settings. -->
+        <IconButton
+          :label="fonts.settingsTitle"
+          size="xs"
+          data-test-id="font-settings-trigger"
+          @click="openSettingsDialog('fonts')"
+        >
+          <icon-lucide-settings class="size-3.5" />
+        </IconButton>
         <Tip
           v-if="ctx.hasMissingFonts.value"
           :label="

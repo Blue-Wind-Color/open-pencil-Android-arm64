@@ -79,6 +79,8 @@ Dostępne odmiany zależą od rodziny, na przykład Regular, Medium, Bold i Blac
 - **Przeglądarka:** czcionki systemowe są dostępne w Chrome i Edge; katalogi internetowe wymagają aplikacji komputerowej.
 - **Pobrane czcionki:** aplikacja zapisuje pobrane odmiany do ponownego użycia na tym komputerze.
 
+Dostęp do czcionek systemowych i dostawców online ustawisz w **Ustawienia › Czcionki**, które otwiera koło zębate obok rodziny czcionek; w aplikacji desktopowej strona zarządza też pobranymi czcionkami i pakietami zastępczymi.
+
 ## Brakujące czcionki i zamienniki
 
 Jeśli odpowiednia rodzina lub odmiana nie może zostać załadowana, OpenPencil pokazuje ostrzeżenie nad edytorem i nie przedstawia zastępczego wyglądu jako wiernego projektowi.

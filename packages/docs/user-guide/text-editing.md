@@ -84,6 +84,8 @@ Change the font weight in the Typography section of the properties panel. Availa
 - **Browser** — system fonts are available in Chrome and Edge with local-font permission. Enabled Fontsource, Bunny Fonts, and Fontshare providers can load online fonts, subject to network access and browser CORS rules; Google Fonts is disabled in the OpenPencil browser app
 - **Downloaded fonts** — the desktop app caches downloaded faces for reuse on the same machine
 
+Allow system font access and choose online providers in **Settings › Fonts**, which the gear next to the font family opens; in the desktop app it also manages downloaded fonts and fallback packs.
+
 ## Missing Fonts and Substitutions
 
 When a requested family or style cannot be loaded, OpenPencil displays a warning above the editor instead of silently treating fallback rendering as faithful typography.

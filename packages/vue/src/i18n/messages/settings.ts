@@ -53,6 +53,7 @@ export const settingsMessageDefaults = {
   usage: 'Usage',
   diagnostics: 'Diagnostics',
   privacy: 'Privacy',
+  fonts: 'Fonts',
   media: 'Media',
   mcp: 'MCP',
   toolAccess: 'Tool access',
