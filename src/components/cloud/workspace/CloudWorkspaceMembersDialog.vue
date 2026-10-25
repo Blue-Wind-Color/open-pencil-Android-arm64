@@ -251,6 +251,7 @@ function invite() {
                   v-model="role"
                   :label="t.inviteRole"
                   :options="roleOptions"
+                  size="sm"
                   :ui="{ trigger: ui.roleSelect(), item: ui.roleItem() }"
                 >
                   <template #option="{ option }">

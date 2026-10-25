@@ -151,8 +151,9 @@ async function remove() {
 
         <SettingsSection>
           <template #title>{{ ai.modelConfiguration }}</template>
-          <ProviderSettingsField :label="ai.provider">
+          <ProviderSettingsField v-slot="{ control }" :label="ai.provider">
             <ProviderSelect
+              v-bind="control"
               :model-value="draft.providerID"
               :aria-label="ai.provider"
               data-test-id="settings-model-provider"
@@ -205,9 +206,11 @@ async function remove() {
             v-if="isCloud && cloudWorkspaceOptions.length"
             :label="ai.cloudWorkspace"
             :hint="ai.cloudWorkspaceHint"
+            v-slot="{ control }"
             :error="fieldErrors.cloudWorkspace"
           >
             <AppSelect
+              v-bind="control"
               :model-value="draft.cloudWorkspaceId ?? ''"
               :label="ai.cloudWorkspace"
               :options="cloudWorkspaceOptions"
@@ -277,9 +280,11 @@ async function remove() {
 
             <ProviderSettingsField
               v-if="draft.providerID === 'openai-compatible'"
+              v-slot="{ control }"
               :label="ai.apiType"
             >
               <AppSelect
+                v-bind="control"
                 v-model="draft.customAPIType"
                 :label="ai.apiType"
                 :options="[

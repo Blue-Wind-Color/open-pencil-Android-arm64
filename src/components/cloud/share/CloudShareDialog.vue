@@ -118,15 +118,10 @@ function submitInvite() {
           v-model="invitePermission"
           :label="t.shareNewPeoplePermission"
           :options="permissionOptions"
-          :ui="{ trigger: 'h-8 w-28' }"
+          size="sm"
+          :ui="{ trigger: 'w-28' }"
         />
-        <AppButton
-          type="submit"
-          color="primary"
-          variant="solid"
-          :loading="inviting"
-          :ui="{ base: 'h-8 px-3' }"
-        >
+        <AppButton type="submit" color="primary" variant="solid" :loading="inviting">
           {{ t.shareInvite }}
         </AppButton>
       </form>

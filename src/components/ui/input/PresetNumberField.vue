@@ -123,6 +123,7 @@ function commitDraft(): void {
         ref="field"
         v-model="draft"
         type="number"
+        size="xs"
         :min="min"
         :max="max"
         :step="1"
