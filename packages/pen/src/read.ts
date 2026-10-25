@@ -67,7 +67,9 @@ export function buildPenGraph(doc: PenDocument, options: PenReadOptions = {}): S
     instances: new Map(),
     placements: new Map(),
     groupIds: new Set(),
-    aroundIds: new Set()
+    aroundIds: new Set(),
+    iconComponents: new Map(),
+    iconPageId: null
   }
   collectComponents(doc.children, build.components)
 

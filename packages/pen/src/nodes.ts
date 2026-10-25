@@ -6,13 +6,12 @@ import type {
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
 import { fillSizingFields } from '@open-pencil/scene-graph/layout'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { iconFontFamily, iconName } from './assets'
 import { convertEffects } from './effects'
 import { ellipseArc, pathNetwork } from './geometry'
+import { drawIcon, insideComponent, useIconComponent } from './icons'
 import type { PenImages } from './images'
 import {
   applyCornerRadius,
@@ -26,13 +25,7 @@ import { applyStroke, convertPaints, strokeFields } from './paints'
 import { isPlain, type PenPlacement } from './placement'
 import type { PenNode, PenOverride } from './schema'
 import { applyTextProps } from './text'
-import {
-  bindIfVar,
-  resolveBoolean,
-  resolveNumber,
-  resolveString,
-  type VarContext
-} from './variables'
+import { bindIfVar, resolveBoolean, resolveNumber, type VarContext } from './variables'
 
 /** Where icon glyphs come from, as the host loaded them. */
 export interface PenIconSource {
@@ -61,6 +54,10 @@ export interface Build {
   groupIds: Set<string>
   /** Frames spreading their children with `space_around`. */
   aroundIds: Set<string>
+  /** The components icons in components are instances of, by glyph and size. */
+  iconComponents: Map<string, string>
+  /** The page those components are on, added with the first one. */
+  iconPageId: string | null
 }
 
 function penPlacement(pen: PenOverride, ctx: VarContext): PenPlacement {
@@ -187,7 +184,8 @@ export function applyPenProperties(node: SceneNode, pen: PenNode, build: Build):
   // Text without a width resizes to its content, which laying out the document measures.
   if (isTextLike) applyTextProps(node, pen, ctx)
 
-  if (pen.type === 'icon') drawIcon(node, pen, build)
+  if (pen.type === 'icon' && node.type === 'INSTANCE') useIconComponent(node, pen, build)
+  else if (pen.type === 'icon') drawIcon(node, pen, build)
   if (pen.type === 'ellipse') node.arcData = ellipseArc(pen, ctx)
   if (pen.type === 'polygon') node.pointCount = Math.max(3, resolveNumber(pen.polygonCount, ctx, 3))
   if (pen.type === 'path') {
@@ -200,60 +198,6 @@ export function applyPenProperties(node: SceneNode, pen: PenNode, build: Build):
     if (h.sizing === 'FILL') Object.assign(node, fillSizingFields(flowLayout, 'VERTICAL'))
   }
   build.effective.set(node.id, pen)
-}
-
-/** The weight pen.dev draws Material Symbols at when an icon sets none. */
-const MATERIAL_SYMBOLS_WEIGHT = 200
-
-/** A font icon's glyph: its name set in the icon font, which turns it into the glyph. */
-function drawFontGlyph(
-  build: Build,
-  frameId: string,
-  family: string,
-  icon: string,
-  weight: number,
-  size: number,
-  color: Color
-): void {
-  build.graph.createNode('TEXT', frameId, {
-    name: icon,
-    text: icon,
-    fontFamily: family,
-    fontWeight: weight,
-    fontVariations: [{ axis: 'wght', value: weight }],
-    fontSize: size,
-    lineHeight: size,
-    width: size,
-    height: size,
-    textAutoResize: 'NONE',
-    fills: [{ type: 'SOLID', color, opacity: 1, visible: true }]
-  })
-}
-
-/**
- * An icon draws its glyph in its fill colour, scaled to fit its box and centred, as pen.dev does;
- * an icon the host could not load is an empty frame. Its library and name may be variables.
- */
-function drawIcon(node: SceneNode, pen: PenNode, build: Build): void {
-  const { graph, ctx } = build
-  const color = node.fills.find((fill) => fill.type === 'SOLID')?.color ?? { ...BLACK }
-  node.fills = []
-  for (const childId of node.childIds) graph.deleteNode(childId)
-  const library = resolveString(pen.library, ctx)
-  const icon = resolveString(pen.icon, ctx)
-  const size = Math.min(node.width, node.height)
-  if (!library || !icon || size <= 0) return
-  const family = iconFontFamily(library)
-  const name = iconName(library, icon)
-  if (family) {
-    const weight = resolveNumber(pen.weight, ctx, MATERIAL_SYMBOLS_WEIGHT)
-    drawFontGlyph(build, node.id, family, icon, weight, size, color)
-  } else if (!name || !build.icons?.draw(graph, node.id, name, size, color)) return
-  const dx = (node.width - size) / 2
-  const dy = (node.height - size) / 2
-  for (const glyph of graph.getChildren(node.id)) {
-    graph.updateNode(glyph.id, { x: glyph.x + dx, y: glyph.y + dy })
-  }
 }
 
 /**
@@ -281,11 +225,11 @@ export function createSceneNode(pen: PenNode, parentId: string, build: Build): s
   // A component that is not a frame has no instances; its uses are plain copies.
   const instanceOf = pen.type === 'ref' && component?.type === 'frame' ? component : undefined
   const fields = pen.type === 'ref' ? instanceFields(pen, component) : pen
+  const iconInstance = fields.type === 'icon' && insideComponent(build.graph, parentId)
   const leaveTheme = fields.theme ? build.ctx.enterTheme(fields.theme) : undefined
   try {
-    const node = build.graph.createNode(instanceOf ? 'INSTANCE' : sceneType(fields), parentId, {
-      id: pen.id
-    })
+    const type = instanceOf || iconInstance ? 'INSTANCE' : sceneType(fields)
+    const node = build.graph.createNode(type, parentId, { id: pen.id })
     applyPenProperties(node, fields, build)
     if (instanceOf) {
       node.componentId = instanceOf.id
