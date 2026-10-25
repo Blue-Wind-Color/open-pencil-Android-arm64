@@ -4,7 +4,9 @@ import { FITTED_CONTAINER_TYPES } from './node-defaults'
 import type { Rect, Vector } from './primitives'
 import type { SceneNode } from './types'
 
-type Placement = Pick<SceneNode, 'x' | 'y' | 'width' | 'height'>
+/** Where a layer sits, with a connector's ends, since a free end is in the parent's axes too. */
+type Placement = Pick<SceneNode, 'x' | 'y' | 'width' | 'height'> &
+  Partial<Pick<SceneNode, 'connectorStart' | 'connectorEnd'>>
 
 /** What `fitEnclosingGroups` changed, so a caller can undo and redo it. */
 export interface GroupFit {
@@ -23,7 +25,23 @@ export interface GroupFitOptions {
 }
 
 function placement(node: SceneNode): Placement {
-  return { x: node.x, y: node.y, width: node.width, height: node.height }
+  const box = { x: node.x, y: node.y, width: node.width, height: node.height }
+  if (node.type !== 'CONNECTOR') return box
+  return {
+    ...box,
+    connectorStart: structuredClone(node.connectorStart),
+    connectorEnd: structuredClone(node.connectorEnd)
+  }
+}
+
+/** A connector end moved by `dx`, `dy` when it is free, as its point is in the parent's axes. */
+function shiftedEnd(
+  end: SceneNode['connectorStart'],
+  dx: number,
+  dy: number
+): SceneNode['connectorStart'] {
+  if (end?.nodeId !== null) return end
+  return { ...end, position: { x: end.position.x - dx, y: end.position.y - dy } }
 }
 
 /** Groups and booleans holding the parents, innermost first. */
@@ -73,6 +91,17 @@ export function groupBounds(
     : { x: origin.x, y: origin.y, width: 0, height: 0 }
 }
 
+/** A child moved back by the group's shift, a connector's free ends with it. */
+function shiftedBack(child: SceneNode, dx: number, dy: number): Partial<SceneNode> {
+  const moved = { x: child.x - dx, y: child.y - dy }
+  if (child.type !== 'CONNECTOR') return moved
+  return {
+    ...moved,
+    connectorStart: shiftedEnd(child.connectorStart, dx, dy),
+    connectorEnd: shiftedEnd(child.connectorEnd, dx, dy)
+  }
+}
+
 /** Moves the group to its children's bounds, shifting them back so they stay put. */
 function fitGroup(
   graph: SceneGraph,
@@ -95,7 +124,7 @@ function fitGroup(
   }
   graph.updateNode(group.id, bounds)
   for (const child of children) {
-    graph.updateNode(child.id, { x: child.x - dx, y: child.y - dy })
+    graph.updateNode(child.id, shiftedBack(child, dx, dy))
   }
   for (const node of [group, ...children]) {
     const current = graph.getNode(node.id)
