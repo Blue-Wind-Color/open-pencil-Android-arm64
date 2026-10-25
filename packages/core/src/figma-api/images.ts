@@ -3,7 +3,7 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import {
   computeImageHash,
-  imageMimeType,
+  imageHeader,
   imageSize,
   type ImageMimeType
 } from '@open-pencil/scene-graph/images'
@@ -19,30 +19,19 @@ const MAX_IMAGE_SIDE = 4096
 /** The most bytes `createImageAsync` reads from a response, well above any 4096 × 4096 image. */
 export const MAX_IMAGE_FETCH_BYTES = 64 * 1024 * 1024
 
-/**
- * The bytes Figma needs before it takes an image: a PNG's header through its bit depth and color
- * type, and a GIF's logical screen size. A JPEG needs its start-of-frame, which `imageSize` reads.
- */
-const MIN_HEADER_BYTES: Partial<Record<ImageMimeType, number>> = {
-  'image/png': 26,
-  'image/gif': 10
-}
-
-/** A PNG's signature and the type of its first chunk, which Figma requires byte for byte. */
-const PNG_HEADER = [
-  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52
-]
+/** The formats Figma's `createImage` takes; it refuses WebP, SVG, and the rest. */
+const FIGMA_IMAGE_TYPES: ReadonlySet<ImageMimeType> = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif'
+])
 
 /** Figma's complaint about `data` as an image, or null when it takes it. */
 function imageProblem(data: Uint8Array): string | null {
-  const type = imageMimeType(data)
-  const size = type === 'image/webp' ? null : imageSize(data)
-  if (!size || size.width === 0 || size.height === 0) return 'Image type is unsupported'
-  if (type === 'image/png' && PNG_HEADER.some((byte, index) => data[index] !== byte)) {
-    return 'Image type is unsupported'
-  }
-  if (data.length < (MIN_HEADER_BYTES[type] ?? 0)) return 'Image type is unsupported'
-  if (size.width > MAX_IMAGE_SIDE || size.height > MAX_IMAGE_SIDE) return 'Image is too large'
+  const header = imageHeader(data)
+  if (!header || !FIGMA_IMAGE_TYPES.has(header.type)) return 'Image type is unsupported'
+  if (header.width === 0 || header.height === 0) return 'Image type is unsupported'
+  if (header.width > MAX_IMAGE_SIDE || header.height > MAX_IMAGE_SIDE) return 'Image is too large'
   return null
 }
 

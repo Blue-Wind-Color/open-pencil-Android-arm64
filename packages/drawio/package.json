@@ -37,6 +37,7 @@
   "dependencies": {
     "@xmldom/xmldom": "^0.9.12",
     "fflate": "^0.8.3",
+    "image-size": "^2.0.4",
     "js-base64": "^3.9.3"
   },
   "devDependencies": {

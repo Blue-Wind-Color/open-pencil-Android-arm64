@@ -2,7 +2,11 @@ import { sumBy } from 'es-toolkit'
 
 import type { Fill } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { computeImageHash } from '@open-pencil/scene-graph/images'
+import {
+  computeImageHash,
+  IMPORTABLE_RASTER_TYPES,
+  isSVGFile
+} from '@open-pencil/scene-graph/images'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { TRANSPARENT } from '#core/constants'
@@ -19,14 +23,6 @@ import { computeAllLayouts } from '#core/layout'
 
 const IMAGE_MAX_DIMENSION = 4096
 const ASSET_GAP = 20
-
-const RASTER_IMAGE_TYPES = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-  'image/avif'
-])
 
 interface PreparedRasterAsset {
   kind: 'raster'
@@ -52,12 +48,6 @@ type PushCreatedNodesUndo = (
   previousSelection: Set<string>,
   label?: string
 ) => void
-
-function isSVGFile(file: Pick<File, 'name' | 'type'>): boolean {
-  return (
-    file.type === 'image/svg+xml' || (file.type === '' && file.name.toLowerCase().endsWith('.svg'))
-  )
-}
 
 export function createClipboardAssetActions(
   ctx: EditorContext,
@@ -98,7 +88,7 @@ export function createClipboardAssetActions(
           }
         : null
     }
-    if (!RASTER_IMAGE_TYPES.has(file.type)) return null
+    if (!IMPORTABLE_RASTER_TYPES.has(file.type)) return null
     const bytes = new Uint8Array(await file.arrayBuffer())
     const dimensions = decodeImageDimensions(bytes)
     return dimensions ? { kind: 'raster', bytes, name: file.name, ...dimensions } : null
@@ -203,7 +193,7 @@ export function createClipboardAssetActions(
 
   function placeImageFiles(files: File[], cx: number, cy: number) {
     return placeFiles(
-      files.filter((file) => RASTER_IMAGE_TYPES.has(file.type)),
+      files.filter((file) => IMPORTABLE_RASTER_TYPES.has(file.type)),
       cx,
       cy
     )

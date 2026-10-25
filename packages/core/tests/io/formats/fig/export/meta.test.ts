@@ -7,8 +7,9 @@ import * as v from 'valibot'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { parseFigBuffer, pngSize, readFigArchiveMeta } from '@open-pencil/fig'
+import { parseFigBuffer, readFigArchiveMeta } from '@open-pencil/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { imageSize } from '@open-pencil/scene-graph/images'
 
 setDefaultTimeout(60_000)
 
@@ -34,7 +35,7 @@ function readArchive(bytes: Uint8Array) {
   return {
     raw,
     meta: meta.output,
-    thumbnailSize: expectDefined(pngSize(png), 'thumbnail size')
+    thumbnailSize: expectDefined(imageSize(png), 'thumbnail size')
   }
 }
 

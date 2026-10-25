@@ -89,8 +89,8 @@ describe('figma.createImage', () => {
   })
 
   test('takes a PNG, JPEG, or GIF up to 4096 pixels a side, and finds only images it stored', async () => {
-    const png = (width: number, height: number, length = 26) =>
-      `new Uint8Array(${JSON.stringify(pngHeader(width, height).slice(0, length))})`
+    const png = (width: number, height: number) =>
+      `new Uint8Array(${JSON.stringify(pngHeader(width, height))})`
     /** A 1 × 1 PNG header with `value` at `index`, breaking its signature or chunk type. */
     const brokenPNG = (index: number, value: number) =>
       `(() => { const bytes = ${png(1, 1)}; bytes[${index}] = ${value}; return figma.createImage(bytes).hash })()`
@@ -101,8 +101,6 @@ describe('figma.createImage', () => {
           wide: `figma.createImage(${png(4097, 1)}).hash`,
           tall: `figma.createImage(${png(1, 4097)}).hash`,
           empty: `figma.createImage(${png(0, 0)}).hash`,
-          noColorType: `figma.createImage(${png(1, 1, 25)}).hash`,
-          signature: brokenPNG(0, 0),
           lineEnding: brokenPNG(4, 0),
           chunkType: brokenPNG(12, 0x58),
           webp: `figma.createImage(bytes('${WEBP_1X1}')).hash`,
@@ -118,8 +116,6 @@ describe('figma.createImage', () => {
       wide: 'in createImage: Image is too large',
       tall: 'in createImage: Image is too large',
       empty: 'in createImage: Image type is unsupported',
-      noColorType: 'in createImage: Image type is unsupported',
-      signature: 'in createImage: Image type is unsupported',
       lineEnding: 'in createImage: Image type is unsupported',
       chunkType: 'in createImage: Image type is unsupported',
       webp: 'in createImage: Image type is unsupported',

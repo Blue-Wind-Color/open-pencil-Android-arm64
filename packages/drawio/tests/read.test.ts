@@ -143,10 +143,12 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
   return out
 }
 
-/** A PNG holding only the given chunks between its signature and `IEND`. */
+/** A 1 × 1 PNG holding the given chunks between its `IHDR` and `IEND`. */
 function png(...chunks: Uint8Array[]): Uint8Array {
   const signature = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-  return concat([signature, ...chunks, chunk('IEND', new Uint8Array())])
+  // Width and height 1, bit depth 8, color type 6 (RGBA), default compression, filter, interlace.
+  const header = Uint8Array.from([0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0])
+  return concat([signature, chunk('IHDR', header), ...chunks, chunk('IEND', new Uint8Array())])
 }
 
 /** A PNG holding only the chunk draw.io adds: a `tEXt` chunk under `keyword`. */
@@ -196,7 +198,8 @@ describe('reading the diagram a draw.io export embeds', () => {
       'Could not read the draw.io diagram in this image'
     )
     const whole = pngWithText('mxfile', `<mxfile>${page('Embedded')}</mxfile>`)
-    expect(() => readDrawIOBytes(whole.subarray(0, 40))).toThrow('cut short')
+    // Dropping `IEND`, the text chunk's CRC, and a few bytes of its data.
+    expect(() => readDrawIOBytes(whole.subarray(0, -20))).toThrow('cut short')
   })
 
   test('takes an SVG’s comments before its root in stride', () => {

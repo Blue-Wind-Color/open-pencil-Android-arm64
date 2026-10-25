@@ -1,9 +1,11 @@
 import type { Element } from '@xmldom/xmldom'
+import { imageSize } from 'image-size'
 
 import { boundedInflate, percentDecoded, type InflateBudget } from './inflate'
 import { parseXML } from './xml'
 
-const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+/** A PNG's chunks start after its eight-byte signature. */
+const PNG_SIGNATURE_LENGTH = 8
 /** The keyword draw.io stores its diagram under in a PNG's text chunks. */
 const DRAWIO_KEYWORD = 'mxfile'
 
@@ -11,7 +13,11 @@ const latin1 = new TextDecoder('latin1')
 const utf8 = new TextDecoder()
 
 function isPNG(bytes: Uint8Array): boolean {
-  return PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)
+  try {
+    return imageSize(bytes).type === 'png'
+  } catch {
+    return false
+  }
 }
 
 /** Where a NUL byte ends the field that starts at `from`, or -1. */
@@ -48,7 +54,7 @@ function chunkDiagram(type: string, data: Uint8Array, budget: InflateBudget): st
  */
 function diagramInPNG(bytes: Uint8Array, budget: InflateBudget): string | null {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
-  let offset = PNG_SIGNATURE.length
+  let offset = PNG_SIGNATURE_LENGTH
   while (offset + 8 <= bytes.length) {
     const length = view.getUint32(offset)
     const type = latin1.decode(bytes.subarray(offset + 4, offset + 8))

@@ -1,3 +1,5 @@
+import { isSVGFile } from '@open-pencil/scene-graph/images'
+
 import type {
   ImageAttachmentMediaType,
   PreparedImageAttachment
@@ -56,13 +58,6 @@ function canvasToBlob(
       quality
     )
   })
-}
-
-/** Whether a file is an SVG image, which some systems report without a media type. */
-export function isSVGFile(file: File): boolean {
-  return (
-    file.type === 'image/svg+xml' || (file.type === '' && file.name.toLowerCase().endsWith('.svg'))
-  )
 }
 
 /** Whether a file can be attached as an image, as it is or after drawing an SVG as PNG. */
