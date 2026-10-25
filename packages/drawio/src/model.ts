@@ -1,5 +1,5 @@
 /** A point or offset, in the coordinates of the cell's parent. */
-export interface DrawioPoint {
+export interface DrawIOPoint {
   x: number
   y: number
 }
@@ -10,37 +10,37 @@ export interface DrawioPoint {
  * whose parent is an edge, as draw.io stores an edge label it moved, sits `x` of the way along the
  * edge, from -1 at its source to 1 at its target, `y` across it, and `offset` from there.
  */
-export interface DrawioGeometry {
+export interface DrawIOGeometry {
   x: number
   y: number
   width: number
   height: number
   relative: boolean
-  points: DrawioPoint[]
-  sourcePoint: DrawioPoint | null
-  targetPoint: DrawioPoint | null
-  offset: DrawioPoint | null
+  points: DrawIOPoint[]
+  sourcePoint: DrawIOPoint | null
+  targetPoint: DrawIOPoint | null
+  offset: DrawIOPoint | null
 }
 
 /**
  * A `style` string: the names of stylesheet styles it starts from, such as `ellipse` or `text`,
  * and its `key=value` pairs, both in the order written.
  */
-export interface DrawioStyle {
+export interface DrawIOStyle {
   names: string[]
   values: Partial<Record<string, string>>
 }
 
 /** A shape or a connecting edge, in the order draw.io draws them. */
-export interface DrawioCell {
+export interface DrawIOCell {
   id: string
   /** The cell or layer it belongs to. */
   parent: string
   kind: 'vertex' | 'edge'
   /** The label: HTML when the style says `html=1`, plain text otherwise. */
   value: string
-  style: DrawioStyle
-  geometry: DrawioGeometry
+  style: DrawIOStyle
+  geometry: DrawIOGeometry
   visible: boolean
   source: string | null
   target: string | null
@@ -52,26 +52,26 @@ export interface DrawioCell {
 }
 
 /** One of a page's layers, bottom first: the cells whose parent it is draw on it. */
-export interface DrawioLayer {
+export interface DrawIOLayer {
   id: string
   name: string
   visible: boolean
   locked: boolean
 }
 
-export interface DrawioPage {
+export interface DrawIOPage {
   id: string
   name: string
   /** The model's own attributes, such as `grid` and `background`. */
   attributes: Record<string, string>
   /** The id of the cell at the root of the model, which the layers belong to. */
   rootId: string
-  layers: DrawioLayer[]
-  cells: DrawioCell[]
+  layers: DrawIOLayer[]
+  cells: DrawIOCell[]
 }
 
 /** A draw.io file: its pages, and the names of those that could not be read. */
-export interface DrawioFile {
-  pages: DrawioPage[]
+export interface DrawIOFile {
+  pages: DrawIOPage[]
   unreadable: string[]
 }

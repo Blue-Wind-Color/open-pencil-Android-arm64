@@ -86,7 +86,7 @@ export function drawioRoot(bytes: Uint8Array, budget: InflateBudget): Element | 
 }
 
 /** Whether a file name is draw.io's for an editable export, such as `flow.drawio.png`. */
-export function isDrawioExportFileName(fileName: string): boolean {
+export function isDrawIOExportFileName(fileName: string): boolean {
   const name = fileName.toLowerCase()
   return name.endsWith('.drawio.png') || name.endsWith('.drawio.svg')
 }

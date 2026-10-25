@@ -1,6 +1,6 @@
 import { DOMImplementation, XMLSerializer, type Document, type Element } from '@xmldom/xmldom'
 
-import type { DrawioCell, DrawioFile, DrawioGeometry, DrawioPage, DrawioPoint } from './model'
+import type { DrawIOCell, DrawIOFile, DrawIOGeometry, DrawIOPage, DrawIOPoint } from './model'
 import { formatStyle } from './style'
 
 /** What the writer puts on `<mxfile>`, so draw.io knows who wrote it. */
@@ -10,7 +10,7 @@ function setNumber(element: Element, name: string, value: number) {
   if (value !== 0) element.setAttribute(name, String(value))
 }
 
-function point(document: Document, at: DrawioPoint, as?: string): Element {
+function point(document: Document, at: DrawIOPoint, as?: string): Element {
   const element = document.createElement('mxPoint')
   element.setAttribute('x', String(at.x))
   element.setAttribute('y', String(at.y))
@@ -18,7 +18,7 @@ function point(document: Document, at: DrawioPoint, as?: string): Element {
   return element
 }
 
-function geometry(document: Document, value: DrawioGeometry): Element {
+function geometry(document: Document, value: DrawIOGeometry): Element {
   const element = document.createElement('mxGeometry')
   setNumber(element, 'x', value.x)
   setNumber(element, 'y', value.y)
@@ -39,7 +39,7 @@ function geometry(document: Document, value: DrawioGeometry): Element {
 }
 
 /** A cell as draw.io writes it, wrapped in a `UserObject` when it carries attributes. */
-function cellElement(document: Document, cell: DrawioCell): Element {
+function cellElement(document: Document, cell: DrawIOCell): Element {
   const element = document.createElement('mxCell')
   const wrapped = Object.keys(cell.attributes).length > 0
   if (!wrapped) {
@@ -63,7 +63,7 @@ function cellElement(document: Document, cell: DrawioCell): Element {
   return wrapper
 }
 
-function pageElement(document: Document, page: DrawioPage): Element {
+function pageElement(document: Document, page: DrawIOPage): Element {
   const diagram = document.createElement('diagram')
   diagram.setAttribute('id', page.id)
   diagram.setAttribute('name', page.name)
@@ -93,7 +93,7 @@ function pageElement(document: Document, page: DrawioPage): Element {
  * as draw.io itself saves by default, so the file diffs and reads as text. A file with pages that
  * could not be read is refused, since writing it would drop them.
  */
-export function writeDrawioFile(file: DrawioFile): string {
+export function writeDrawIOFile(file: DrawIOFile): string {
   if (file.unreadable.length > 0) {
     throw new Error(`Could not write the draw.io pages ${file.unreadable.join(', ')}`)
   }

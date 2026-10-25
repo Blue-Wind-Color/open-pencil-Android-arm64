@@ -1,4 +1,4 @@
-import type { DrawioStyle } from '@open-pencil/drawio'
+import type { DrawIOStyle } from '@open-pencil/drawio'
 import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
 
 /** What a draw.io vertex becomes: a FigJam shape, text, a section around its cells, or a group. */
@@ -69,7 +69,7 @@ const SHAPES = new Map<string, ShapeWithTextType>([
 const SHAPE_NAMES = new Set([...SHAPES.keys(), 'text', 'swimlane', 'group', 'image'])
 
 /** The shape a style draws: its `shape`, else the stylesheet style it names, else a rectangle. */
-export function shapeName(style: DrawioStyle): string {
+export function shapeName(style: DrawIOStyle): string {
   return style.values.shape ?? style.names.find((name) => SHAPE_NAMES.has(name)) ?? 'rectangle'
 }
 
@@ -87,7 +87,7 @@ const DIRECTION_TURN = new Map([
  * `direction` keeps its turn. Any other shape, a stencil FigJam has no shape for among them,
  * becomes a rectangle, named after the stencil so it can be found.
  */
-export function vertexKind(style: DrawioStyle, hasChildren: boolean): VertexKind {
+export function vertexKind(style: DrawIOStyle, hasChildren: boolean): VertexKind {
   const name = shapeName(style)
   if (name === 'text') return { type: 'TEXT' }
   if (name === 'swimlane' || (hasChildren && style.values.container === '1')) {
@@ -110,4 +110,46 @@ export function vertexKind(style: DrawioStyle, hasChildren: boolean): VertexKind
     shape = 'PARALLELOGRAM_LEFT'
   } else if (shape === 'SQUARE' && style.values.rounded === '1') shape = 'ROUNDED_RECTANGLE'
   return { type: 'SHAPE_WITH_TEXT', shape, rotation, stencil: !SHAPES.has(name) }
+}
+
+/**
+ * The draw.io style that draws each FigJam shape, the other way round: built-in shapes where
+ * draw.io has one, its flowchart and basic stencils otherwise. A shield, which draw.io has no
+ * shape for, goes as a rectangle.
+ */
+const DRAWIO_SHAPES: Record<ShapeWithTextType, Record<string, string>> = {
+  SQUARE: {},
+  ROUNDED_RECTANGLE: { rounded: '1' },
+  ELLIPSE: { shape: 'ellipse', perimeter: 'ellipsePerimeter' },
+  DIAMOND: { shape: 'rhombus', perimeter: 'rhombusPerimeter' },
+  TRIANGLE_UP: { shape: 'triangle', direction: 'north', perimeter: 'trianglePerimeter' },
+  TRIANGLE_DOWN: { shape: 'triangle', direction: 'south', perimeter: 'trianglePerimeter' },
+  PARALLELOGRAM_RIGHT: { shape: 'parallelogram', perimeter: 'parallelogramPerimeter' },
+  PARALLELOGRAM_LEFT: { shape: 'parallelogram', flipH: '1', perimeter: 'parallelogramPerimeter' },
+  ENG_DATABASE: { shape: 'cylinder3' },
+  ENG_QUEUE: { shape: 'mxgraph.flowchart.direct_data' },
+  ENG_FILE: { shape: 'note' },
+  ENG_FOLDER: { shape: 'folder' },
+  TRAPEZOID: { shape: 'trapezoid', perimeter: 'trapezoidPerimeter' },
+  PREDEFINED_PROCESS: { shape: 'process' },
+  SHIELD: {},
+  DOCUMENT_SINGLE: { shape: 'document' },
+  DOCUMENT_MULTIPLE: { shape: 'mxgraph.flowchart.multi-document' },
+  MANUAL_INPUT: { shape: 'manualInput' },
+  HEXAGON: { shape: 'hexagon', perimeter: 'hexagonPerimeter2' },
+  CHEVRON: { shape: 'step' },
+  PENTAGON: { shape: 'mxgraph.basic.pentagon' },
+  OCTAGON: { shape: 'mxgraph.basic.octagon2' },
+  STAR: { shape: 'mxgraph.basic.star' },
+  PLUS: { shape: 'cross' },
+  ARROW_LEFT: { shape: 'singleArrow', direction: 'west' },
+  ARROW_RIGHT: { shape: 'singleArrow' },
+  SUMMING_JUNCTION: { shape: 'sumEllipse', perimeter: 'ellipsePerimeter' },
+  OR: { shape: 'orEllipse', perimeter: 'ellipsePerimeter' },
+  SPEECH_BUBBLE: { shape: 'callout' },
+  INTERNAL_STORAGE: { shape: 'internalStorage' }
+}
+
+export function drawioShapeValues(shape: ShapeWithTextType): Record<string, string> {
+  return { ...DRAWIO_SHAPES[shape] }
 }

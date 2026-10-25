@@ -1,4 +1,4 @@
-import type { DrawioCell, DrawioStyle } from '@open-pencil/drawio'
+import type { DrawIOCell, DrawIOStyle } from '@open-pencil/drawio'
 import type {
   ConnectorControlPoint,
   ConnectorEndpoint,
@@ -38,7 +38,7 @@ const ELBOW_STYLES = new Set([
  * The line type an edge draws: curved when `curved=1`, elbowed for a right-angled edge style or
  * an edge bent through points of its own, and straight otherwise.
  */
-function lineTypeOf(edge: DrawioCell): ConnectorLineType {
+function lineTypeOf(edge: DrawIOCell): ConnectorLineType {
   const { values } = edge.style
   if (values.curved === '1') return 'CURVED'
   if (ELBOW_STYLES.has(values.edgeStyle ?? '') || edge.geometry.points.length > 0) return 'ELBOWED'
@@ -65,7 +65,7 @@ const CAPS = new Map<string, StrokeCap>([
 ])
 
 /** An end's cap: `startArrow` is none and `endArrow` classic unless the style says otherwise. */
-function capOf(style: DrawioStyle, key: 'startArrow' | 'endArrow'): StrokeCap {
+function capOf(style: DrawIOStyle, key: 'startArrow' | 'endArrow'): StrokeCap {
   const arrow = style.values[key] ?? (key === 'endArrow' ? 'classic' : 'none')
   const fill = style.values[key === 'endArrow' ? 'endFill' : 'startFill']
   const cap = CAPS.get(arrow) ?? 'ARROW_LINES'
@@ -89,9 +89,9 @@ export function labelPositionOf(x: number): ConnectorLabelPosition | null {
 /** A drawn edge, made before the layers its ends join, so it keeps its place in the order. */
 export interface PendingEdge {
   connector: SceneNode
-  edge: DrawioCell
+  edge: DrawIOCell
   /** Labels draw.io keeps as cells of the edge, which the connector's label takes in turn. */
-  labels: DrawioCell[]
+  labels: DrawIOCell[]
 }
 
 /**
@@ -101,8 +101,8 @@ export interface PendingEdge {
 export function createEdge(
   graph: SceneGraph,
   parentId: string,
-  edge: DrawioCell,
-  labels: DrawioCell[]
+  edge: DrawIOCell,
+  labels: DrawIOCell[]
 ): PendingEdge {
   const { style } = edge
   const connector = createConnector(
@@ -155,7 +155,7 @@ function sideFacing(
 function endpointOf(
   graph: SceneGraph,
   layerOf: (cellId: string) => string | undefined,
-  edge: DrawioCell,
+  edge: DrawIOCell,
   end: 'source' | 'target',
   straight: boolean
 ): ConnectorEndpoint {
@@ -216,7 +216,7 @@ export function bindEdge(
   graph: SceneGraph,
   { connector, edge, labels }: PendingEdge,
   layerOf: (cellId: string) => string | undefined
-): DrawioCell[] {
+): DrawIOCell[] {
   const straight = connector.connectorLineType === 'STRAIGHT'
   graph.updateNode(connector.id, {
     connectorStart: endpointOf(graph, layerOf, edge, 'source', straight),

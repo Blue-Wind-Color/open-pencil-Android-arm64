@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { parseDrawioFile, writeDrawioFile } from '@open-pencil/drawio'
+import { parseDrawIOFile, writeDrawIOFile } from '@open-pencil/drawio'
 
 const MODEL = `<mxGraphModel grid="1"><root>
   <mxCell id="0"/><mxCell id="1" parent="0"/>
@@ -27,19 +27,19 @@ const MODEL = `<mxGraphModel grid="1"><root>
 </root></mxGraphModel>`
 
 test('a written file reads back as the file it was written from', () => {
-  const file = parseDrawioFile(`<mxfile><diagram id="p" name="Page">${MODEL}</diagram></mxfile>`)
+  const file = parseDrawIOFile(`<mxfile><diagram id="p" name="Page">${MODEL}</diagram></mxfile>`)
   if (!file) throw new Error('Fixture did not read')
-  const written = writeDrawioFile(file)
+  const written = writeDrawIOFile(file)
   expect(written).toStartWith('<mxfile host="OpenPencil">')
   // Saved uncompressed, as draw.io saves by default.
   expect(written).toContain('<mxGraphModel grid="1"><root><mxCell id="0"/>')
-  expect(parseDrawioFile(written)).toEqual(file)
+  expect(parseDrawIOFile(written)).toEqual(file)
 })
 
 test('a file with pages it could not read is not written, since they would be lost', () => {
-  const file = parseDrawioFile(
+  const file = parseDrawIOFile(
     `<mxfile><diagram id="p" name="Page">${MODEL}</diagram><diagram id="q" name="Broken">!</diagram></mxfile>`
   )
   if (!file) throw new Error('Fixture did not read')
-  expect(() => writeDrawioFile(file)).toThrow('Could not write the draw.io pages Broken')
+  expect(() => writeDrawIOFile(file)).toThrow('Could not write the draw.io pages Broken')
 })

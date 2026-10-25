@@ -1,4 +1,4 @@
-import type { DrawioCell, DrawioFile, DrawioPage } from '@open-pencil/drawio'
+import type { DrawIOCell, DrawIOFile, DrawIOPage } from '@open-pencil/drawio'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { connectorRoute, placeConnectorLabel } from '@open-pencil/scene-graph/connectors'
 import { createShapeWithText } from '@open-pencil/scene-graph/generated'
@@ -10,7 +10,7 @@ import { labelFields, labelFormat, shapePaint } from './paint'
 import { shapeName, vertexKind } from './shapes'
 
 /** A cell's label as text and runs, in the cell's own style. */
-function labelOf(cell: DrawioCell) {
+function labelOf(cell: DrawIOCell) {
   const format = labelFormat(cell.style)
   return { format, ...readLabel(cell.value, cell.style.values.html === '1', format) }
 }
@@ -29,7 +29,7 @@ class PageBuilder {
 
   constructor(
     private readonly graph: SceneGraph,
-    private readonly page: DrawioPage,
+    private readonly page: DrawIOPage,
     private readonly pageId: string
   ) {}
 
@@ -51,7 +51,7 @@ class PageBuilder {
       this.groups.push(group.id)
     }
     const parents = new Set(page.cells.map((cell) => cell.parent))
-    const labelsOf = new Map<string, DrawioCell[]>()
+    const labelsOf = new Map<string, DrawIOCell[]>()
     const edgeIds = new Set(
       page.cells.filter((cell) => cell.kind === 'edge').map((cell) => cell.id)
     )
@@ -65,7 +65,7 @@ class PageBuilder {
     }
     const cells = new Map(page.cells.map((cell) => [cell.id, cell]))
     const placing = new Set<string>()
-    const place = (cell: DrawioCell) => {
+    const place = (cell: DrawIOCell) => {
       if (edgeIds.has(cell.parent) || this.layers.has(cell.id) || placing.has(cell.id)) return
       placing.add(cell.id)
       // A cell listed before its parent, as draw.io's format allows, waits for the parent.
@@ -90,7 +90,7 @@ class PageBuilder {
     for (const id of this.groups.toReversed()) fitEnclosingGroups(graph, [id])
   }
 
-  private vertex(cell: DrawioCell, parentId: string, hasChildren: boolean): SceneNode {
+  private vertex(cell: DrawIOCell, parentId: string, hasChildren: boolean): SceneNode {
     const { graph } = this
     const { x, y, width, height } = cell.geometry
     const kind = vertexKind(cell.style, hasChildren)
@@ -146,7 +146,7 @@ class PageBuilder {
   }
 
   /** A label beyond an edge's first, as text where draw.io placed it along the edge. */
-  private edgeText({ connector }: PendingEdge, cell: DrawioCell) {
+  private edgeText({ connector }: PendingEdge, cell: DrawIOCell) {
     const { graph } = this
     const node = graph.getNode(connector.id)
     const route = node ? connectorRoute(graph, node) : null
@@ -173,7 +173,7 @@ class PageBuilder {
  * connectors joined to them, its layers groups when there are several, in draw.io's drawing order.
  * Text sizes are left for layout, which measures them once fonts load.
  */
-export function drawioToSceneGraph(file: DrawioFile): SceneGraph {
+export function drawioToSceneGraph(file: DrawIOFile): SceneGraph {
   const graph = new SceneGraph()
   const first = graph.getPages().at(0)
   for (const [index, page] of file.pages.entries()) {
@@ -183,3 +183,5 @@ export function drawioToSceneGraph(file: DrawioFile): SceneGraph {
   }
   return graph
 }
+
+export { sceneGraphToDrawIO } from './export'

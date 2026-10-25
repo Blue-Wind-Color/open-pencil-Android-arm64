@@ -1,4 +1,4 @@
-import { styleNumber, type DrawioStyle } from '@open-pencil/drawio'
+import { styleNumber, type DrawIOStyle } from '@open-pencil/drawio'
 import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { tryParseColor } from '@open-pencil/scene-graph/color'
 import { BLACK, WHITE } from '@open-pencil/scene-graph/constants'
@@ -15,7 +15,7 @@ export const DEFAULT_FONT_FAMILY = 'Inter'
 const DEFAULT_FONT_SIZE = 12
 
 /** A colour a style sets: `none` for none, `default` for draw.io's default, otherwise CSS. */
-function styleColor(style: DrawioStyle, key: string, fallback: Color | null): Color | null {
+function styleColor(style: DrawIOStyle, key: string, fallback: Color | null): Color | null {
   const value = style.values[key]
   if (value === undefined || value === 'default') return fallback
   if (value === 'none') return null
@@ -23,7 +23,7 @@ function styleColor(style: DrawioStyle, key: string, fallback: Color | null): Co
 }
 
 /** A 0–100 opacity a style sets, as a fraction. */
-function opacity(style: DrawioStyle, key: string): number {
+function opacity(style: DrawIOStyle, key: string): number {
   return Math.min(1, Math.max(0, styleNumber(style, key, 100) / 100))
 }
 
@@ -36,7 +36,7 @@ function solid(color: Color, alpha: number): Fill {
  * as draw.io draws a new shape, dashed by `dashPattern` or, with `dashed=1`, draw.io's 3-on-3 dash
  * scaled by the width.
  */
-export function shapePaint(style: DrawioStyle): Partial<SceneNode> {
+export function shapePaint(style: DrawIOStyle): Partial<SceneNode> {
   const fill = styleColor(style, 'fillColor', WHITE)
   const stroke = styleColor(style, 'strokeColor', BLACK)
   const weight = styleNumber(style, 'strokeWidth', 1)
@@ -62,7 +62,7 @@ export function shapePaint(style: DrawioStyle): Partial<SceneNode> {
 }
 
 /** The dash a style draws its line with: `dashPattern` in widths, or 3-on-3 for `dashed=1`. */
-export function dashOf(style: DrawioStyle, weight: number): number[] {
+export function dashOf(style: DrawIOStyle, weight: number): number[] {
   if (style.values.dashed !== '1') return []
   const pattern = (style.values.dashPattern ?? '3 3')
     .split(/\s+/)
@@ -72,12 +72,12 @@ export function dashOf(style: DrawioStyle, weight: number): number[] {
 }
 
 /** The colour of an edge's line: `strokeColor`, black by default. */
-export function lineColor(style: DrawioStyle): Color | null {
+export function lineColor(style: DrawIOStyle): Color | null {
   return styleColor(style, 'strokeColor', BLACK)
 }
 
 /** How a cell's label looks before the tags inside it change it. */
-export function labelFormat(style: DrawioStyle): LabelFormat {
+export function labelFormat(style: DrawIOStyle): LabelFormat {
   const fontStyle = styleNumber(style, 'fontStyle', 0)
   return {
     // fontStyle is a bit set: bold, italic, underline.
@@ -102,7 +102,7 @@ const VERTICAL = new Map<string, SceneNode['textAlignVertical']>([
 ])
 
 /** A label's text fields: its font, size, colour, and alignment, centred by default. */
-export function labelFields(style: DrawioStyle, format = labelFormat(style)): Partial<SceneNode> {
+export function labelFields(style: DrawIOStyle, format = labelFormat(style)): Partial<SceneNode> {
   return {
     fontFamily: format.family,
     fontWeight: format.bold ? 700 : 400,

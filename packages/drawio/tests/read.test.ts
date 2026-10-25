@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { deflateSync } from 'fflate'
 import { fromUint8Array } from 'js-base64'
 
-import { MAX_INFLATED_BYTES, parseDrawioFile, readDrawioBytes } from '@open-pencil/drawio'
+import { MAX_INFLATED_BYTES, parseDrawIOFile, readDrawIOBytes } from '@open-pencil/drawio'
 
 /**
  * A page as draw.io saves it: the root and default layer, a second hidden layer, a plain shape,
@@ -48,7 +48,7 @@ function compressed(model: string): string {
 
 describe('reading a draw.io file', () => {
   test('keeps each page’s layers, cells in drawing order, styles, and geometry', () => {
-    const file = parseDrawioFile(`<mxfile host="drawio">${page('First')}</mxfile>`)
+    const file = parseDrawIOFile(`<mxfile host="drawio">${page('First')}</mxfile>`)
     const [first] = file?.pages ?? []
     expect(first).toMatchObject({
       name: 'First',
@@ -86,15 +86,15 @@ describe('reading a draw.io file', () => {
   })
 
   test('reads a bare model and compressed pages', () => {
-    expect(parseDrawioFile(MODEL)?.pages[0]?.cells).toHaveLength(5)
-    const file = parseDrawioFile(
+    expect(parseDrawIOFile(MODEL)?.pages[0]?.cells).toHaveLength(5)
+    const file = parseDrawIOFile(
       `<mxfile><diagram id="z" name="Packed">${compressed(MODEL)}</diagram></mxfile>`
     )
     expect(file?.pages[0]?.cells.map((cell) => cell.id)).toEqual(['a', 'b', 'e', 'l', 'hidden'])
   })
 
   test('names pages it cannot read, and reads the rest', () => {
-    const file = parseDrawioFile(
+    const file = parseDrawIOFile(
       `<mxfile>${page('Good')}<diagram id="bad" name="Broken">not base64 %%%</diagram></mxfile>`
     )
     expect(file?.pages.map((p) => p.name)).toEqual(['Good'])
@@ -102,8 +102,8 @@ describe('reading a draw.io file', () => {
   })
 
   test('is not fooled by other XML', () => {
-    expect(parseDrawioFile('<svg xmlns="http://www.w3.org/2000/svg"/>')).toBeNull()
-    expect(parseDrawioFile('not xml')).toBeNull()
+    expect(parseDrawIOFile('<svg xmlns="http://www.w3.org/2000/svg"/>')).toBeNull()
+    expect(parseDrawIOFile('not xml')).toBeNull()
   })
 
   test('stops unpacking once the whole file passes its limit, however many pages share it', () => {
@@ -116,7 +116,7 @@ describe('reading a draw.io file', () => {
       { length: 6 },
       (_, i) => `<diagram id="p${i}" name="P${i}">${packed}</diagram>`
     )
-    const file = parseDrawioFile(`<mxfile>${pages.join('')}</mxfile>`)
+    const file = parseDrawIOFile(`<mxfile>${pages.join('')}</mxfile>`)
     expect(file?.pages.length).toBeLessThan(6)
     expect(file?.unreadable.length).toBeGreaterThan(0)
   })
@@ -163,9 +163,9 @@ const EMBEDDED = encodeURIComponent(`<mxfile>${page('Embedded')}</mxfile>`)
 
 describe('reading the diagram a draw.io export embeds', () => {
   test('from a PNG’s text chunk', () => {
-    const file = readDrawioBytes(pngWithText('mxfile', `<mxfile>${page('Embedded')}</mxfile>`))
+    const file = readDrawIOBytes(pngWithText('mxfile', `<mxfile>${page('Embedded')}</mxfile>`))
     expect(file?.pages[0]?.name).toBe('Embedded')
-    expect(readDrawioBytes(pngWithText('Software', 'paint.net'))).toBeNull()
+    expect(readDrawIOBytes(pngWithText('Software', 'paint.net'))).toBeNull()
   })
 
   test('from an SVG’s content attribute', () => {
@@ -174,33 +174,33 @@ describe('reading the diagram a draw.io export embeds', () => {
       .replaceAll('"', '&quot;')
       .replaceAll('<', '&lt;')
     const svg = `<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" content="${content}"><rect/></svg>`
-    expect(readDrawioBytes(new TextEncoder().encode(svg))?.pages[0]?.name).toBe('Vector')
+    expect(readDrawIOBytes(new TextEncoder().encode(svg))?.pages[0]?.name).toBe('Vector')
     expect(
-      readDrawioBytes(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"/>'))
+      readDrawIOBytes(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"/>'))
     ).toBeNull()
   })
 
   test('from a PNG’s compressed and international text chunks', () => {
     const zTXt = png(chunk('zTXt', concat([latin1('mxfile\0\0'), zlib(EMBEDDED)])))
-    expect(readDrawioBytes(zTXt)?.pages[0]?.name).toBe('Embedded')
+    expect(readDrawIOBytes(zTXt)?.pages[0]?.name).toBe('Embedded')
     // iTXt: keyword, compression flag and method, then empty language and translated keyword.
     const packed = png(chunk('iTXt', concat([latin1('mxfile\0\x01\0\0\0'), zlib(EMBEDDED)])))
-    expect(readDrawioBytes(packed)?.pages[0]?.name).toBe('Embedded')
+    expect(readDrawIOBytes(packed)?.pages[0]?.name).toBe('Embedded')
     const plain = png(chunk('iTXt', latin1(`mxfile\0\0\0\0\0${EMBEDDED}`)))
-    expect(readDrawioBytes(plain)?.pages[0]?.name).toBe('Embedded')
+    expect(readDrawIOBytes(plain)?.pages[0]?.name).toBe('Embedded')
   })
 
   test('says a damaged or cut short PNG cannot be read, rather than that it holds no diagram', () => {
     const damaged = png(chunk('zTXt', latin1('mxfile\0\0not zlib')))
-    expect(() => readDrawioBytes(damaged)).toThrow(
+    expect(() => readDrawIOBytes(damaged)).toThrow(
       'Could not read the draw.io diagram in this image'
     )
     const whole = pngWithText('mxfile', `<mxfile>${page('Embedded')}</mxfile>`)
-    expect(() => readDrawioBytes(whole.subarray(0, 40))).toThrow('cut short')
+    expect(() => readDrawIOBytes(whole.subarray(0, 40))).toThrow('cut short')
   })
 
   test('takes an SVG’s comments before its root in stride', () => {
     const svg = `${'<!---->'.repeat(10_000)}x`
-    expect(readDrawioBytes(new TextEncoder().encode(svg))).toBeNull()
+    expect(readDrawIOBytes(new TextEncoder().encode(svg))).toBeNull()
   })
 })

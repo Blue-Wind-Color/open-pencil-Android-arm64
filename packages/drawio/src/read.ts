@@ -3,12 +3,12 @@ import { isValid, toUint8Array } from 'js-base64'
 
 import { boundedInflate, inflateBudget, percentDecoded, type InflateBudget } from './inflate'
 import type {
-  DrawioCell,
-  DrawioFile,
-  DrawioGeometry,
-  DrawioLayer,
-  DrawioPage,
-  DrawioPoint
+  DrawIOCell,
+  DrawIOFile,
+  DrawIOGeometry,
+  DrawIOLayer,
+  DrawIOPage,
+  DrawIOPoint
 } from './model'
 import { parseStyle, styleFlag } from './style'
 import { attributesOf, childElements, parseXML } from './xml'
@@ -21,11 +21,11 @@ function number(element: Element, name: string, fallback = 0): number {
   return Number.isFinite(value) ? value : fallback
 }
 
-function pointOf(element: Element): DrawioPoint {
+function pointOf(element: Element): DrawIOPoint {
   return { x: number(element, 'x'), y: number(element, 'y') }
 }
 
-const NO_GEOMETRY: DrawioGeometry = {
+const NO_GEOMETRY: DrawIOGeometry = {
   x: 0,
   y: 0,
   width: 0,
@@ -37,7 +37,7 @@ const NO_GEOMETRY: DrawioGeometry = {
   offset: null
 }
 
-function readGeometry(cell: Element): DrawioGeometry {
+function readGeometry(cell: Element): DrawIOGeometry {
   const geometry = childElements(cell, 'mxGeometry').at(0)
   if (!geometry) return structuredClone(NO_GEOMETRY)
   const points = childElements(geometry, 'Array').find((e) => e.getAttribute('as') === 'points')
@@ -71,7 +71,7 @@ function cellElements(element: Element): CellElements | null {
   return cell ? { cell, wrapper: element } : null
 }
 
-function readCell({ cell, wrapper }: CellElements, id: string, parent: string): DrawioCell {
+function readCell({ cell, wrapper }: CellElements, id: string, parent: string): DrawIOCell {
   const isEdge = cell.getAttribute('edge') === '1'
   return {
     id,
@@ -91,7 +91,7 @@ function readCell({ cell, wrapper }: CellElements, id: string, parent: string): 
  * A model's cells. Its root is the one cell without a parent, and its layers are the cells under
  * the root that are neither shapes nor edges; draw.io names them `0` and `1` by default.
  */
-function readModel(model: Element, page: Pick<DrawioPage, 'id' | 'name'>): DrawioPage | null {
+function readModel(model: Element, page: Pick<DrawIOPage, 'id' | 'name'>): DrawIOPage | null {
   const root = childElements(model, 'root').at(0)
   if (!root) return null
   const read: { elements: CellElements; id: string; parent: string | null }[] = []
@@ -102,8 +102,8 @@ function readModel(model: Element, page: Pick<DrawioPage, 'id' | 'name'>): Drawi
   }
   const rootId = read.find((entry) => !entry.parent)?.id
   if (rootId === undefined) return null
-  const layers: DrawioLayer[] = []
-  const cells: DrawioCell[] = []
+  const layers: DrawIOLayer[] = []
+  const cells: DrawIOCell[] = []
   for (const { elements, id, parent } of read) {
     if (!parent) continue
     const { cell } = elements
@@ -143,7 +143,7 @@ function readDiagram(
   diagram: Element,
   index: number,
   budget: InflateBudget
-): DrawioPage | { unreadable: string } {
+): DrawIOPage | { unreadable: string } {
   const name = diagram.getAttribute('name') || `Page ${index + 1}`
   const page = { id: diagram.getAttribute('id') ?? `page-${index + 1}`, name }
   let model = childElements(diagram, 'mxGraphModel').at(0) ?? null
@@ -160,19 +160,19 @@ function readDiagram(
  * pages it could not read: damaged, or past what the file may unpack to. Null when the source
  * is not a draw.io file.
  */
-export function parseDrawioFile(source: string, budget = inflateBudget()): DrawioFile | null {
+export function parseDrawIOFile(source: string, budget = inflateBudget()): DrawIOFile | null {
   const root = parseXML(source)
-  return root ? readDrawioRoot(root, budget) : null
+  return root ? readDrawIORoot(root, budget) : null
 }
 
-/** The pages of a draw.io document from its parsed root, as `parseDrawioFile` reads them. */
-export function readDrawioRoot(root: Element, budget: InflateBudget): DrawioFile | null {
+/** The pages of a draw.io document from its parsed root, as `parseDrawIOFile` reads them. */
+export function readDrawIORoot(root: Element, budget: InflateBudget): DrawIOFile | null {
   if (root.localName === 'mxGraphModel') {
     const page = readModel(root, { id: 'page-1', name: 'Page 1' })
     return page ? { pages: [page], unreadable: [] } : null
   }
   if (root.localName !== 'mxfile') return null
-  const file: DrawioFile = { pages: [], unreadable: [] }
+  const file: DrawIOFile = { pages: [], unreadable: [] }
   for (const [index, diagram] of childElements(root, 'diagram').entries()) {
     const read = readDiagram(diagram, index, budget)
     if ('unreadable' in read) file.unreadable.push(read.unreadable)

@@ -34,7 +34,7 @@ export const runtimeScenarios: RuntimeScenario[] = [
   },
   {
     name: 'draw.io codec',
-    code: 'const { parseDrawioFile, writeDrawioFile } = await import(\'@open-pencil/drawio\'); const file = parseDrawioFile(\'<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="a" vertex="1" parent="1"/></root></mxGraphModel>\'); if (file?.pages[0]?.cells.length !== 1 || !writeDrawioFile(file).startsWith(\'<mxfile\')) throw new Error(\'draw.io package smoke failed\')'
+    code: 'const { parseDrawIOFile, writeDrawIOFile } = await import(\'@open-pencil/drawio\'); const file = parseDrawIOFile(\'<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="a" vertex="1" parent="1"/></root></mxGraphModel>\'); if (file?.pages[0]?.cells.length !== 1 || !writeDrawIOFile(file).startsWith(\'<mxfile\')) throw new Error(\'draw.io package smoke failed\')'
   },
   {
     name: 'Emit package',
