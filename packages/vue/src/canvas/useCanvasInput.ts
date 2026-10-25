@@ -22,7 +22,11 @@ import {
 } from '#vue/canvas/vector-input/input'
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
 import { createClickCounter } from '#vue/shared/input/click-count'
-import { handleConnectorDrawMove } from '#vue/shared/input/connector/draw'
+import {
+  attachModifiers,
+  handleConnectorDrawMove,
+  refreshConnectorDrag
+} from '#vue/shared/input/connector/draw'
 import { handleDrawMove } from '#vue/shared/input/draw'
 import { cancelMove, handleMoveMove, handleMoveUp } from '#vue/shared/input/move/drag'
 import { setupPanZoom } from '#vue/shared/input/pan/zoom'
@@ -268,7 +272,7 @@ export function useCanvasInput(
     }
 
     if (!drag.value && editor.state.activeTool === 'CONNECTOR') {
-      editor.connectorHover(coords.cx, coords.cy)
+      editor.connectorHover(coords.cx, coords.cy, attachModifiers(e))
     }
 
     if (!drag.value && editor.state.activeTool === 'SELECT') {
@@ -367,12 +371,12 @@ export function useCanvasInput(
     }
 
     if (d.type === 'connector-draw') {
-      handleConnectorDrawMove(d, cx, cy, sx, sy, editor)
+      handleConnectorDrawMove(d, cx, cy, sx, sy, editor, attachModifiers(e))
       return
     }
 
     if (d.type === 'connector-end') {
-      editor.connectorEndpointDrag(cx, cy)
+      editor.connectorEndpointDrag(cx, cy, attachModifiers(e))
       return
     }
 
@@ -491,9 +495,14 @@ export function useCanvasInput(
   useEventListener(canvasRef, 'mousemove', onMouseMove)
   useEventListener(canvasRef, 'mouseup', onMouseUp)
   useEventListener(window, 'keydown', (event) => {
-    if (!guideInput.deleteSelected(event)) updateModifier(event.code, true)
+    if (guideInput.deleteSelected(event)) return
+    updateModifier(event.code, true)
+    refreshConnectorDrag(drag.value, lastPointer.value, event, editor)
   })
-  useEventListener(window, 'keyup', (event) => updateModifier(event.code, false))
+  useEventListener(window, 'keyup', (event) => {
+    updateModifier(event.code, false)
+    refreshConnectorDrag(drag.value, lastPointer.value, event, editor)
+  })
   useEventListener(
     window,
     'keydown',

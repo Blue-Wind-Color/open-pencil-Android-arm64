@@ -11,6 +11,7 @@ export { createDefaultEditorSharedState } from './state/shared'
 export { editedGradient, editedGradientLayout } from './gradient-edit'
 export type { SelectionSpacing } from './alignment'
 export type { MovePlace } from './undo'
+export type { AttachModifiers } from './connectors/attach'
 export {
   replaceSelectionColor,
   selectionColors,

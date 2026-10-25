@@ -32,13 +32,17 @@ function routeEnd(
     const point = endpoint.nodeId && fallback ? fallback : endpoint.position
     return { box: null, point, magnet: 'NONE', cap, outline: 0 }
   }
-  if (endpoint.magnet === 'NONE' || endpoint.magnet === 'ABSOLUTE') {
+  // An elbow or curve joined at the centre runs into the layer to its centre, as Figma Design
+  // draws it; a straight line stops at the outline on its way there.
+  const centred = endpoint.magnet === 'CENTER' && connector.connectorLineType !== 'STRAIGHT'
+  if (endpoint.magnet === 'NONE' || endpoint.magnet === 'ABSOLUTE' || centred) {
     // A point in the layer's own axes, carried into the connector's parent's.
     const toParent =
       Matrix.invert(getParentWorldMatrix(graph.getNode(parentId), graph)) ?? Matrix.identity()
+    const local = centred ? { x: node.width / 2, y: node.height / 2 } : endpoint.position
     const [x, y] = Matrix.mapPoints(Matrix.multiply(toParent, getWorldMatrix(node, graph)), [
-      endpoint.position.x,
-      endpoint.position.y
+      local.x,
+      local.y
     ])
     return { box: null, point: { x, y }, magnet: endpoint.magnet, cap, outline: 0 }
   }

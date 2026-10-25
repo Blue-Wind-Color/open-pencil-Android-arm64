@@ -1,4 +1,4 @@
-import type { MovePlace, Tool } from '@open-pencil/core'
+import type { AttachModifiers, MovePlace, Tool } from '@open-pencil/core'
 import type { HandlePosition } from '@open-pencil/core/geometry'
 import type {
   DerivedTextGlyph,
@@ -44,6 +44,8 @@ export interface DragConnectorDraw {
   /** Where the pointer is, in canvas coordinates. */
   x: number
   y: number
+  /** The keys held at the last move, which the release attaches by. */
+  modifiers: AttachModifiers
   commit: () => void
   cancel: () => void
 }
