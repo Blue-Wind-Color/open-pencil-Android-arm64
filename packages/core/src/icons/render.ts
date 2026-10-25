@@ -41,8 +41,8 @@ export interface PlaceIconOptions {
   identity?: boolean
 }
 
-function solid(color: Color) {
-  return [{ type: 'SOLID' as const, color, opacity: 1, visible: true }]
+function solid(color: Color, opacity = 1) {
+  return [{ type: 'SOLID' as const, color, opacity, visible: true }]
 }
 
 /** One path of an icon as a vector filling the icon's box, marked where the icon's color paints. */
@@ -63,7 +63,7 @@ function addPath(graph: SceneGraph, frameId: string, path: IconPath, size: numbe
     // Resizing the icon resizes its glyph, as the frame is the icon.
     horizontalConstraint: 'SCALE',
     verticalConstraint: 'SCALE',
-    fills: path.fill ? solid(paint(path.fill, 'fill')) : []
+    fills: path.fill ? solid(paint(path.fill, 'fill'), path.fillOpacity) : []
   })
   if (path.stroke) {
     const stroke = createPathStroke(

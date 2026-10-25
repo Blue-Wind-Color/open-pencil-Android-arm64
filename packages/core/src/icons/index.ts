@@ -1,7 +1,7 @@
 import { MATERIAL_SYMBOLS_PREFIXES } from './material-symbols/font'
 import { createMaterialSymbolsProvider } from './material-symbols/provider'
 import { createIconifyProvider, type IconProvider } from './provider'
-import { createIconSetsProvider } from './sets'
+import { createIconSetsProvider, type IconSetSource } from './sets'
 
 export {
   createIconifyProvider,
@@ -22,6 +22,11 @@ export type { IconCollection, IconData, IconOption, IconPath, IconSearchResult }
 export { createMaterialSymbolsProvider } from './material-symbols/provider'
 export { MATERIAL_SYMBOLS_PREFIXES } from './material-symbols/font'
 export { createIconSetsProvider, type IconSetSource, type IconSetsOptions } from './sets'
+export {
+  createSFSymbolsProvider,
+  SF_SYMBOLS_PREFIX,
+  type SFSymbolsHost
+} from './sf-symbols/provider'
 
 /** Iconify's icons, every set as Iconify serves it. */
 export const iconify: IconProvider = createIconifyProvider()
@@ -31,14 +36,17 @@ const ICONIFY_MATERIAL_SYMBOLS = ['material-symbols', 'material-symbols-light']
 
 /**
  * Icons from Iconify, with Material Symbols drawn from Google's variable fonts at any of their
- * axes in place of Iconify's copies. `fetcher` reaches Google, as a host's web fonts do.
+ * axes in place of Iconify's copies. `fetcher` reaches Google, as a host's web fonts do; `sources`
+ * adds sets only some hosts draw, such as SF Symbols on a Mac.
  */
 export function createIconProvider(
-  fetcher: typeof globalThis.fetch = globalThis.fetch
+  fetcher: typeof globalThis.fetch = globalThis.fetch,
+  sources: readonly IconSetSource[] = []
 ): IconProvider {
   return createIconSetsProvider({
     sources: [
-      { prefixes: MATERIAL_SYMBOLS_PREFIXES, provider: createMaterialSymbolsProvider(fetcher) }
+      { prefixes: MATERIAL_SYMBOLS_PREFIXES, provider: createMaterialSymbolsProvider(fetcher) },
+      ...sources
     ],
     fallback: iconify,
     replaced: ICONIFY_MATERIAL_SYMBOLS

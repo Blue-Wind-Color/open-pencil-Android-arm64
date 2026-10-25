@@ -22,6 +22,9 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[target.'cfg(target_os = "macos")'.build-dependencies]
+swift-rs = { version = "1.0.8", features = ["build"] }
+
 [dependencies]
 tauri = { version = "2", features = ["devtools"] }
 tauri-plugin-opener = "2"

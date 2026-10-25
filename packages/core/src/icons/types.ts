@@ -4,6 +4,8 @@ import type { IconOptions } from '@open-pencil/scene-graph/icons'
 export interface IconPath {
   vectorNetwork: VectorNetwork
   fill: string | null
+  /** How opaque the fill is, as for a symbol's secondary layers; opaque when left out. */
+  fillOpacity?: number
   stroke: string | null
   strokeWidth: number
   strokeCap: string
