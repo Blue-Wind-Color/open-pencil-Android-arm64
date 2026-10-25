@@ -7,7 +7,8 @@ import {
   changeWorkspaceRole,
   deleteWorkspace,
   inviteToWorkspace,
-  lastInvitationLink,
+  lastInvitation,
+  lastResent,
   leaveWorkspace,
   membersBusy,
   membersFailure,
@@ -17,6 +18,7 @@ import {
   membersWorkspace,
   removeWorkspaceMember,
   renameWorkspace,
+  resendWorkspaceInvitation,
   revokeWorkspaceInvitation,
   workspaceMembers,
   type WorkspaceFailure
@@ -53,10 +55,12 @@ const failure = computed(() => {
     :loading="membersLoading"
     :busy="membersBusy"
     :failure="failure"
-    :invitation-link="lastInvitationLink"
+    :invitation-link="lastInvitation?.link ?? null"
+    :resent="lastResent"
     @rename="renameWorkspace"
     @invite="inviteToWorkspace"
     @revoke="revokeWorkspaceInvitation"
+    @resend="resendWorkspaceInvitation"
     @change-role="changeWorkspaceRole"
     @remove="removeWorkspaceMember"
     @leave="leaveWorkspace"

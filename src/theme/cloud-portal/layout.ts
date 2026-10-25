@@ -12,13 +12,13 @@ export const portalLayout = tv({
     barEnd: 'ml-auto flex items-center gap-2',
     console: 'flex min-h-0 flex-1 max-md:flex-col',
     // Narrow screens turn the section list into one scrolling row above the page.
-    nav: 'max-md:h-auto max-md:w-full max-md:flex-row max-md:overflow-x-auto max-md:border-r-0 max-md:border-b max-md:pb-0',
-    navGroup: 'max-md:flex-row max-md:items-center',
+    nav: 'max-md:h-auto max-md:w-full max-md:flex-row max-md:overflow-x-auto max-md:border-r-0 max-md:border-b max-md:p-1',
+    navGroup: 'max-md:flex-row max-md:items-center max-md:border-t-0 max-md:p-0',
     navHeader: 'max-md:hidden',
-    navItems: 'max-md:flex-row max-md:p-1',
+    navItems: 'max-md:flex-row',
     navItem: 'max-md:w-auto max-md:shrink-0',
     main: 'min-w-0 flex-1 overflow-y-auto',
-    mainInner: 'mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-6 md:px-6',
+    mainInner: 'flex w-full max-w-5xl flex-col gap-5 px-4 py-6 md:px-6',
     pageTitle: 'text-base font-semibold',
     pageDescription: 'mt-0.5 text-xs text-muted'
   }
