@@ -243,12 +243,15 @@ Common node properties are readable/writable through the proxy, including:
 ### Utilities
 
 - `figma.mixed`
-- `figma.createImage(data)`
+- `figma.util.rgb(color)`, `figma.util.rgba(color, alphaOverride?)`, and `figma.util.solidPaint(color, overrides?)` read a hex or CSS color string (`rgb()`, `hsl()`, `lab()`, `oklab()`, `oklch()`, `color(display-p3 …)`, or a name), clipped to sRGB, or an `{ r, g, b, a? }` object with channels from 0 to 1; `solidPaint` takes its color and opacity from `color` and its other properties from `overrides`, such as an existing paint
+- `figma.createImage(data)` takes a PNG, JPEG, or GIF up to 4096 pixels a side and gives Figma's `Image`: its `hash`, `getBytesAsync()`, and `getSizeAsync()`; `figma.getImageByHash(hash)` gives a stored image back
+- `figma.createImageAsync(url)` loads an `http(s)://` URL or a data URI. The desktop app fetches through its native proxy, as Figma fetches through its servers; in the browser, the image's host must allow cross-origin requests
 - `figma.loadFontAsync(fontName)` no-ops because OpenPencil does not gate text edits on plugin font loading
 - `figma.listAvailableFontsAsync()` returns host-provided fonts when available
 - `figma.getNodeByIdAsync(id)` and `instance.getMainComponentAsync()` resolve to the same nodes as `figma.getNodeById(id)` and `instance.mainComponent`, for scripts written for Figma's dynamic-page mode
 - `figma.setCurrentPageAsync(page)` switches pages as setting `figma.currentPage` does, and `page.loadAsync()` resolves at once because every page is already loaded, for scripts written for Figma's dynamic-page mode
 - `figma.notify(message)` logs a warning in headless mode
+- `figma.closePlugin(message?)` and `figma.loadAllPagesAsync()` let a script written as a Figma plugin run: nothing needs closing or loading, and `closePlugin` passes its message to `figma.notify`. Figma refuses every call after `closePlugin` while a script here keeps running, so follow it with `return` as Figma's docs do
 - `instance.swapComponent(component)` points an instance at another component
 - A layer inside an instance refuses `x`, `y`, `rotation`, `relativeTransform`, `constraints`, `isMask`, and `maskType` with Figma's error, such as `in set_x: This property cannot be overridden in an instance: relative-transform`; those always follow the component. Slot content keeps them, and setting one on a slot's default content makes the instance own the slot
 - `component.createSlot()` adds a slot frame and its `SLOT` property; slot frames read `type: 'SLOT'`, `resetSlot()` brings back an instance slot's component content, and `limitViolations` lists the limits an instance slot breaks. `addComponentProperty` and `editComponentProperty` take a `description` and, for slots, `slotSettings`
@@ -259,6 +262,7 @@ Common node properties are readable/writable through the proxy, including:
 These Figma APIs are not exposed as compatible helpers yet:
 
 - `node.exportAsync()`
+- `figma.util.normalizeMarkdown()`, which fails because OpenPencil has no rich-text descriptions or annotations to normalize for
 - Library variables, extended collections, and variable bindings on effects and layout grids
 - Figma style APIs such as `figma.createPaintStyle()` / `figma.createTextStyle()`
 - Full vector boolean operation parity
