@@ -9,7 +9,7 @@ import {
   paragraphStyleAt
 } from '@open-pencil/scene-graph/text'
 
-import { weightToStyleName } from '#core/figma-api/fonts'
+import { readVariationSettings, weightToStyleName } from '#core/figma-api/fonts'
 import { toFigmaPaint, type WithFigmaTransforms } from '#core/figma-api/paints'
 import { variableAlias } from '#core/figma-api/variables/values'
 import { characterStyles, nodeStyle, type CharacterStyle } from '#core/text/character-style'
@@ -84,11 +84,21 @@ function spacing(field: 'paragraphSpacing' | 'listSpacing' | 'paragraphIndent') 
  */
 const FIELD_READERS: Record<TextSegmentField, (context: FieldContext) => unknown> = {
   fontSize: ({ style }) => style.fontSize,
-  fontName: ({ style }) => ({
-    family: style.fontFamily,
-    style: weightToStyleName(style.fontWeight, style.italic)
-  }),
-  fontWeight: ({ style }) => style.fontWeight,
+  fontName: ({ node, style }) => {
+    const name = weightToStyleName(style.fontWeight, style.italic)
+    const variationSettings = readVariationSettings(
+      style.fontFamily,
+      name,
+      style.fontVariations,
+      node.opticalSizeFromFontSize
+    )
+    return variationSettings
+      ? { family: style.fontFamily, style: name, variationSettings }
+      : { family: style.fontFamily, style: name }
+  },
+  // A weight axis the text sets is its weight, as Figma reads it.
+  fontWeight: ({ style }) =>
+    style.fontVariations.find((variation) => variation.axis === 'wght')?.value ?? style.fontWeight,
   fontStyle: ({ style }) => (style.italic ? 'ITALIC' : 'REGULAR'),
   textDecoration: ({ style }) => style.textDecoration,
   textDecorationStyle: whenUnderlined((style) => style.textDecorationStyle),

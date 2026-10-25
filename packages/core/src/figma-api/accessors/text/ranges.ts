@@ -21,7 +21,15 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import { figmaPaintToFill, type FigmaPaint } from '#core/figma-api/accessors/visual'
-import { styleNameToWeight, type FigmaFontName } from '#core/figma-api/fonts'
+import {
+  fontNameInputStyle,
+  readVariationSettings,
+  weightToStyleName,
+  type CurrentFont,
+  type FigmaFontName,
+  type FigmaFontNameInput,
+  type FigmaVariationSettings
+} from '#core/figma-api/fonts'
 import {
   getRangeIndentation,
   getRangeListOptions,
@@ -42,7 +50,12 @@ import {
   type TextSegmentField
 } from '#core/figma-api/text/style'
 import type { FigmaVariableAlias } from '#core/figma-api/variables/values'
-import { styleRunsWithPatch, type TextStylePatch } from '#core/text/character-style'
+import {
+  characterStyles,
+  nodeStyle,
+  styleRunsWithPatch,
+  type TextStylePatch
+} from '#core/text/character-style'
 
 import { hyperlinkTarget } from './hyperlink'
 import { invalid, received } from './messages'
@@ -127,17 +140,65 @@ function stringProblem(value: unknown, at: string): string | null {
   return typeof value === 'string' ? null : `Expected string, received ${received(value)} at ${at}`
 }
 
-/** A font name Figma takes: a family and style; a style left out reads as regular. */
-function fontNameStyle(method: string, value: unknown): CharacterStyleOverride {
+/** The font Figma reads for the character at `index`, as a font name left out reads from. */
+/** The font of the character at `index`, and the axes it sets itself. */
+function currentFont(node: SceneNode, index: number): CurrentFont {
+  const at = Math.min(index, node.text.length - 1)
+  const [style] = at < 0 ? [nodeStyle(node)] : characterStyles(node, at, at + 1)
+  const name = weightToStyleName(style.fontWeight, style.italic)
+  return {
+    style: name,
+    fontVariations: style.fontVariations,
+    variationSettings: readVariationSettings(
+      style.fontFamily,
+      name,
+      style.fontVariations,
+      node.opticalSizeFromFontSize
+    )
+  }
+}
+
+/**
+ * A font name Figma takes: a family, and a style and variation settings that may be left out, as
+ * in `FontNameInput`. What is left out reads from the font of the character at `start`.
+ */
+export function fontNameStyle(
+  method: string,
+  node: SceneNode,
+  start: number,
+  value: unknown
+): CharacterStyleOverride {
   if (!value || typeof value !== 'object') {
     throw invalid(method, `Expected object, received ${received(value)}`)
   }
   const fontName = value as Partial<Record<keyof FigmaFontName, unknown>>
-  const style = fontName.style ?? 'Regular'
-  const problem = stringProblem(fontName.family, '.family') ?? stringProblem(style, '.style')
+  const problem =
+    stringProblem(fontName.family, '.family') ??
+    (fontName.style === undefined ? null : stringProblem(fontName.style, '.style')) ??
+    variationSettingsProblem(fontName.variationSettings)
   if (problem) throw invalid(method, problem)
-  const { weight, italic } = styleNameToWeight(style as string)
-  return { fontFamily: fontName.family as string, fontWeight: weight, italic }
+  return fontNameInputStyle(
+    method,
+    {
+      family: fontName.family as string,
+      style: fontName.style as string | undefined,
+      variationSettings: fontName.variationSettings as FigmaVariationSettings | undefined
+    },
+    currentFont(node, start)
+  )
+}
+
+/** Variation settings Figma takes: numbers by axis tag. */
+function variationSettingsProblem(value: unknown): string | null {
+  if (value === undefined) return null
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return `Expected object, received ${received(value)} at .variationSettings`
+  }
+  for (const [tag, setting] of Object.entries(value)) {
+    const problem = numberProblem(setting, ` at .variationSettings.${tag}`)
+    if (problem) return problem
+  }
+  return null
 }
 
 /** A number from 0 to 1, as Figma takes colour channels and opacity. */
@@ -279,7 +340,7 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
     if ((value as number) < 1) throw invalid(method, 'Number must be greater than or equal to 1')
     return { fontSize: value as number }
   },
-  setRangeFontName: (method, _node, _start, _end, value) => fontNameStyle(method, value),
+  setRangeFontName: (method, node, start, _end, value) => fontNameStyle(method, node, start, value),
   setRangeFills: (method, _node, _start, _end, value) => ({
     fills: fillsFromPaints(method, value)
   }),
@@ -365,7 +426,7 @@ export interface TextRangeMethods {
   getRangeFontSize: RangeGetter<number>
   setRangeFontSize: RangeSetterMethod<number>
   getRangeFontName: RangeGetter<FigmaFontName>
-  setRangeFontName: RangeSetterMethod<FigmaFontName>
+  setRangeFontName: RangeSetterMethod<FigmaFontNameInput>
   getRangeFontWeight: RangeGetter<number>
   getRangeFills: RangeGetter<Fill[]>
   setRangeFills: RangeSetterMethod<FigmaPaint[]>

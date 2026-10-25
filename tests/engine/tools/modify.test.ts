@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { fontManager } from '@open-pencil/core/text'
 
 import { expectDefined, expectFills, getNodeOrThrow } from '#tests/helpers/assert'
+import { repoPath } from '#tests/helpers/paths'
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 describe('set_fill', () => {
@@ -241,7 +243,7 @@ describe('set_font_range', () => {
       error: expect.stringContaining('Range outside of available characters')
     })
     expect(setFontRange.execute(figma, { id, start: 2, end: 2 })).toEqual({
-      error: 'set_font_range needs at least one of family, size, style, or color'
+      error: 'set_font_range needs at least one of family, size, style, variations, or color'
     })
     expect(getNodeOrThrow(graph, id).styleRuns).toEqual([])
   })
@@ -305,5 +307,33 @@ describe('set_font_range', () => {
       expectDefined(expectDefined(colorRun, 'color style run').style.fills, 'color style fills')[0]
         ?.color.r
     ).toBeCloseTo(1)
+  })
+})
+
+describe('set_font', () => {
+  test('sets variable font axes, picking the nearest named style when none is given', async () => {
+    const family = 'Tool Variations'
+    fontManager.markLoaded(
+      family,
+      'Regular',
+      await Bun.file(repoPath('tests/fixtures/fonts/InterVariable-Latin.ttf')).arrayBuffer()
+    )
+    const { figma } = setupToolTest()
+    const text = figma.createText()
+    text.characters = 'Hello'
+    const setFont = getTool('set_font')
+
+    expect(
+      setFont.execute(figma, { id: text.id, family, variations: { wght: 650 } })
+    ).toMatchObject({
+      fontName: { family, style: 'Bold', variationSettings: { wght: 650 } }
+    })
+    expect(
+      setFont.execute(figma, { id: text.id, style: 'Regular', variations: { wght: 450 } })
+    ).toMatchObject({ fontName: { style: 'Regular', variationSettings: { wght: 450 } } })
+    expect(setFont.execute(figma, { id: text.id, variations: { slnt: -10 } })).toEqual({
+      error:
+        'in setRangeFontName: "slnt" is not a valid variation setting. Valid settings are ["opsz","wght"].'
+    })
   })
 })

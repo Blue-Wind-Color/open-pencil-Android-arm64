@@ -1,8 +1,9 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectFills } from '#core-tests/helpers/assert'
+import { expectDefined, expectFills } from '#core-tests/helpers/assert'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { fontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -15,16 +16,26 @@ function styledText(characters = 'Hello world\nSecond') {
   return { api, text }
 }
 
-const REGULAR = { family: 'Inter', style: 'Regular' }
+// Inter is variable, so its names read every axis it is drawn at.
+const REGULAR = { family: 'Inter', style: 'Regular', variationSettings: { opsz: 14, wght: 400 } }
 const BLUE: Color = { r: 0, g: 0, b: 1, a: 1 }
 const RGB_BLUE = { r: 0, g: 0, b: 1 }
-const BOLD = { family: 'Inter', style: 'Bold' }
+const BOLD = { family: 'Inter', style: 'Bold', variationSettings: { opsz: 14, wght: 700 } }
+const BOLD_NAME = { family: 'Inter', style: 'Bold' }
+
+beforeAll(async () => {
+  const inter = expectDefined(
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
+    'bundled Inter font'
+  )
+  fontManager.markLoaded('Inter', 'Regular', inter)
+})
 
 describe('styled text segments', () => {
   test('split only where a requested field changes', () => {
     const { text } = styledText()
     text.setRangeFontSize(0, 5, 24)
-    text.setRangeFontName(6, 11, BOLD)
+    text.setRangeFontName(6, 11, BOLD_NAME)
 
     expect(text.getStyledTextSegments(['fontSize'])).toEqual([
       { characters: 'Hello', start: 0, end: 5, fontSize: 24 },
@@ -126,7 +137,7 @@ describe('character style ranges', () => {
   test('read mixed on the node once ranges differ, and setting the node restyles every character', () => {
     const { api, text } = styledText()
     text.setRangeFontSize(0, 5, 24)
-    text.setRangeFontName(6, 11, BOLD)
+    text.setRangeFontName(6, 11, BOLD_NAME)
     expect<unknown>(text.fontSize).toBe(api.mixed)
     expect<unknown>(text.fontName).toBe(api.mixed)
     expect(text.getRangeFontSize(0, 8)).toBe(api.mixed)

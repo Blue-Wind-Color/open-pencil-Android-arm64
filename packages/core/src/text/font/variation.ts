@@ -140,6 +140,28 @@ export function fontAxes(data: ArrayBuffer): FontAxis[] | null {
   return variationTable(data)?.axes ?? null
 }
 
+/** A named instance of a variable font, such as Inter's `Semi Bold`, with every axis' value. */
+export interface NamedInstance {
+  name: string
+  variations: FontVariation[]
+}
+
+/** A variable font's named instances, in its order. */
+export function namedInstances(data: ArrayBuffer): NamedInstance[] {
+  const table = variationTable(data)
+  if (!table?.name) return []
+  const { view, axes, instances, name } = table
+  return instances.flatMap((offset) => {
+    const instanceName = fontName(view, name, view.getUint16(offset))
+    if (instanceName === null) return []
+    const variations = axes.map((axis, axisIndex) => ({
+      axis: axis.tag,
+      value: fixed(view, offset + 4 + axisIndex * 4)
+    }))
+    return [{ name: instanceName, variations }]
+  })
+}
+
 /**
  * Returns the axis coordinates a variable font needs to render `style`, preferring the named
  * instance with that name (for example SF Pro `Medium` is `wght` 510) and otherwise clamping the

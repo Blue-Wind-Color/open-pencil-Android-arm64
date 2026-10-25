@@ -13,7 +13,7 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { styleNameToWeight, type FigmaFontName } from '#core/figma-api/fonts'
+import type { FigmaFontNameInput } from '#core/figma-api/fonts'
 import {
   getParagraphSpacing,
   letterSpacingValue,
@@ -28,6 +28,7 @@ import { getTextStyle, type TextSegmentField } from '#core/figma-api/text/style'
 import { styleRunsWithPatch, textStyleChanges } from '#core/text/character-style'
 
 import { hyperlinkTarget } from './hyperlink'
+import { fontNameStyle } from './ranges'
 
 /**
  * Getter/setter pair for a spacing Figma keeps at zero or more. It reads `mixed` while paragraphs
@@ -105,10 +106,9 @@ export function installTextNodeProxyAccessors(
         updateNode(this, internals, { text: value, textParagraphs, styleRuns })
       }
     },
-    fontName: characterStyle<FigmaFontName>(internals, 'fontName', mixed, (_node, value) => {
-      const { weight, italic } = styleNameToWeight(value.style)
-      return { fontFamily: value.family, fontWeight: weight, italic }
-    }),
+    fontName: characterStyle<FigmaFontNameInput>(internals, 'fontName', mixed, (node, value) =>
+      fontNameStyle('set_fontName', node, 0, value)
+    ),
     fontSize: characterStyle<number>(internals, 'fontSize', mixed, (_node, fontSize) => ({
       fontSize
     })),

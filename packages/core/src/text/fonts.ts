@@ -8,7 +8,13 @@ import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import { fontFaceRenderFamily } from '#core/text/face'
 import { facesFromStyles, hasFamilyFace, type FamilyFace } from '#core/text/font/faces'
 import { chooseLocalFontMatch } from '#core/text/font/style'
-import { fontAxes, namedInstanceVariations } from '#core/text/font/variation'
+import {
+  fontAxes,
+  namedInstances,
+  namedInstanceVariations,
+  type FontAxis,
+  type NamedInstance
+} from '#core/text/font/variation'
 
 export * from '#core/text/font/sources'
 export * from '#core/text/font/style'
@@ -77,6 +83,10 @@ export class FontManager {
   private fileFamilies = new Map<ArrayBuffer, string>()
   private remoteCoverage = new Map<string, Set<string>>()
   private instanceVariations = new WeakMap<ArrayBuffer, Map<string, FontVariation[] | null>>()
+  private variations = new WeakMap<
+    ArrayBuffer,
+    { axes: FontAxis[]; instances: NamedInstance[] } | null
+  >()
   private blockedNodeIds = new Set<string>()
   private fontProvider: TypefaceFontProvider | null = null
   private bundledFontLocator: BundledFontLocator = defaultBundledFontLocator
@@ -534,6 +544,34 @@ export class FontManager {
 
   loadedData(family: string, style: string): ArrayBuffer | null {
     return this.loadedFamilies.get(`${family}|${style}`) ?? null
+  }
+
+  /**
+   * The variation axes and named instances of a family's variable font, from a face it has loaded,
+   * in the slant asked for where it has one: `null` when the faces it has loaded are static,
+   * `undefined` when it has loaded none.
+   */
+  familyVariation(
+    family: string,
+    italic?: boolean
+  ): { data: ArrayBuffer; axes: FontAxis[]; instances: NamedInstance[] } | null | undefined {
+    let loaded = false
+    let other: { data: ArrayBuffer; axes: FontAxis[]; instances: NamedInstance[] } | null = null
+    for (const [key, data] of this.loadedFamilies) {
+      if (!key.startsWith(`${family}|`)) continue
+      loaded = true
+      let variation = this.variations.get(data)
+      if (variation === undefined) {
+        const axes = fontAxes(data)
+        variation = axes ? { axes, instances: namedInstances(data) } : null
+        this.variations.set(data, variation)
+      }
+      if (!variation) continue
+      const slant = parseFontStyle(key.slice(family.length + 1)).italic
+      if (italic === undefined || slant === italic) return { data, ...variation }
+      other ??= { data, ...variation }
+    }
+    return loaded ? other : undefined
   }
 
   /** Axis coordinates for `style` when the loaded face is a variable font, otherwise `null`. */
