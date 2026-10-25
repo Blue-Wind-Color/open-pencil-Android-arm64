@@ -1,5 +1,12 @@
+import { pick } from 'es-toolkit/object'
+import { isEqual } from 'es-toolkit/predicate'
+
 import { generateId, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { populateInstanceChildren } from '@open-pencil/scene-graph/instances'
+import {
+  INSTANCE_OVERRIDE_FIELDS,
+  populateInstanceChildren,
+  recordInstanceOverride
+} from '@open-pencil/scene-graph/instances'
 
 import { applyPenProperties, createSceneNode, type Build } from './nodes'
 import type { PenNode, PenOverride } from './schema'
@@ -71,15 +78,30 @@ function replaceLayer(build: Build, target: SceneNode, replacement: PenOverride)
   })
 }
 
+/**
+ * Records as the instance's overrides the fields an override changed on a copy, so they survive
+ * the instance's next sync and a save, as an edit made in the editor would.
+ */
+function recordChangedFields(
+  graph: SceneGraph,
+  target: SceneNode,
+  before: Partial<SceneNode>
+): void {
+  const changed = INSTANCE_OVERRIDE_FIELDS.filter((field) => !isEqual(before[field], target[field]))
+  recordInstanceOverride(graph, target.id, changed)
+}
+
 function overrideLayer(build: Build, target: SceneNode, override: PenOverride): void {
   const { graph, ctx, effective } = build
   const base = effective.get(target.id) ?? { type: 'frame', id: target.id }
   const { descendants: _descendants, children, ...fields } = override
   const merged: PenNode = { ...base, ...fields, type: base.type, id: base.id }
+  const before = structuredClone(pick(target, INSTANCE_OVERRIDE_FIELDS))
   inAncestorThemes(build, target, () => {
     const leave = merged.theme ? ctx.enterTheme(merged.theme) : undefined
     try {
       applyPenProperties(target, merged, build)
+      recordChangedFields(graph, target, before)
       if (children) {
         const replaced = target.childIds
         for (const childId of replaced) graph.deleteNode(childId)

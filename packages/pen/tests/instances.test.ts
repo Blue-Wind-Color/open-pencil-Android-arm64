@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { PenNode } from '@open-pencil/pen'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { hasInstanceOverride, syncInstance } from '@open-pencil/scene-graph/instances'
 
 import { expectDefined, getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
@@ -83,6 +84,26 @@ describe('parsePenFile — instances', () => {
     ])
     expect(copyOf(graph, 'changed', 'label').text).toBe('Changed')
     expect(getNodeOrThrow(graph, 'label').text).toBe('Button')
+  })
+
+  test('records a descendant override so a sync keeps it', () => {
+    const graph = parseDocument([
+      button,
+      {
+        id: 'kept',
+        type: 'ref',
+        ref: 'button',
+        descendants: { label: { content: 'Kept' }, dot: { enabled: false } }
+      }
+    ])
+    const label = copyOf(graph, 'kept', 'label')
+    expect(hasInstanceOverride(graph, label.id, 'text')).toBe(true)
+    expect(hasInstanceOverride(graph, label.id, 'fills')).toBe(false)
+
+    syncInstance(graph, 'kept')
+
+    expect(copyOf(graph, 'kept', 'label').text).toBe('Kept')
+    expect(copyOf(graph, 'kept', 'dot').visible).toBe(false)
   })
 
   test('follows an ID path through a nested instance', () => {
