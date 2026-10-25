@@ -52,6 +52,7 @@ const ESCAPABLE_DRAGS: ReadonlySet<DragState['type']> = new Set<DragState['type'
   'rotate',
   'connector-draw',
   'connector-end',
+  'connector-line',
   'line-end'
 ])
 
@@ -377,6 +378,11 @@ export function useCanvasInput(
 
     if (d.type === 'connector-end') {
       editor.connectorEndpointDrag(cx, cy, attachModifiers(e))
+      return
+    }
+
+    if (d.type === 'connector-line') {
+      editor.connectorLineDrag(cx, cy)
       return
     }
 
