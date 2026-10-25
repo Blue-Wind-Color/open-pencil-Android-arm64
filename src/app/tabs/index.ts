@@ -2,7 +2,7 @@ import { promiseTimeout } from '@vueuse/core'
 import { shallowRef, computed, triggerRef } from 'vue'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { findFigThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
+import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
@@ -270,10 +270,10 @@ async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGra
   const layOut = (pageId: string) =>
     imported.applyDerivedLayoutDuring(() => computeAllLayouts(imported, pageId))
   if (firstPageId) layOut(firstPageId)
-  const coverPageId = findFigThumbnailPageId(imported.getPages())
-  if (coverPageId && coverPageId !== firstPageId) {
-    populateFigPage(imported, coverPageId)
-    layOut(coverPageId)
+  const thumbnailPageId = figThumbnailPageId(imported.getPages())
+  if (thumbnailPageId && thumbnailPageId !== firstPageId) {
+    populateFigPage(imported, thumbnailPageId)
+    layOut(thumbnailPageId)
   }
   return imported
 }
@@ -299,26 +299,26 @@ async function showImportedGraph(
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {
   if (await loadCachedRecentFileThumbnail(path)) return
-  const coverPageId = findFigThumbnailPageId(store.graph.getPages())
-  if (!coverPageId) return
+  const thumbnailPageId = figThumbnailPageId(store.graph.getPages())
+  if (!thumbnailPageId) return
   for (let attempt = 0; attempt < 240 && !store.renderer; attempt++) {
     await promiseTimeout(250)
   }
   const renderer = store.renderer
   if (!renderer) {
-    console.warn('[Recent files] Cover thumbnail skipped because the renderer was unavailable')
+    console.warn('[Recent files] Thumbnail skipped because the renderer was unavailable')
     return
   }
   const bytes = renderThumbnail(
     renderer.ck,
     renderer,
     store.graph,
-    coverPageId,
+    thumbnailPageId,
     RECENT_FILE_THUMBNAIL_SIZE,
     RECENT_FILE_THUMBNAIL_SIZE
   )
   if (!bytes) {
-    console.warn('[Recent files] Cover thumbnail skipped because the Cover page was empty')
+    console.warn('[Recent files] Thumbnail skipped because its page was empty')
     return
   }
   await cacheRecentFileThumbnail(path, bytes)
@@ -326,14 +326,14 @@ async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<vo
 
 function watchOpenedFigCover(path: string, store: EditorStore): void {
   coverThumbnailListeners.get(store)?.()
-  const coverPageId = findFigThumbnailPageId(store.graph.getPages())
-  if (!coverPageId) return
+  const thumbnailPageId = figThumbnailPageId(store.graph.getPages())
+  if (!thumbnailPageId) return
   coverThumbnailListeners.set(
     store,
     store.onEditorEvent('page:changed', (pageId) => {
-      if (pageId !== coverPageId) return
+      if (pageId !== thumbnailPageId) return
       void cacheOpenedFigCover(path, store).catch((error) => {
-        console.warn('[Recent files] Failed to cache the Cover thumbnail', error)
+        console.warn('[Recent files] Failed to cache the thumbnail', error)
       })
     })
   )
@@ -498,7 +498,7 @@ export async function openFileInNewTab(
       if (path?.toLowerCase().endsWith('.fig')) {
         watchOpenedFigCover(path, existing.store)
         void cacheOpenedFigCover(path, existing.store).catch((error) => {
-          console.warn('[Recent files] Failed to cache the Cover thumbnail', error)
+          console.warn('[Recent files] Failed to cache the thumbnail', error)
         })
       }
       return { kind: 'existing' as const, store: existing.store }
@@ -569,7 +569,7 @@ export async function openFileInNewTab(
     )
     if (isFig && path) {
       void cacheOpenedFigCover(path, store).catch((error) => {
-        console.warn('[Recent files] Failed to cache the Cover thumbnail', error)
+        console.warn('[Recent files] Failed to cache the thumbnail', error)
       })
     }
     completion.resolve(undefined)

@@ -54,6 +54,18 @@ describe('.fig meta.json', () => {
     expect(meta.client_meta.render_coordinates).toEqual({ x: 49, y: 3, width: 345, height: 308 })
   })
 
+  test('without a Cover page, the thumbnail shows the first page a person drew on', async () => {
+    const { graph } = landingPage()
+    // An internal page, such as the one library data lives on, listed before it.
+    const internal = graph.addPage('Internal')
+    graph.updateNode(internal.id, { internalOnly: true })
+    graph.insertChildAt(internal.id, graph.rootId, 0)
+    graph.createNode('RECTANGLE', internal.id, { x: 900, y: 900, width: 10, height: 10 })
+    const { meta } = readArchive(await exportFigFile(graph, { renderHeadlessThumbnail: true }))
+
+    expect(meta.client_meta.render_coordinates).toEqual({ x: 49, y: 3, width: 345, height: 308 })
+  })
+
   test('describes the placeholder when no thumbnail was rendered', async () => {
     const { graph } = landingPage()
     const { meta, thumbnailSize } = readArchive(await exportFigFile(graph))
