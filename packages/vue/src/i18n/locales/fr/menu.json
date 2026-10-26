@@ -77,6 +77,7 @@
   "exportSelectionAsPNG": "Exporter la sélection en PNG",
   "exportSelectionAsSVG": "Exporter la sélection en SVG",
   "exportSelectionAsPPTX": "Exporter la sélection en PPTX",
+  "exportSelectionAsDrawIO": "Exporter la sélection en draw.io",
   "exportSelectionAsFig": "Exporter la sélection en .fig",
   "togglePreview": "Aperçu",
   "browseFiles": "Parcourir les fichiers…",

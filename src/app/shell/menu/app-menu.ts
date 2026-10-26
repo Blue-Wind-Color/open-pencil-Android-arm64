@@ -198,6 +198,7 @@ export function useAppMenu() {
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),
+    'export-drawio': () => exportSelection('drawio'),
     'export-fig': () => exportSelection('fig'),
     ...createSharedEditorMenuActions(setTheme)
   }

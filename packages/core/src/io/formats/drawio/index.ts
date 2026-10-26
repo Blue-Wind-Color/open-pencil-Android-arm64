@@ -1,4 +1,4 @@
-import type { DrawIOCell, DrawIOFile, DrawIOPage } from '@open-pencil/drawio'
+import type { DrawIOCell, DrawIOFile, DrawIOPage, DrawIOStyle } from '@open-pencil/drawio'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { connectorRoute, placeConnectorLabel } from '@open-pencil/scene-graph/connectors'
 import { createShapeWithText } from '@open-pencil/scene-graph/generated'
@@ -13,6 +13,19 @@ import { shapeName, vertexKind } from './shapes'
 function labelOf(cell: DrawIOCell) {
   const format = labelFormat(cell.style)
   return { format, ...readLabel(cell.value, cell.style.values.html === '1', format) }
+}
+
+/**
+ * A cell's turn and mirrors as a layer's. draw.io mirrors a cell about its centre and then turns
+ * it, negating the turn when it mirrors one way only; a layer turns and then mirrors, so that
+ * turn is the layer's own. `ownFlipH` is a mirror the shape itself stands for, as a left
+ * parallelogram is draw.io's mirrored one.
+ */
+function placementOf(style: DrawIOStyle, ownFlipH = false) {
+  const flipX = style.values.flipH === '1' && !ownFlipH
+  const flipY = style.values.flipV === '1'
+  const turn = Number(style.values.rotation ?? 0) || 0
+  return { flipX, flipY, rotation: flipX === flipY ? turn : -turn }
 }
 
 /** The first line of a label, as a layer's name. */
@@ -99,6 +112,7 @@ class PageBuilder {
     if (kind.type === 'TEXT') {
       return graph.createNode('TEXT', parentId, {
         ...box,
+        ...placementOf(cell.style),
         name: nameOf(label.text, 'Text'),
         ...labelFields(cell.style, label.format),
         text: label.text,
@@ -127,13 +141,15 @@ class PageBuilder {
       ? { x: x + (width - height) / 2, y: y + (height - width) / 2, width: height, height: width }
       : { x, y, width, height }
     const known = shapeName(cell.style)
+    const own = placementOf(cell.style, kind.shape === 'PARALLELOGRAM_LEFT')
     return createShapeWithText(
       graph,
       parentId,
       {
         ...placed,
         visible: cell.visible,
-        rotation: kind.rotation,
+        ...own,
+        rotation: own.rotation + kind.rotation,
         shapeWithTextType: kind.shape,
         // draw.io sized it, so it keeps its size, as a FigJam shape whose height was set does.
         shapeTruncates: true,

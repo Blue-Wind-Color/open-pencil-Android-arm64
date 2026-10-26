@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '#core-tests/helpers/assert'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
-
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
 import { shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
+
+import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
@@ -28,7 +28,10 @@ function onPage(graph: SceneGraph): SceneNode[] {
 }
 
 function byName(graph: SceneGraph, name: string): SceneNode {
-  return expectDefined([...graph.getAllNodes()].find((node) => node.name === name), name)
+  return expectDefined(
+    [...graph.getAllNodes()].find((node) => node.name === name),
+    name
+  )
 }
 
 describe('opening draw.io files', () => {
@@ -54,14 +57,31 @@ describe('draw.io shapes', () => {
   test('become FigJam shapes with text of the same kind, sized and painted as drawn', async () => {
     const graph = await read(
       file(
-        vertex('a', 'rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;', [40, 60, 120, 60], 'Start') +
-          vertex('b', 'rhombus;whiteSpace=wrap;html=1;fillColor=none;dashed=1;', [280, 40, 100, 100], '&lt;b&gt;Ok&lt;/b&gt;?') +
+        vertex(
+          'a',
+          'rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;',
+          [40, 60, 120, 60],
+          'Start'
+        ) +
+          vertex(
+            'b',
+            'rhombus;whiteSpace=wrap;html=1;fillColor=none;dashed=1;',
+            [280, 40, 100, 100],
+            '&lt;b&gt;Ok&lt;/b&gt;?'
+          ) +
           vertex('c', 'shape=cylinder3;whiteSpace=wrap;html=1;', [280, 240, 80, 100], 'Store') +
           vertex('d', 'shape=mxgraph.aws4.lambda;', [600, 40, 60, 60], 'Lambda')
       )
     )
     expect(
-      onPage(graph).map((node) => [node.type, node.shapeWithTextType, node.x, node.y, node.width, node.height])
+      onPage(graph).map((node) => [
+        node.type,
+        node.shapeWithTextType,
+        node.x,
+        node.y,
+        node.width,
+        node.height
+      ])
     ).toEqual([
       ['SHAPE_WITH_TEXT', 'ROUNDED_RECTANGLE', 40, 60, 120, 60],
       ['SHAPE_WITH_TEXT', 'DIAMOND', 280, 40, 100, 100],
@@ -89,24 +109,44 @@ describe('draw.io shapes', () => {
     )
     const [right, down] = onPage(graph)
     // Turned a quarter about the centre of the box it fills.
-    expect([right.shapeWithTextType, right.rotation, right.x, right.y, right.width, right.height]).toEqual(['TRIANGLE_UP', 90, 490, 50, 80, 60])
+    expect([
+      right.shapeWithTextType,
+      right.rotation,
+      right.x,
+      right.y,
+      right.width,
+      right.height
+    ]).toEqual(['TRIANGLE_UP', 90, 490, 50, 80, 60])
     expect([down.shapeWithTextType, down.rotation]).toEqual(['TRIANGLE_DOWN', 0])
   })
 
   test('text stays text, and a swimlane is a section around its cells', async () => {
     const graph = await read(
       file(
-        vertex('t', 'text;html=1;align=left;verticalAlign=top;fontSize=20;fontColor=#ff0000;', [40, 20, 200, 30], 'Title') +
+        vertex(
+          't',
+          'text;html=1;align=left;verticalAlign=top;fontSize=20;fontColor=#ff0000;',
+          [40, 20, 200, 30],
+          'Title'
+        ) +
           vertex('lane', 'swimlane;whiteSpace=wrap;html=1;', [40, 100, 300, 200], 'Team') +
           vertex('in', 'whiteSpace=wrap;html=1;', [20, 40, 100, 50], 'Task', 'lane')
       )
     )
     const title = byName(graph, 'Title')
-    expect(title).toMatchObject({ type: 'TEXT', text: 'Title', fontSize: 20, textAlignHorizontal: 'LEFT', textAlignVertical: 'TOP' })
+    expect(title).toMatchObject({
+      type: 'TEXT',
+      text: 'Title',
+      fontSize: 20,
+      textAlignHorizontal: 'LEFT',
+      textAlignVertical: 'TOP'
+    })
     expect(title.fills[0]?.color).toMatchObject({ r: 1, g: 0, b: 0 })
     const lane = byName(graph, 'Team')
     expect(lane).toMatchObject({ type: 'SECTION', x: 40, y: 100, width: 300, height: 200 })
-    expect(graph.getChildren(lane.id).map((node) => [node.name, node.x, node.y])).toEqual([['Task', 20, 40]])
+    expect(graph.getChildren(lane.id).map((node) => [node.name, node.x, node.y])).toEqual([
+      ['Task', 20, 40]
+    ])
   })
 })
 
@@ -135,7 +175,11 @@ describe('draw.io edges', () => {
     })
     const parts = expectDefined(connectorSublayers(graph, goes))
     expect(parts.label.text).toBe('goes')
-    expect(parts.line.strokes[0]).toMatchObject({ weight: 2, color: { r: 1, g: 0, b: 0 }, dashPattern: [6, 6] })
+    expect(parts.line.strokes[0]).toMatchObject({
+      weight: 2,
+      color: { r: 1, g: 0, b: 0 },
+      dashPattern: [6, 6]
+    })
     // exitX/exitY pin an end to a point of its shape; an unfilled triangle is an open arrow.
     expect(exits).toMatchObject({
       connectorLineType: 'STRAIGHT',
@@ -159,11 +203,48 @@ describe('draw.io edges', () => {
       )
     )
     const connector = expectDefined(onPage(graph).find((node) => node.type === 'CONNECTOR'))
-    expect([connector.connectorStart?.magnet, connector.connectorEnd?.magnet]).toEqual(['RIGHT', 'RIGHT'])
+    expect([connector.connectorStart?.magnet, connector.connectorEnd?.magnet]).toEqual([
+      'RIGHT',
+      'RIGHT'
+    ])
     const { line } = expectDefined(connectorSublayers(graph, connector))
-    const points = (line.vectorNetwork?.vertices ?? []).map((v) => [connector.x + line.x + v.x, connector.y + line.y + v.y])
+    const points = (line.vectorNetwork?.vertices ?? []).map((v) => [
+      connector.x + line.x + v.x,
+      connector.y + line.y + v.y
+    ])
     expect(points.some(([x]) => x === 600)).toBe(true)
     expect(points.at(0)?.[0]).toBeGreaterThan(520)
+  })
+
+  test('curved through a point off a corner leave and enter where draw.io ends them', async () => {
+    // Beyond both shapes' right sides but further below B and above C than across.
+    const graph = await read(
+      file(
+        shapes +
+          `<mxCell id="e" style="curved=1;" edge="1" parent="1" source="b" target="c"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="600" y="190"/></Array></mxGeometry></mxCell>`
+      )
+    )
+    const connector = expectDefined(onPage(graph).find((node) => node.type === 'CONNECTOR'))
+    expect([connector.connectorStart?.magnet, connector.connectorEnd?.magnet]).toEqual([
+      'BOTTOM',
+      'TOP'
+    ])
+  })
+
+  test('bent toward a shape inside a group join it by the side facing the point', async () => {
+    // The group holds C at 400, 260 on the page; the curve to it runs on the page.
+    const graph = await read(
+      file(
+        vertex('a', 'whiteSpace=wrap;', [40, 60, 120, 60], 'A') +
+          vertex('g', 'group;', [300, 200, 300, 200], '') +
+          vertex('c', 'whiteSpace=wrap;', [100, 60, 120, 60], 'C', 'g') +
+          `<mxCell id="e" style="curved=1;" edge="1" parent="1" source="a" target="c"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="460" y="160"/></Array></mxGeometry></mxCell>`
+      )
+    )
+    const connector = expectDefined(
+      [...graph.getAllNodes()].find((node) => node.type === 'CONNECTOR')
+    )
+    expect(connector.connectorEnd?.magnet).toBe('TOP')
   })
 
   test('take the labels draw.io keeps along them, where it keeps them', async () => {
@@ -176,7 +257,11 @@ describe('draw.io edges', () => {
       )
     )
     const connector = expectDefined(onPage(graph).find((node) => node.type === 'CONNECTOR'))
-    expect(connector.connectorLabelPosition).toEqual({ section: 'MIDDLE_TO_START', offset: 0.5, offAxis: 'NONE' })
+    expect(connector.connectorLabelPosition).toEqual({
+      section: 'MIDDLE_TO_START',
+      offset: 0.5,
+      offAxis: 'NONE'
+    })
     expect(connectorSublayers(graph, connector)?.label.text).toBe('first')
     // A second label draws as text by the edge.
     expect(byName(graph, 'second').type).toBe('TEXT')
@@ -197,7 +282,12 @@ describe('draw.io edges', () => {
 test('style values named like built-in object members fall back as unknown values do', async () => {
   const graph = await read(
     file(
-      vertex('a', 'triangle;direction=constructor;align=constructor;verticalAlign=toString;', [0, 0, 80, 60], 'A') +
+      vertex(
+        'a',
+        'triangle;direction=constructor;align=constructor;verticalAlign=toString;',
+        [0, 0, 80, 60],
+        'A'
+      ) +
         vertex('b', '', [200, 0, 80, 60], 'B') +
         `<mxCell id="e" style="endArrow=constructor;startArrow=valueOf;" edge="1" parent="1" source="a" target="b"><mxGeometry relative="1" as="geometry"/></mxCell>`
     )
@@ -206,8 +296,13 @@ test('style values named like built-in object members fall back as unknown value
   // An unknown direction points east, as draw.io's default does: FigJam's triangle turned a quarter.
   expect(shape.rotation).toBe(90)
   const connector = expectDefined(onPage(graph).find((node) => node.type === 'CONNECTOR'))
-  expect([connector.connectorStartCap, connector.connectorEndCap]).toEqual(['ARROW_LINES', 'ARROW_LINES'])
-  const label = expectDefined([...graph.getAllNodes()].find((node) => node.type === 'TEXT' && node.text === 'A'))
+  expect([connector.connectorStartCap, connector.connectorEndCap]).toEqual([
+    'ARROW_LINES',
+    'ARROW_LINES'
+  ])
+  const label = expectDefined(
+    [...graph.getAllNodes()].find((node) => node.type === 'TEXT' && node.text === 'A')
+  )
   expect([label.textAlignHorizontal, label.textAlignVertical]).toEqual(['CENTER', 'CENTER'])
 })
 
@@ -218,20 +313,39 @@ describe('draw.io pages and layers', () => {
     )
     expect(graph.getPages().map((page) => page.name)).toEqual(['One', 'Two'])
     const [base, notes] = onPage(graph)
-    expect([base.type, base.name, notes.type, notes.name, notes.visible]).toEqual(['GROUP', 'Layer 1', 'GROUP', 'Notes', false])
+    expect([base.type, base.name, notes.type, notes.name, notes.visible]).toEqual([
+      'GROUP',
+      'Layer 1',
+      'GROUP',
+      'Notes',
+      false
+    ])
     expect(graph.getChildren(base.id).map((node) => node.name)).toEqual(['Below', 'Above'])
     expect(graph.getChildren(notes.id).map((node) => node.name)).toEqual(['Hidden note'])
   })
 
   test('a single hidden or locked layer is a group that stays so', async () => {
-    const graph = await read(file(vertex('a', '', [0, 0, 50, 50], 'Shape'), '<mxCell id="1" value="Only" style="locked=1;" parent="0" visible="0"/>'))
+    const graph = await read(
+      file(
+        vertex('a', '', [0, 0, 50, 50], 'Shape'),
+        '<mxCell id="1" value="Only" style="locked=1;" parent="0" visible="0"/>'
+      )
+    )
     const [layer] = onPage(graph)
-    expect([layer.type, layer.name, layer.visible, layer.locked]).toEqual(['GROUP', 'Only', false, true])
+    expect([layer.type, layer.name, layer.visible, layer.locked]).toEqual([
+      'GROUP',
+      'Only',
+      false,
+      true
+    ])
   })
 
   test('a cell listed before its parent still lands inside it', async () => {
     const graph = await read(
-      file(vertex('child', '', [10, 10, 40, 40], 'Child', 'g') + vertex('g', 'group;', [100, 100, 60, 60], '', '1'))
+      file(
+        vertex('child', '', [10, 10, 40, 40], 'Child', 'g') +
+          vertex('g', 'group;', [100, 100, 60, 60], '', '1')
+      )
     )
     const child = byName(graph, 'Child')
     const group = expectDefined(graph.getNode(expectDefined(child.parentId)))
@@ -247,7 +361,9 @@ describe('draw.io pages and layers', () => {
         '<mxCell id="1" parent="0"/><mxCell id="2" parent="0"/>'
       )
     )
-    const connector = expectDefined([...graph.getAllNodes()].find((node) => node.type === 'CONNECTOR'))
+    const connector = expectDefined(
+      [...graph.getAllNodes()].find((node) => node.type === 'CONNECTOR')
+    )
     const layer = expectDefined(graph.getNode(expectDefined(connector.parentId)))
     const end = expectDefined(connector.connectorEnd).position
     expect([layer.x + end.x, layer.y + end.y]).toEqual([700, 700])

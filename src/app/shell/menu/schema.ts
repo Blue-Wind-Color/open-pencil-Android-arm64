@@ -22,6 +22,7 @@ export type AppMenuPaletteLabel =
   | 'exportSelectionAsPNG'
   | 'exportSelectionAsSVG'
   | 'exportSelectionAsPPTX'
+  | 'exportSelectionAsDrawIO'
   | 'exportSelectionAsFig'
 
 export interface AppMenuPaletteMetadata {
@@ -116,6 +117,11 @@ export const APP_MENU_SCHEMA = [
             id: 'export-pptx',
             label: 'PPTX',
             palette: { icon: 'download', label: 'exportSelectionAsPPTX' }
+          },
+          {
+            id: 'export-drawio',
+            label: 'draw.io',
+            palette: { icon: 'download', label: 'exportSelectionAsDrawIO' }
           },
           {
             id: 'export-fig',

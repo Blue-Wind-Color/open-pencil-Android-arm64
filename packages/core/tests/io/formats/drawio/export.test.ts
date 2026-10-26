@@ -11,7 +11,9 @@ import {
   createConnector,
   freeEndpoint
 } from '@open-pencil/scene-graph/connectors'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { createShapeWithText } from '@open-pencil/scene-graph/generated'
+import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 import type { ExportTarget } from '#core/io'
@@ -142,6 +144,82 @@ describe('saving a draw.io file', () => {
     graph.createNode('TEXT', page.id, { width: 40, height: 20, rotation: 15, text: 'Turned' })
     const cells = expectDefined(parseDrawIOFile(await write(graph))).pages[0]?.cells ?? []
     expect(cells.map((cell) => cell.style.values.rotation)).toEqual(['30', '-45', '15'])
+  })
+
+  test('turned and mirrored layers, also in a turned and mirrored group, open where they were', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const group = graph.createNode('GROUP', page.id, {
+      x: 100,
+      y: 80,
+      width: 300,
+      height: 200,
+      rotation: 30,
+      flipX: true
+    })
+    const shapes = [
+      { text: 'Up', shapeWithTextType: 'TRIANGLE_UP', rotation: 20, flipY: true },
+      { text: 'Quarter', shapeWithTextType: 'TRIANGLE_UP', rotation: 90 },
+      { text: 'Left', shapeWithTextType: 'PARALLELOGRAM_LEFT', rotation: -10, flipX: true },
+      { text: 'Both', shapeWithTextType: 'DIAMOND', rotation: 45, flipX: true, flipY: true }
+    ] as const
+    for (const [index, { text, ...fields }] of shapes.entries()) {
+      const at = { x: 20 + index * 70, y: 30, width: 60, height: 40 }
+      createShapeWithText(graph, page.id, { ...at, ...fields, name: text }, { text })
+      const name = `${text} grouped`
+      createShapeWithText(graph, group.id, { ...at, ...fields, name }, { text: name })
+    }
+    graph.createNode('TEXT', group.id, {
+      name: 'Note',
+      x: 10,
+      y: 120,
+      width: 80,
+      height: 20,
+      text: 'Note'
+    })
+    graph.createNode('TEXT', page.id, {
+      x: 300,
+      y: 300,
+      width: 80,
+      height: 20,
+      rotation: 15,
+      flipX: true,
+      name: 'Mirrored',
+      text: 'Mirrored'
+    })
+
+    /** Where each named layer's corners land on the page, in its own order. */
+    const corners = (of: SceneGraph) =>
+      Object.fromEntries(
+        [...of.getAllNodes()]
+          .filter((node) => node.type === 'SHAPE_WITH_TEXT' || node.type === 'TEXT')
+          // A shape's label goes with its shape.
+          .filter((node) => of.getNode(node.parentId ?? '')?.type !== 'SHAPE_WITH_TEXT')
+          .map((node) => [
+            node.name,
+            Matrix.mapPoints(getWorldMatrix(node, of), [
+              0,
+              0,
+              node.width,
+              0,
+              node.width,
+              node.height,
+              0,
+              node.height
+            ]).map((n) => Math.round(n * 10) / 10)
+          ])
+      )
+    const opened = await read(await write(graph))
+    const { Left: left, ...before } = corners(graph)
+    const { Left: reopened, ...after } = corners(opened)
+    expect(Object.keys(before)).toHaveLength(9)
+    expect(after).toEqual(before)
+    // A mirrored left parallelogram is a right one.
+    const right = [...opened.getAllNodes()].find((node) => node.name === 'Left')
+    expect(right?.shapeWithTextType).toBe('PARALLELOGRAM_RIGHT')
+    const points = (flat: number[] = []) =>
+      flat.flatMap((n, i) => (i % 2 ? [] : [`${n},${flat[i + 1]}`])).toSorted()
+    expect(points(reopened)).toEqual(points(left))
   })
 
   test('non-rectangular shapes name the outline edges attach to', async () => {

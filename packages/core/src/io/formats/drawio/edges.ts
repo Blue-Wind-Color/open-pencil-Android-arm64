@@ -20,6 +20,7 @@ import {
   freeEndpoint,
   layoutConnector
 } from '@open-pencil/scene-graph/connectors'
+import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { readLabel } from './label'
@@ -138,13 +139,27 @@ export function createEdge(
  * edge stores when it joins nothing.
  */
 /**
- * The side of `box` that faces `toward`, as an edge bent through a point leaves or enters by the
- * side that point lies beyond; null for a point over the box.
+ * The side of `box` that faces `toward`, as an edge bent through a point leaves or enters by; null
+ * for a point over the box. An elbow runs square to the side the point lies beyond; a curve
+ * leaves by the side a line from the box's centre to the point crosses, where draw.io ends one
+ * that names no point on the layer.
  */
 function sideFacing(
   box: Pick<SceneNode, 'x' | 'y' | 'width' | 'height'>,
-  toward: Vector
+  toward: Vector,
+  curved: boolean
 ): ConnectorMagnet | null {
+  const over =
+    toward.x >= box.x &&
+    toward.x <= box.x + box.width &&
+    toward.y >= box.y &&
+    toward.y <= box.y + box.height
+  if (curved && !over) {
+    const dx = toward.x - (box.x + box.width / 2)
+    const dy = toward.y - (box.y + box.height / 2)
+    if (Math.abs(dx) * box.height >= Math.abs(dy) * box.width) return dx > 0 ? 'RIGHT' : 'LEFT'
+    return dy > 0 ? 'BOTTOM' : 'TOP'
+  }
   if (toward.x > box.x + box.width) return 'RIGHT'
   if (toward.x < box.x) return 'LEFT'
   if (toward.y < box.y) return 'TOP'
@@ -157,7 +172,7 @@ function endpointOf(
   layerOf: (cellId: string) => string | undefined,
   edge: DrawIOCell,
   end: 'source' | 'target',
-  straight: boolean
+  lineType: ConnectorLineType
 ): ConnectorEndpoint {
   const cellId = edge[end]
   const nodeId = cellId ? layerOf(cellId) : undefined
@@ -175,10 +190,15 @@ function endpointOf(
     }
     const { points } = edge.geometry
     const toward = end === 'source' ? points.at(0) : points.at(-1)
-    // Both share the edge's parent's axes when the layer is a sibling of the edge.
-    const facing =
-      toward && node.parentId === layerOf(edge.parent) ? sideFacing(node, toward) : null
-    return boundEndpoint(node.id, straight ? 'CENTER' : (facing ?? 'AUTO'))
+    // The point is in the edge's parent's axes, so the layer's box is taken there too, for a
+    // layer nested deeper than the edge as much as for a sibling.
+    const edgeParentId = layerOf(edge.parent)
+    const box =
+      node.parentId === edgeParentId || !edgeParentId
+        ? node
+        : getAxisAlignedBoundsInParent([node], edgeParentId, graph)
+    const facing = toward ? sideFacing(box, toward, lineType === 'CURVED') : null
+    return boundEndpoint(node.id, lineType === 'STRAIGHT' ? 'CENTER' : (facing ?? 'AUTO'))
   }
   const point = end === 'source' ? edge.geometry.sourcePoint : edge.geometry.targetPoint
   return freeEndpoint(point?.x ?? 0, point?.y ?? 0)
@@ -217,10 +237,10 @@ export function bindEdge(
   { connector, edge, labels }: PendingEdge,
   layerOf: (cellId: string) => string | undefined
 ): DrawIOCell[] {
-  const straight = connector.connectorLineType === 'STRAIGHT'
+  const lineType = connector.connectorLineType
   graph.updateNode(connector.id, {
-    connectorStart: endpointOf(graph, layerOf, edge, 'source', straight),
-    connectorEnd: endpointOf(graph, layerOf, edge, 'target', straight)
+    connectorStart: endpointOf(graph, layerOf, edge, 'source', lineType),
+    connectorEnd: endpointOf(graph, layerOf, edge, 'target', lineType)
   })
   const own = edge.value ? [edge] : []
   const all = [...own, ...labels]

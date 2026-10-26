@@ -185,6 +185,7 @@ ja:menu.copyNodeId
 ja:menu.copyXPath
 ja:menu.exportSelectionAsFig
 ja:menu.exportSelectionAsPNG
+ja:menu.exportSelectionAsDrawIO
 ja:menu.exportSelectionAsPPTX
 ja:menu.exportSelectionAsSVG
 ja:menu.toggleUI
@@ -408,6 +409,7 @@ zh-cn:menu.copyNodeId
 zh-cn:menu.copyXPath
 zh-cn:menu.exportSelectionAsFig
 zh-cn:menu.exportSelectionAsPNG
+zh-cn:menu.exportSelectionAsDrawIO
 zh-cn:menu.exportSelectionAsPPTX
 zh-cn:menu.exportSelectionAsSVG
 zh-cn:panels.behaviourAddVariants

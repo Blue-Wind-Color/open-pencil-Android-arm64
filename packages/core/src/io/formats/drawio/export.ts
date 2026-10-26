@@ -16,103 +16,31 @@ import {
   connectorSublayers,
   curveMidpoint
 } from '@open-pencil/scene-graph/connectors'
-import { getParentWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { getParentWorldMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
   isGeneratedFrame,
   shapeWithTextLabel,
   stickySublayers
 } from '@open-pencil/scene-graph/generated'
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import { computeContentBounds } from '#core/io/formats/raster'
 import { renderNodesToSVG } from '#core/io/formats/svg'
 
 import { DEFAULT_FONT_FAMILY } from './paint'
+import { EMPTY_GEOMETRY, placed, placedValues, round, type Placed } from './placement'
 import { drawioShapeValues } from './shapes'
 
 /** draw.io's id for its root cell and for its one layer, as it numbers new files. */
 const ROOT_ID = '0'
 const LAYER_ID = '1'
 
-const EMPTY_GEOMETRY: DrawIOGeometry = {
-  x: 0,
-  y: 0,
-  width: 0,
-  height: 0,
-  relative: false,
-  points: [],
-  sourcePoint: null,
-  targetPoint: null,
-  offset: null
-}
-
 function style(names: string[], values: Record<string, string | undefined>): DrawIOStyle {
   return {
     names,
     values: Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined))
   }
-}
-
-function round(value: number): number {
-  return Math.round(value * 100) / 100
-}
-
-function box(node: SceneNode): DrawIOGeometry {
-  return {
-    ...EMPTY_GEOMETRY,
-    x: round(node.x),
-    y: round(node.y),
-    width: round(node.width),
-    height: round(node.height)
-  }
-}
-
-/**
- * Carries a layer's parent's axes into the page's, for a selected layer whose parent is not
- * written: draw.io places it on its one layer, which has the page's axes.
- */
-interface ToPage {
-  matrix: Mat3
-  /** How far the parent turns its axes, in degrees. */
-  turn: number
-}
-
-function toPageOf(graph: SceneGraph, node: SceneNode, pageId: string): ToPage | null {
-  if (!node.parentId || node.parentId === pageId) return null
-  const matrix = getParentWorldMatrix(graph.getNode(node.parentId), graph)
-  const origin = Matrix.mapPoint(matrix, { x: 0, y: 0 })
-  const across = Matrix.mapPoint(matrix, { x: 1, y: 0 })
-  const turn = (Math.atan2(across.y - origin.y, across.x - origin.x) * 180) / Math.PI
-  return { matrix, turn }
-}
-
-/** Where a layer sits and how far it turns about its centre, in draw.io's axes. */
-interface Placed {
-  geometry: DrawIOGeometry
-  rotation: number
-}
-
-function placed(node: SceneNode, toPage: ToPage | null): Placed {
-  if (!toPage) return { geometry: box(node), rotation: node.rotation }
-  // draw.io turns a cell about its centre, as the layer turns, so the centre carries its place.
-  const centre = Matrix.mapPoint(toPage.matrix, {
-    x: node.x + node.width / 2,
-    y: node.y + node.height / 2
-  })
-  const rotation = ((((node.rotation + toPage.turn + 180) % 360) + 360) % 360) - 180
-  return {
-    geometry: {
-      ...box(node),
-      x: round(centre.x - node.width / 2),
-      y: round(centre.y - node.height / 2)
-    },
-    rotation
-  }
-}
-
-/** A turn as draw.io's `rotation` style value, which an unturned cell leaves out. */
-function rotationValue(rotation: number): string | undefined {
-  return rotation === 0 ? undefined : String(round(rotation))
 }
 
 const escapeHTML = (text: string) =>
@@ -246,6 +174,8 @@ class PageWriter {
   private readonly ids = new Map<string, string>()
   /** Where each edge's line last ran from and to, in draw.io's axes. */
   private readonly drawnEnds = new Map<string, { start: DrawIOPoint; end: DrawIOPoint }>()
+  /** Where each vertex's box starts on the page: draw.io measures its cells' boxes from there. */
+  private readonly origins = new Map<string, Vector>([[LAYER_ID, { x: 0, y: 0 }]])
   private next = 2
 
   constructor(
@@ -279,7 +209,7 @@ class PageWriter {
     for (const id of roots) assign(id)
     for (const id of roots) {
       const node = this.graph.getNode(id)
-      if (node) this.layer(node, LAYER_ID, toPageOf(this.graph, node, this.pageId))
+      if (node) this.layer(node, LAYER_ID)
     }
     this.freeStrandedEnds()
   }
@@ -310,8 +240,13 @@ class PageWriter {
     cell: Omit<DrawIOCell, 'id' | 'parent' | 'visible' | 'attributes' | 'source' | 'target'> &
       Partial<Pick<DrawIOCell, 'source' | 'target'>>
   ) {
+    const id = this.idOf(node.id)
+    if (cell.kind === 'vertex') {
+      const from = this.originOf(parent)
+      this.origins.set(id, { x: from.x + cell.geometry.x, y: from.y + cell.geometry.y })
+    }
     this.cells.push({
-      id: this.idOf(node.id),
+      id,
       parent,
       visible: node.visible,
       attributes: {},
@@ -321,18 +256,41 @@ class PageWriter {
     })
   }
 
-  private children(node: SceneNode) {
-    for (const id of node.childIds) {
-      const child = this.graph.getNode(id)
-      if (child) this.layer(child, this.idOf(node.id), null)
+  private originOf(parent: string): Vector {
+    return this.origins.get(parent) ?? { x: 0, y: 0 }
+  }
+
+  private place(node: SceneNode, parent: string): Placed {
+    return placed(node, getWorldMatrix(node, this.graph), this.originOf(parent))
+  }
+
+  /** The box a layer covers on the page, square to it, in its parent cell's axes. */
+  private bounds(node: SceneNode, parent: string): DrawIOGeometry {
+    const bounds = computeContentBounds(this.graph, [node.id])
+    if (!bounds) return this.place(node, parent).geometry
+    const from = this.originOf(parent)
+    return {
+      ...EMPTY_GEOMETRY,
+      x: round(bounds.minX - from.x),
+      y: round(bounds.minY - from.y),
+      width: round(bounds.maxX - bounds.minX),
+      height: round(bounds.maxY - bounds.minY)
     }
   }
 
-  private layer(node: SceneNode, parent: string, toPage: ToPage | null) {
-    const { geometry, rotation } = placed(node, toPage)
+  private children(node: SceneNode) {
+    for (const id of node.childIds) {
+      const child = this.graph.getNode(id)
+      if (child) this.layer(child, this.idOf(node.id))
+    }
+  }
+
+  private layer(node: SceneNode, parent: string) {
+    const placement = this.place(node, parent)
+    const { geometry } = placement
     switch (node.type) {
       case 'SHAPE_WITH_TEXT':
-        return this.shape(node, parent, toPage)
+        return this.shape(node, parent, placement)
       case 'TEXT':
         return this.push(node, parent, {
           kind: 'vertex',
@@ -340,7 +298,7 @@ class PageWriter {
           style: style(['text'], {
             html: '1',
             whiteSpace: 'wrap',
-            rotation: rotationValue(rotation),
+            ...placedValues(placement),
             ...fontValues(node)
           }),
           geometry
@@ -358,7 +316,7 @@ class PageWriter {
             align: 'left',
             verticalAlign: 'top',
             spacing: '20',
-            rotation: rotationValue(rotation),
+            ...placedValues(placement),
             fontSize: body ? String(body.fontSize) : undefined
           }),
           geometry
@@ -368,7 +326,12 @@ class PageWriter {
         this.push(node, parent, {
           kind: 'vertex',
           value: escapeHTML(node.name),
-          style: style(['swimlane'], { html: '1', startSize: '30', ...paintValues(node) }),
+          style: style(['swimlane'], {
+            html: '1',
+            startSize: '30',
+            ...paintValues(node),
+            ...placedValues(placement)
+          }),
           geometry
         })
         return this.children(node)
@@ -377,14 +340,20 @@ class PageWriter {
           kind: 'vertex',
           value: '',
           style: style(['group'], {}),
-          geometry
+          // A group draws nothing, so it holds what it groups square to the page.
+          geometry: this.bounds(node, parent)
         })
         return this.children(node)
       case 'FRAME':
         this.push(node, parent, {
           kind: 'vertex',
           value: '',
-          style: style([], { container: '1', html: '1', ...paintValues(node) }),
+          style: style([], {
+            container: '1',
+            html: '1',
+            ...paintValues(node),
+            ...placedValues(placement)
+          }),
           geometry
         })
         return this.children(node)
@@ -395,19 +364,19 @@ class PageWriter {
           value: '',
           style: style(node.type === 'ELLIPSE' ? ['ellipse'] : [], {
             rounded: node.cornerRadius > 0 ? '1' : undefined,
-            rotation: rotationValue(rotation),
+            ...placedValues(placement),
             ...paintValues(node)
           }),
           geometry
         })
       case 'CONNECTOR':
-        return this.edge(node, parent, toPage)
+        return this.edge(node, parent)
       default:
-        return this.picture(node, parent, geometry)
+        return this.picture(node, parent)
     }
   }
 
-  private shape(node: SceneNode, parent: string, toPage: ToPage | null) {
+  private shape(node: SceneNode, parent: string, placement: Placed) {
     const label = shapeWithTextLabel(this.graph, node)
     const values: Record<string, string | undefined> = {
       ...drawioShapeValues(node.shapeWithTextType),
@@ -416,9 +385,11 @@ class PageWriter {
       ...paintValues(node),
       ...(label ? fontValues(label) : {})
     }
-    let { geometry, rotation } = placed(node, toPage)
+    let { geometry, rotation } = placement
     // A triangle turned a quarter points the way draw.io's direction says, in the box it fills.
-    const quarter = Math.abs(rotation) === 90 && node.shapeWithTextType === 'TRIANGLE_UP'
+    const mirrored = placement.flipH || placement.flipV
+    const quarter =
+      !mirrored && Math.abs(rotation) === 90 && node.shapeWithTextType === 'TRIANGLE_UP'
     if (quarter) {
       values.direction = rotation === 90 ? 'east' : 'west'
       geometry = {
@@ -430,7 +401,12 @@ class PageWriter {
       }
       rotation = 0
     }
-    values.rotation = rotationValue(rotation)
+    // A shape that is draw.io's mirrored one, as a left parallelogram is, mirrors back if the layer is.
+    const ownFlipH = values.flipH === '1'
+    Object.assign(
+      values,
+      placedValues({ ...placement, rotation, flipH: placement.flipH !== ownFlipH })
+    )
     this.push(node, parent, {
       kind: 'vertex',
       value: label ? labelHTML(label) : '',
@@ -439,8 +415,8 @@ class PageWriter {
     })
   }
 
-  /** A layer draw.io has no cell for, drawn as the SVG image it exports as. */
-  private picture(node: SceneNode, parent: string, geometry: DrawIOGeometry) {
+  /** A layer draw.io has no cell for, drawn as the SVG image it exports as, where it covers. */
+  private picture(node: SceneNode, parent: string) {
     const svg = renderNodesToSVG(this.graph, this.pageId, [node.id])
     if (!svg) return
     const data = fromUint8Array(new TextEncoder().encode(svg))
@@ -449,7 +425,7 @@ class PageWriter {
       value: '',
       // draw.io keeps a data URI in its style without `;base64`, which would end the value.
       style: style([], { shape: 'image', image: `data:image/svg+xml,${data}`, aspect: 'fixed' }),
-      geometry
+      geometry: this.bounds(node, parent)
     })
   }
 
@@ -473,10 +449,15 @@ class PageWriter {
    * Where an edge's free ends sit, its bend points, and its label's place along it, with the
    * points carried into draw.io's axes.
    */
-  private edgeGeometry(node: SceneNode, toPage: ToPage | null): DrawIOGeometry {
+  private edgeGeometry(node: SceneNode, parent: string): DrawIOGeometry {
+    const toPage = getParentWorldMatrix(
+      node.parentId ? this.graph.getNode(node.parentId) : undefined,
+      this.graph
+    )
+    const from = this.originOf(parent)
     const at = (point: Vector) => {
-      const mapped = toPage ? Matrix.mapPoint(toPage.matrix, point) : point
-      return { x: round(mapped.x), y: round(mapped.y) }
+      const mapped = Matrix.mapPoint(toPage, point)
+      return { x: round(mapped.x - from.x), y: round(mapped.y - from.y) }
     }
     const drawn = connectorRouteEnds(this.graph, node)
     if (drawn) {
@@ -494,7 +475,7 @@ class PageWriter {
     }
   }
 
-  private edge(node: SceneNode, parent: string, toPage: ToPage | null) {
+  private edge(node: SceneNode, parent: string) {
     // A connector without its line and label is not one draw.io could draw.
     const parts = connectorSublayers(this.graph, node)
     if (!parts) return
@@ -516,7 +497,7 @@ class PageWriter {
         ...this.end(node.connectorEnd, 'entry'),
         ...fontValues(parts.label)
       }),
-      geometry: this.edgeGeometry(node, toPage),
+      geometry: this.edgeGeometry(node, parent),
       source: startId ? (this.ids.get(startId) ?? null) : null,
       target: endId ? (this.ids.get(endId) ?? null) : null
     })

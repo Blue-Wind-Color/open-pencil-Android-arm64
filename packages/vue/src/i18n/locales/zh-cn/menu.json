@@ -77,6 +77,7 @@
   "exportSelectionAsPNG": "将所选内容导出为 PNG",
   "exportSelectionAsSVG": "将所选内容导出为 SVG",
   "exportSelectionAsPPTX": "将所选内容导出为 PPTX",
+  "exportSelectionAsDrawIO": "将所选内容导出为 draw.io",
   "exportSelectionAsFig": "将所选内容导出为 .fig",
   "togglePreview": "预览",
   "browseFiles": "浏览文件…",

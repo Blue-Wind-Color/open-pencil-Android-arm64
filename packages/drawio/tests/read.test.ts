@@ -202,6 +202,23 @@ describe('reading the diagram a draw.io export embeds', () => {
     expect(() => readDrawIOBytes(whole.subarray(0, -20))).toThrow('cut short')
   })
 
+  test('counts what a PNG’s chunk unpacks to against the limit its pages share', () => {
+    // The chunk and each page unpack within the limit; the chunk and both pages do not.
+    const model = (share: number) =>
+      `<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0" value="${'x'.repeat(
+        MAX_INFLATED_BYTES * share
+      )}"/></root></mxGraphModel>`
+    const packed = compressed(model(0.3))
+    const pages = ['First', 'Second'].map(
+      (name) => `<diagram id="${name}" name="${name}">${packed}</diagram>`
+    )
+    const padding = 'x'.repeat(MAX_INFLATED_BYTES * 0.5)
+    const embedded = encodeURIComponent(`<mxfile padding="${padding}">${pages.join('')}</mxfile>`)
+    const file = readDrawIOBytes(png(chunk('zTXt', concat([latin1('mxfile\0\0'), zlib(embedded)]))))
+    expect(file?.pages.map((p) => p.name)).toEqual(['First'])
+    expect(file?.unreadable).toEqual(['Second'])
+  })
+
   test('takes an SVG’s comments before its root in stride', () => {
     const svg = `${'<!---->'.repeat(10_000)}x`
     expect(readDrawIOBytes(new TextEncoder().encode(svg))).toBeNull()

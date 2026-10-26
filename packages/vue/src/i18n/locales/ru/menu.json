@@ -77,6 +77,7 @@
   "exportSelectionAsPNG": "Экспортировать выделение как PNG",
   "exportSelectionAsSVG": "Экспортировать выделение как SVG",
   "exportSelectionAsPPTX": "Экспортировать выделение как PPTX",
+  "exportSelectionAsDrawIO": "Экспортировать выделение как draw.io",
   "exportSelectionAsFig": "Экспортировать выделение как .fig",
   "togglePreview": "Просмотр",
   "browseFiles": "Обзор файлов…",
