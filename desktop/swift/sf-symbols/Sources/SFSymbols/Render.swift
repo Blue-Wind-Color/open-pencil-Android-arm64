@@ -78,12 +78,23 @@ private func pdf(_ name: String, _ request: RenderRequest) -> (Data, CGSize)? {
   return result
 }
 
-/// A symbol as an icon, or nil when this Mac has no symbol by that name.
+/// A symbol as an icon, or nil when this Mac has no symbol by that name or draws it in a way its
+/// outlines cannot be read from, which is reported rather than drawn incomplete.
 @available(macOS 14, *)
 @MainActor
 func icon(_ name: String, _ request: RenderRequest) -> Icon? {
   guard let (data, layout) = pdf(name, request) else { return nil }
-  let drawn = outlines(ofPDF: data)
+  let drawn: [Outline]
+  do {
+    drawn = try outlines(ofPDF: data)
+  } catch let unreadable as UnreadableDrawing {
+    let operators = unreadable.operators.sorted().joined(separator: ", ")
+    FileHandle.standardError.write(
+      Data("SF Symbols: \(name) paints with \(operators), which outlines cannot read\n".utf8))
+    return nil
+  } catch {
+    return nil
+  }
   // Badges reach past the box SwiftUI lays a symbol out in, so the icon holds both.
   let bounds = drawn.reduce(CGRect(origin: .zero, size: layout)) {
     $0.union($1.path.boundingBoxOfPath)

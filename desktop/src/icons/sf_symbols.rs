@@ -1,34 +1,19 @@
 //! The Swift library in `swift/sf-symbols`, which reads the symbols macOS has and draws them with
-//! SwiftUI. Requests and answers are JSON in C strings.
+//! SwiftUI. Requests and answers are JSON in `SRString`s.
 
-use std::ffi::{c_char, CStr, CString};
+use swift_rs::{swift, SRString};
 
-extern "C" {
-    fn op_sf_symbols_catalogue() -> *mut c_char;
-    fn op_sf_symbols_render(request: *const c_char) -> *mut c_char;
-    fn op_sf_symbols_free(answer: *mut c_char);
-}
-
-fn take(answer: *mut c_char) -> Option<String> {
-    if answer.is_null() {
-        return None;
-    }
-    // SAFETY: the library answers with a NUL-terminated string it allocated, freed once here.
-    let text = unsafe { CStr::from_ptr(answer) }
-        .to_string_lossy()
-        .into_owned();
-    unsafe { op_sf_symbols_free(answer) };
-    Some(text)
-}
+swift!(fn op_sf_symbols_catalogue() -> Option<SRString>);
+swift!(fn op_sf_symbols_render(request: &SRString) -> Option<SRString>);
 
 pub fn catalogue() -> Option<String> {
     // SAFETY: the catalogue takes no arguments and may run on any thread.
-    take(unsafe { op_sf_symbols_catalogue() })
+    unsafe { op_sf_symbols_catalogue() }.map(|answer| answer.to_string())
 }
 
 /// Must run on the main thread.
 pub fn render(request: &str) -> Option<String> {
-    let request = CString::new(request).ok()?;
-    // SAFETY: the request is a NUL-terminated string that outlives the call.
-    take(unsafe { op_sf_symbols_render(request.as_ptr()) })
+    let request = SRString::from(request);
+    // SAFETY: the request is a Swift string that outlives the call.
+    unsafe { op_sf_symbols_render(&request) }.map(|answer| answer.to_string())
 }

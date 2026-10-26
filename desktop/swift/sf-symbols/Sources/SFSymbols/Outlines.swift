@@ -18,12 +18,19 @@ private struct GraphicsState {
   var knockout: CGPath?
 }
 
+/// A drawing that paints with operators outlines cannot read, such as strokes or images.
+struct UnreadableDrawing: Error {
+  var operators: Set<String>
+}
+
 /// The fills a PDF content stream draws, read operator by operator.
 @available(macOS 14, *)
 private final class Reader {
   var states = [GraphicsState()]
   var path = CGMutablePath()
   var outlines: [Outline] = []
+  /// The painting operators met that this reader does not read.
+  var unsupported: Set<String> = []
 
   var state: GraphicsState {
     get { states[states.count - 1] }
@@ -79,10 +86,12 @@ private func matrix(_ form: CGPDFStreamRef) -> CGAffineTransform {
     a: values[0], b: values[1], c: values[2], d: values[3], tx: values[4], ty: values[5])
 }
 
-/// The fills of a form, drawn with `transform`, read with a reader of their own.
+/// The fills of a form, drawn with `transform`, read with a reader of their own; what that reader
+/// cannot read is `reader`'s too.
 @available(macOS 14, *)
 private func formOutlines(
-  _ form: CGPDFStreamRef, parent: CGPDFContentStreamRef, transform: CGAffineTransform
+  _ form: CGPDFStreamRef, parent: CGPDFContentStreamRef, transform: CGAffineTransform,
+  for reader: Reader
 ) -> [Outline] {
   let nested = Reader()
   nested.state.transform = matrix(form).concatenating(transform)
@@ -92,7 +101,17 @@ private func formOutlines(
   // A form without resources of its own finds them in the stream that draws it.
   let stream = CGPDFContentStreamCreateWithStream(form, resources ?? dictionary, parent)
   scan(stream, nested)
+  reader.unsupported.formUnion(nested.unsupported)
   return nested.outlines
+}
+
+/// Whether an XObject is a form, a content stream of its own, rather than an image.
+private func isForm(_ stream: CGPDFStreamRef) -> Bool {
+  var subtype: UnsafePointer<CChar>?
+  guard let dictionary = CGPDFStreamGetDictionary(stream),
+    CGPDFDictionaryGetName(dictionary, "Subtype", &subtype), let subtype
+  else { return false }
+  return String(cString: subtype) == "Form"
 }
 
 /// The stream a resource names, such as a form XObject.
@@ -201,7 +220,9 @@ private let operators: CGPDFOperatorTableRef = {
       CGPDFDictionaryGetStream(mask, "G", &group), let group
     {
       // The mask is drawn over white, so what it fills in black is hidden.
-      let hidden = formOutlines(group, parent: content, transform: reader.state.transform)
+      let hidden = formOutlines(
+        group, parent: content, transform: reader.state.transform, for: reader
+      )
         .filter { $0.gray < 0.5 }
         .reduce(CGMutablePath()) { union, outline in
           union.addPath(outline.path)
@@ -218,13 +239,32 @@ private let operators: CGPDFOperatorTableRef = {
     guard let key = name(scanner), let form = resourceStream(scanner, "XObject", key) else {
       return
     }
+    guard isForm(form) else {
+      reader.unsupported.insert("Do (image)")
+      return
+    }
     let content = CGPDFScannerGetContentStream(scanner)
-    for var outline in formOutlines(form, parent: content, transform: reader.state.transform) {
+    let drawn = formOutlines(form, parent: content, transform: reader.state.transform, for: reader)
+    for var outline in drawn {
       if let knockout = reader.state.knockout { outline.path = outline.path.subtracting(knockout) }
       outline.opacity *= reader.state.opacity
       reader.outlines.append(outline)
     }
   }
+  // Painting the reader does not read. Clips are left out: the `re W n` that bounds a form to its
+  // box is all SwiftUI writes, and `n` ends it.
+  on("S") { _, info in reader(info).unsupported.insert("S") }
+  on("s") { _, info in reader(info).unsupported.insert("s") }
+  on("B") { _, info in reader(info).unsupported.insert("B") }
+  on("B*") { _, info in reader(info).unsupported.insert("B*") }
+  on("b") { _, info in reader(info).unsupported.insert("b") }
+  on("b*") { _, info in reader(info).unsupported.insert("b*") }
+  on("sh") { _, info in reader(info).unsupported.insert("sh") }
+  on("BI") { _, info in reader(info).unsupported.insert("BI") }
+  on("Tj") { _, info in reader(info).unsupported.insert("Tj") }
+  on("TJ") { _, info in reader(info).unsupported.insert("TJ") }
+  on("'") { _, info in reader(info).unsupported.insert("'") }
+  on("\"") { _, info in reader(info).unsupported.insert("\"") }
   return table
 }()
 
@@ -235,13 +275,15 @@ private func scan(_ stream: CGPDFContentStreamRef, _ reader: Reader) {
   CGPDFScannerRelease(scanner)
 }
 
-/// The fills of a one-page PDF, in its page's coordinates.
+/// The fills of a one-page PDF, in its page's coordinates. Throws when the page paints with
+/// operators this reader does not read, rather than leaving that painting out.
 @available(macOS 14, *)
-func outlines(ofPDF data: Data) -> [Outline] {
+func outlines(ofPDF data: Data) throws -> [Outline] {
   guard let provider = CGDataProvider(data: data as CFData),
     let page = CGPDFDocument(provider)?.page(at: 1)
   else { return [] }
   let reader = Reader()
   scan(CGPDFContentStreamCreateWithPage(page), reader)
+  guard reader.unsupported.isEmpty else { throw UnreadableDrawing(operators: reader.unsupported) }
   return reader.outlines
 }
