@@ -5,6 +5,23 @@ export interface InstanceOverrideState {
   descendants: Map<string, Map<InstanceOverrideField, unknown>>
 }
 
+const BINDING_OVERRIDE_PREFIX = 'boundVariables/'
+
+/**
+ * The override field that claims a layer's binding of `field`, which keeps that binding, or its
+ * absence, through a sync. `boundVariables` alone claims every binding of the layer.
+ */
+export function bindingOverrideField(field: string): InstanceOverrideField {
+  return `${BINDING_OVERRIDE_PREFIX}${field}`
+}
+
+/** The binding field an override field claims, or null for an override of anything else. */
+export function overriddenBindingField(field: InstanceOverrideField): string | null {
+  return field.startsWith(BINDING_OVERRIDE_PREFIX)
+    ? field.slice(BINDING_OVERRIDE_PREFIX.length)
+    : null
+}
+
 export function createInstanceOverrideState(): InstanceOverrideState {
   return { self: new Map(), descendants: new Map() }
 }
@@ -102,7 +119,7 @@ export function remapInstanceOverrideState(
   const remapValue = (field: string, value: unknown): unknown => {
     if (typeof value !== 'string') return structuredClone(value)
     if (field === 'componentId' || field === 'sourceComponentId') return references.node(value)
-    if (field.startsWith('boundVariables/')) return references.variable(value)
+    if (overriddenBindingField(field) !== null) return references.variable(value)
     return value
   }
   const fields = (entries: ReadonlyMap<string, unknown>) =>

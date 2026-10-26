@@ -10,7 +10,7 @@ import {
   type VariableType
 } from '@open-pencil/scene-graph'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
-import { independentCornerChanges } from '@open-pencil/scene-graph/variables'
+import { independentCornerChanges, paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import type { FigmaPaint } from '#core/figma-api/paints'
 import { reconcileVariableLayouts } from '#core/layout/variables'
@@ -204,14 +204,12 @@ const FIGMA_FIELD_BY_DOCUMENT_FIELD = new Map<string, string>(
     .map(([figma, field]) => [field, figma])
 )
 
-const PAINT_FIELD = /^(fills|strokes)\/(\d+)\/color$/
-
 /** The variable bound to each paint's colour, by paint index, for `fills` or `strokes`. */
 export function paintBindings(node: SceneNode, key: 'fills' | 'strokes'): Map<number, string> {
   const bindings = new Map<number, string>()
   for (const [field, id] of Object.entries(node.boundVariables)) {
-    const match = PAINT_FIELD.exec(field)
-    if (match?.[1] === key) bindings.set(Number(match[2]), id)
+    const paint = paintBindingTarget(field)
+    if (paint?.list === key) bindings.set(paint.index, id)
   }
   return bindings
 }
