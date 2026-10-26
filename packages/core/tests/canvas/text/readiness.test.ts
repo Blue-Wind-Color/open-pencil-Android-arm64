@@ -18,7 +18,7 @@ describe('text readiness with characters no font has', () => {
       await fontManager.fetchBundledFont('/InterVariable.ttf'),
       'bundled Inter font'
     )
-    fontManager.markLoaded('Inter', 'Regular', inter)
+    await fontManager.markLoaded('Inter', 'Regular', inter)
   })
 
   test('draws the text with the fonts it has', async () => {

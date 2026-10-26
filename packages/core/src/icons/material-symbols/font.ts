@@ -1,11 +1,17 @@
-import * as OpenType from 'opentype.js'
-
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
 import type { IconOption, IconPath } from '#core/icons/types'
+import {
+  fontInstance,
+  glyphCommands,
+  harfBuzzFont,
+  loadHarfBuzz,
+  shapeText,
+  type HarfBuzzFont,
+  type OutlineCommand
+} from '#core/text/font/harfbuzz'
 import { sfntFont } from '#core/text/font/woff2'
-import type { OutlineCommand } from '#core/text/opentype'
 
 /** Material Symbols' sets, each one of Google's three fonts. */
 export const MATERIAL_SYMBOLS_PREFIXES = [
@@ -35,32 +41,8 @@ export const MATERIAL_SYMBOLS_OPTIONS = [
   { key: 'GRAD', name: 'Grade', min: -50, max: 200, default: 0, step: 1 }
 ] as const satisfies readonly IconOption[]
 
-interface LigatureSubtable {
-  coverage?: { glyphs?: number[]; ranges?: { start: number; end: number; index: number }[] }
-  ligatureSets?: { ligGlyph: number; components: number[] }[][]
-  extension?: LigatureSubtable
-}
-
-/** What drawing Material Symbols reads of a font parsed by opentype.js, which ships no types. */
-export interface MaterialSymbolsFont {
-  charToGlyphIndex(character: string): number
-  glyphs: {
-    get(index: number): {
-      getPath(
-        x: number,
-        y: number,
-        fontSize: number,
-        options: { variation: Record<string, number> },
-        font: MaterialSymbolsFont
-      ): { commands: OutlineCommand[] }
-    }
-  }
-  tables: { gsub?: { lookups: { subtables: LigatureSubtable[] }[] } }
-}
-
-interface OpenTypeModule {
-  parse(buffer: ArrayBuffer): MaterialSymbolsFont
-}
+/** A Material Symbols font, as HarfBuzz reads it. */
+export type MaterialSymbolsFont = HarfBuzzFont
 
 const CSS_API = 'https://fonts.googleapis.com/css2'
 /** Google serves variable fonts as WOFF2, and only to clients that say they read it. */
@@ -96,38 +78,16 @@ export async function fetchMaterialSymbolsFont(
   if (!url) throw new Error(`Google Fonts served no font for ${prefix}`)
   const file = await fetcher(url)
   if (!file.ok) throw new Error(`Google Fonts answered ${file.status} for ${url}`)
-  return (OpenType as OpenTypeModule).parse(await sfntFont(await file.arrayBuffer()))
+  const [bytes] = await Promise.all([sfntFont(await file.arrayBuffer()), loadHarfBuzz()])
+  const font = harfBuzzFont(bytes)
+  if (!font) throw new Error(`Google Fonts served a font for ${prefix} that cannot be read`)
+  return font
 }
 
-/** Where `glyph` stands in a coverage table, or -1 when the table does not cover it. */
-function coverageIndex(coverage: LigatureSubtable['coverage'], glyph: number): number {
-  const listed = coverage?.glyphs?.indexOf(glyph) ?? -1
-  if (listed !== -1) return listed
-  const range = coverage?.ranges?.find((item) => glyph >= item.start && glyph <= item.end)
-  return range ? range.index + glyph - range.start : -1
-}
-
-/**
- * The glyph a Material Symbols name draws: the ligature its letters form. The fonts keep their
- * ligatures in an extension lookup, which opentype.js parses but does not apply, so the lookup is
- * read here.
- */
+/** The glyph a Material Symbols name draws: the ligature its letters form. */
 export function materialSymbolsGlyph(font: MaterialSymbolsFont, name: string): number | null {
-  const letters = Array.from(name, (character) => font.charToGlyphIndex(character))
-  const [first, ...rest] = letters
-  for (const lookup of font.tables.gsub?.lookups ?? []) {
-    for (const table of lookup.subtables) {
-      const subtable = table.extension ?? table
-      const set = subtable.ligatureSets?.[coverageIndex(subtable.coverage, first)]
-      const ligature = set?.find(
-        (item) =>
-          item.components.length === rest.length &&
-          item.components.every((component, index) => component === rest[index])
-      )
-      if (ligature) return ligature.ligGlyph
-    }
-  }
-  return null
+  const glyphs = shapeText(font, name)
+  return glyphs.length === 1 && Array.from(name).length > 1 ? glyphs[0].codepoint : null
 }
 
 /**
@@ -140,31 +100,23 @@ export function materialSymbolsPathData(
   size: number,
   axes: Record<string, number>
 ): string {
-  const path = font.glyphs.get(glyph).getPath(0, size, size, { variation: axes }, font)
-  return closedPathData(path.commands)
+  const variations = Object.entries(axes).map(([axis, value]) => ({ axis, value }))
+  return pathData(glyphCommands(font, fontInstance(font, variations), glyph, size, size))
 }
 
 const coordinate = (value: number | undefined) => Number((value ?? 0).toFixed(3))
 
-/**
- * Commands as SVG path data with every contour closed. TrueType contours always are, but
- * opentype.js leaves the close out of a glyph it draws at variation axes, and an open contour
- * fills on its own rather than cutting the holes its direction cuts.
- */
-function closedPathData(commands: readonly OutlineCommand[]): string {
-  const parts: string[] = []
-  let open = false
-  for (const command of commands) {
-    if (command.type === 'Z') continue
-    if (command.type === 'M' && open) parts.push('Z')
-    const points = [command.x1, command.y1, command.x2, command.y2].filter(
-      (value) => value !== undefined
-    )
-    parts.push(`${command.type}${[...points, command.x, command.y].map(coordinate).join(' ')}`)
-    open = true
-  }
-  if (open) parts.push('Z')
-  return parts.join('')
+/** Commands as SVG path data. */
+function pathData(commands: readonly OutlineCommand[]): string {
+  return commands
+    .map((command) => {
+      const points = [command.x1, command.y1, command.x2, command.y2, command.x, command.y]
+      return `${command.type}${points
+        .filter((value) => value !== undefined)
+        .map(coordinate)
+        .join(' ')}`
+    })
+    .join('')
 }
 
 /** A glyph as an icon path filling a `size` square, painted in the icon's color. */

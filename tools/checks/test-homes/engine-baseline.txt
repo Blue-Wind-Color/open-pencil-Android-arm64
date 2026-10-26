@@ -388,7 +388,7 @@ tests/engine/text/fonts/normalize-export.test.ts
 tests/engine/text/fonts/status.test.ts
 tests/engine/text/fonts/variations.test.ts
 tests/engine/text/fonts/web-fonts.test.ts
-tests/engine/text/opentype/outlines.test.ts
+tests/engine/text/harfbuzz/outlines.test.ts
 tests/engine/text/resolver.test.ts
 tests/engine/text/rtl-auto-layout-input.test.ts
 tests/engine/text/style-runs.test.ts

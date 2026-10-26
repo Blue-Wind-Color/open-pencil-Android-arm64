@@ -11,7 +11,7 @@ import { fontManager } from '#core/text/fonts'
 // differently by up to a pixel.
 
 beforeAll(async () => {
-  fontManager.markLoaded(
+  await fontManager.markLoaded(
     'Inter',
     'Regular',
     expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'), 'bundled Inter font')

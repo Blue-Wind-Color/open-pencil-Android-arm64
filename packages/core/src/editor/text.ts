@@ -9,7 +9,7 @@ import {
 
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 import type { TextEditorState } from '#core/text/editor'
-import { hasGlyphOutlines } from '#core/text/opentype'
+import { hasGlyphOutlines } from '#core/text/font/glyphs'
 
 import { applyBoundTextEdit } from './components/authoring/text-edit'
 import { fitEmptyLabelToPlaceholder } from './connectors/label-edit'

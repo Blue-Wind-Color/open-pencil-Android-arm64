@@ -28,7 +28,7 @@ beforeAll(async () => {
     await fontManager.fetchBundledFont('/InterVariable.ttf'),
     'bundled Inter font'
   )
-  fontManager.markLoaded('Inter', 'Regular', inter)
+  await fontManager.markLoaded('Inter', 'Regular', inter)
 })
 
 describe('styled text segments', () => {

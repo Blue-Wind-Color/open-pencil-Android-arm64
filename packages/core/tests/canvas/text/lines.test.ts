@@ -97,7 +97,7 @@ describe('lines of mixed sizes', () => {
       'bundled Inter font'
     )
     provider.registerFont(inter, 'Inter')
-    fontManager.markLoaded('Inter', 'Regular', inter)
+    await fontManager.markLoaded('Inter', 'Regular', inter)
   })
 
   afterAll(() => {

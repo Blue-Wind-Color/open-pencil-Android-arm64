@@ -3,7 +3,7 @@ import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { cjkFallbackScriptForLanguage, type FontFallbackScript } from '#core/text/fallbacks'
-import { fontGlyphCoverageSync } from '#core/text/opentype'
+import { fontGlyphCoverageSync } from '#core/text/font/glyphs'
 
 const CJK_IDEOGRAPH_CHAR_RE = /\p{Script=Han}/u
 const CJK_HIRAGANA_KATAKANA_RE = /[\u3040-\u30ff]/u

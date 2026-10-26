@@ -13,7 +13,7 @@ const SENTENCE = 'A sentence long enough that it has to wrap onto a second line.
 
 beforeAll(async () => {
   const inter = expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'), 'Inter')
-  fontManager.markLoaded('Inter', 'Regular', inter)
+  await fontManager.markLoaded('Inter', 'Regular', inter)
 })
 
 test('a paragraph wrapped on the canvas keeps its lines in the SVG drawn into a PDF', async () => {

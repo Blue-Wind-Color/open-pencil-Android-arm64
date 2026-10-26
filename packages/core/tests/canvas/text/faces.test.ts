@@ -12,7 +12,7 @@ import { buildParagraph } from '#core/canvas/text'
 import { withFigExportRuntime } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
 import { FontManager, fontManager } from '#core/text/fonts'
-import { glyphOutlineSourceSync } from '#core/text/opentype'
+import { glyphOutlineSourceSync } from '#core/text/font/glyphs'
 
 /** A family only these tests load, so faces other tests load cannot answer for it. */
 const FAMILY = 'Faces Test Sans'
@@ -68,7 +68,7 @@ describe('text faces', () => {
     const ck = await getCanvasKit()
     const fontProvider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, fontProvider)
-    fontManager.markLoaded(FAMILY, 'Regular', await bundled('/InterVariable.ttf'))
+    await fontManager.markLoaded(FAMILY, 'Regular', await bundled('/InterVariable.ttf'))
     const regular = drawn(ck, fontProvider, { fontWeight: 400, italic: false })
     expect(drawn(ck, fontProvider, { fontWeight: 400, italic: true })).toEqual(regular)
     expect(drawn(ck, fontProvider, { fontWeight: 700, italic: false })).toEqual(regular)
@@ -78,8 +78,8 @@ describe('text faces', () => {
     const ck = await getCanvasKit()
     const fontProvider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, fontProvider)
-    fontManager.markLoaded(FAMILY, 'Regular', await bundled('/InterVariable.ttf'))
-    fontManager.markLoaded(FAMILY, 'Bold', await bundled('/InterVariable.ttf'))
+    await fontManager.markLoaded(FAMILY, 'Regular', await bundled('/InterVariable.ttf'))
+    await fontManager.markLoaded(FAMILY, 'Bold', await bundled('/InterVariable.ttf'))
     const regular = drawn(ck, fontProvider, { fontWeight: 400, italic: false })
     expect(drawn(ck, fontProvider, { fontWeight: 700, italic: false })).not.toEqual(regular)
   })
@@ -93,7 +93,7 @@ describe('text faces', () => {
       join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')
     ).arrayBuffer()
     const fontFamily = 'Faces Test Optical'
-    fontManager.markLoaded(fontFamily, 'Regular', variable)
+    await fontManager.markLoaded(fontFamily, 'Regular', variable)
     const face = (fields: Partial<SceneNode>) =>
       drawn(ck, fontProvider, { fontFamily, fontWeight: 400, italic: false, ...fields })
     const automatic = face({})
@@ -116,9 +116,9 @@ describe('text faces', () => {
     const variable = await Bun.file(
       join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')
     ).arrayBuffer()
-    fontManager.markLoaded('Faces Test Mixed', 'Regular', regular)
-    fontManager.markLoaded('Faces Test Mixed', 'Light', variable)
-    fontManager.markLoaded('Faces Test Variable Only', 'Light', variable)
+    await fontManager.markLoaded('Faces Test Mixed', 'Regular', regular)
+    await fontManager.markLoaded('Faces Test Mixed', 'Light', variable)
+    await fontManager.markLoaded('Faces Test Variable Only', 'Light', variable)
     const light = (fontFamily: string) =>
       drawn(ck, fontProvider, { fontFamily, fontWeight: 300, italic: false })
     expect(light('Faces Test Mixed')).toEqual(light('Faces Test Variable Only'))
@@ -130,9 +130,9 @@ describe('text faces', () => {
    */
   test('saves fallback characters in the face the text is drawn in', async () => {
     const primary = 'Faces Test Naskh'
-    fontManager.markLoaded(primary, 'Regular', await bundled('/NotoNaskhArabic-Regular.ttf'))
-    fontManager.markLoaded('Inter', 'Regular', await bundled('/InterVariable.ttf'))
-    fontManager.markLoaded('Inter', 'Bold', await bundled('/InterVariable.ttf'))
+    await fontManager.markLoaded(primary, 'Regular', await bundled('/NotoNaskhArabic-Regular.ttf'))
+    await fontManager.markLoaded('Inter', 'Regular', await bundled('/InterVariable.ttf'))
+    await fontManager.markLoaded('Inter', 'Bold', await bundled('/InterVariable.ttf'))
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', graph.getPages()[0].id, {
       text: 'F',
@@ -149,7 +149,11 @@ describe('text faces', () => {
       ),
       'shaped text'
     )
-    const regular = expectDefined(glyphOutlineSourceSync('Inter', 'Regular'), 'Inter Regular')
+    // At the optical size the font size sets, as the paragraph draws every family it falls back to.
+    const regular = expectDefined(
+      glyphOutlineSourceSync('Inter', 'Regular', [{ axis: 'opsz', value: 40 }]),
+      'Inter Regular'
+    )
     expect(shaped.glyphs[0]?.commands).toEqual(regular.outline(regular.glyphOf('F'), 40))
   })
 })

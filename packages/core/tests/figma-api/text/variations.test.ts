@@ -16,8 +16,8 @@ const STATIC = 'Variations Static'
 beforeAll(async () => {
   const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
   const static_ = await Bun.file(join(FIXTURES, 'fonts', 'InterRegular-Faces.ttf')).arrayBuffer()
-  fontManager.markLoaded(VARIABLE, 'Regular', variable)
-  fontManager.markLoaded(STATIC, 'Regular', static_)
+  await fontManager.markLoaded(VARIABLE, 'Regular', variable)
+  await fontManager.markLoaded(STATIC, 'Regular', static_)
 })
 
 function text(family = VARIABLE) {
@@ -97,8 +97,8 @@ describe('variable fonts in the plugin API', () => {
     const data = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
     const upright = data.slice(0)
     const italic = data.slice(0)
-    fontManager.markLoaded('Variations Slant', 'Regular', upright)
-    fontManager.markLoaded('Variations Slant', 'Italic', italic)
+    await fontManager.markLoaded('Variations Slant', 'Regular', upright)
+    await fontManager.markLoaded('Variations Slant', 'Italic', italic)
     expect(fontManager.familyVariation('Variations Slant', true)?.data).toBe(italic)
     expect(fontManager.familyVariation('Variations Slant', false)?.data).toBe(upright)
   })

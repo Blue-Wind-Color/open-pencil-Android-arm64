@@ -7,7 +7,7 @@ import { repoPath } from '#tests/helpers/paths'
 
 async function loadInter() {
   const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
-  fontManager.markLoaded('Inter', 'Regular', interData)
+  await fontManager.markLoaded('Inter', 'Regular', interData)
 }
 
 function textNode(text: string) {

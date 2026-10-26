@@ -14,7 +14,7 @@ import { withFigExportRuntime, withTextShaper } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { fontManager } from '#core/text/fonts'
-import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
+import { getGlyphOutlineMetricsSync } from '#core/text/font/glyphs'
 
 const testFont = (name: string) => join(FIXTURES, 'fonts', name)
 
@@ -42,7 +42,7 @@ describe('text shaping for saved glyphs', () => {
       await fontManager.fetchBundledFont('/InterVariable.ttf'),
       'bundled Inter font'
     )
-    fontManager.markLoaded('Inter', 'Regular', inter)
+    await fontManager.markLoaded('Inter', 'Regular', inter)
   })
 
   /**
@@ -54,7 +54,7 @@ describe('text shaping for saved glyphs', () => {
       await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
-    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
     const family = '👨‍👩‍👧‍👦'
     const shaped = expectDefined(
       await shape({ text: `a😀${family}🇺🇸b`, fontSize: 40, width: 400, textAutoResize: 'NONE' }),
@@ -75,7 +75,7 @@ describe('text shaping for saved glyphs', () => {
       await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
-    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
     const shaped = expectDefined(
       await shape({ text: 'a😀☺©', fontSize: 40, width: 400, textAutoResize: 'NONE' }),
       'shaped text'
@@ -152,7 +152,7 @@ describe('text shaping for saved glyphs', () => {
       await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
-    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
     const sequence = '\u{1f469}\u200d\u{1f9af}\u200d\u{1f4bb}'
     const shaped = expectDefined(
       await shape({ text: `x${sequence}x`, fontSize: 40, width: 400, textAutoResize: 'NONE' }),
@@ -174,7 +174,7 @@ describe('text shaping for saved glyphs', () => {
       await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
-    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
     const shaped = expectDefined(
       await shape({
         text: '\u05d0\u{1f600}\u05d1',
@@ -201,7 +201,7 @@ describe('text shaping for saved glyphs', () => {
       await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
-    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
     const scotland = '\u{1f3f4}\u{e0067}\u{e0062}\u{e0073}\u{e0063}\u{e0074}\u{e007f}'
     const shaped = expectDefined(
       await shape({
@@ -334,7 +334,7 @@ describe('text shaping for saved glyphs', () => {
     fallbackFamilies.length = 0
     try {
       const cjk = await Bun.file(testFont('NotoSansCJK-Test.otf')).arrayBuffer()
-      fontManager.markLoaded('Shape Test CJK', 'Regular', cjk)
+      await fontManager.markLoaded('Shape Test CJK', 'Regular', cjk)
       fontManager.setCJKFallbackFamily('Shape Test CJK')
       const shaped = expectDefined(await shape({ text: 'Hi 你好' }), 'shaped text')
       const ni = expectDefined(
@@ -354,7 +354,7 @@ describe('text shaping for saved glyphs', () => {
 
   test('outlines a variable font at the instance the text is set in', async () => {
     const variable = await Bun.file(testFont('InterVariable-Latin.ttf')).arrayBuffer()
-    fontManager.markLoaded('Shape Test Variable', 'Bold', variable)
+    await fontManager.markLoaded('Shape Test Variable', 'Bold', variable)
     const shaped = expectDefined(
       await shape({ text: 'l', fontFamily: 'Shape Test Variable', fontWeight: 700 }),
       'shaped text'

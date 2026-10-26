@@ -41,7 +41,7 @@ test('variable fonts render each style at its named instance', async ({ page }) 
       response.arrayBuffer()
     )
     for (const style of ['Regular', 'Medium', 'SemiBold', 'Bold']) {
-      fontManager.markLoaded('Inter Variable', style, data)
+      await fontManager.markLoaded('Inter Variable', style, data)
     }
 
     const samples = [

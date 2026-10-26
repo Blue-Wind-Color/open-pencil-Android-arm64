@@ -13,4 +13,8 @@ export * from './path'
 export * from './prepare'
 export * from './font/faces'
 export { fontFaceFromFigmaFontName, fontFaceRenderFamily, type FontFaceRef } from './face'
-export { probeGlyphOutlineCommands, type GlyphOutlineProbe, type OutlineCommand } from './opentype'
+export {
+  probeGlyphOutlineCommands,
+  type GlyphOutlineProbe,
+  type OutlineCommand
+} from './font/glyphs'

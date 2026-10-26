@@ -30,6 +30,12 @@ function sfntTable(view: DataView, tag: string): TableRange | null {
   return null
 }
 
+/** One of the font's tables, or `null` when it has none. */
+export function fontTableView(data: ArrayBuffer, tag: string): DataView | null {
+  const table = sfntTable(new DataView(data), tag)
+  return table ? new DataView(data, table.offset, table.length) : null
+}
+
 export function isVariableFont(data: ArrayBuffer): boolean {
   return sfntTable(new DataView(data), 'fvar') !== null
 }

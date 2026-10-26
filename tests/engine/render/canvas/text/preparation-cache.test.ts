@@ -63,7 +63,7 @@ describe('text preparation cache', () => {
     const f = await fixture(8)
     const data = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     f.provider.registerFont(data, 'Inter')
-    fontManager.markLoaded('Inter', 'Regular', data)
+    await fontManager.markLoaded('Inter', 'Regular', data)
     let builds = 0
     const ck: CanvasKit = {
       ...f.ck,

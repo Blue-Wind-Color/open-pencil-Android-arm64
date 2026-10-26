@@ -33,7 +33,7 @@ describe('app font loading', () => {
     const interData = await Bun.file(
       repoPath('packages/core/assets/InterVariable.ttf')
     ).arrayBuffer()
-    fontManager.markLoaded('Inter', 'Regular', interData)
+    await fontManager.markLoaded('Inter', 'Regular', interData)
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

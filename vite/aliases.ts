@@ -100,10 +100,6 @@ export function createOpenPencilAliases(rootDir: string, options: { cloud?: bool
       replacement: `${resolve(rootDir, 'packages/core/assets')}/`
     },
     { find: /^@open-pencil\/core$/, replacement: resolve(rootDir, 'packages/core/src/index.ts') },
-    { find: '@open-pencil/core', replacement: resolve(rootDir, 'packages/core/src') },
-    {
-      find: 'opentype.js',
-      replacement: resolve(rootDir, 'node_modules/opentype.js/dist/opentype.mjs')
-    }
+    { find: '@open-pencil/core', replacement: resolve(rootDir, 'packages/core/src') }
   ]
 }

@@ -309,7 +309,7 @@ describe('set_font_range', () => {
 describe('set_font', () => {
   test('sets variable font axes, picking the nearest named style when none is given', async () => {
     const family = 'Tool Variations'
-    fontManager.markLoaded(
+    await fontManager.markLoaded(
       family,
       'Regular',
       await Bun.file(repoPath('tests/fixtures/fonts/InterVariable-Latin.ttf')).arrayBuffer()

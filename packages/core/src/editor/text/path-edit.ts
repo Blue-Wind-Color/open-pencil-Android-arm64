@@ -6,7 +6,7 @@ import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 
-import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
+import { getGlyphOutlineMetricsSync } from '#core/text/font/glyphs'
 import {
   calibratePathTextLayout,
   getTextPathData,

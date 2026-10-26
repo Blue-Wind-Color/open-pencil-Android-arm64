@@ -1,6 +1,6 @@
 import { geometryCommandCoordCount } from '@open-pencil/scene-graph/geometry'
 
-import type { OutlineCommand } from '#core/text/opentype'
+import type { OutlineCommand } from '#core/text/font/glyphs'
 
 /** Straight pieces a curve is followed in: a fraction of a pixel off at display sizes. */
 const CURVE_STEPS = 24
@@ -69,7 +69,7 @@ class BandInk {
 }
 
 /**
- * The ink of a font outline in the band, given in pixels below the baseline as opentype.js
+ * The ink of a font outline in the band, given in pixels below the baseline as HarfBuzz
  * draws it, for a glyph at `x`, `y`.
  */
 export function outlineInk(

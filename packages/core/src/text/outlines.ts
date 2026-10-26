@@ -4,12 +4,12 @@ import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph
 import { weightToStyle } from '@open-pencil/scene-graph/font-style'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
-import { fontManager } from '#core/text/fonts'
 import {
   fontHasGlyphSync,
   getGlyphOutlineMetricsSync,
   type OutlineCommand
-} from '#core/text/opentype'
+} from '#core/text/font/glyphs'
+import { fontManager } from '#core/text/fonts'
 
 export type TextOutlineUnsupportedReason =
   | 'not-text'

@@ -37,7 +37,7 @@ test('a new catalog tells listeners to ask for their families again', () => {
 test('draws every weight its variable font covers from the one file, in the same slant', async () => {
   const manager = offlineManager()
   const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
-  manager.markLoaded('Fonts Test Variable', 'Regular', variable)
+  await manager.markLoaded('Fonts Test Variable', 'Regular', variable)
   expect(await manager.loadFont('Fonts Test Variable', 'Bold')).toBe(variable)
   expect(manager.isStyleLoaded('Fonts Test Variable', 'Bold')).toBe(true)
   // The file is upright, so it does not stand in for an italic.
@@ -52,7 +52,7 @@ test('an installed face of the style comes before a variable file loaded for ano
   manager.setHostFontLoader(async (name, style) =>
     name === family && style === 'Regular' ? installed : null
   )
-  manager.markLoaded(family, 'Light', variable)
+  await manager.markLoaded(family, 'Light', variable)
   expect(await manager.loadFont(family, 'Regular')).toBe(installed)
   // A weight nothing installs draws from the variable file.
   expect(await manager.loadFont(family, 'Bold')).toBe(variable)

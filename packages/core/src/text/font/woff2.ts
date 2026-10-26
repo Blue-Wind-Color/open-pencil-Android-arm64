@@ -6,7 +6,7 @@ export function isWOFF2(data: ArrayBuffer): boolean {
 }
 
 /**
- * The font as an sfnt (TrueType or OpenType) file. CanvasKit draws WOFF2, but opentype.js, the PDF
+ * The font as an sfnt (TrueType or OpenType) file. CanvasKit draws WOFF2, but HarfBuzz, the PDF
  * exporter, and the font table readers need the tables themselves, so a WOFF2 font is decompressed
  * with Google's reference decoder, loaded only when one arrives. Other files stay as they are.
  */

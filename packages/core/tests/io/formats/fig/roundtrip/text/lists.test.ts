@@ -21,7 +21,7 @@ beforeAll(async () => {
     await fontManager.fetchBundledFont('/InterVariable.ttf'),
     'bundled Inter font'
   )
-  fontManager.markLoaded('Inter', 'Regular', inter)
+  await fontManager.markLoaded('Inter', 'Regular', inter)
 })
 
 test('writes lists as Figma does and reads them back', async () => {

@@ -7,8 +7,8 @@ import {
   NOTO_COLOR_EMOJI_FAMILY,
   savedEmojiCharacters
 } from '#core/text/emoji'
+import { fontGlyphCoverageSync } from '#core/text/font/glyphs'
 import { fontManager } from '#core/text/fonts'
-import { fontGlyphCoverageSync } from '#core/text/opentype'
 import { collectGraphFontRequirements, collectNodeFontFaces } from '#core/text/requirements'
 import { missingGraphFontScripts } from '#core/text/resolved-requirements'
 

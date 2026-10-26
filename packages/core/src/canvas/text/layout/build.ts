@@ -30,7 +30,7 @@ import type { TextRenderer } from '#core/canvas/text/renderer'
 import { utf8Length } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
-import { glyphAdvanceSync } from '#core/text/opentype'
+import { glyphAdvanceSync } from '#core/text/font/glyphs'
 
 /** A list item's indent per level, in ems of the list's first character. */
 const LIST_INDENT_EMS = 1.5

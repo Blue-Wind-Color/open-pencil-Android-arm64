@@ -14,7 +14,7 @@ import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
 import { utf16IndicesByUtf8 } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { ELLIPSIS } from '#core/text/ellipsis'
-import { glyphOutlineSourceSync, type GlyphOutlineSource } from '#core/text/opentype'
+import { glyphOutlineSourceSync, type GlyphOutlineSource } from '#core/text/font/glyphs'
 
 type GlyphRun = ReturnType<Paragraph['getShapedLines']>[number]['runs'][number]
 

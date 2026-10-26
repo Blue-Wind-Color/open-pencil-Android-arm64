@@ -198,7 +198,7 @@ describe('renderText', () => {
     const interData = await Bun.file(
       repoPath('packages/core/assets/InterVariable.ttf')
     ).arrayBuffer()
-    fontManager.markLoaded('Inter', 'Regular', interData)
+    await fontManager.markLoaded('Inter', 'Regular', interData)
     const r = createMockRenderer()
     const canvas = createMockCanvas()
 
@@ -320,8 +320,8 @@ describe('paragraph font weights', () => {
     await renderer.loadFonts()
     const regular = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
     const bold = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
-    fontManager.markLoaded('Inter', 'Regular', regular)
-    fontManager.markLoaded('Inter', 'Bold', bold)
+    await fontManager.markLoaded('Inter', 'Regular', regular)
+    await fontManager.markLoaded('Inter', 'Bold', bold)
 
     const base = textNode({
       text: 'World largest design',
@@ -345,7 +345,7 @@ describe('paragraph font weights', () => {
     const { renderer, surface } = await createTextRenderer()
     await renderer.loadFonts()
     const regular = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
-    fontManager.markLoaded('Inter', 'Regular', regular)
+    await fontManager.markLoaded('Inter', 'Regular', regular)
     const demand = fontFaceDemand('Inter', 'Regular Italic', 'Synthetic italic')
     fontResolver.reset(demand)
     fontResolver.exhaust(demand)
@@ -382,7 +382,7 @@ describe('renderText headless visual', () => {
     fontManager.attachProvider(ck, fontProvider)
     const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
-    fontManager.markLoaded('Inter', 'Regular', interData)
+    await fontManager.markLoaded('Inter', 'Regular', interData)
     const fallbackFamilies = fontManager.getCJKFallbackFamilies()
     const originalFallbacks = [...fallbackFamilies]
     fallbackFamilies.length = 0
@@ -411,7 +411,7 @@ describe('renderText headless visual', () => {
     const fontProvider = ck.TypefaceFontProvider.Make()
     fontManager.attachProvider(ck, fontProvider)
     const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
-    fontManager.markLoaded('Inter', 'Regular', interData)
+    await fontManager.markLoaded('Inter', 'Regular', interData)
     const fallbackFamilies = fontManager.getCJKFallbackFamilies()
     const originalFallbacks = [...fallbackFamilies]
     fallbackFamilies.length = 0
@@ -441,7 +441,7 @@ describe('renderText headless visual', () => {
   test('does not require fallback families when the primary font covers CJK glyphs', async () => {
     const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
     const notoData = await Bun.file(notoPath).arrayBuffer()
-    fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
+    await fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
     const fallbackFamilies = fontManager.getCJKFallbackFamilies()
     const originalFallbacks = [...fallbackFamilies]
     fallbackFamilies.length = 0
@@ -464,14 +464,14 @@ describe('renderText headless visual', () => {
     fontManager.attachProvider(ck, fontProvider)
 
     const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
-    fontManager.markLoaded('Inter', 'Regular', interData)
+    await fontManager.markLoaded('Inter', 'Regular', interData)
 
     const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
     const notoData = await Bun.file(notoPath).arrayBuffer()
-    fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
+    await fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
     fontManager.setCJKFallbackFamily('Noto Sans SC')
     for (let attempt = 0; attempt < 5; attempt++) {
-      fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
+      await fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
     }
 
     const graph = new SceneGraph()
@@ -537,7 +537,7 @@ describe('renderText headless visual', () => {
 
     const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
-    fontManager.markLoaded('Inter', 'Regular', interData)
+    await fontManager.markLoaded('Inter', 'Regular', interData)
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
@@ -616,7 +616,7 @@ describe('renderText headless visual', () => {
 
     const interData = await Bun.file('packages/core/assets/InterVariable.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
-    fontManager.markLoaded('Inter', 'Regular', interData)
+    await fontManager.markLoaded('Inter', 'Regular', interData)
 
     const arabicPath = repoPath('tests/fixtures/fonts/NotoNaskhArabic-Regular.ttf')
     const arabicData = await Bun.file(arabicPath).arrayBuffer()

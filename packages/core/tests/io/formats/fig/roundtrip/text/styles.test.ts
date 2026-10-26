@@ -13,7 +13,7 @@ beforeAll(async () => {
     await fontManager.fetchBundledFont('/InterVariable.ttf'),
     'bundled Inter font'
   )
-  fontManager.markLoaded('Inter', 'Regular', inter)
+  await fontManager.markLoaded('Inter', 'Regular', inter)
 })
 
 test('keeps auto line height on text that mixes font sizes', async () => {

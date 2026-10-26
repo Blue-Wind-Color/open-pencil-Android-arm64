@@ -15,7 +15,7 @@ describe('startTextEditing — path-text font gate', () => {
     const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     expect(font).toBeTruthy()
     if (!font) return
-    fontManager.markLoaded('Inter', 'Regular', font)
+    await fontManager.markLoaded('Inter', 'Regular', font)
 
     const editor = createEditor()
     const page = editor.state.currentPageId
