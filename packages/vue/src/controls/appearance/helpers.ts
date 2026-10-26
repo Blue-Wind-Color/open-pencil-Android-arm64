@@ -4,6 +4,7 @@ import type { ComputedRef, Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
 import type { BlendMode, SceneNode } from '@open-pencil/scene-graph'
+import { independentCornerChanges } from '@open-pencil/scene-graph/variables'
 
 import type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
@@ -279,13 +280,7 @@ export function createAppearanceActions({
             if (target.independentCorners) continue
             editor.updateNodeWithUndo(
               target.id,
-              {
-                independentCorners: true,
-                topLeftRadius: target.cornerRadius,
-                topRightRadius: target.cornerRadius,
-                bottomRightRadius: target.cornerRadius,
-                bottomLeftRadius: target.cornerRadius
-              } as Partial<SceneNode>,
+              independentCornerChanges(target),
               'Independent corner radii'
             )
           } else {

@@ -188,6 +188,82 @@ describe('node variable bindings', () => {
     rect.setBoundVariable('minWidth', null)
   })
 
+  test('shows and unbinds by corner a uniform radius a file binds as one field', () => {
+    const { api, mode, size } = tokens()
+    const rect = api.createRectangle()
+    const corners = [
+      'topLeftRadius',
+      'topRightRadius',
+      'bottomLeftRadius',
+      'bottomRightRadius'
+    ] as const
+    // `api.mixed` widens to `symbol`, so the radii are typed to hold either.
+    const radii = (): (number | symbol)[] => [
+      rect.cornerRadius,
+      ...corners.map((corner) => rect[corner])
+    ]
+    // A .pen or .fig file binds a uniform radius as one field.
+    api.graph.bindVariable(rect.id, 'cornerRadius', size.id)
+    size.setValueForMode(mode, 6)
+    expect(Object.keys(rect.boundVariables)).toEqual([...corners])
+
+    // An unbound corner keeps the radius it shows, and the others follow the variable.
+    rect.setBoundVariable('topLeftRadius', null)
+    expect(Object.keys(rect.boundVariables)).toEqual(corners.slice(1))
+    expect(radii()).toEqual([6, 6, 6, 6, 6])
+    size.setValueForMode(mode, 10)
+    expect(radii()).toEqual([api.mixed, 6, 10, 10, 10])
+
+    for (const corner of corners.slice(1)) rect.setBoundVariable(corner, null)
+    rect.cornerRadius = 20
+    expect(api.graph.getNode(rect.id)?.boundVariables).toEqual({})
+    expect(radii()).toEqual([20, 20, 20, 20, 20])
+  })
+
+  test('setting one corner of a radius a file binds as one field keeps the others bound', () => {
+    const { api, size } = tokens()
+    const rect = api.createRectangle()
+    api.graph.bindVariable(rect.id, 'cornerRadius', size.id)
+    rect.topLeftRadius = 20
+    const bound = api.graph.getNode(rect.id)?.boundVariables ?? {}
+    expect(bound).not.toHaveProperty('cornerRadius')
+    expect(bound).toMatchObject({
+      topRightRadius: size.id,
+      bottomLeftRadius: size.id,
+      bottomRightRadius: size.id
+    })
+  })
+
+  // Figma desktop, 2026-10-26: unbinding `cornerRadius` leaves every corner's binding in place.
+  test('unbinding the radius as a whole keeps the corners bound', () => {
+    const { api, size } = tokens()
+    const rect = api.createRectangle()
+    rect.setBoundVariable('cornerRadius', size)
+    rect.setBoundVariable('cornerRadius', null)
+    expect(Object.keys(rect.boundVariables)).toEqual([
+      'topLeftRadius',
+      'topRightRadius',
+      'bottomLeftRadius',
+      'bottomRightRadius'
+    ])
+  })
+
+  test('a radius bound as a whole is drawn at the variable’s value', () => {
+    const { api, mode, size } = tokens()
+    const rect = api.createRectangle()
+    rect.setBoundVariable('cornerRadius', size)
+    size.setValueForMode(mode, 10)
+    expect(rect.cornerRadius).toBe(10)
+    // The layer draws its corners, which hold the bound value, not a radius left at 0.
+    expect(api.graph.getNode(rect.id)).toMatchObject({
+      independentCorners: true,
+      topLeftRadius: 10,
+      topRightRadius: 10,
+      bottomLeftRadius: 10,
+      bottomRightRadius: 10
+    })
+  })
+
   test('setBoundVariable takes only the type Figma’s API allows for each field', () => {
     const { api, size, label, flag, color } = tokens()
     const rect = api.createRectangle()

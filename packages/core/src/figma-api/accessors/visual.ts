@@ -1,6 +1,6 @@
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
-import { resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
+import { independentCornerChanges, resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
 
 import {
   graph,
@@ -173,8 +173,13 @@ export function installVisualNodeProxyAccessors(
     cornerRadius: {
       get(this: ProxyThis): number | symbol {
         const node = raw(this, internals)
-        if (node.independentCorners) return mixed
-        return node.cornerRadius
+        if (!node.independentCorners) return node.cornerRadius
+        // Corners set or bound one by one read as one radius while they agree, as in Figma.
+        const { topLeftRadius, topRightRadius, bottomLeftRadius, bottomRightRadius } = node
+        const agree = [topRightRadius, bottomLeftRadius, bottomRightRadius].every(
+          (radius) => radius === topLeftRadius
+        )
+        return agree ? topLeftRadius : mixed
       },
       set(this: ProxyThis, value: number | symbol) {
         if (value === mixed) return
@@ -212,7 +217,10 @@ function cornerAccessor(
       return raw(this, internals)[field]
     },
     set(this: ProxyThis, value: number) {
-      updateNode(this, internals, { [field]: value, independentCorners: true })
+      updateNode(this, internals, {
+        ...independentCornerChanges(raw(this, internals)),
+        [field]: value
+      })
     }
   }
 }
