@@ -189,7 +189,7 @@ function formattedDate(updatedAt: string): string {
         :storage="sidebarStorage"
         @select="places.select"
         @connect="places.connect"
-        @account-settings="places.accountSettings"
+        @open-account="places.openAccount"
         @storage-settings="places.storageSettings"
         @switch-server="places.connect"
         @new-workspace="places.newWorkspace"

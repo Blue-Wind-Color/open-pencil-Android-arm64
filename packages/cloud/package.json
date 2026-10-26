@@ -3,7 +3,11 @@
   "version": "0.15.1",
   "private": true,
   "license": "Apache-2.0 AND MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "sideEffects": false,
   "imports": {
     "#cloud/*": {
       "types": "./src/*",
@@ -46,10 +50,6 @@
       "default": "./dist/server.js"
     }
   },
-  "sideEffects": false,
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
     "build:standalone": "bunx tsdown --config tsdown.standalone.config.ts",
@@ -89,7 +89,9 @@
     "fflate": "^0.8.3",
     "hono": "^4.13.13",
     "hono-rate-limiter": "^0.5.3",
+    "image-size": "^2.0.4",
     "jose": "^6.2.8",
+    "js-base64": "^3.9.3",
     "kysely": "^0.29.6",
     "lib0": "^0.2.117",
     "nodemailer": "^9.0.5",
@@ -99,9 +101,6 @@
     "vue": "^3.5.43",
     "ws": "^8.21.3",
     "yjs": "^13.6.32"
-  },
-  "optionalDependencies": {
-    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261011.1",
@@ -115,5 +114,8 @@
     "typescript": "~5.8.3",
     "wrangler": "4.149.0",
     "y-protocols": "^1.0.7"
+  },
+  "optionalDependencies": {
+    "pg": "^8.23.0"
   }
 }

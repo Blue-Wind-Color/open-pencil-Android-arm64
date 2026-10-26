@@ -116,7 +116,12 @@ async function signedInConnection(
       account: server.account
     }
   }
-  const account = { id: status.user.userId, name: status.user.name, email: status.user.email }
+  const account = {
+    id: status.user.userId,
+    name: status.user.name,
+    email: status.user.email,
+    image: status.user.image ?? null
+  }
   rememberCloudAccount(server.id, account)
   if (status.state !== 'active') {
     const state = status.state === 'pending' ? 'pending' : 'closed'

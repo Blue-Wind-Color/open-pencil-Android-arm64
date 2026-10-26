@@ -50,6 +50,7 @@ export type PortalPersonAction =
   | 'remove-admin'
   | 'sign-out'
   | 'reset-two-step'
+  | 'remove-picture'
   | 'suspend'
   | 'restore'
 

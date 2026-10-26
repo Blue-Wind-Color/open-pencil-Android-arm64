@@ -1,6 +1,7 @@
 import { createEnrollmentService, type EnrollmentService } from '#cloud/admin/enrollment/service'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
+import { createUserPictures, providerPictures } from '#cloud/server/pictures'
 import { passkey } from '@better-auth/passkey'
 import { APIError, betterAuth, type BetterAuthOptions } from 'better-auth'
 import { getMigrations } from 'better-auth/db/migration'
@@ -304,7 +305,8 @@ export function createBetterAuthAdapter(
         validateClient: (clientId) => clientId.startsWith('openpencil-desktop:')
       }),
       // After two-step sign-in's own hooks, so a sign-in waiting for its second step is skipped.
-      accountActivity(activity, (user) => notifyTwoStep(user, 'passkey-added'))
+      accountActivity(activity, (user) => notifyTwoStep(user, 'passkey-added')),
+      providerPictures(createUserPictures(database, { publicURL: config.publicURL }))
     ],
     socialProviders: socialProviders(config),
     trustedOrigins: [

@@ -7,6 +7,7 @@ import {
   type CloudAuthAdapter
 } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
+import type { UserPictureService } from '#cloud/server/pictures'
 import { dateString } from '#cloud/server/sharing/contracts'
 import { clamp, countBy, keyBy } from 'es-toolkit'
 import type { ExpressionBuilder, Kysely } from 'kysely'
@@ -72,7 +73,12 @@ type UserRow = {
 export function createAdminUserService(
   database: Kysely<CloudDatabase>,
   auth: CloudAuthAdapter,
-  options: { requireMFA?: boolean; notify?: AuthenticationEmailService } = {}
+  options: {
+    requireMFA?: boolean
+    notify?: AuthenticationEmailService
+    /** Takes down a person's picture; without it, `removePicture` refuses. */
+    pictures?: UserPictureService
+  } = {}
 ) {
   const activity = createSignInActivity(database)
 
@@ -361,6 +367,18 @@ export function createAdminUserService(
         userId: user.id,
         change: 'reset-by-administrator'
       })
+    },
+
+    /** Takes down a person's picture, such as one that should not be shown; initials replace it. */
+    async removePicture(actorId: string, userId: string): Promise<void> {
+      if (!options.pictures) throw new Error('Pictures are not available')
+      await database
+        .selectFrom('user')
+        .select('id')
+        .where('id', '=', userId)
+        .executeTakeFirstOrThrow()
+      await options.pictures.remove(userId)
+      await audit(actorId, 'user.picture-removed', userId)
     }
   }
 }

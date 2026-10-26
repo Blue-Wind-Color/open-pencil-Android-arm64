@@ -1,6 +1,11 @@
 import * as v from 'valibot'
 
-import { cloudIdentitySchema, cloudAccountSessionSchema, cloudSignInSchema } from '../account'
+import {
+  cloudIdentitySchema,
+  cloudAccountSessionSchema,
+  cloudPersonSchema,
+  cloudSignInSchema
+} from '../account'
 import { workspaceRoleSchema } from '../workspaces'
 
 const timestampSchema = v.pipe(v.string(), v.isoTimestamp())
@@ -46,10 +51,7 @@ export const cloudAdminSessionResponseSchema = v.object({ user: cloudIdentitySch
 const countSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 
 export const cloudAdminUserSchema = v.object({
-  id: v.string(),
-  name: v.string(),
-  email: v.pipe(v.string(), v.email()),
-  image: v.nullable(v.string()),
+  ...cloudPersonSchema.entries,
   role: v.optional(v.string()),
   banned: v.nullable(v.boolean()),
   banReason: v.optional(v.nullable(v.string())),

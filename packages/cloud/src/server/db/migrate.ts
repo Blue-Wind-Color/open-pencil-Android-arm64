@@ -26,6 +26,7 @@ import * as entitlementExternalVersion from './migrations/022_entitlement_extern
 import * as documentImages from './migrations/023_document_images'
 import * as accountActivity from './migrations/024_account_activity'
 import * as tableNames from './migrations/025_table_names'
+import * as userPicture from './migrations/026_user_picture'
 import type { CloudDatabase } from './tables'
 
 const migrations: Record<string, Migration> = {
@@ -53,7 +54,8 @@ const migrations: Record<string, Migration> = {
   '022_entitlement_external_version': entitlementExternalVersion,
   '023_document_images': documentImages,
   '024_account_activity': accountActivity,
-  '025_table_names': tableNames
+  '025_table_names': tableNames,
+  '026_user_picture': userPicture
 }
 
 class CloudMigrationProvider implements MigrationProvider {

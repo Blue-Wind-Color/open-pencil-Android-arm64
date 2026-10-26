@@ -22,7 +22,8 @@ const actions = computed<Record<string, string>>(() => ({
   'user.admin-granted': messages.value.activityMadeAdmin,
   'user.admin-revoked': messages.value.activityRemovedAdmin,
   'email.regenerated': messages.value.activityEmailRetried,
-  'user.two-step-reset': messages.value.activityTwoStepReset
+  'user.two-step-reset': messages.value.activityTwoStepReset,
+  'user.picture-removed': messages.value.activityPictureRemoved
 }))
 </script>
 

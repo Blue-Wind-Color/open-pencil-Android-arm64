@@ -117,7 +117,11 @@ const title = (server: CloudServerEntry) =>
               {{ t.settingsAccessClosed }}
             </p>
             <p v-else-if="server.account && server.session === 'signed-in'" :class="ui.account()">
-              <AccountAvatar :id="server.account.id" :name="server.account.name" />
+              <AccountAvatar
+                :id="server.account.id"
+                :name="server.account.name"
+                :image="server.account.image ?? null"
+              />
               <span :class="ui.accountText()">
                 {{ server.account.name }} · {{ server.account.email }}
               </span>

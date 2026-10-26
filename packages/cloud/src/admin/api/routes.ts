@@ -17,7 +17,7 @@ import type { CloudAuthAdapter } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { CLOUD_RATE_LIMITS, createActorRateLimiter } from '#cloud/server/rate-limit'
 import { validatedJSON, validatedQuery } from '#cloud/server/validation'
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { NoResultError, type Kysely } from 'kysely'
 import * as v from 'valibot'
 
@@ -38,6 +38,19 @@ const parseUserQuery = (input: unknown) =>
 const parseLimitQuery = (input: unknown) => v.parse(v.object({ limit: countSchema }), input)
 /** Accounts are named by UUID; anything else names no one, rather than failing the query. */
 const accountIdSchema = v.pipe(v.string(), v.uuid())
+
+/** Does what an administrator asked to another account; one that is not an account is not found. */
+async function accountMutation(
+  context: Context<CloudAPIEnvironment>,
+  userId: string,
+  mutate: (actorId: string, userId: string) => Promise<void>
+) {
+  if (!v.is(accountIdSchema, userId)) {
+    return context.json({ error: { code: 'not_found' as const } }, 404)
+  }
+  await mutate(context.get('actor').userId, userId)
+  return context.json({ ok: true as const })
+}
 
 export type CloudAdminServices = {
   email: AdminEmailService
@@ -143,14 +156,16 @@ export function createCloudAdminRoutes(
       if (!detail) return context.json({ error: { code: 'not_found' as const } }, 404)
       return context.json(detail)
     })
-    .post('/users/reset-two-step', validatedJSON(parseUserMutation), async (context) => {
-      const { userId } = context.req.valid('json')
-      if (!v.is(accountIdSchema, userId)) {
-        return context.json({ error: { code: 'not_found' as const } }, 404)
-      }
-      await services.users.resetTwoStep(context.get('actor').userId, userId)
-      return context.json({ ok: true as const })
-    })
+    .post('/users/reset-two-step', validatedJSON(parseUserMutation), (context) =>
+      accountMutation(context, context.req.valid('json').userId, (actorId, userId) =>
+        services.users.resetTwoStep(actorId, userId)
+      )
+    )
+    .post('/users/remove-picture', validatedJSON(parseUserMutation), (context) =>
+      accountMutation(context, context.req.valid('json').userId, (actorId, userId) =>
+        services.users.removePicture(actorId, userId)
+      )
+    )
     .post('/users/ban', validatedJSON(parseUserMutation), async (context) => {
       const input = context.req.valid('json')
       await services.users.ban(

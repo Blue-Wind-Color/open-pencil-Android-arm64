@@ -85,6 +85,7 @@ export function useHomeCloud() {
     workspaces: computed<WorkspaceSummary[]>(() => []),
     serverId: computed<string | null>(() => null),
     connect: noop,
+    openAccount: noop,
     newWorkspace: noop,
     signOut: () => Promise.resolve()
   }

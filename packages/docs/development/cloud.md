@@ -211,7 +211,19 @@ filtered to administrators, suspended accounts, or accounts without two-step sig
 for each filter. A person's page shows how they sign in, their workspaces, sessions, and recent
 sign-ins. Administrators make and remove administrators, sign people out everywhere, suspend
 with a reason the activity log keeps, and reset a locked-out person's two-step sign-in, which
-removes their authenticator app, recovery codes, and passkeys. Every action asks once more.
+removes their authenticator app, recovery codes, and passkeys, and take down a person's picture.
+Every action asks once more.
+
+Account pictures live in `user_picture`, one per account, and `user.image` holds the address the
+server serves them from, `/api/pictures/:userId/:version`, where the version is the start of the
+picture's SHA-256: a new picture is a new address. Responses are cached for one day, so a
+picture an administrator removes may stay visible until the cache expires. The
+page crops and shrinks a picture to a 256-pixel JPEG; the server accepts PNG or JPEG of at most
+256 KB and 1024 pixels a side, reading the type and size from the bytes. A Google picture is
+fetched once a sign-in issues its session and kept the same way; one that cannot be fetched leaves
+initials, never a link to Google. The server fetches only from Google's picture host and follows no
+redirects. Only a provider's sign-in may write `user.image` through Better Auth; an address
+sent with email sign-up or a user update is dropped.
 
 ## Portal
 
@@ -503,6 +515,14 @@ for 30 days so it can be restored; a Cloud workspace can only be deleted once it
 documents, and deleted documents already have their own retention, so a delay would protect
 nothing but the name and members. Workspace settings stay in the editor's Members dialog, which
 the desktop app reaches without leaving for a browser.
+
+**2026-10 · Pictures are kept in the database, and Gravatar is not used.** A 256-pixel JPEG is
+a few dozen kilobytes. Object storage only hands out short-lived signed links, so pictures there
+would need upload tracking, a quota exemption, and a redirect for every picture a page shows; in a
+table the server reads the bytes, checks them, and serves them itself. Gravatar would send every
+viewer's address and a hash of each person's email to a third party, which a self-hosted server
+should not do by default; copying a linked Google picture instead of linking to it follows the
+same rule.
 
 **2026-10 · Tables are named for what they hold.** OpenPencil's tables beside Better Auth's had a
 `cloud_` prefix the rest never had; they lose it, and only a name Better Auth already uses gets a

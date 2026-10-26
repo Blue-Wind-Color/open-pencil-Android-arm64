@@ -36,13 +36,17 @@ class BandInk {
     this.y = y
   }
 
+  /** A quadratic is the cubic whose control points lie two thirds of the way to its own. */
   quadTo(x1: number, y1: number, x: number, y: number): void {
     const { x: x0, y: y0 } = this
-    for (let step = 1; step <= CURVE_STEPS; step++) {
-      const t = step / CURVE_STEPS
-      const u = 1 - t
-      this.lineTo(u * u * x0 + 2 * u * t * x1 + t * t * x, u * u * y0 + 2 * u * t * y1 + t * t * y)
-    }
+    this.cubicTo(
+      x0 + (2 / 3) * (x1 - x0),
+      y0 + (2 / 3) * (y1 - y0),
+      x + (2 / 3) * (x1 - x),
+      y + (2 / 3) * (y1 - y),
+      x,
+      y
+    )
   }
 
   cubicTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number): void {

@@ -525,6 +525,7 @@ ja:cloudPortal.welcomeTitle
 ja:cloudPortal.accountId
 ja:cloudPortal.desktopApp
 ja:cloudPortal.methodDesktop
+ja:cloudPortal.pictureUnreadable
 zh-cn:cloud.connectHeading
 zh-cn:cloud.connectServerDescription
 zh-cn:cloud.officialDescription
@@ -546,6 +547,7 @@ zh-cn:cloudPortal.accountId
 zh-cn:cloudPortal.accountIdDescription
 zh-cn:cloudPortal.desktopApp
 zh-cn:cloudPortal.methodDesktop
+zh-cn:cloudPortal.pictureUnreadable
 ja:ai.cloudAIUnavailable
 ja:ai.cloudAINoWorkspace
 ja:ai.chatCloudCreditsExhausted

@@ -77,6 +77,12 @@ const confirmation = computed(() => {
       confirm: words.resetTwoStep,
       tone: 'danger'
     },
+    'remove-picture': {
+      heading: words.removePersonPictureHeading({ name }),
+      description: words.removePersonPictureDescription,
+      confirm: words.removePersonPicture,
+      tone: 'danger'
+    },
     suspend: {
       heading: words.suspendHeading({ name }),
       description: words.suspendDescription,
@@ -149,6 +155,13 @@ function confirm() {
           @select="ask('reset-two-step')"
         >
           {{ messages.resetTwoStep }}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          v-if="person.image"
+          :class="menuUI.item({ justify: 'start' })"
+          @select="ask('remove-picture')"
+        >
+          {{ messages.removePersonPicture }}
         </DropdownMenuItem>
         <DropdownMenuSeparator :class="menuUI.separator()" />
         <DropdownMenuItem

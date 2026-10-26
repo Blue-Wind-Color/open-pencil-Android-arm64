@@ -8,6 +8,8 @@ import {
   parseCloudUnlinkAuthenticationMethod,
   parseCloudEmailChange,
   parseCloudProfileUpdate,
+  parseCloudPictureUpload,
+  CLOUD_PICTURE_MAX_BYTES,
   parseCloudSessionRevoke
 } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
@@ -18,15 +20,22 @@ import {
   type CloudSessionResolver
 } from '#cloud/server/auth'
 import type { CloudServerConfig } from '#cloud/server/config'
+import { PictureInvalidError, type UserPictureService } from '#cloud/server/pictures'
 import { validatedJSON } from '#cloud/server/validation'
 import type { WorkspaceService } from '#cloud/server/workspaces'
 import { Hono, type MiddlewareHandler } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
+import { toUint8Array } from 'js-base64'
 
 import { createAccountActions } from './actions'
+
+/** Room for a Base64 picture and the JSON around it. */
+const PICTURE_BODY_BYTES = Math.ceil(CLOUD_PICTURE_MAX_BYTES / 3) * 4 + 1024
 
 export type AccountRouteDependencies = {
   auth: CloudAuthAdapter
   config: CloudServerConfig
+  pictures: UserPictureService
   enrollment: EnrollmentService
   workspaces: WorkspaceService
   resolveIdentity: CloudIdentityResolver
@@ -216,6 +225,28 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
         context
       )
       return result instanceof Response ? result : context.json({ ok: true as const })
+    })
+    .put(
+      '/api/account/profile/picture',
+      bodyLimit({
+        maxSize: PICTURE_BODY_BYTES,
+        onError: (context) => context.json({ error: { code: 'picture_invalid' as const } }, 413)
+      }),
+      validatedJSON(parseCloudPictureUpload),
+      async (context) => {
+        const bytes = toUint8Array(context.req.valid('json').data)
+        try {
+          const image = await services.pictures.upload(context.get('actor').userId, bytes)
+          return context.json({ image })
+        } catch (error) {
+          if (!(error instanceof PictureInvalidError)) throw error
+          return context.json({ error: { code: 'picture_invalid' as const } }, 400)
+        }
+      }
+    )
+    .delete('/api/account/profile/picture', async (context) => {
+      await services.pictures.remove(context.get('actor').userId)
+      return context.json({ ok: true as const })
     })
     .post('/api/account/profile/email', validatedJSON(parseCloudEmailChange), async (context) => {
       const result = await accountAction(

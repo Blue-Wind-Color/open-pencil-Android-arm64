@@ -40,13 +40,13 @@ export function accountAuthenticationRequest(
   path: string,
   body?: object,
   cookie?: string,
-  init: { headers?: Record<string, string> } = {}
+  init: { headers?: Record<string, string>; method?: string } = {}
 ): Request {
   const headers = new Headers(init.headers)
   if (body) headers.set('Content-Type', 'application/json')
   if (cookie) headers.set('Cookie', cookie)
   return new Request(new URL(path, accountAuthenticationConfig.publicURL), {
-    method: body ? 'POST' : 'GET',
+    method: init.method ?? (body ? 'POST' : 'GET'),
     headers,
     body: body ? JSON.stringify(body) : undefined
   })
@@ -133,13 +133,14 @@ export async function approveAccount(
 
 export async function createVerifiedCredentialAccount(
   fixture: Awaited<ReturnType<typeof createAccountAuthenticationFixture>>,
-  input: { email: string; name: string; password: string; approved: boolean }
+  input: { email: string; name: string; password: string; approved: boolean; image?: string }
 ): Promise<{ userId: string; sessionCookie: string }> {
   await fixture.app.fetch(
     accountAuthenticationRequest('/api/auth/sign-up/email', {
       name: input.name,
       email: input.email,
-      password: input.password
+      password: input.password,
+      image: input.image
     })
   )
   const user = await fixture.database

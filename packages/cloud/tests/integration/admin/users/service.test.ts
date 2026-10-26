@@ -2,7 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { ignoredSecurityNotices } from '#cloud-tests/helpers/account-authentication'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
+import { pngHeader } from '#cloud-tests/helpers/pictures'
 import { createAdminAuditService, createAdminUserService } from '#cloud/server'
+import { createUserPictures } from '#cloud/server/pictures'
 
 const ADMIN_ID = '11111111-1111-4111-8111-111111111111'
 const USER_ID = '22222222-2222-4222-8222-222222222222'
@@ -329,6 +331,61 @@ describe('deployment admin user safety', () => {
           action: 'user.two-step-reset',
           actor: { id: ADMIN_ID, name: 'Admin' },
           subject: { type: 'user', id: USER_ID, name: 'Locked Out' }
+        })
+      ])
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('takes down a person’s picture and records it', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      await runtime.database
+        .insertInto('user')
+        .values([
+          {
+            id: ADMIN_ID,
+            name: 'Admin',
+            email: 'admin@example.com',
+            emailVerified: true,
+            image: null,
+            role: 'admin',
+            banned: false
+          },
+          {
+            id: USER_ID,
+            name: 'Pictured',
+            email: 'pictured@example.com',
+            emailVerified: true,
+            image: null,
+            role: 'user',
+            banned: false
+          }
+        ])
+        .execute()
+      const pictures = createUserPictures(runtime.database, {
+        publicURL: 'https://cloud.example.com'
+      })
+      await pictures.upload(USER_ID, pngHeader(256, 256))
+      await expect(
+        createAdminUserService(runtime.database, authAdapter()).removePicture(ADMIN_ID, USER_ID)
+      ).rejects.toThrow('not available')
+
+      const service = createAdminUserService(runtime.database, authAdapter(), { pictures })
+      await service.removePicture(ADMIN_ID, USER_ID)
+      const user = await runtime.database
+        .selectFrom('user')
+        .select('image')
+        .where('id', '=', USER_ID)
+        .executeTakeFirstOrThrow()
+      expect(user.image).toBeNull()
+      const kept = await runtime.database.selectFrom('userPicture').select('userId').execute()
+      expect(kept).toEqual([])
+      expect(await createAdminAuditService(runtime.database).list()).toEqual([
+        expect.objectContaining({
+          action: 'user.picture-removed',
+          subject: { type: 'user', id: USER_ID, name: 'Pictured' }
         })
       ])
     } finally {

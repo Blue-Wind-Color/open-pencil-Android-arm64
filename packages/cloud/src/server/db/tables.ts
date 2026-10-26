@@ -218,6 +218,19 @@ export interface SignInTable {
   createdAt: TimestampColumn
 }
 
+export type UserPictureFormat = 'png' | 'jpeg'
+
+/** The picture an account shows: uploaded by its owner, or copied from a linked account. */
+export interface UserPictureTable {
+  userId: string
+  bytes: Uint8Array
+  format: UserPictureFormat
+  /** The SHA-256 of the bytes, hex, which names this picture in its address. */
+  checksum: string
+  source: 'upload' | 'provider'
+  createdAt: TimestampColumn
+}
+
 export interface DocumentCollaborationStateTable {
   documentId: string
   roomEpoch: number
@@ -330,6 +343,7 @@ export interface CloudDatabase {
   passkey: PasskeyTable
   mfaAssurance: MFAAssuranceTable
   signIn: SignInTable
+  userPicture: UserPictureTable
   user: AuthUserTable
   authSchemaVersion: AuthSchemaVersionTable
   enrollment: EnrollmentTable

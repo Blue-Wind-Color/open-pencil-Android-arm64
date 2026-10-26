@@ -41,6 +41,7 @@ export function personAction(
     'remove-admin': () => api.setAdmin(person.id, false),
     'sign-out': () => api.userAction('revoke-sessions', person.id),
     'reset-two-step': () => api.userAction('reset-two-step', person.id),
+    'remove-picture': () => api.userAction('remove-picture', person.id),
     suspend: () => api.userAction('ban', person.id, reason),
     restore: () => api.userAction('unban', person.id)
   }

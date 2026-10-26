@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { fromUint8Array } from 'js-base64'
+import * as v from 'valibot'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { CloudPortalAPIError } from '@open-pencil/cloud/client'
@@ -9,15 +11,20 @@ import { usePortal } from '@/app/cloud-portal/context'
 import { usePortalFailureMessages } from '@/app/cloud-portal/failure'
 import { portalURL } from '@/app/cloud-portal/navigation'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
+import { portalToast } from '@/app/cloud-portal/toast'
 import { useDateFormat } from '@/app/i18n/date'
+import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
-import PortalEmailDialog from '../account/PortalEmailDialog.vue'
+import PortalFieldDialog from '../account/PortalFieldDialog.vue'
 import PortalPasswordDialog from '../account/PortalPasswordDialog.vue'
+import PortalPictureDialog from '../account/PortalPictureDialog.vue'
 import PortalProfile from '../account/PortalProfile.vue'
 
 /** The query the email confirmation link comes back with. */
 const EMAIL_CONFIRMED = 'email-confirmed'
+/** The longest name the server keeps. */
+const NAME_MAX_LENGTH = 100
 
 /**
  * The signed-in person's name, email, and picture. A new email is confirmed from the new
@@ -52,14 +59,61 @@ const profile = computed(() => {
       }
     : null
 })
-const notice = ref<string | null>(null)
+const nameOpen = ref(false)
+const nameSchema = computed(() =>
+  v.pipe(
+    v.string(),
+    v.trim(),
+    v.nonEmpty(messages.value.errorNameRequired),
+    v.maxLength(NAME_MAX_LENGTH)
+  )
+)
+const emailSchema = computed(() =>
+  v.pipe(
+    v.string(),
+    v.trim(),
+    v.nonEmpty(messages.value.errorEmailRequired),
+    v.email(messages.value.errorEmailInvalid)
+  )
+)
 
 const rename = usePortalAction(async (name: string) => {
-  notice.value = null
-  await portal.api.updateProfile(name)
-  await Promise.all([loaded.reload(), portal.refreshAccount()])
-  notice.value = messages.value.nameSaved
+  if (name !== profile.value?.name) {
+    await portal.api.updateProfile(name)
+    await Promise.all([loaded.reload(), portal.refreshAccount()])
+    portalToast.info(messages.value.nameSaved)
+  }
+  nameOpen.value = false
 })
+
+function openName() {
+  rename.clear()
+  nameOpen.value = true
+}
+
+const pictureFile = ref<File | null>(null)
+const pictureOpen = ref(false)
+
+function choosePicture(file: File) {
+  savePicture.clear()
+  pictureFile.value = file
+  pictureOpen.value = true
+}
+
+const savePicture = usePortalAction(async (picture: Blob) => {
+  await portal.api.uploadPicture(fromUint8Array(new Uint8Array(await picture.arrayBuffer())))
+  pictureOpen.value = false
+  await Promise.all([loaded.reload(), portal.refreshAccount()])
+  portalToast.info(messages.value.pictureSaved)
+})
+
+const removeOpen = ref(false)
+const removePicture = usePortalAction(async () => {
+  await portal.api.removePicture()
+  await Promise.all([loaded.reload(), portal.refreshAccount()])
+  portalToast.info(messages.value.pictureRemoved)
+})
+watch(removePicture.error, (failure) => failure && portalToast.error(failure))
 
 const emailOpen = ref(false)
 const passwordOpen = ref(false)
@@ -70,11 +124,10 @@ async function requestEmail(email: string) {
   await portal.api.changeEmail(email, portalURL(`/account?${EMAIL_CONFIRMED}`))
   emailOpen.value = false
   passwordOpen.value = false
-  notice.value = messages.value.emailChangeSent({ email })
+  portalToast.info(messages.value.emailChangeSent({ email }))
 }
 
 const changeEmail = usePortalAction(async (email: string) => {
-  notice.value = null
   try {
     await requestEmail(email)
   } catch (error) {
@@ -104,10 +157,11 @@ const busy = computed(
   () =>
     loaded.loading.value ||
     rename.busy.value ||
+    savePicture.busy.value ||
+    removePicture.busy.value ||
     changeEmail.busy.value ||
     confirmPassword.busy.value
 )
-const error = computed(() => rename.error.value ?? loaded.error.value)
 
 function openEmail() {
   changeEmail.clear()
@@ -119,26 +173,71 @@ onMounted(async () => {
   await router.replace({ query: {} })
   await portal.refreshAccount()
   const email = portal.account.value?.user.email
-  if (email) notice.value = messages.value.emailChanged({ email })
+  if (email) portalToast.info(messages.value.emailChanged({ email }))
 })
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
-    <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
-    <AppAlert v-if="notice" tone="success" :heading="notice" />
+  <div class="flex max-w-2xl flex-col gap-4">
+    <AppAlert
+      v-if="loaded.error.value"
+      tone="error"
+      :heading="messages.errorTitle"
+      :description="loaded.error.value"
+    />
     <PortalProfile
       v-if="profile"
       :profile="profile"
       :email-change-available="loaded.data.value?.profile.emailChangeAvailable"
       :busy="busy"
-      @rename="rename.run"
+      @change-name="openName"
       @change-email="openEmail"
+      @choose-picture="choosePicture"
+      @remove-picture="removeOpen = true"
     />
-    <PortalEmailDialog
+    <AppConfirmationDialog
+      v-model:open="removeOpen"
+      tone="danger"
+      :heading="messages.removePictureHeading"
+      :description="messages.removePictureDescription"
+      :cancel-label="messages.cancel"
+      :confirm-label="messages.removePictureConfirm"
+      :confirm-loading="removePicture.busy.value"
+      @confirm="removePicture.run()"
+    />
+    <PortalPictureDialog
+      v-model:open="pictureOpen"
+      :file="pictureFile"
+      :saving="savePicture.busy.value"
+      :error="savePicture.error.value"
+      @save="savePicture.run"
+    />
+    <PortalFieldDialog
+      v-if="profile"
+      v-model:open="nameOpen"
+      :heading="messages.changeNameTitle"
+      :description="messages.detailsSectionDescription"
+      :label="messages.name"
+      :submit-label="messages.save"
+      :schema="nameSchema"
+      :initial="profile.name"
+      autocomplete="name"
+      :maxlength="NAME_MAX_LENGTH"
+      :error="rename.error.value"
+      :saving="rename.busy.value"
+      @submit="rename.run"
+    />
+    <PortalFieldDialog
       v-if="profile"
       v-model:open="emailOpen"
-      :current-email="profile.email"
+      :heading="messages.changeEmailTitle"
+      :description="messages.changeEmailDescription({ email: profile.email })"
+      :label="messages.newEmail"
+      :submit-label="messages.sendConfirmation"
+      :schema="emailSchema"
+      type="email"
+      autocomplete="email"
+      :placeholder="messages.emailPlaceholder"
       :error="changeEmail.error.value"
       :saving="busy"
       @submit="changeEmail.run"

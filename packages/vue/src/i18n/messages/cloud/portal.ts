@@ -143,11 +143,24 @@ export const cloudPortalMessageDefaults = {
 
   detailsSection: 'Details',
   detailsSectionDescription: 'People see your name and picture beside your edits and comments.',
-  picture: 'Picture',
-  pictureFromProvider: 'From your linked account',
-  pictureInitials: 'Your initials, until you link an account that has a picture',
+  uploadPicture: 'Upload picture',
+  changePicture: 'Change picture',
+  removePicture: 'Remove',
+  pictureTitle: 'Your picture',
+  pictureDescription: 'Drag the picture and zoom to choose what shows in the circle.',
+  pictureZoom: 'Zoom',
+  savePicture: 'Save picture',
+  pictureSaved: 'Picture saved',
+  pictureRemoved: 'Picture removed',
+  removePictureHeading: 'Remove your picture?',
+  removePictureDescription: 'Your initials show in its place until you upload another picture.',
+  removePictureConfirm: 'Remove picture',
+  pictureUnreadable:
+    'This file isn’t a picture the page can open. Choose a PNG, JPEG, WebP, or GIF image.',
   save: 'Save',
   nameSaved: 'Name saved',
+  changeName: 'Change name',
+  changeNameTitle: 'Change your name',
   changeEmail: 'Change email',
   changeEmailTitle: 'Change your email',
   changeEmailDescription: params(
@@ -295,6 +308,10 @@ export const cloudPortalMessageDefaults = {
   resetTwoStepHeading: params('Reset two-step sign-in for {name}?'),
   resetTwoStepDescription:
     'Their authenticator app, recovery codes, and passkeys are removed, so they can sign in with their password or a linked account and set them up again. They get an email saying so.',
+  removePersonPicture: 'Remove picture',
+  removePersonPictureHeading: params('Remove {name}’s picture?'),
+  removePersonPictureDescription:
+    'Their initials show in its place. They can upload another picture.',
 
   backToPeople: 'All people',
   personAccount: 'Account',
@@ -389,6 +406,7 @@ export const cloudPortalMessageDefaults = {
   activityRemovedAdmin: 'removed administrator rights from',
   activityEmailRetried: 'retried an email to',
   activityTwoStepReset: 'reset two-step sign-in for',
+  activityPictureRemoved: 'removed the picture of',
   activityReason: params('Reason: {reason}'),
   activityChanged: 'changed',
   errorTitle: 'That didn’t work',
@@ -402,6 +420,7 @@ export const cloudPortalMessageDefaults = {
   errorAlreadyDecided: 'Someone already decided this request. Refresh to see it.',
   errorEmailUnchanged: 'That’s already your email.',
   errorCurrentSession: 'Sign out to end the session you’re using.',
+  errorPictureInvalid: 'The server can’t use this picture. Choose another image.',
   passwordResetSent: 'We emailed you a link to set a password.'
 } as const
 

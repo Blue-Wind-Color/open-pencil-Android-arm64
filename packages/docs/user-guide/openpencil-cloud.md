@@ -21,7 +21,7 @@ Servers that review new accounts say so before you sign up. Until an administrat
 Each server in **Settings → Cloud** shows who is signed in to it:
 
 - **Sign-in expired** keeps your account, so **Sign in** goes back to the same one.
-- **Account and security** in the server's **…** menu opens the server's own account pages. See [Your Account](#your-account).
+- **Account and security** in the server's **…** menu opens the server's own account pages, as does **Account settings** in the **…** menu beside **OpenPencil Cloud** in Home's sidebar. See [Your Account](#your-account).
 - **Sign out** ends the session on the server. If the server can't be reached, you stay signed in so you can try again. At the server's own editor address, signing out of that server goes back to its welcome page, unless the server lets you use its editor without an account and you chose to on this browser.
 - **Disconnect server** signs you out and forgets the server on this device; your documents stay on it, and you can connect again anytime. It warns you when documents still have changes that haven't reached the server, because disconnecting discards them.
 
@@ -31,7 +31,7 @@ The desktop app keeps its sign-in in the system credential store. In the browser
 
 A server's account pages have three parts:
 
-- **Profile** changes your name and shows your account ID, which an administrator may ask for. A picture comes from a linked Google or Apple account; without one, your initials stand in. **Change email** sends a link to the new address, and your email changes once you open it. The old address gets a note saying which address is taking over. If you signed in a while ago, the server asks for your password first.
+- **Profile** shows your picture, name, and email, and your account ID, which an administrator may ask for. **Upload picture**, beside your picture, takes a PNG, JPEG, WebP, or GIF image; drag and zoom it to choose what shows in the circle, and **Remove**, once you confirm, goes back to your initials. **Change name** opens a dialog for your new name. Signing in with Google uses your Google picture until you upload one. The server keeps every picture itself, so pages never load them from Google or anywhere else. **Change email** sends a link to the new address, and your email changes once you open it. The old address gets a note saying which address is taking over. If you signed in a while ago, the server asks for your password first.
 - **Sign-in and security** links Google or Apple, changes your password, and sets up two-step sign-in with an authenticator app or passkeys. Recovery codes are shown once: copy or download them before you close the dialog.
 - **Sessions** lists every browser and desktop app signed in to your account, with when each was last active, and your recent sign-ins. Sign out any session you don't recognize, or all of them except the one you're using.
 
@@ -123,4 +123,3 @@ People who open a link without an account, where the server allows it, join unde
 When your workspace's plan includes AI and the server offers it, the AI assistant can use models through Cloud instead of a key of your own. In **Settings → AI**, add a model, choose **OpenPencil Cloud** as the provider, and pick the workspace whose plan pays for it; the models and their prices come from the server. **OpenPencil Cloud** is listed while you are signed in to the server Home shows.
 
 Each request uses the workspace's AI credits for the month. When they run out, the assistant says so and, if the server bills, offers **Manage plan**. Self-hosted servers run their own AI service with their own models and limits ([self-hosting guide](/reference/self-hosting-cloud#ai)).
-

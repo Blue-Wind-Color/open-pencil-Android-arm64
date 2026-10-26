@@ -41,6 +41,7 @@ import type { TransactionalEmailService } from '#cloud/server/email'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { ObjectStore } from '#cloud/server/objects'
+import { createPictureRoutes, createUserPictures } from '#cloud/server/pictures'
 import {
   createConfiguredCloudPolicy,
   createDefaultCloudPolicy,
@@ -169,6 +170,7 @@ export function createCloudApp(services: CloudServices) {
     maxAge: 600
   })
   const workspaces = createWorkspaceService(services.database)
+  const pictures = createUserPictures(services.database, { publicURL: services.config.publicURL })
   const workspaceMembers = createWorkspaceMemberService(services.database, {
     email: services.transactionalEmail,
     publicURL: services.config.publicURL
@@ -188,6 +190,7 @@ export function createCloudApp(services: CloudServices) {
       enrollment,
       users: createAdminUserService(services.database, services.auth, {
         requireMFA: services.config.deploymentAdminMFARequired,
+        pictures,
         notify: services.transactionalEmail
           ? createAuthenticationEmailService(services.transactionalEmail, services.config.publicURL)
           : undefined
@@ -297,6 +300,7 @@ export function createCloudApp(services: CloudServices) {
 
   const accountRoutes = createAccountRoutes({
     auth: services.auth,
+    pictures,
     config: services.config,
     enrollment,
     workspaces,
@@ -398,6 +402,7 @@ export function createCloudApp(services: CloudServices) {
       return services.auth.handler(context.req.raw)
     })
     .route('/', accountRoutes)
+    .route('/', createPictureRoutes(pictures))
     .use('/api/shares/:shareId/collaboration-ticket', publicCollaborationLimiter)
     .use('/api/public/*', publicRateLimiter)
     .use('/api/shares/*', publicRateLimiter)

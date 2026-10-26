@@ -8,6 +8,7 @@ import {
   cloudMFAStatusResponseSchema,
   cloudMFAVerifyResponseSchema,
   cloudPasskeysResponseSchema,
+  cloudPictureResponseSchema,
   cloudProfileResponseSchema,
   cloudSignInsResponseSchema,
   cloudSocialLinkResponseSchema
@@ -116,6 +117,21 @@ export function createAccountAPI(call: CloudCall, { account }: PortalRouteClient
     updateProfile(name: string, signal?: AbortSignal) {
       return call(
         (options) => account.profile.$post({ json: { name } }, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
+    /** Shows `data`, a Base64 PNG or JPEG the page cropped and shrank, as the account's picture. */
+    uploadPicture(data: string, signal?: AbortSignal) {
+      return call(
+        (options) => account.profile.picture.$put({ json: { data } }, options),
+        cloudPictureResponseSchema,
+        signal
+      )
+    },
+    removePicture(signal?: AbortSignal) {
+      return call(
+        (options) => account.profile.picture.$delete(undefined, options),
         cloudAccountMutationResponseSchema,
         signal
       )

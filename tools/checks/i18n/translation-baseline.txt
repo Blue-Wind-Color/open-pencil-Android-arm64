@@ -387,6 +387,7 @@ es:cloudPortal.workspaceRoleEditor
 es:cloudPortal.deploymentOfficial
 es:cloudPortal.emailTransportSMTP
 es:cloudPortal.emailTransportCloudflare
+es:cloudPortal.pictureZoom
 it:cloudPortal.productName
 it:cloudPortal.email
 it:cloudPortal.password
@@ -405,6 +406,7 @@ it:cloudPortal.deploymentSelfHosted
 it:cloudPortal.emailTransportSMTP
 it:cloudPortal.emailTransportCloudflare
 it:cloudPortal.emailKindOther
+it:cloudPortal.pictureZoom
 de:cloudPortal.productName
 de:cloudPortal.name
 de:cloudPortal.sectionServer
@@ -419,6 +421,7 @@ de:cloudPortal.serverSection
 de:cloudPortal.deploymentOfficial
 de:cloudPortal.emailTransportSMTP
 de:cloudPortal.emailTransportCloudflare
+de:cloudPortal.pictureZoom
 fr:cloudPortal.productName
 fr:cloudPortal.providerGoogle
 fr:cloudPortal.providerApple
@@ -428,6 +431,7 @@ fr:cloudPortal.documents
 fr:cloudPortal.deploymentOfficial
 fr:cloudPortal.emailTransportSMTP
 fr:cloudPortal.emailTransportCloudflare
+fr:cloudPortal.pictureZoom
 ja:cloudPortal.productName
 ja:cloudPortal.emailPlaceholder
 ja:cloudPortal.providerGoogle
