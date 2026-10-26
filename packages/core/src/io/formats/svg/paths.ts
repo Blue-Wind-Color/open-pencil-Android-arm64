@@ -8,9 +8,11 @@ import type {
 } from '@open-pencil/scene-graph'
 import { polygonVertices } from '@open-pencil/scene-graph/geometry'
 import { outlineSVGPath, polygonOutline } from '@open-pencil/scene-graph/polygon'
+import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 
 import { traceSmoothRect, type SmoothCornerSink } from '#core/canvas/paths/smooth-corners'
 import { nodeHasRadius } from '#core/canvas/shapes'
+import type { PathSink } from '#core/vector/path-helpers'
 
 const CMD_CLOSE = 0
 const CMD_MOVE_TO = 1
@@ -217,22 +219,33 @@ export function vectorNetworkToSVGPaths(
   network: VectorNetwork,
   decimals: number | null = 2
 ): string[] {
-  const { vertices, segments, regions } = network
+  const { vertices, regions } = network
 
   if (regions.length === 0) {
     const path = unfilledSegmentsToPath(network, decimals)
     return path ? [path] : []
   }
-  const paths = regions.map((region) =>
-    region.loops.map((loop) => traceOrderedSegments(loop, segments, vertices, decimals)).join('')
-  )
+  const paths = regionSVGPaths(network, decimals)
   // Segments no region encloses, such as an icon's open strokes beside its filled shapes,
   // draw as open paths after the regions.
-  const enclosed = new Set(regions.flatMap((region) => region.loops.flat()))
-  const open = segments.filter((_, index) => !enclosed.has(index))
+  const open = looseSegments(network)
   const loose =
     open.length > 0 && unfilledSegmentsToPath({ vertices, segments: open, regions: [] }, decimals)
   return loose ? [...paths, loose] : paths
+}
+
+/** Each region of a vector network as path data, its loops traced in turn. */
+export function regionSVGPaths(network: VectorNetwork, decimals: number | null = 2): string[] {
+  const { vertices, segments, regions } = network
+  return regions.map((region) =>
+    region.loops.map((loop) => traceOrderedSegments(loop, segments, vertices, decimals)).join('')
+  )
+}
+
+/** The segments of a vector network that no region encloses. */
+export function looseSegments({ segments, regions }: VectorNetwork): VectorNetwork['segments'] {
+  const enclosed = new Set(regions.flatMap((region) => region.loops.flat()))
+  return segments.filter((_, index) => !enclosed.has(index))
 }
 
 /** The outline of a polygon or star whose corners are rounded, as path data. */
@@ -336,20 +349,28 @@ export function arcPath(node: Pick<SceneNode, 'width' | 'height' | 'arcData'>): 
   return parts.join('')
 }
 
+/** Path commands written as SVG path data into `parts`, as the canvas would build a path. */
+export function svgPathSink(parts: string[]): PathSink {
+  const point = (x: number, y: number) => `${round(x)} ${round(y)}`
+  return {
+    moveTo: (x, y) => parts.push(`M${point(x, y)}`),
+    lineTo: (x, y) => parts.push(`L${point(x, y)}`),
+    cubicTo: (x1, y1, x2, y2, x, y) =>
+      parts.push(`C${point(x1, y1)} ${point(x2, y2)} ${point(x, y)}`),
+    close: () => parts.push('Z')
+  }
+}
+
 /** A rectangle with smoothed corners as path data, traced as the canvas draws it. */
 function smoothRectPath(node: RectOutlineNode & Pick<SceneNode, 'cornerSmoothing'>): string {
   const parts: string[] = []
   const point = (x: number, y: number) => `${round(x)} ${round(y)}`
   const sink: SmoothCornerSink = {
-    moveTo: (x, y) => parts.push(`M${point(x, y)}`),
-    lineTo: (x, y) => parts.push(`L${point(x, y)}`),
-    cubicTo: (x1, y1, x2, y2, x, y) =>
-      parts.push(`C${point(x1, y1)} ${point(x2, y2)} ${point(x, y)}`),
+    ...svgPathSink(parts),
     arcToRotated: (rx, ry, rotation, useSmallArc, isCCW, x, y) =>
       parts.push(
         `A${round(rx)} ${round(ry)} ${rotation} ${useSmallArc ? 0 : 1} ${isCCW ? 0 : 1} ${point(x, y)}`
-      ),
-    close: () => parts.push('Z')
+      )
   }
   const box = { left: 0, top: 0, right: node.width, bottom: node.height }
   return traceSmoothRect(sink, node, box) ? parts.join('') : roundedRectPath(node)
@@ -384,4 +405,28 @@ export function nodeOutlinePath(node: OutlineNode): string | null {
     default:
       return null
   }
+}
+
+/** A FigJam shape's outline in its own box as path data, with its corner radius. */
+export function shapeWithTextOutlinePath(
+  node: Pick<SceneNode, 'shapeWithTextType' | 'width' | 'height' | 'cornerRadius'>
+): string {
+  const { outline } = shapeWithTextGeometry(
+    node.shapeWithTextType,
+    node.width,
+    node.height,
+    node.cornerRadius
+  )
+  return outlineSVGPath(outline, (value) => round(value))
+}
+
+/**
+ * A FigJam shape's stroke-only inner lines, such as a database's front rim, as path data; null for
+ * a shape without any.
+ */
+export function shapeWithTextDetailsPath(
+  node: Pick<SceneNode, 'shapeWithTextType' | 'width' | 'height'>
+): string | null {
+  const { details } = shapeWithTextGeometry(node.shapeWithTextType, node.width, node.height)
+  return details.length > 0 ? outlineSVGPath(details, (value) => round(value)) : null
 }

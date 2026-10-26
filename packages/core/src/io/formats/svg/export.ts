@@ -1,7 +1,7 @@
-import { lineStrokeEnds } from '@open-pencil/scene-graph/arrow-caps'
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 
 import { normalizeDashPattern } from '#core/canvas/strokes'
+import { lineStrokePath } from '#core/canvas/strokes/line'
 import { fittedDashPattern } from '#core/canvas/strokes/sides'
 import { computeContentBounds } from '#core/io/formats/raster'
 
@@ -18,12 +18,15 @@ import {
 import {
   round,
   geometryBlobToSVGPath,
-  vectorNetworkToSVGPaths,
   makePolygonPoints,
   roundedPolygonPath,
   hasRadius,
   roundedRectPath,
-  arcPath
+  arcPath,
+  shapeWithTextDetailsPath,
+  shapeWithTextOutlinePath,
+  regionSVGPaths,
+  looseSegments
 } from './paths'
 
 export {
@@ -33,8 +36,9 @@ export {
   type OutlineNode
 } from './paths'
 
-import type { SceneGraph, SceneNode, Fill, Stroke } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
 
+import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
 import type { SVGExportContext, SVGFontAlias } from './defs'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
@@ -42,6 +46,20 @@ import { renderTextNode } from './text/export'
 import type { SVGTextLayout } from './text/lines'
 
 // --- Node rendering ---
+
+/**
+ * A vector network's paths: its regions as they are traced, and its open segments as the canvas
+ * strokes them, rounded and pulled back under their heads.
+ */
+function networkElements(
+  node: SceneNode,
+  network: VectorNetwork,
+  common: Record<string, string | number | undefined>
+): SVGNode[] {
+  const regions = regionSVGPaths(network).map((d) => svg('path', { d, ...common }))
+  if (looseSegments(network).length === 0) return regions
+  return [...regions, ...openPathElements(node, network, common, looseSegments)]
+}
 
 function vectorShapeElements(
   node: SceneNode,
@@ -84,10 +102,7 @@ function vectorShapeElements(
       }
     }
   } else if (node.vectorNetwork) {
-    const paths = vectorNetworkToSVGPaths(node.vectorNetwork)
-    for (const d of paths) {
-      elements.push(svg('path', { d, ...common }))
-    }
+    elements.push(...networkElements(node, node.vectorNetwork, common))
   }
   if (node.strokeGeometry.length > 0 && strokeAttrs.stroke && strokeAttrs.stroke !== 'none') {
     for (const geo of node.strokeGeometry) {
@@ -104,6 +119,7 @@ function vectorShapeElements(
       }
     }
   }
+  if (node.vectorNetwork) elements.push(...vectorArrowHeads(node, node.vectorNetwork, strokeAttrs))
   return elements.length > 0
     ? elements
     : [svg('rect', { width: round(node.width), height: round(node.height), ...common })]
@@ -151,12 +167,11 @@ function nodeShapeElements(
     case 'LINE': {
       // Where the canvas strokes it: to one side of the line, with its caps inside its length.
       const stroke = node.strokes.find((item) => item.visible)
-      const { start, end } = lineStrokeEnds(
-        node.width,
-        node.height,
-        stroke?.weight ?? 0,
-        stroke?.cap ?? node.strokeCap
-      )
+      const {
+        network,
+        from: start,
+        to: end
+      } = lineStrokePath(node, stroke?.weight ?? 0, stroke?.cap ?? node.strokeCap)
       return [
         svg('line', {
           x1: round(start.x),
@@ -166,7 +181,8 @@ function nodeShapeElements(
           fill: 'none',
           ...strokeAttrs,
           ...lineDashAttrs(stroke, Math.hypot(end.x - start.x, end.y - start.y))
-        })
+        }),
+        ...arrowHeadElements(node, network, stroke, strokeAttrs)
       ]
     }
 
@@ -178,6 +194,9 @@ function nodeShapeElements(
 
     case 'VECTOR':
       return vectorShapeElements(node, common, strokeAttrs, ctx)
+
+    case 'SHAPE_WITH_TEXT':
+      return shapeWithTextElements(node, common, strokeAttrs, ctx)
 
     default: {
       if (hasRadius(node)) {
@@ -197,6 +216,29 @@ function nodeShapeElements(
       return [svg('rect', { width: round(node.width), height: round(node.height), ...common })]
     }
   }
+}
+
+/**
+ * A FigJam shape's outline, and its inner lines, such as a database's front rim, stroked as the
+ * canvas strokes them: at the stroke's own weight, ending where the outline does.
+ */
+function shapeWithTextElements(
+  node: SceneNode,
+  common: Record<string, string | number | undefined>,
+  strokeAttrs: Record<string, string | number | undefined>,
+  ctx: SVGExportContext
+): SVGNode[] {
+  const outline = shapeWithTextOutlinePath(node)
+  const elements = [svg('path', { d: outline, ...common })]
+  const details = strokeAttrs.stroke ? shapeWithTextDetailsPath(node) : null
+  if (details) {
+    const clipId = nextDefId(ctx, 'clip')
+    ctx.defs.push(svg('clipPath', { id: clipId }, svg('path', { d: outline })))
+    elements.push(
+      svg('path', { d: details, fill: 'none', ...strokeAttrs, 'clip-path': `url(#${clipId})` })
+    )
+  }
+  return elements
 }
 
 // --- Main recursive renderer ---
