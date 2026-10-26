@@ -19,6 +19,7 @@ import {
   localAutomationToken,
   openPencilAutomationPlugin
 } from './vite/automation'
+import { bootSplashPlugin } from './vite/boot-splash'
 import { cloudSitePlugin } from './vite/cloud-site'
 import { aiIconCollection } from './vite/icons'
 import { metricsBrandPlugin } from './vite/metrics'
@@ -60,6 +61,10 @@ export default defineConfig(async ({ command, mode }) => {
     optimizeDeps: { include: ['ai/test'] },
     plugins: [
       rawMarkdownPlugin(),
+      bootSplashPlugin({
+        entry: resolve(__dirname, 'src/splash/theme.ts'),
+        pages: ['index.html', 'cloud.html', 'metrics.html']
+      }),
       tailwindcss(),
       Icons({ compiler: 'vue3', customCollections: { ai: aiIconCollection() } }),
       Components({ resolvers: [IconsResolver({ prefix: 'icon', customCollections: ['ai'] })] }),
