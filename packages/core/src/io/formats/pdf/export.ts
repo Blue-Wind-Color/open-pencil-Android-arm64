@@ -4,6 +4,7 @@ import { computeContentBounds } from '#core/io/formats/raster'
 import { renderNodesToSVG, type SVGExportOptions, type SVGTextLayout } from '#core/io/formats/svg'
 
 import {
+  cutFontInstances,
   embeddedFontAlias,
   planFontEmbedding,
   registerEmbeddedFonts,
@@ -97,9 +98,13 @@ export async function renderPagesToPDFDetailed(
     doc.setProperties({ title: options.title })
   }
 
-  // jsPDF reads a font file when it is registered, so a face it refuses is only known now: the
-  // pages are written again without that face's name.
-  if (embedding && !registerEmbeddedFonts(doc, embedding)) prepared = preparePages()
+  // The pages name the variable instances they draw, which are cut now. jsPDF reads a font file
+  // when it is registered, so a face it refuses is only known then. Either way, the pages are
+  // written again without the names of faces that are not embedded.
+  if (embedding) {
+    const cut = await cutFontInstances(embedding)
+    if (!registerEmbeddedFonts(doc, embedding) || !cut) prepared = preparePages()
+  }
 
   for (const [index, page] of prepared.entries()) {
     if (index > 0) doc.addPage([page.width, page.height], orientationOf(page))
@@ -115,15 +120,4 @@ export async function renderPagesToPDFDetailed(
     })),
     ...(embedding ? { fonts: embedding.report } : {})
   }
-}
-
-/** One PDF page holding all `nodeIds`. */
-export async function renderNodesToPDF(
-  graph: SceneGraph,
-  pageId: string,
-  nodeIds: string[],
-  options: PDFExportOptions = {}
-): Promise<Uint8Array | null> {
-  const result = await renderPagesToPDFDetailed(graph, [{ pageId, nodeIds }], options)
-  return result?.data ?? null
 }

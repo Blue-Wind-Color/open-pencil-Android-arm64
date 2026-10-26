@@ -442,8 +442,9 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
   async exportContent(request) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
-    const { renderNodesToPDF } = await import('./formats/pdf')
-    const data = await renderNodesToPDF(request.graph, target.pageId, target.nodeIds)
+    // Embedded, as Figma embeds every face its PDFs draw.
+    const { exportPDFDocument } = await import('./formats/pdf/document')
+    const data = (await exportPDFDocument(request.graph, [target], { embedFonts: true }))?.data
     if (!data) throw new Error('Nothing to export')
     return {
       format: 'pdf',

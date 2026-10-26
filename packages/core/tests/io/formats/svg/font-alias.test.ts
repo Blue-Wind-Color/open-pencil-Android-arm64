@@ -16,7 +16,7 @@ function exportText(props: Partial<SceneNode>, lines?: SVGTextLine[]): string {
   const svg = renderNodesToSVG(graph, pageId, [node.id], {
     xmlDeclaration: false,
     textLayout: lines ? () => lines : undefined,
-    fontAlias: (family, style) => ALIASES[`${family}\0${style}`] ?? null
+    fontAlias: ({ family, style }) => ALIASES[`${family}\0${style}`] ?? null
   })
   if (!svg) throw new Error('nothing exported')
   return svg
