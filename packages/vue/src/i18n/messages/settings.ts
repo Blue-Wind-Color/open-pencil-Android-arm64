@@ -49,6 +49,11 @@ export const settingsMessageDefaults = {
   snapToPixelGridDescription:
     'Align vector points, moved layers, and resized edges to whole pixels.',
   temporaryDisableSnappingHint: 'Hold Control while dragging to temporarily disable snapping.',
+  navigation: 'Navigation',
+  navigationDescription: 'Control how the canvas moves when you scroll and zoom.',
+  zoomSpeed: 'Zoom speed',
+  zoomSpeedDescription: 'How far each mouse wheel step or trackpad pinch zooms the canvas.',
+  zoomSpeedDefault: params('{speed} (default)'),
   aiAndAgents: 'AI & agents',
   usage: 'Usage',
   diagnostics: 'Diagnostics',

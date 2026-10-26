@@ -64,7 +64,9 @@ export function useCanvasInput(
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null,
   onCursorMove?: (cx: number, cy: number) => void,
   onActivate?: () => void,
-  isEnabled: () => boolean = () => true
+  isEnabled: () => boolean = () => true,
+  /** How far wheel and pinch zoom move per event; 1 is the default rate. */
+  zoomSpeed: () => number = () => 1
 ) {
   const drag = ref<DragState | null>(null)
   // Canvas chrome that explains layout, such as auto layout child outlines, steps aside while
@@ -599,7 +601,7 @@ export function useCanvasInput(
     cancelPointerInteraction()
   })
 
-  setupPanZoom(canvasRef, editor, drag, onMouseDown, onMouseMove, onMouseUp)
+  setupPanZoom(canvasRef, editor, drag, onMouseDown, onMouseMove, onMouseUp, zoomSpeed)
   return {
     drag,
     cursorOverride,

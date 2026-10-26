@@ -60,6 +60,7 @@ de:panels.behaviourStateHover
 de:panels.behaviourText
 de:panels.shader
 de:settings.mcp
+de:settings.navigation
 de:settings.accentOrange
 de:settings.accentPink
 de:storage.bucket
@@ -187,6 +188,7 @@ fr:panels.variableModeHeading
 fr:settings.animations
 fr:settings.diagnostics
 fr:settings.mcp
+fr:settings.navigation
 fr:settings.notifications
 fr:settings.accentGraphite
 fr:settings.accentOrange

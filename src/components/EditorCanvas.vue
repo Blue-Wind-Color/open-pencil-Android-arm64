@@ -42,6 +42,7 @@ import { createCanvasContextSelection } from '@/app/editor/canvas/context-select
 import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
+import { appPreferences } from '@/app/settings/preferences/store'
 import CommentsLayer from '@/components/comments/CommentsLayer.vue'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
@@ -161,7 +162,8 @@ const {
   hitTestFrameTitle,
   updatePaneCursor,
   activatePane,
-  () => isActivePane.value
+  () => isActivePane.value,
+  () => appPreferences.value.navigation.zoomSpeed
 )
 
 watch(isActivePane, (active) => {
