@@ -1,3 +1,4 @@
+import { escapeText } from 'entities'
 import { fromUint8Array } from 'js-base64'
 
 import type {
@@ -42,9 +43,6 @@ function style(names: string[], values: Record<string, string | undefined>): Dra
     values: Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined))
   }
 }
-
-const escapeHTML = (text: string) =>
-  text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
 
 /** A layer's first visible solid fill, or the first stop of a gradient, as draw.io's colour. */
 function fillColor(node: SceneNode): string {
@@ -109,7 +107,7 @@ function labelHTML(text: SceneNode): string {
   let html = ''
   let at = 0
   const plain = (to: number) => {
-    html += escapeHTML(characters.slice(at, to)).replaceAll('\n', '<br>')
+    html += escapeText(characters.slice(at, to)).replaceAll('\n', '<br>')
     at = to
   }
   for (const run of [...styleRuns].sort((a, b) => a.start - b.start)) {
@@ -124,7 +122,7 @@ function labelHTML(text: SceneNode): string {
     if (s.fontFamily) css.push(`font-family: ${s.fontFamily}`)
     const fill = s.fills?.find((paint) => paint.type === 'SOLID')
     if (fill?.type === 'SOLID') css.push(`color: ${colorToHex(fill.color)}`)
-    const inner = escapeHTML(characters.slice(run.start, run.start + run.length)).replaceAll(
+    const inner = escapeText(characters.slice(run.start, run.start + run.length)).replaceAll(
       '\n',
       '<br>'
     )
@@ -325,7 +323,7 @@ class PageWriter {
       case 'SECTION':
         this.push(node, parent, {
           kind: 'vertex',
-          value: escapeHTML(node.name),
+          value: escapeText(node.name),
           style: style(['swimlane'], {
             html: '1',
             startSize: '30',

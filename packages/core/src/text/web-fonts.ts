@@ -4,6 +4,12 @@ import type { FontFaceData, RemoteFontSource, ResolveFontResult } from 'unifont'
 import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
 
 import { IS_BROWSER } from '#core/constants'
+import {
+  ARABIC_CHARACTER,
+  HAN_CHARACTER,
+  HANGUL_CHARACTER,
+  KANA_CHARACTER
+} from '#core/text/fallbacks'
 import type { FamilyFace } from '#core/text/font/faces'
 import { sfntFont } from '#core/text/font/woff2'
 import {
@@ -67,10 +73,10 @@ export function normalizedCoverageText(text: string): string {
 
 export function webFontSubsetsForText(text: string): string[] {
   const subsets = new Set(DEFAULT_WEB_FONT_SUBSETS)
-  if (/\p{Script=Arabic}/u.test(text)) subsets.add('arabic')
-  if (/\p{Script=Hangul}/u.test(text)) subsets.add('korean')
-  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) subsets.add('japanese')
-  if (/\p{Script=Han}/u.test(text)) {
+  if (ARABIC_CHARACTER.test(text)) subsets.add('arabic')
+  if (HANGUL_CHARACTER.test(text)) subsets.add('korean')
+  if (KANA_CHARACTER.test(text)) subsets.add('japanese')
+  if (HAN_CHARACTER.test(text)) {
     subsets.add('chinese-simplified')
     subsets.add('chinese-traditional')
     subsets.add('japanese')

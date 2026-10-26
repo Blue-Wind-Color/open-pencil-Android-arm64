@@ -193,6 +193,7 @@
     "culori": "^4.0.2",
     "destr": "^2.0.5",
     "diff": "^8.0.4",
+    "entities": "^8.0.0",
     "es-toolkit": "^1.52.0",
     "fflate": "^0.8.3",
     "fontoxpath": "^3.34.0",

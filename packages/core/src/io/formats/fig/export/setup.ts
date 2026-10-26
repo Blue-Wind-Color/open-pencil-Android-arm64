@@ -116,8 +116,8 @@ function ownGuid(
   sourceOwners: ReadonlyMap<string, string>,
   assignedGuidValues: ReadonlySet<string>
 ): GUID | null {
-  if (!/^\d+:\d+$/.test(id)) return null
-  const guid = stringToGuid(id)
+  const guid = parseGuidOrNull(id)
+  if (!guid) return null
   const key = `${guid.sessionID}:${guid.localID}`
   const owner = sourceOwners.get(key)
   return (owner !== undefined && owner !== id) || assignedGuidValues.has(key) ? null : guid
@@ -161,9 +161,8 @@ export function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly s
   }
   let last = 0
   for (const id of ids) {
-    if (!/^\d+:\d+$/.test(id)) continue
-    const guid = stringToGuid(id)
-    if (guid.sessionID <= 1) last = Math.max(last, guid.localID)
+    const guid = parseGuidOrNull(id)
+    if (guid && guid.sessionID <= 1) last = Math.max(last, guid.localID)
   }
   return last + 1
 }

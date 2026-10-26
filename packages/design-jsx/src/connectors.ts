@@ -2,6 +2,7 @@ import { compact, countBy } from 'es-toolkit/array'
 import { camelCase } from 'es-toolkit/string'
 import type * as v from 'valibot'
 
+import { es } from '@open-pencil/emit'
 import type { ConnectorEndpoint, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import {
@@ -172,7 +173,7 @@ export function resolveConnectorEnds(
 /** `card1` for a layer named "Card": a name a declaration can take, numbered to stay unique. */
 function refName(layerName: string, taken: Set<string>): string {
   const camel = camelCase(layerName)
-  const base = /^[A-Za-z_$][\w$]*$/.test(camel) ? camel : 'layer'
+  const base = es.isIdentifierName(camel) ? camel : 'layer'
   let count = 1
   while (taken.has(`${base}${count}`)) count++
   const name = `${base}${count}`

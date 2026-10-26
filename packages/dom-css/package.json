@@ -100,6 +100,7 @@
     "css-tree": "^3.2.1",
     "cssesc": "^3.0.0",
     "dedent": "^1.7.2",
+    "entities": "^8.0.0",
     "es-toolkit": "^1.52.0",
     "js-base64": "^3.9.3",
     "parse5": "^8.0.1",
