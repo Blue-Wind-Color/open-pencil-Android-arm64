@@ -9,14 +9,33 @@ OpenPencil Cloud is one Node 22+ process in front of PostgreSQL 15 or later and 
 
 ## Install
 
-The server is published to npm as `@open-pencil/cloud`, released with the editor, and runs on Node 22 or later:
+Each release publishes an image, `ghcr.io/open-pencil/cloud`, with the server and the editor and pages it serves, for `linux/amd64` and `linux/arm64`. It is tagged with the version (`0.16.0`), the minor version (`0.16`), and `latest`; prereleases are tagged with their version and `next`. Give it the [configuration](#configure) through a mounted TOML file and the environment:
+
+```sh
+docker run -p 8787:8787 \
+  -v ./openpencil-cloud.toml:/etc/openpencil/openpencil-cloud.toml:ro \
+  -e OPENPENCIL_CLOUD_CONFIG=/etc/openpencil/openpencil-cloud.toml \
+  --env-file .env \
+  ghcr.io/open-pencil/cloud:0.16
+```
+
+The image serves its own editor and pages from `/app/site`, so leave `OPENPENCIL_CLOUD_SITE_DIR` out of the `.env` it is given, or the variable points the server somewhere the container does not have. It listens on port 8787, and reports health from `GET /ready`. `docker run … ghcr.io/open-pencil/cloud node ai-relay.mjs` runs the [AI relay](#ai) instead.
+
+To try it on one machine, [`compose.self-hosted.yml`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/compose.self-hosted.yml) runs the image with PostgreSQL, SeaweedFS for storage, and Mailpit for email, configured by [`self-hosted/openpencil-cloud.toml`](https://github.com/open-pencil/open-pencil/blob/master/packages/cloud/deploy/self-hosted/openpencil-cloud.toml):
+
+```sh
+cd packages/cloud/deploy
+BETTER_AUTH_SECRET=$(openssl rand -hex 32) docker compose -f compose.self-hosted.yml up
+```
+
+Open `http://localhost:8787` and sign up; the confirmation email is at `http://localhost:8025`. Its storage keys and passwords are fixed development values, and it answers only on this machine, so set up your own database, storage, and email for a server other people use.
+
+The server alone is also published to npm as `@open-pencil/cloud` and runs on Node 22 or later. It does not include the editor and pages, `dist-cloud/`, which are built from a checkout as below; without them the server runs its API alone.
 
 ```sh
 npm install -g @open-pencil/cloud
 openpencil-cloud --help
 ```
-
-The package is the server only. The editor and the server's own pages are a separate build, `dist-cloud/`, made from a checkout as below; without it the server runs its API alone.
 
 ## Build from source
 
