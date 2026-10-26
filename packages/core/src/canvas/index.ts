@@ -1,14 +1,12 @@
+export { canMakeBooleanSourceNode, canMakeBooleanSourcePath, nodeHasVisibleStroke } from './boolean'
+export { flattenNodesToVectorProps, type VectorFlattenProps } from './flatten'
 export {
-  canMakeBooleanSourceNode,
-  canMakeBooleanSourcePath,
-  hasVisibleStrokeSourceNode,
-  nodeHasVisibleStroke
-} from './boolean'
-export {
-  flattenNodesToVectorProps,
-  outlineStrokeNodesToVectorProps,
-  type VectorFlattenProps
-} from './flatten'
+  canOutlineStroke,
+  layersToOutline,
+  outlineStrokeLayer,
+  type OutlinedLayer,
+  type OutlinePiece
+} from './outline-stroke'
 export {
   distanceToGuideSegment,
   getGuideScreenSegment,

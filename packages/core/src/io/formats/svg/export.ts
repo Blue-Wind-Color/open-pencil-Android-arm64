@@ -23,7 +23,6 @@ import {
   hasRadius,
   roundedRectPath,
   arcPath,
-  shapeWithTextDetailsPath,
   shapeWithTextOutlinePath,
   regionSVGPaths,
   looseSegments
@@ -42,6 +41,7 @@ import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
 import type { SVGExportContext, SVGFontAlias } from './defs'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
+import { alignedStroke, alignedStrokeElement, shapeWithTextDetailElements } from './strokes'
 import { renderTextNode } from './text/export'
 import type { SVGTextLayout } from './text/lines'
 
@@ -228,17 +228,10 @@ function shapeWithTextElements(
   strokeAttrs: Record<string, string | number | undefined>,
   ctx: SVGExportContext
 ): SVGNode[] {
-  const outline = shapeWithTextOutlinePath(node)
-  const elements = [svg('path', { d: outline, ...common })]
-  const details = strokeAttrs.stroke ? shapeWithTextDetailsPath(node) : null
-  if (details) {
-    const clipId = nextDefId(ctx, 'clip')
-    ctx.defs.push(svg('clipPath', { id: clipId }, svg('path', { d: outline })))
-    elements.push(
-      svg('path', { d: details, fill: 'none', ...strokeAttrs, 'clip-path': `url(#${clipId})` })
-    )
-  }
-  return elements
+  return [
+    svg('path', { d: shapeWithTextOutlinePath(node), ...common }),
+    ...shapeWithTextDetailElements(node, strokeAttrs, ctx)
+  ]
 }
 
 // --- Main recursive renderer ---
@@ -328,6 +321,35 @@ function hasPathLevelFills(node: SceneNode): boolean {
 }
 
 function buildShapeChildren(
+  node: SceneNode,
+  visibleFills: Fill[],
+  fillAttr: string | null,
+  fillOpacity: number | undefined,
+  strokeAttrs: Record<string, string | number | undefined>,
+  visibleStrokes: Stroke[],
+  ctx: SVGExportContext
+): SVGNode[] {
+  const aligned = hasPathLevelFills(node) ? null : alignedStroke(node, visibleStrokes[0])
+  if (!aligned) {
+    return fillAndStrokeElements(
+      node,
+      visibleFills,
+      fillAttr,
+      fillOpacity,
+      strokeAttrs,
+      visibleStrokes.length,
+      ctx
+    )
+  }
+  // The fill goes as it is, and the stroke over it inside or outside the outline.
+  return [
+    ...fillAndStrokeElements(node, visibleFills, fillAttr, fillOpacity, {}, 0, ctx),
+    ...alignedStrokeElement(node, aligned, strokeAttrs, ctx),
+    ...(node.type === 'SHAPE_WITH_TEXT' ? shapeWithTextDetailElements(node, strokeAttrs, ctx) : [])
+  ]
+}
+
+function fillAndStrokeElements(
   node: SceneNode,
   visibleFills: Fill[],
   fillAttr: string | null,
@@ -425,7 +447,7 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     fillAttr,
     fillOpacity,
     strokeAttrs,
-    visibleStrokes.length,
+    visibleStrokes,
     ctx
   )
 

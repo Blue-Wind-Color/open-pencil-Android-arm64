@@ -1,6 +1,6 @@
 import { computed, shallowRef } from 'vue'
 
-import { canMakeBooleanSourceNode, hasVisibleStrokeSourceNode } from '@open-pencil/core/canvas'
+import { canMakeBooleanSourceNode, layersToOutline } from '@open-pencil/core/canvas'
 
 import { useEditorEvent } from '#vue/editor/events/use'
 import { useSelectionState } from '#vue/editor/selection-state/use'
@@ -61,17 +61,9 @@ export function useSelectionCapabilities() {
         nodes.every((node) => node.type === 'TEXT' && canMakeBooleanSourceNode(node, editor.graph))
       )
     }),
-    canOutlineStroke: useSceneComputed(() => {
-      const nodes = editor.getSelectedNodes()
-      return (
-        nodes.length > 0 &&
-        nodes.every(
-          (node) =>
-            hasVisibleStrokeSourceNode(node, editor.graph) &&
-            canMakeBooleanSourceNode(node, editor.graph)
-        )
-      )
-    }),
+    canOutlineStroke: useSceneComputed(
+      () => layersToOutline(editor.getSelectedNodes(), editor.graph).length > 0
+    ),
     canGoToMainComponent: computed(() => selection.isInstance.value),
     canCreateInstance: computed(() => selectedNode.value?.type === 'COMPONENT'),
     canCreateSlot: selection.canCreateSlot,

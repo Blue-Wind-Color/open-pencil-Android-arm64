@@ -71,11 +71,11 @@ export const exportSVG = defineTool({
   exposure: { webmcp: false },
   input: v.strictObject({ ...exportInputs }),
   execute: async (figma, args) => {
-    const { renderNodesToSVG } = await import('#core/io/formats/svg')
+    const { renderNodesToLaidOutSVG } = await import('#core/io/formats/svg/text/layout')
     const pageId = figma.currentPageId
     const ids =
       args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
-    const svg = renderNodesToSVG(figma.graph, pageId, ids)
+    const svg = await renderNodesToLaidOutSVG(figma.graph, pageId, ids)
     if (!svg) return { error: 'No visible nodes to export' }
     return { svg }
   }

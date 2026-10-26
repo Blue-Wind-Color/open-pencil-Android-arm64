@@ -20,7 +20,6 @@ import type { DrawIOExportTarget } from './formats/drawio/export'
 import { exportFigFile, parseFigFile } from './formats/fig'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
-import { renderNodesToSVG } from './formats/svg'
 import { extractExportGraph, findPageId } from './subgraph'
 import type {
   ExportRequest,
@@ -413,7 +412,13 @@ export const svgFormat: IOFormatAdapter<'svg'> = {
   async exportContent(request, options?: SVGExportOptions) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
-    const data = renderNodesToSVG(request.graph, target.pageId, target.nodeIds, options)
+    const { renderNodesToLaidOutSVG } = await import('./formats/svg/text/layout')
+    const data = await renderNodesToLaidOutSVG(
+      request.graph,
+      target.pageId,
+      target.nodeIds,
+      options
+    )
     if (!data) throw new Error('Nothing to export')
     return {
       format: 'svg',
