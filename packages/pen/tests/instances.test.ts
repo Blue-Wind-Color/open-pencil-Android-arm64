@@ -86,6 +86,59 @@ describe('parsePenFile — instances', () => {
     expect(getNodeOrThrow(graph, 'label').text).toBe('Button')
   })
 
+  test("records the instance's own fields as overrides, its size only when it sets one", () => {
+    const graph = parseDocument([
+      button,
+      { id: 'tinted', type: 'ref', ref: 'button', fill: '#119944' },
+      { id: 'sized', type: 'ref', ref: 'button', width: 200 }
+    ])
+    expect(hasInstanceOverride(graph, 'tinted', 'fills')).toBe(true)
+    expect(hasInstanceOverride(graph, 'tinted', 'width')).toBe(false)
+    expect(hasInstanceOverride(graph, 'sized', 'width')).toBe(true)
+
+    syncInstance(graph, 'tinted')
+
+    expect(getNodeOrThrow(graph, 'tinted').fills[0]?.color).toMatchObject({ r: 0x11 / 255 })
+  })
+
+  test('records the fields a stroke writes, not the ones it leaves to its paints', () => {
+    const graph = parseDocument([
+      button,
+      { id: 'outlined', type: 'ref', ref: 'button', stroke: { fill: '#111111', thickness: 2 } }
+    ])
+    const recorded = (field: string) => hasInstanceOverride(graph, 'outlined', field)
+    expect(['strokes', 'strokeCap', 'strokeJoin'].map(recorded)).toEqual([true, true, true])
+    expect(['strokeWeight', 'strokeAlign', 'dashPattern'].map(recorded)).toEqual([
+      false,
+      false,
+      false
+    ])
+  })
+
+  test("keeps a field the ref sets to its component's value when the component changes", () => {
+    const graph = parseDocument([
+      button,
+      {
+        id: 'same',
+        type: 'ref',
+        ref: 'button',
+        fill: '#2255CC',
+        descendants: { label: { content: 'Button' } }
+      }
+    ])
+    expect(hasInstanceOverride(graph, 'same', 'fills')).toBe(true)
+    expect(hasInstanceOverride(graph, copyOf(graph, 'same', 'label').id, 'text')).toBe(true)
+
+    graph.updateNode('button', {
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    graph.updateNode('label', { text: 'Renamed' })
+    syncInstance(graph, 'same')
+
+    expect(getNodeOrThrow(graph, 'same').fills[0]?.color).toMatchObject({ r: 0x22 / 255 })
+    expect(copyOf(graph, 'same', 'label').text).toBe('Button')
+  })
+
   test('records a descendant override so a sync keeps it', () => {
     const graph = parseDocument([
       button,

@@ -10,7 +10,7 @@ import {
   swapInstanceComponent
 } from '@open-pencil/scene-graph/instances'
 
-import { applyPenProperties, createSceneNode, type Build } from './nodes'
+import { applyPenProperties, createSceneNode, fieldsSetBy, type Build } from './nodes'
 import type { PenNode, PenOverride } from './schema'
 
 /** Fills an instance read from `.pen`, after the instances inside its component. */
@@ -128,16 +128,34 @@ function swapLayer(
 }
 
 /**
- * Records as the instance's overrides the fields an override changed on a copy, so they survive
- * the instance's next sync and a save, as an edit made in the editor would.
+ * Records as the instance's overrides the fields an override set or changed on a copy, so they
+ * survive the instance's next sync and a save, as an edit made in the editor would.
  */
 function recordChangedFields(
   graph: SceneGraph,
   target: SceneNode,
-  before: Partial<SceneNode>
+  before: Partial<SceneNode>,
+  override: PenOverride
 ): void {
   const changed = INSTANCE_OVERRIDE_FIELDS.filter((field) => !isEqual(before[field], target[field]))
-  recordInstanceOverride(graph, target.id, changed)
+  recordInstanceOverride(graph, target.id, [...changed, ...fieldsSetBy(override)])
+}
+
+/**
+ * Records as the instance's own overrides the fields its `ref` sets or makes differ from its
+ * component's. A size counts only when the `ref` sets it: otherwise it is the layout's, which
+ * follows the component's.
+ */
+function recordOwnFields(graph: SceneGraph, instance: SceneNode, ref: PenNode): void {
+  const component = instance.componentId ? graph.getNode(instance.componentId) : undefined
+  if (!component) return
+  const changed = INSTANCE_OVERRIDE_FIELDS.filter(
+    (field) =>
+      (field !== 'width' || 'width' in ref) &&
+      (field !== 'height' || 'height' in ref) &&
+      !isEqual(instance[field], component[field])
+  )
+  recordInstanceOverride(graph, instance.id, [...changed, ...fieldsSetBy(ref)])
 }
 
 function overrideLayer(build: Build, target: SceneNode, override: PenOverride): void {
@@ -150,7 +168,7 @@ function overrideLayer(build: Build, target: SceneNode, override: PenOverride): 
     const leave = merged.theme ? ctx.enterTheme(merged.theme) : undefined
     try {
       applyPenProperties(target, merged, build)
-      recordChangedFields(graph, target, before)
+      recordChangedFields(graph, target, before, fields)
       if (children) {
         const replaced = target.childIds
         for (const childId of replaced) graph.deleteNode(childId)
@@ -231,6 +249,7 @@ export function populateInstances(build: Build): void {
       if (graph.isDescendant(nested, component.id)) populate(nested)
     }
     populateInstanceChildren(graph, instance.id, component.id)
+    recordOwnFields(graph, instance, ref)
     inheritCopyFields(build, instance)
     applyDescendants(build, instance, ref.descendants, populate)
     // Before anything copies this instance, so the copies are of what it became.

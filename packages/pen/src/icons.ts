@@ -138,6 +138,8 @@ export function useIconComponent(node: SceneNode, pen: PenNode, build: Build): v
     populateInstanceChildren(graph, node.id, componentId)
   } else if (instanceMainComponent(graph, node)?.id !== componentId) {
     swapInstanceComponent(graph, node.id, componentId, { keepName: true })
+    // The layer keeps its own name rather than the icon's, which a saved file keeps as an override.
+    recordInstanceOverride(graph, node.id, ['name'])
   }
   keepOwnFields(graph, node.id, own, componentId)
   recolorGlyph(graph, node.id, color)

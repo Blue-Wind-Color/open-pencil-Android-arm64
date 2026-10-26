@@ -80,6 +80,9 @@ describe('parsePenFile — icons in components', () => {
     })
     const glyph = glyphOf(graph, 'swapped')
     expect(instanceMainComponent(graph, glyph)?.name).toBe('lucide/star/16x16')
+    // The layer keeps its name, as an override a saved file keeps.
+    expect(glyph.name).toBe(getNodeOrThrow(graph, 'glyph').name)
+    expect(hasInstanceOverride(graph, glyph.id, 'name')).toBe(true)
     // Every layer the instance holds is a copy of a component's layer, as a .fig file needs.
     const queue = [...graph.getChildren('swapped')]
     for (const node of queue) {
