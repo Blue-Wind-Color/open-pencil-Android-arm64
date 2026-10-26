@@ -9,6 +9,7 @@ import { useDateFormat } from '@/app/i18n/date'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 import PortalSessions from '../account/PortalSessions.vue'
+import PortalLoadAlert from '../layout/PortalLoadAlert.vue'
 import { portalSession, portalSignIn } from './sessions'
 
 /** Where the signed-in person's account is signed in, its recent sign-ins, and signing them out. */
@@ -35,15 +36,26 @@ const change = usePortalAction(async (work: () => Promise<unknown>) => {
   await work()
   await activity.reload()
 })
-const error = computed(() => change.error.value ?? activity.error.value)
+const error = computed(() => change.error.value)
+/** What the tables show while the server answers. */
+const loading = computed(() => {
+  if (activity.status.value === 'loading') return 'first'
+  return activity.status.value === 'refreshing' ? 'refresh' : false
+})
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
+    <PortalLoadAlert
+      v-if="activity.error.value"
+      :error="activity.error.value"
+      @retry="activity.reload()"
+    />
     <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
     <PortalSessions
-      v-if="activity.data.value"
+      v-if="activity.status.value !== 'failed'"
       manage
+      :loading="loading"
       :sessions="sessions"
       :sign-ins="signIns"
       :busy="change.busy.value"

@@ -325,7 +325,7 @@ describe('deployment admin user safety', () => {
         .execute()
       expect(factors).toEqual([])
       expect(notices).toEqual(['locked@example.com:reset-by-administrator'])
-      const events = await createAdminAuditService(runtime.database).list()
+      const { events } = await createAdminAuditService(runtime.database).list()
       expect(events).toEqual([
         expect.objectContaining({
           action: 'user.two-step-reset',
@@ -382,7 +382,7 @@ describe('deployment admin user safety', () => {
       expect(user.image).toBeNull()
       const kept = await runtime.database.selectFrom('userPicture').select('userId').execute()
       expect(kept).toEqual([])
-      expect(await createAdminAuditService(runtime.database).list()).toEqual([
+      expect((await createAdminAuditService(runtime.database).list()).events).toEqual([
         expect.objectContaining({
           action: 'user.picture-removed',
           subject: { type: 'user', id: USER_ID, name: 'Pictured' }

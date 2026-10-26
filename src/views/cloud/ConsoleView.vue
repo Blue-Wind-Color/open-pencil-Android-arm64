@@ -19,6 +19,8 @@ import SessionsSection from '@/components/cloud-portal/sections/SessionsSection.
 import type { PortalSection } from '@/components/cloud-portal/types'
 
 const ACCOUNT_SECTIONS = ['profile', 'security', 'sessions'] as const
+/** Every section, and a few people's pages, stay loaded while others are shown. */
+const SECTIONS_KEPT = 12
 const ADMIN_SECTIONS = ['overview', 'requests', 'people', 'email', 'activity'] as const
 type AccountSectionId = (typeof ACCOUNT_SECTIONS)[number]
 type AdminSectionId = (typeof ADMIN_SECTIONS)[number]
@@ -112,16 +114,17 @@ const sections = computed<PortalSection[]>(() => {
 const heading = computed(
   () => sections.value.find((section) => section.id === active.value)?.label ?? ''
 )
+// Null while the page's description waits on what it counts, so the layout keeps its line.
 const description = computed(() => {
   if (personId.value) return ''
   const value = messages.value
-  const descriptions: Record<SectionId, string> = {
+  const descriptions: Record<SectionId, string | null> = {
     profile: value.profileDescription({ host: portal.host }),
     security: value.securityDescription({ host: portal.host }),
     sessions: value.sessionsDescription,
     overview: portal.host,
     requests: value.accessRequestsDescription,
-    people: peopleTotal.value === null ? '' : value.peopleDescription(peopleTotal.value),
+    people: peopleTotal.value === null ? null : value.peopleDescription(peopleTotal.value),
     email: value.emailDeliveryDescription,
     activity: value.activityDescription
   }
@@ -170,18 +173,26 @@ onMounted(() => void refreshWaiting())
     @select="select"
     @sign-out="signOut"
   >
-    <ProfileSection v-if="active === 'profile'" />
-    <SecuritySection v-else-if="active === 'security'" />
-    <SessionsSection v-else-if="active === 'sessions'" />
-    <AdminOverviewSection v-else-if="active === 'overview'" @open="select" />
-    <AdminRequestsSection v-else-if="active === 'requests'" @changed="refreshWaiting" />
-    <AdminPersonSection v-else-if="personId" :user-id="personId" @back="select('people')" />
-    <AdminPeopleSection
-      v-else-if="active === 'people'"
-      @total="(count) => (peopleTotal = count)"
-      @open="openPerson"
-    />
-    <AdminEmailSection v-else-if="active === 'email'" />
-    <AdminActivitySection v-else />
+    <!-- Sections keep what they loaded while another is shown, and load again on return. -->
+    <KeepAlive :max="SECTIONS_KEPT">
+      <ProfileSection v-if="active === 'profile'" />
+      <SecuritySection v-else-if="active === 'security'" />
+      <SessionsSection v-else-if="active === 'sessions'" />
+      <AdminOverviewSection v-else-if="active === 'overview'" @open="select" />
+      <AdminRequestsSection v-else-if="active === 'requests'" @changed="refreshWaiting" />
+      <AdminPersonSection
+        v-else-if="personId"
+        :key="personId"
+        :user-id="personId"
+        @back="select('people')"
+      />
+      <AdminPeopleSection
+        v-else-if="active === 'people'"
+        @total="(count) => (peopleTotal = count)"
+        @open="openPerson"
+      />
+      <AdminEmailSection v-else-if="active === 'email'" />
+      <AdminActivitySection v-else />
+    </KeepAlive>
   </PortalConsoleLayout>
 </template>

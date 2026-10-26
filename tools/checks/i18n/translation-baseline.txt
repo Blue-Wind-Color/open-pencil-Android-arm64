@@ -390,6 +390,7 @@ es:cloudPortal.deploymentOfficial
 es:cloudPortal.emailTransportSMTP
 es:cloudPortal.emailTransportCloudflare
 es:cloudPortal.pictureZoom
+it:cloudPortal.filterEmail
 it:cloudPortal.productName
 it:cloudPortal.email
 it:cloudPortal.password
@@ -409,6 +410,7 @@ it:cloudPortal.emailTransportSMTP
 it:cloudPortal.emailTransportCloudflare
 it:cloudPortal.emailKindOther
 it:cloudPortal.pictureZoom
+de:cloudPortal.columnStatus
 de:cloudPortal.productName
 de:cloudPortal.name
 de:cloudPortal.sectionServer
@@ -424,6 +426,9 @@ de:cloudPortal.deploymentOfficial
 de:cloudPortal.emailTransportSMTP
 de:cloudPortal.emailTransportCloudflare
 de:cloudPortal.pictureZoom
+fr:cloudPortal.columnAction
+fr:cloudPortal.columnActions
+fr:cloudPortal.columnMessage
 fr:cloudPortal.productName
 fr:cloudPortal.providerGoogle
 fr:cloudPortal.providerApple
@@ -452,6 +457,7 @@ zh-cn:cloudPortal.methodApple
 zh-cn:cloudPortal.deploymentOfficial
 zh-cn:cloudPortal.emailTransportSMTP
 zh-cn:cloudPortal.emailTransportCloudflare
+pl:cloudPortal.columnStatus
 pl:cloudPortal.productName
 pl:cloudPortal.emailPlaceholder
 pl:cloudPortal.providerGoogle

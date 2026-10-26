@@ -14,7 +14,7 @@ describe('Cloud enrollment integration', () => {
       const enrollment = createEnrollmentService(runtime.database)
       await enrollment.request({ email: 'Person@Example.com', name: 'Person', reason: 'Design' })
       await enrollment.request({ email: 'person@example.com', name: 'Duplicate' })
-      const [pending] = await enrollment.list('pending')
+      const [pending] = (await enrollment.list({ filter: 'pending' })).enrollments
       expect(pending).toMatchObject({
         email: 'person@example.com',
         name: 'Person',
@@ -67,7 +67,7 @@ describe('Cloud enrollment integration', () => {
         email
       })
       await enrollment.request({ email: 'person@example.com', name: 'Person', reason: 'Design' })
-      let [record] = await enrollment.list()
+      let [record] = (await enrollment.list()).enrollments
       if (!record) throw new Error('Expected enrollment')
       expect(record.requestRevision).toBe(1)
       expect(
@@ -81,7 +81,7 @@ describe('Cloud enrollment integration', () => {
         'Enrollment cannot transition'
       )
       await enrollment.request({ email: 'person@example.com', reason: 'Try again' })
-      ;[record] = await enrollment.list()
+      ;[record] = (await enrollment.list()).enrollments
       expect(record).toMatchObject({ status: 'pending', requestRevision: 2, reason: 'Try again' })
       if (!record) throw new Error('Expected reopened enrollment')
       await enrollment.review('admin-user', record.id, 'approved', {})

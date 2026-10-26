@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { ref } from 'vue'
 
 import PortalAccountSecurity from '../account/PortalAccountSecurity.vue'
 import PortalProfile from '../account/PortalProfile.vue'
@@ -8,6 +7,8 @@ import PortalConsoleLayout from '../layout/PortalConsoleLayout.vue'
 import { PORTAL_SECTION_ICONS } from '../layout/sections'
 import type {
   AccessRequest,
+  PortalActivityEntry,
+  PortalEmail,
   PortalPerson,
   PortalPersonDetail,
   PortalSection,
@@ -117,7 +118,90 @@ const people: PortalPerson[] = [
     workspaceCount: 0
   }
 ]
-const counts = { all: 24, administrators: 2, suspended: 1, 'without-two-step': 9 }
+/** A console list's server for a story: every page holds `rows`, and each filter `counts`. */
+const serve =
+  <Filter extends string, Row>(rows: Row[], counts: Record<Filter, number>) =>
+  () =>
+    Promise.resolve({ rows, total: rows.length, counts })
+const loadPeople = serve(people, {
+  all: 24,
+  administrators: 2,
+  suspended: 1,
+  'without-two-step': 9
+})
+const loadRequests = serve(requests, { pending: 3, approved: 18, rejected: 2, revoked: 1 })
+const loadNoRequests = serve<AccessRequest['status'], AccessRequest>([], {
+  pending: 0,
+  approved: 18,
+  rejected: 2,
+  revoked: 1
+})
+const emails: PortalEmail[] = [
+  {
+    id: 'e1',
+    kind: 'document-invitation',
+    recipient: 'chloe@agency.example',
+    status: 'failed',
+    attempts: 5,
+    when: 'Oct 25, 2026, 10:42 AM',
+    error: 'Mailbox unavailable'
+  },
+  {
+    id: 'e2',
+    kind: 'email-verification',
+    recipient: 'diego@studio.example',
+    status: 'sent',
+    attempts: 1,
+    when: 'Oct 25, 2026, 9:15 AM',
+    error: null
+  },
+  {
+    id: 'e4',
+    kind: 'new-sign-in',
+    recipient: 'ana@studio.example',
+    status: 'sent',
+    attempts: 1,
+    when: 'Oct 25, 2026, 8:51 AM',
+    error: null
+  },
+  {
+    id: 'e3',
+    kind: 'enrollment-approved',
+    recipient: 'mia@client.example',
+    status: 'waiting',
+    attempts: 2,
+    when: 'Oct 24, 2026, 6:20 PM',
+    error: null
+  }
+]
+const loadEmails = serve(emails, { all: 4, sent: 2, waiting: 1, failed: 1 })
+const entries: PortalActivityEntry[] = [
+  {
+    id: 'a1',
+    actor: { id: 'user-ana', name: 'Ana Duarte' },
+    action: 'enrollment.approved',
+    target: 'mia@client.example',
+    reason: null,
+    when: 'Oct 24, 2026, 3:10 PM'
+  },
+  {
+    id: 'a2',
+    actor: { id: 'user-ben', name: 'Ben Ortiz' },
+    action: 'user.banned',
+    target: 'Tom Weber',
+    reason: 'Shared files outside the studio',
+    when: 'Oct 21, 2026, 11:02 AM'
+  },
+  {
+    id: 'a3',
+    actor: { id: 'user-ana', name: 'Ana Duarte' },
+    action: 'user.admin-granted',
+    target: 'Ben Ortiz',
+    reason: null,
+    when: 'Sep 28, 2026, 9:30 AM'
+  }
+]
+const loadActivity = serve(entries, { all: 3, accounts: 2, requests: 1, email: 0 })
 const sessions: PortalSession[] = [
   {
     id: 's1',
@@ -226,14 +310,14 @@ const story = (
     setup: () => ({
       account,
       sections,
-      requests,
-      people,
-      counts,
       sessions,
       signIns,
       person,
-      filter: ref('pending'),
-      peopleFilter: ref('all'),
+      loadPeople,
+      loadRequests,
+      loadNoRequests,
+      loadEmails,
+      loadActivity,
       ...extra
     }),
     template: `
@@ -290,39 +374,30 @@ export const AccessRequests = story(
   'requests',
   'Access requests',
   'People asking to join. Approving lets them sign in; each gets an email either way.',
-  `<PortalAccessRequests v-model:filter="filter" :requests="requests" />`
+  `<PortalAccessRequests :load="loadRequests" />`
 )
 export const NoAccessRequests = story(
   'requests',
   'Access requests',
   'People asking to join. Approving lets them sign in; each gets an email either way.',
-  `<PortalAccessRequests v-model:filter="filter" :requests="[]" />`
+  `<PortalAccessRequests :load="loadNoRequests" />`
 )
 export const People = story(
   'people',
   'People',
   '24 accounts on this server.',
-  `<PortalPeople v-model:filter="peopleFilter" :people="people" :counts="counts" :page-size="4" />`
+  `<PortalPeople :load="loadPeople" />`
 )
 export const Person = story('people', 'People', '', `<PortalPerson :detail="person" />`)
 export const EmailDelivery = story(
   'email',
   'Email delivery',
   'Invitations, sign-in links, and access decisions the server sends.',
-  `<PortalEmailDelivery :emails="[
-    { id: 'e1', kind: 'document-invitation', recipient: 'chloe@agency.example', status: 'failed', attempts: 5, when: '10:42', error: 'Mailbox unavailable' },
-    { id: 'e2', kind: 'email-verification', recipient: 'diego@studio.example', status: 'sent', attempts: 1, when: '09:15' },
-    { id: 'e4', kind: 'new-sign-in', recipient: 'ana@studio.example', status: 'sent', attempts: 1, when: '08:51' },
-    { id: 'e3', kind: 'enrollment-approved', recipient: 'mia@client.example', status: 'sent', attempts: 1, when: 'Yesterday' }
-  ]" />`
+  `<PortalEmailDelivery :load="loadEmails" />`
 )
 export const Activity = story(
   'activity',
   'Activity',
   'What administrators did on this server.',
-  `<PortalActivity :entries="[
-    { id: 'a1', actor: { id: 'user-ana', name: 'Ana Duarte' }, action: 'enrollment.approved', target: 'mia@client.example', when: 'Yesterday' },
-    { id: 'a2', actor: { id: 'user-ben', name: 'Ben Ortiz' }, action: 'user.banned', target: 'Tom Weber', reason: 'Shared files outside the studio', when: 'Oct 21, 2026, 11:02 AM' },
-    { id: 'a3', actor: { id: 'user-ana', name: 'Ana Duarte' }, action: 'user.admin-granted', target: 'Ben Ortiz', when: 'Sep 28' }
-  ]" />`
+  `<PortalActivity :load="loadActivity" />`
 )

@@ -1,3 +1,4 @@
+import { zipObject } from 'es-toolkit'
 import * as v from 'valibot'
 
 import {
@@ -10,6 +11,23 @@ import { workspaceRoleSchema } from '../workspaces'
 
 const timestampSchema = v.pipe(v.string(), v.isoTimestamp())
 const nullableTimestampSchema = v.nullable(timestampSchema)
+const countSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
+
+/**
+ * What every admin list answers besides its rows: how many rows match the search and filter
+ * across every page, and how many match the search under each filter.
+ */
+function listTotals<const Filter extends string>(filters: readonly Filter[]) {
+  return {
+    total: countSchema,
+    counts: v.object(
+      zipObject(
+        filters,
+        filters.map(() => countSchema)
+      )
+    )
+  }
+}
 
 export const adminErrorCodeSchema = v.picklist([
   'bad_request',
@@ -38,17 +56,20 @@ export const enrollmentSchema = v.object({
   requestedAt: timestampSchema,
   reviewedAt: nullableTimestampSchema,
   reviewedBy: v.nullable(v.string()),
+  /** The reviewer's name, in lists, while the server still knows them. */
+  reviewerName: v.optional(v.nullable(v.string())),
   reviewNote: v.nullable(v.string()),
   approvedUserId: v.nullable(v.string()),
   requestRevision: v.pipe(v.number(), v.integer(), v.minValue(1))
 })
 
-export const enrollmentsResponseSchema = v.object({ enrollments: v.array(enrollmentSchema) })
+export const enrollmentsResponseSchema = v.object({
+  enrollments: v.array(enrollmentSchema),
+  ...listTotals(enrollmentStatusSchema.options)
+})
 export const enrollmentReviewResponseSchema = v.object({ enrollment: enrollmentSchema })
 
 export const cloudAdminSessionResponseSchema = v.object({ user: cloudIdentitySchema })
-
-const countSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 
 export const cloudAdminUserSchema = v.object({
   ...cloudPersonSchema.entries,
@@ -72,15 +93,7 @@ export const cloudAdminUserFilterSchema = v.picklist([
 ])
 export const cloudAdminUsersResponseSchema = v.object({
   users: v.array(cloudAdminUserSchema),
-  /** How many accounts match the search and filter, across every page. */
-  total: countSchema,
-  /** How many accounts match the search under each filter. */
-  counts: v.object({
-    all: countSchema,
-    administrators: countSchema,
-    suspended: countSchema,
-    'without-two-step': countSchema
-  })
+  ...listTotals(cloudAdminUserFilterSchema.options)
 })
 
 export const cloudAdminUserDetailSchema = v.object({
@@ -120,8 +133,11 @@ export const transactionalEmailAdminSchema = v.object({
   acceptedAt: nullableTimestampSchema,
   regeneratable: v.boolean()
 })
+/** Which messages a list of email shows, by how their delivery went. */
+export const cloudAdminEmailFilterSchema = v.picklist(['all', 'sent', 'waiting', 'failed'])
 export const adminEmailResponseSchema = v.object({
-  messages: v.array(transactionalEmailAdminSchema)
+  messages: v.array(transactionalEmailAdminSchema),
+  ...listTotals(cloudAdminEmailFilterSchema.options)
 })
 
 /** Who or what an event names; `name` is null once the server no longer knows it. */
@@ -136,7 +152,12 @@ export const adminAuditEventSchema = v.object({
   metadata: v.unknown(),
   createdAt: timestampSchema
 })
-export const adminAuditResponseSchema = v.object({ events: v.array(adminAuditEventSchema) })
+/** Which events a list of activity shows, by what they are about. */
+export const cloudAdminAuditFilterSchema = v.picklist(['all', 'accounts', 'requests', 'email'])
+export const adminAuditResponseSchema = v.object({
+  events: v.array(adminAuditEventSchema),
+  ...listTotals(cloudAdminAuditFilterSchema.options)
+})
 
 export const adminOperationsResponseSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
@@ -156,6 +177,9 @@ export type Enrollment = v.InferOutput<typeof enrollmentSchema>
 export type CloudAdminSessionResponse = v.InferOutput<typeof cloudAdminSessionResponseSchema>
 export type CloudAdminUser = v.InferOutput<typeof cloudAdminUserSchema>
 export type CloudAdminUserFilter = v.InferOutput<typeof cloudAdminUserFilterSchema>
+export type CloudAdminEmailFilter = v.InferOutput<typeof cloudAdminEmailFilterSchema>
+export type CloudAdminAuditFilter = v.InferOutput<typeof cloudAdminAuditFilterSchema>
+export type EnrollmentStatus = v.InferOutput<typeof enrollmentStatusSchema>
 export type CloudAdminUsers = v.InferOutput<typeof cloudAdminUsersResponseSchema>
 export type CloudAdminUserDetail = v.InferOutput<typeof cloudAdminUserDetailSchema>
 export type TransactionalEmailAdmin = v.InferOutput<typeof transactionalEmailAdminSchema>

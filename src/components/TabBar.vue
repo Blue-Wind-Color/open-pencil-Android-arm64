@@ -8,7 +8,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useTabsStore, createTab } from '@/app/tabs'
 import PreparationIndicator from '@/components/preparation/tab/Indicator.vue'
-import { useScrollOverflow } from '@/components/shell/useScrollOverflow'
+import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import tabBarTheme from '@/theme/tab-bar'
 
@@ -19,7 +19,12 @@ const tabBarStyles = tv(tabBarTheme)
 const baseStyles = tabBarStyles()
 
 const scroller = useTemplateRef<HTMLElement>('scroller')
-const { overflowing, overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(scroller)
+const { overflowing, overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(
+  scroller,
+  {
+    smooth: animationsEnabled
+  }
+)
 
 // Keep the active tab in view when it opens, when another one is chosen, and when the row starts
 // or stops overflowing, since the chevron that appears then narrows the visible row. Scrolling

@@ -14,12 +14,13 @@ import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
 import { portalToast } from '@/app/cloud-portal/toast'
 import { useDateFormat } from '@/app/i18n/date'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
-import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 import PortalFieldDialog from '../account/PortalFieldDialog.vue'
 import PortalPasswordDialog from '../account/PortalPasswordDialog.vue'
 import PortalPictureDialog from '../account/PortalPictureDialog.vue'
 import PortalProfile from '../account/PortalProfile.vue'
+import PortalLoadAlert from '../layout/PortalLoadAlert.vue'
+import PortalPageSkeleton from '../layout/PortalPageSkeleton.vue'
 
 /** The query the email confirmation link comes back with. */
 const EMAIL_CONFIRMED = 'email-confirmed'
@@ -155,7 +156,6 @@ const confirmPassword = usePortalAction(async (password: string) => {
 
 const busy = computed(
   () =>
-    loaded.loading.value ||
     rename.busy.value ||
     savePicture.busy.value ||
     removePicture.busy.value ||
@@ -178,12 +178,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex max-w-2xl flex-col gap-4">
-    <AppAlert
+  <div class="flex max-w-2xl flex-col gap-4" :aria-busy="loaded.loading.value || undefined">
+    <PortalLoadAlert
       v-if="loaded.error.value"
-      tone="error"
-      :heading="messages.errorTitle"
-      :description="loaded.error.value"
+      :error="loaded.error.value"
+      @retry="loaded.reload()"
     />
     <PortalProfile
       v-if="profile"
@@ -195,6 +194,7 @@ onMounted(async () => {
       @choose-picture="choosePicture"
       @remove-picture="removeOpen = true"
     />
+    <PortalPageSkeleton v-else-if="loaded.status.value === 'loading'" avatar :groups="[2, 1]" />
     <AppConfirmationDialog
       v-model:open="removeOpen"
       tone="danger"

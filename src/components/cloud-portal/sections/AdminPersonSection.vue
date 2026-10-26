@@ -12,6 +12,8 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 
 import PortalPerson from '../console/PortalPerson.vue'
+import PortalLoadAlert from '../layout/PortalLoadAlert.vue'
+import PortalPageSkeleton from '../layout/PortalPageSkeleton.vue'
 import type { PortalPersonAction, PortalPersonDetail } from '../types'
 import { personAction, portalPerson } from './people'
 import { portalSession, portalSignIn } from './sessions'
@@ -53,7 +55,7 @@ const action = usePortalAction(async (change: () => Promise<unknown>) => {
   await change()
   await loaded.reload()
 })
-const error = computed(() => action.error.value ?? loaded.error.value)
+const error = computed(() => action.error.value)
 
 function act(kind: PortalPersonAction, reason?: string) {
   const person = detail.value?.person
@@ -67,7 +69,12 @@ watch(
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4" :aria-busy="loaded.loading.value || undefined">
+    <PortalLoadAlert
+      v-if="loaded.error.value"
+      :error="loaded.error.value"
+      @retry="loaded.reload()"
+    />
     <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
     <AppPlaceholder
       v-if="loaded.data.value === 'missing'"
@@ -90,5 +97,6 @@ watch(
       @act="act"
       @back="emit('back')"
     />
+    <PortalPageSkeleton v-else-if="loaded.status.value === 'loading'" avatar :groups="[5, 2]" />
   </div>
 </template>

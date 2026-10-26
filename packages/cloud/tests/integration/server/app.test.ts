@@ -245,7 +245,9 @@ describe('createCloudApp', () => {
         '/api/admin/audit?limit=many',
         '/api/admin/email?limit=-1',
         '/api/admin/users?offset=1.5',
-        '/api/admin/enrollments?status=sideways'
+        '/api/admin/users?offset=99999999999999999999',
+        '/api/admin/enrollments?filter=sideways',
+        '/api/admin/email?filter=bounced'
       ]) {
         const response = await adminApp.request(path)
         expect(response.status).toBe(400)

@@ -483,6 +483,7 @@ zh-cn:storage.waitlistOpenWebsite
 zh-cn:storage.waitlistUnavailable
 zh-cn:statuses.figmaShows
 zh-cn:statuses.presetHandoff
+ja:cloudPortal.columnAddress
 ja:cloudPortal.signInTitle
 ja:cloudPortal.newHere
 ja:cloudPortal.returnsToDesktop
@@ -494,6 +495,7 @@ ja:cloudPortal.deviceWarningDescription
 ja:cloudPortal.deviceApprovedDescription
 ja:cloudPortal.deviceExpiredDescription
 ja:cloudPortal.authenticatorOff
+zh-cn:cloudPortal.columnAddress
 zh-cn:cloudPortal.signInTitle
 zh-cn:cloudPortal.newHere
 zh-cn:cloudPortal.returnsToDesktop

@@ -1,18 +1,24 @@
 <script setup lang="ts">
+import { createColumnHelper } from '@tanstack/vue-table'
 import { compact } from 'es-toolkit'
-import { computed } from 'vue'
+import { computed, h } from 'vue'
+import IconLayers from '~icons/lucide/layers'
 
 import type { WorkspaceRole } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
+import { usePortalRows, type PortalTableFeatures } from '@/app/cloud-portal/list'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { portalList } from '@/theme/cloud-portal/list'
+import AppDataTable from '@/components/ui/table/AppDataTable.vue'
+import { portalTable } from '@/theme/cloud-portal/table'
 
 import PortalSessions from '../account/PortalSessions.vue'
+import PortalStatusCell from '../table/PortalStatusCell.vue'
+import PortalTextCell from '../table/PortalTextCell.vue'
 import type { PortalPersonAction, PortalPersonDetail } from '../types'
 import PortalPersonActions from './PortalPersonActions.vue'
 
@@ -23,7 +29,7 @@ import PortalPersonActions from './PortalPersonActions.vue'
 const { detail, busy = false } = defineProps<{ detail: PortalPersonDetail; busy?: boolean }>()
 const emit = defineEmits<{ act: [action: PortalPersonAction, reason?: string]; back: [] }>()
 
-const ui = portalList()
+const ui = portalTable()
 const messages = useCloudPortalMessages()
 const person = computed(() => detail.person)
 
@@ -52,6 +58,30 @@ const roleLabel = (role: WorkspaceRole) =>
     editor: messages.value.workspaceRoleEditor,
     viewer: messages.value.workspaceRoleViewer
   })[role]
+
+const column = createColumnHelper<PortalTableFeatures, PortalPersonDetail['workspaces'][number]>()
+const workspaces = usePortalRows(() => detail.workspaces, {
+  rowId: (workspace) => workspace.id,
+  columns: column.columns([
+    column.display({
+      id: 'workspace',
+      header: () => messages.value.columnWorkspace,
+      cell: ({ row: { original: workspace } }) =>
+        h(PortalTextCell, { icon: IconLayers, text: workspace.name, strong: true })
+    }),
+    column.display({
+      id: 'role',
+      header: () => messages.value.columnRole,
+      meta: { class: 'w-32' },
+      cell: ({ row: { original: workspace } }) =>
+        h(PortalStatusCell, { statuses: [{ label: roleLabel(workspace.role), tone: 'neutral' }] })
+    }),
+    column.accessor('memberCount', {
+      header: () => messages.value.columnMembers,
+      meta: { class: 'w-24 text-right tabular-nums' }
+    })
+  ])
+})
 </script>
 
 <template>
@@ -114,19 +144,11 @@ const roleLabel = (role: WorkspaceRole) =>
 
     <SettingsSection>
       <template #title>{{ messages.personWorkspaces }}</template>
-      <ul v-if="detail.workspaces.length" :class="ui.list()">
-        <li v-for="workspace in detail.workspaces" :key="workspace.id" :class="ui.row()">
-          <icon-lucide-layers class="size-4 shrink-0 text-muted" />
-          <div :class="ui.body()">
-            <p :class="ui.title()">{{ workspace.name }}</p>
-            <p :class="ui.detail()">{{ messages.workspaceMembers(workspace.memberCount) }}</p>
-          </div>
-          <span :class="ui.status()" data-tone="neutral">{{ roleLabel(workspace.role) }}</span>
-        </li>
-      </ul>
-      <p v-else class="rounded border border-dashed border-border px-3 py-3 text-xs text-muted">
-        {{ messages.personWorkspacesEmpty }}
-      </p>
+      <AppDataTable :table="workspaces" :label="messages.personWorkspaces">
+        <template #empty>
+          <p class="text-center text-xs text-muted">{{ messages.personWorkspacesEmpty }}</p>
+        </template>
+      </AppDataTable>
     </SettingsSection>
 
     <PortalSessions :sessions="detail.sessions" :sign-ins="detail.signIns" />

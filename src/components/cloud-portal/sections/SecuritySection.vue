@@ -16,6 +16,8 @@ import PortalAccountSecurity from '../account/PortalAccountSecurity.vue'
 import PortalAuthenticatorSetup from '../account/PortalAuthenticatorSetup.vue'
 import PortalPasswordDialog from '../account/PortalPasswordDialog.vue'
 import PortalRecoveryCodes from '../account/PortalRecoveryCodes.vue'
+import PortalLoadAlert from '../layout/PortalLoadAlert.vue'
+import PortalPageSkeleton from '../layout/PortalPageSkeleton.vue'
 import type { PortalSignInMethod } from '../types'
 
 /** The signed-in person's sign-in methods and second steps, with every change they can make. */
@@ -128,11 +130,7 @@ const passwordAction = usePortalAction(
 )
 
 const busy = computed(
-  () =>
-    security.loading.value ||
-    change.busy.value ||
-    passwordAction.busy.value ||
-    verifyAction.busy.value
+  () => change.busy.value || passwordAction.busy.value || verifyAction.busy.value
 )
 const passwordError = computed(() => (passwordStep.value ? passwordAction.error.value : null))
 const passwordShown = useHeldContent(passwordStep)
@@ -140,10 +138,7 @@ const passwordErrorShown = useHeldContent(passwordError, () => passwordStep.valu
 const setupShown = useHeldContent(setupURI)
 const codesShown = useHeldContent(recoveryCodes)
 const error = computed(
-  () =>
-    change.error.value ??
-    (passwordStep.value ? null : passwordAction.error.value) ??
-    security.error.value
+  () => change.error.value ?? (passwordStep.value ? null : passwordAction.error.value)
 )
 
 function link(provider: PortalSignInMethod) {
@@ -201,7 +196,12 @@ function addPasskey() {
 </script>
 
 <template>
-  <div class="flex max-w-2xl flex-col gap-4">
+  <div class="flex max-w-2xl flex-col gap-4" :aria-busy="security.loading.value || undefined">
+    <PortalLoadAlert
+      v-if="security.error.value"
+      :error="security.error.value"
+      @retry="security.reload()"
+    />
     <AppAlert v-if="error" tone="error" :heading="messages.errorTitle" :description="error" />
     <PortalAccountSecurity
       v-if="methods && mfa"
@@ -227,6 +227,7 @@ function addPasskey() {
       @add-passkey="addPasskey"
       @remove-passkey="(id) => change.run(() => portal.api.deletePasskey(id))"
     />
+    <PortalPageSkeleton v-else-if="security.status.value === 'loading'" :groups="[2, 2, 1]" />
 
     <PortalPasswordDialog
       :open="passwordStep !== null"

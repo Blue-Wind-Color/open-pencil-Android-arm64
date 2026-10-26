@@ -206,9 +206,16 @@ pending request that a deployment administrator approves or rejects; approval ca
 Deployment administrators are separate from workspace administrators, and startup never grants
 either role: the first operator is approved and promoted through the `admin` command.
 
-The console's People list pages through accounts in sign-up order, searched by name or email and
-filtered to administrators, suspended accounts, or accounts without two-step sign-in, with a count
-for each filter. A person's page shows how they sign in, their workspaces, sessions, and recent
+The console's lists are tables the server pages, searches, and filters: each admin list endpoint
+takes `search`, `filter`, `limit`, and `offset` and answers with its rows, the `total` matching, and
+how many match the search under each filter (`src/admin/list.ts`). A list declares its filters once, as conditions on its table; one query counts them all with `count(*) filter (where …)`, and the page uses the same condition. People lists accounts in sign-up
+order, searched by name or email and filtered to administrators, suspended accounts, or accounts
+without two-step sign-in; access requests are searched by name or email in each status; email by
+recipient and delivery; activity by the names of who acted and whom it was about, and by what it
+was about. In the portal, `usePortalList` (`src/app/cloud-portal/list.ts`) holds a list's search,
+filter, and page and builds its TanStack Table; `PortalTable` draws the toolbar, the shared
+`AppDataTable`, and the pages, and each list only defines its columns, which render their cells with the components in `src/components/cloud-portal/table/`. A row has at most one inline
+action, such as Approve; the rest are in its “…” menu. A person's page shows how they sign in, their workspaces, sessions, and recent
 sign-ins. Administrators make and remove administrators, sign people out everywhere, suspend
 with a reason the activity log keeps, and reset a locked-out person's two-step sign-in, which
 removes their authenticator app, recovery codes, and passkeys, and take down a person's picture.

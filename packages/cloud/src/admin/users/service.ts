@@ -1,6 +1,18 @@
 import { AdminDomainError } from '#cloud/admin/errors'
-import { ADMIN_LIST_MAXIMUM } from '#cloud/admin/schema'
-import type { CloudAdminUser, CloudAdminUserDetail, CloudAdminUserFilter } from '#cloud/contract'
+import {
+  containsPattern,
+  countEachFilter,
+  listSearch,
+  listWindow,
+  type AdminListQuery,
+  type ListFilters
+} from '#cloud/admin/list'
+import {
+  cloudAdminUserFilterSchema,
+  type CloudAdminUser,
+  type CloudAdminUserDetail,
+  type CloudAdminUserFilter
+} from '#cloud/contract'
 import {
   createSignInActivity,
   type AuthenticationEmailService,
@@ -9,19 +21,17 @@ import {
 import type { CloudDatabase } from '#cloud/server/db'
 import type { UserPictureService } from '#cloud/server/pictures'
 import { dateString } from '#cloud/server/sharing/contracts'
-import { clamp, countBy, keyBy } from 'es-toolkit'
+import { countBy, keyBy } from 'es-toolkit'
 import type { ExpressionBuilder, Kysely } from 'kysely'
 
 /** The sign-ins a person's page lists. */
 const DETAIL_SIGN_INS = 20
 
-const FILTERS = ['all', 'administrators', 'suspended', 'without-two-step'] as const
-
 type UserExpression = ExpressionBuilder<CloudDatabase, 'user'>
 
 /** A search for part of a name or email, matched literally and without case. */
 function searchCondition(search: string) {
-  const pattern = `%${search.replace(/[\\%_]/g, (character) => `\\${character}`)}%`
+  const pattern = containsPattern(search)
   return (expression: UserExpression) =>
     expression.or([
       expression('user.email', 'ilike', pattern),
@@ -29,34 +39,26 @@ function searchCondition(search: string) {
     ])
 }
 
-function filterCondition(filter: CloudAdminUserFilter) {
-  return (expression: UserExpression) => {
-    if (filter === 'administrators') return expression('user.role', '=', 'admin')
-    if (filter === 'suspended') return expression('user.banned', '=', true)
-    if (filter === 'without-two-step') {
-      return expression.and([
-        // Better Auth leaves the flag unset on accounts that never turned it on.
-        expression('user.twoFactorEnabled', 'is not', true),
-        expression.not(
-          expression.exists(
-            expression
-              .selectFrom('passkey')
-              .select('passkey.id')
-              .whereRef('passkey.userId', '=', 'user.id')
-          )
+const FILTERS: ListFilters<CloudAdminUserFilter, 'user'> = {
+  all: (expression) => expression.lit(true),
+  administrators: (expression) => expression('user.role', '=', 'admin'),
+  suspended: (expression) => expression('user.banned', '=', true),
+  'without-two-step': (expression) =>
+    expression.and([
+      // Better Auth leaves the flag unset on accounts that never turned it on.
+      expression('user.twoFactorEnabled', 'is not', true),
+      expression.not(
+        expression.exists(
+          expression
+            .selectFrom('passkey')
+            .select('passkey.id')
+            .whereRef('passkey.userId', '=', 'user.id')
         )
-      ])
-    }
-    return expression.lit(true)
-  }
+      )
+    ])
 }
 
-export type AdminUserQuery = {
-  search?: string
-  filter?: CloudAdminUserFilter
-  limit?: number
-  offset?: number
-}
+export type AdminUserQuery = AdminListQuery<CloudAdminUserFilter>
 
 type UserRow = {
   id: string
@@ -187,40 +189,21 @@ export function createAdminUserService(
   return {
     /** A page of accounts in sign-up order, with how many match the search under each filter. */
     async list(query: AdminUserQuery = {}) {
-      const search = query.search?.trim()
+      const search = listSearch(query)
       const filter = query.filter ?? 'all'
-      const matching = (target: CloudAdminUserFilter) => {
-        let selection = database.selectFrom('user').where(filterCondition(target))
-        if (search) selection = selection.where(searchCondition(search))
-        return selection
-      }
-      const counts = await Promise.all(
-        FILTERS.map(async (target) => {
-          const row = await matching(target)
-            .select(({ fn }) => fn.countAll<number>().as('count'))
-            .executeTakeFirstOrThrow()
-          return Number(row.count)
-        })
-      )
-      const [all = 0, administrators = 0, suspended = 0, withoutTwoStep = 0] = counts
-      const countsByFilter = {
-        all,
-        administrators,
-        suspended,
-        'without-two-step': withoutTwoStep
-      }
-      const rows = await matching(filter)
+      const { limit, offset } = listWindow(query)
+      let searched = database.selectFrom('user')
+      if (search) searched = searched.where(searchCondition(search))
+      const counts = await countEachFilter(searched, cloudAdminUserFilterSchema.options, FILTERS)
+      const rows = await searched
+        .where(FILTERS[filter])
         .select(userColumns)
         .orderBy('user.createdAt')
         .orderBy('user.id')
-        .limit(clamp(query.limit ?? 50, 1, ADMIN_LIST_MAXIMUM))
-        .offset(Math.max(0, query.offset ?? 0))
+        .limit(limit)
+        .offset(offset)
         .execute()
-      return {
-        users: await accountSummaries(rows),
-        total: countsByFilter[filter],
-        counts: countsByFilter
-      }
+      return { users: await accountSummaries(rows), total: counts[filter], counts }
     },
 
     /** Everything an administrator reads about one account; null when there is none. */

@@ -1,24 +1,15 @@
 <script setup lang="ts">
-import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuRoot,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from 'reka-ui'
+import { compact } from 'es-toolkit'
 import { computed, ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
-import AppButton from '@/components/ui/button/AppButton.vue'
-import IconButton from '@/components/ui/button/IconButton.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
-import { menu } from '@/components/ui/menu/menu'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import { portalForm } from '@/theme/cloud-portal/form'
 
+import PortalRowMenu from '../table/PortalRowMenu.vue'
 import type { PortalPerson, PortalPersonAction } from '../types'
 
 /**
@@ -38,7 +29,6 @@ const {
 const emit = defineEmits<{ act: [action: PortalPersonAction, reason?: string] }>()
 
 const messages = useCloudPortalMessages()
-const menuUI = menu()
 const form = portalForm()
 const confirming = ref<PortalPersonAction | null>(null)
 const reason = ref('')
@@ -99,6 +89,21 @@ const confirmation = computed(() => {
   return copy[action]
 })
 
+const items = computed(() => {
+  const words = messages.value
+  return compact([
+    person.admin
+      ? { action: 'remove-admin' as const, label: words.removeAdministrator }
+      : { action: 'make-admin' as const, label: words.makeAdministrator },
+    { action: 'sign-out' as const, label: words.signOutEverywhere },
+    person.twoStep && { action: 'reset-two-step' as const, label: words.resetTwoStep },
+    person.image && { action: 'remove-picture' as const, label: words.removePersonPicture },
+    person.suspended
+      ? { action: 'restore' as const, label: words.restoreAccount, separated: true }
+      : { action: 'suspend' as const, label: words.suspendAccount, separated: true }
+  ])
+})
+
 function ask(action: PortalPersonAction) {
   reason.value = ''
   confirming.value = action
@@ -114,65 +119,13 @@ function confirm() {
 </script>
 
 <template>
-  <DropdownMenuRoot :modal="false">
-    <DropdownMenuTrigger as-child>
-      <IconButton
-        v-if="look === 'icon'"
-        :label="messages.actionsFor({ name: person.name })"
-        :disabled="disabled || person.you"
-      >
-        <icon-lucide-ellipsis class="size-3.5" />
-      </IconButton>
-      <AppButton
-        v-else
-        size="sm"
-        variant="outline"
-        :aria-label="messages.actionsFor({ name: person.name })"
-        :disabled="disabled || person.you"
-      >
-        <icon-lucide-ellipsis class="size-3.5" />
-      </AppButton>
-    </DropdownMenuTrigger>
-    <DropdownMenuPortal>
-      <DropdownMenuContent
-        side="bottom"
-        align="end"
-        :side-offset="4"
-        :class="[menuUI.content(), 'w-56']"
-      >
-        <DropdownMenuItem
-          :class="menuUI.item({ justify: 'start' })"
-          @select="ask(person.admin ? 'remove-admin' : 'make-admin')"
-        >
-          {{ person.admin ? messages.removeAdministrator : messages.makeAdministrator }}
-        </DropdownMenuItem>
-        <DropdownMenuItem :class="menuUI.item({ justify: 'start' })" @select="ask('sign-out')">
-          {{ messages.signOutEverywhere }}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          v-if="person.twoStep"
-          :class="menuUI.item({ justify: 'start' })"
-          @select="ask('reset-two-step')"
-        >
-          {{ messages.resetTwoStep }}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          v-if="person.image"
-          :class="menuUI.item({ justify: 'start' })"
-          @select="ask('remove-picture')"
-        >
-          {{ messages.removePersonPicture }}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator :class="menuUI.separator()" />
-        <DropdownMenuItem
-          :class="menuUI.item({ justify: 'start' })"
-          @select="ask(person.suspended ? 'restore' : 'suspend')"
-        >
-          {{ person.suspended ? messages.restoreAccount : messages.suspendAccount }}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  <PortalRowMenu
+    :label="messages.actionsFor({ name: person.name })"
+    :items="items"
+    :look="look"
+    :disabled="disabled || person.you"
+    @select="ask"
+  />
   <AppConfirmationDialog
     :open="confirming !== null"
     :tone="confirmation?.tone"
