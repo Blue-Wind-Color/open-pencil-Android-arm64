@@ -46,7 +46,7 @@ Collegamenti, trigger, azioni, animazioni, sovrapposizioni, scorrimento, flussi,
 
 ## Importazione ed esportazione
 
-Importazione/esportazione `.fig`, salvataggio, appunti Figma ed esportazione immagini/SVG funzionano. Importazione Sketch, PDF e cronologia delle versioni mancano.
+Importazione/esportazione `.fig`, salvataggio, appunti Figma ed esportazione di immagini, SVG e PDF funzionano. Importazione Sketch e cronologia delle versioni mancano.
 
 ## API dei plugin e scripting
 

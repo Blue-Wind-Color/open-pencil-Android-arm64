@@ -91,7 +91,7 @@ Comparación entre las funciones de Figma Design y el estado actual de OpenPenci
 | Enlaces | 🔲 | No hay hipervínculos |
 | Emoji y símbolos | 🔲 | Compatibilidad incompleta |
 | OpenType | 🔲 | Sin ligaduras, alternativas estilísticas ni cifras tabulares |
-| Fuentes variables | 🔲 | No permite ajustar peso, anchura o inclinación |
+| Fuentes variables | 🟡 | Los estilos con nombre usan sus valores de eje y el tamaño óptico sigue al tamaño de fuente, como en Figma; la API de plugins ajusta cualquier eje, pero el panel aún no tiene controles de ejes |
 | CJK | 🔲 | Compatibilidad incompleta con chino, japonés y coreano |
 | RTL | 🔲 | No hay disposición de derecha a izquierda |
 | Fuentes de iconos | 🔲 | Sin tratamiento especial |
@@ -183,7 +183,7 @@ Conexiones, activadores, acciones, animaciones, transiciones, superposiciones, d
 | Pegar desde Figma | ✅ | Decodifica el binario Kiwi del portapapeles |
 | Copiar a Figma | ✅ | Genera binario Kiwi legible por Figma |
 | Importar Sketch | 🔲 | No hay analizador `.sketch` |
-| Exportar imagen/SVG/PDF | 🟡 | PNG, JPG, WEBP y SVG ✅; PDF 🔲 |
+| Exportar imagen/SVG/PDF | ✅ | PNG, JPG, WEBP, SVG y PDF; el PDF incrusta las fuentes de su texto cuando sus archivos se pueden incrustar |
 | Historial de versiones | 🔲 | No consulta ni restaura versiones anteriores |
 | Recursos entre herramientas | ✅ | Portapapeles de Figma y copiar como texto/SVG/PNG/JSX |
 

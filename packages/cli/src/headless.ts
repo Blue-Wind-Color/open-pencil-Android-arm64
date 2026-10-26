@@ -6,9 +6,14 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { headlessHTMLReader } from '@open-pencil/core/io/formats/html/import'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { computeAllLayouts, installTextMeasurer } from '@open-pencil/core/layout'
+import {
+  computeAllLayouts,
+  installTextMeasurer,
+  sizeAutoResizingText
+} from '@open-pencil/core/layout'
 import { prepareGraphFonts, type DocumentFontStatus } from '@open-pencil/core/text'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 
 import { printError } from '#cli/format'
 
@@ -146,4 +151,19 @@ export function requirePage(graph: SceneGraph, pageName?: string) {
     process.exit(1)
   }
   return page
+}
+
+/**
+ * Runs `edit` on `graph`, then loads the fonts the text it touched needs and sizes that text again
+ * in them. Text is sized as it is edited, before the fonts for new characters (Japanese in a
+ * Latin-only web font, say) can load, so without this it would save the size and glyphs of a
+ * stand-in.
+ */
+export async function editDocument<T>(graph: SceneGraph, edit: () => T | Promise<T>): Promise<T> {
+  const { result, impact } = await collectSceneMutation(graph, edit)
+  const textIds = [...impact.changedNodeIds].filter((id) => graph.getNode(id)?.type === 'TEXT')
+  if (textIds.length === 0) return result
+  await prepareGraphFonts(graph, textIds)
+  for (const id of textIds) sizeAutoResizingText(graph, id)
+  return result
 }

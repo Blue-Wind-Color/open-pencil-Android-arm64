@@ -91,7 +91,7 @@ Porównanie funkcji Figma Design z obecnymi możliwościami OpenPencil.
 | Łącza | 🔲 | Brak odnośników w tekście |
 | Emoji i symbole | 🔲 | Obsługa niepełna |
 | OpenType | 🔲 | Brak ligatur i wariantów stylistycznych |
-| Czcionki zmienne | 🔲 | Brak regulacji osi |
+| Czcionki zmienne | 🟡 | Style nazwane są rysowane w swoich wartościach osi, a rozmiar optyczny podąża za rozmiarem czcionki, jak w Figmie; API wtyczek ustawia dowolną oś, ale panel nie ma jeszcze kontrolek osi |
 | CJK | 🔲 | Brak pełnej obsługi chińskiego, japońskiego i koreańskiego |
 | RTL | 🔲 | Brak układu od prawej do lewej |
 | Czcionki ikon | 🔲 | Brak specjalnej obsługi glifów |
@@ -166,7 +166,7 @@ Połączenia, wyzwalacze, działania, animacje, nakładki, przewijanie, przepły
 | Zapis | ✅ | Okna systemowe, File System Access API i pobieranie w Safari |
 | Schowek Figmy | ✅ | Kopiowanie i wklejanie binarnego Kiwi |
 | Import Sketch | 🔲 | Brak odczytu `.sketch` |
-| Obrazy, SVG i PDF | 🟡 | PNG, JPG, WEBP i SVG działają; PDF nie |
+| Obrazy, SVG i PDF | ✅ | PNG, JPG, WEBP, SVG i PDF; PDF osadza czcionki tekstu, gdy ich pliki da się osadzić |
 | Historia wersji | 🔲 | Brak przeglądania i przywracania |
 | Kopiowanie zasobów | ✅ | Tekst, SVG, PNG, JSX i schowek Figmy |
 

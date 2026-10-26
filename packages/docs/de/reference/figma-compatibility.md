@@ -89,7 +89,7 @@ Verbindungen, Auslöser, Aktionen, Animationen, Overlays, Scrollverhalten, Ablä
 
 ## Import und Export
 
-`.fig`-Import/-Export, Speichern, Figma-Zwischenablage und Bild-/SVG-Export funktionieren. Sketch-Import, PDF-Export und Versionsverlauf fehlen.
+`.fig`-Import/-Export, Speichern, Figma-Zwischenablage sowie Bild-, SVG- und PDF-Export funktionieren. Sketch-Import und Versionsverlauf fehlen.
 
 ## Plugin API, Zusammenarbeit und Entwicklermodus
 

@@ -86,3 +86,15 @@ test('a variable font shared with another weight still fetches the characters it
   await manager.loadFont(family, 'Bold', 'xyz')
   expect(asked.at(-1)).toContain('xyz')
 })
+
+test('keeps the file it has when the same font is read or downloaded again', async () => {
+  const manager = offlineManager()
+  const family = 'Fonts Test Same File'
+  const file = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  await manager.markLoaded(family, 'Regular', file)
+  await manager.markLoaded(family, 'Regular', file.slice(0))
+  expect(manager.loadedData(family, 'Regular')).toBe(file)
+  // Nothing replaced the file, so it draws under the family's own name with nothing else.
+  expect(manager.renderFamily(family, 'Regular')).toBe(family)
+  expect(manager.renderShardFamilies(family, 'Regular')).toEqual([])
+})

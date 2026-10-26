@@ -72,7 +72,7 @@ Connexions, déclencheurs, actions, animations, superpositions, défilement, par
 | Coller depuis Figma | ✅ | Décode le binaire Kiwi du presse-papiers |
 | Copier vers Figma | ✅ | Produit un binaire Kiwi lisible par Figma |
 | Importer Sketch | 🔲 | Pas d’analyseur `.sketch` |
-| Export image/SVG/PDF | 🟡 | PNG, JPG, WEBP et SVG ✅ ; PDF 🔲 |
+| Export image/SVG/PDF | ✅ | PNG, JPG, WEBP, SVG et PDF ; le PDF intègre les polices de son texte lorsque leurs fichiers peuvent l’être |
 | Historique des versions | 🔲 | Pas de consultation ni restauration |
 | Ressources entre outils | ✅ | Presse-papiers Figma et copie en texte/SVG/PNG/JSX |
 
