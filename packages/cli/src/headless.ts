@@ -7,7 +7,7 @@ import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/forma
 import { headlessHTMLReader } from '@open-pencil/core/io/formats/html/import'
 import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts, installTextMeasurer } from '@open-pencil/core/layout'
-import { prepareGraphFonts } from '@open-pencil/core/text'
+import { prepareGraphFonts, type DocumentFontStatus } from '@open-pencil/core/text'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { printError } from '#cli/format'
@@ -68,11 +68,12 @@ export function measureTextHeadlessly(): Promise<void> {
 /**
  * Measures the text an edit to `graph` lays out as `measureTextHeadlessly` does, in the fonts the
  * document uses: a weight or family the measurer does not start with is otherwise measured in a
- * stand-in, and the edited layer comes out taller or wider than the app draws it.
+ * stand-in, and the edited layer comes out taller or wider than the app draws it. Returns which
+ * of those fonts could not be loaded.
  */
-export async function measureDocumentText(graph: SceneGraph): Promise<void> {
+export async function measureDocumentText(graph: SceneGraph): Promise<DocumentFontStatus> {
   await measureTextHeadlessly()
-  await prepareGraphFonts(
+  return prepareGraphFonts(
     graph,
     graph.getPages(true).map((page) => page.id)
   )

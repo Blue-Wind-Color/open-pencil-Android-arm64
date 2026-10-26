@@ -301,6 +301,7 @@ export const penFormat: IOFormatAdapter<'pen'> = {
   support: {
     readDocument: true
   },
+  laysOutOnRead: true,
   matchesFile(fileName, mimeType) {
     return lowerExt(fileName) === 'pen' || mimeType === 'application/json'
   },
@@ -341,6 +342,7 @@ export const drawioFormat: IOFormatAdapter<'drawio'> = {
     exportNode: true
   },
   exportOptions: FIXED_SIZE_EXPORT,
+  laysOutOnRead: true,
   // A draw.io PNG or SVG export opens as its diagram when its name says it is one.
   matchesFile(fileName, mimeType) {
     const ext = lowerExt(fileName)
