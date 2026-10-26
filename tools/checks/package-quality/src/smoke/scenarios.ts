@@ -61,6 +61,10 @@ export const runtimeScenarios: RuntimeScenario[] = [
     code: "const { jsx, jsxToDesignDocument } = await import('@open-pencil/dom-css/jsx-runtime'); const document = await jsxToDesignDocument(jsx('section', { class: 'card', style: { width: '120px' }, children: 'OpenPencil' })); const node = document.children[0]; if (node?.type !== 'element' || node.inlineStyle?.width !== '120px') throw new Error('DOM/CSS JSX runtime failed')"
   },
   {
+    name: 'Cloud contract',
+    code: "const { CLOUD_AI_TOKEN_AUDIENCE, aiWalletSchema } = await import('@open-pencil/cloud/contract'); const { safeParse } = await import('valibot'); if (CLOUD_AI_TOKEN_AUDIENCE !== 'openpencil-ai' || !safeParse(aiWalletSchema, { balance: 5, buckets: [] }).success) throw new Error('Cloud contract smoke failed')"
+  },
+  {
     name: 'XPath query',
     code: "const { SceneGraph } = await import('@open-pencil/scene-graph'); const { FigmaAPI } = await import('@open-pencil/core/figma-api'); const { matchByXPath, queryByXPath } = await import('@open-pencil/core/xpath'); const graph = new SceneGraph(); new FigmaAPI(graph).createRectangle(); const found = await queryByXPath(graph, '//RECTANGLE'); if (found.length !== 1 || !(await matchByXPath(graph, '@width > 0', found[0]))) throw new Error('XPath query smoke failed')"
   }
