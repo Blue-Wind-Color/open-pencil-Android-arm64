@@ -66,6 +66,8 @@ export interface Build {
   iconComponents: Map<string, string>
   /** The page those components are on, added with the first one. */
   iconPageId: string | null
+  /** Layers whose children an override replaced, whose instances are detached. */
+  replaced: Set<string>
 }
 
 function penPlacement(pen: PenOverride, ctx: VarContext): PenPlacement {
