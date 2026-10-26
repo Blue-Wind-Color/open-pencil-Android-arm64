@@ -13,11 +13,11 @@ import type {
 import {
   createLibraryRevision,
   deserializeLibraryRevision,
+  encodeStoredLibraryRevision,
   librarySummarySchema,
   MAX_LIBRARY_REVISION_BYTES,
-  serializedLibraryRevisionSchema,
-  serializeLibraryRevision,
   storedLibraryLatestManifestSchema,
+  storedLibraryRevisionSchema,
   validateLibraryRevision
 } from '@open-pencil/core/library'
 
@@ -63,7 +63,7 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
         .summary.latestRevisionId
     const data = await this.#readJSON(
       `${libraryId}/revisions/${resolvedRevisionId}.json`,
-      serializedLibraryRevisionSchema,
+      storedLibraryRevisionSchema,
       MAX_LIBRARY_REVISION_BYTES
     )
     const revision = deserializeLibraryRevision(data)
@@ -89,7 +89,7 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
       const manifest = revision.manifest
       await this.#writeJSON(
         `${manifest.libraryId}/revisions/${manifest.revisionId}.json`,
-        serializeLibraryRevision(revision)
+        encodeStoredLibraryRevision(revision)
       )
       const summary: LibrarySummary = {
         libraryId: manifest.libraryId,
