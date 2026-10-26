@@ -4,6 +4,7 @@ import {
   CLOUD_AI_API_PATHS,
   CLOUD_AI_TOKEN_AUDIENCE,
   parseAIUsageQuery,
+  type AIError,
   type AIErrorCode,
   type AITokenClaims
 } from '#cloud/contract'
@@ -74,8 +75,12 @@ const FORWARDED_FIELDS = [
 /** How long an upstream answer may take in all, streamed or not, so a stalled one cannot hold a request slot forever. */
 const DEFAULT_UPSTREAM_TIMEOUT_MS = 10 * 60_000
 
-function aiError(context: Context, code: AIErrorCode) {
-  return context.json({ error: { code } }, AI_ERROR_STATUS[code])
+function aiError(
+  context: Context,
+  code: AIErrorCode,
+  details: Omit<AIError['error'], 'code'> = {}
+) {
+  return context.json({ error: { code, ...details } }, AI_ERROR_STATUS[code])
 }
 
 /** Counts each workspace's model requests in flight, within one process. */
@@ -179,7 +184,11 @@ export function createAIRelayApp(services: AIRelayServices) {
         const model = models.get(request.model)
         if (!model) return aiError(context, 'model_not_allowed')
         const wallet = await usage.wallet(claims.workspaceId, claims.monthlyCreditAllowance, now())
-        if (wallet.balance === 0) return aiError(context, 'insufficient_credits')
+        if (wallet.balance === 0) {
+          return aiError(context, 'insufficient_credits', {
+            resetsAt: wallet.buckets[0]?.expiresAt ?? undefined
+          })
+        }
         const release = limiter.acquire(claims.workspaceId)
         if (!release) return aiError(context, 'rate_limited')
 
@@ -232,7 +241,9 @@ export function createAIRelayApp(services: AIRelayServices) {
         }
         const settled = settle().catch(reportBackgroundError).finally(release)
         services.waitUntil?.(settled)
-        return new Response(answer, { status: upstream.status, headers })
+        // The answer ends once its charge is recorded, so a wallet read after it includes the charge.
+        const charged = answer.pipeThrough(new TransformStream({ flush: () => settled }))
+        return new Response(charged, { status: upstream.status, headers })
       }
     )
 }

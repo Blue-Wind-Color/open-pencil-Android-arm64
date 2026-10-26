@@ -86,6 +86,10 @@ export const aiCreditBucketSchema = v.object({
 })
 export type AICreditBucket = v.InferOutput<typeof aiCreditBucketSchema>
 
+/**
+ * A service records a request's charge before the request's answer ends, so a wallet read after
+ * an answer includes what it cost.
+ */
 export const aiWalletSchema = v.object({
   /** Credits left to spend; `null` when the service sets no limit. */
   balance: v.nullable(creditsSchema),
@@ -129,7 +133,12 @@ export const aiErrorCodeSchema = v.picklist([
 export type AIErrorCode = v.InferOutput<typeof aiErrorCodeSchema>
 
 export const aiErrorSchema = v.object({
-  error: v.object({ code: aiErrorCodeSchema, message: v.optional(v.string()) })
+  error: v.object({
+    code: aiErrorCodeSchema,
+    message: v.optional(v.string()),
+    /** With `insufficient_credits`: when the workspace's allowance renews, if the service knows. */
+    resetsAt: v.optional(v.pipe(v.string(), v.isoTimestamp()))
+  })
 })
 export type AIError = v.InferOutput<typeof aiErrorSchema>
 

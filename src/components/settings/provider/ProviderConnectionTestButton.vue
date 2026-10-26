@@ -51,6 +51,8 @@ const resultMessage = computed(() => {
       return ai.value.connectionTestNetworkFailed
     case 'cloud-unavailable':
       return ai.value.cloudAIUnavailable
+    case 'cloud-credits-exhausted':
+      return ai.value.connectionTestCloudCreditsExhausted
     default:
       return ai.value.connectionTestUnknownFailed
   }

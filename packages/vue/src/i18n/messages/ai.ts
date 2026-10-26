@@ -221,6 +221,14 @@ export const aiMessageDefaults = {
     'OpenPencil Cloud could not check which of your workspaces include AI. Check your connection and try again.',
   chatCloudCreditsExhausted:
     'This workspace has used this month’s AI credits. Manage its plan to add more.',
+  chatCloudAllowanceUsed:
+    'This workspace has used this month’s AI allowance. Ask your Cloud administrator to raise it.',
+  chatCloudAllowanceUsedUntil: params(
+    'This workspace has used this month’s AI allowance. It renews on {date}. Ask your Cloud administrator to raise it sooner.'
+  ),
+  connectionTestCloudCreditsExhausted: 'This workspace has no AI credits left this month.',
+  cloudCreditsLeft: params('{credits} credits left'),
+  cloudCreditsRenew: params('Renews {date}'),
   manageCloudPlanAction: 'Manage plan',
   chatCloudUnavailable:
     'OpenPencil Cloud AI is unavailable. Sign in to OpenPencil Cloud and choose a workspace in Settings.',

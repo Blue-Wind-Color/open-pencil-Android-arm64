@@ -336,7 +336,9 @@ forwards completions to one upstream with one key, and keeps one usage row per s
 workspace's monthly spend is the sum of its rows. It reads usage from the upstream's answer, asking
 streams for it with `stream_options.include_usage`, and keeps reading after the editor disconnects
 so a request is still charged. It admits a request while credits remain and charges it afterwards,
-so in-flight requests can overdraw an allowance; the official service reserves credits instead. It forwards only
+so in-flight requests can overdraw an allowance; the official service reserves credits instead. An
+answer ends only after its charge is recorded, so the wallet the editor reads once a reply ends
+includes it, and a refusal for lack of credits says when the allowance renews. It forwards only
 chat completion fields, so a router's fallback or provider fields cannot run a model outside the
 catalog on its key. An upstream answer has ten minutes in all, streamed or not, before the relay ends it.
 

@@ -8,16 +8,15 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { chatDocumentId } from '@/app/ai/chat/history/document'
 import { useChatRunLocation } from '@/app/ai/chat/run-location'
-import { providerID } from '@/app/ai/chat/storage'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
 import { saveChatTrace } from '@/app/ai/chat/trace/export'
 import { useAIChat } from '@/app/ai/chat/use'
 import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
-import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { didHitStepLimit } from '@/app/ai/tools'
 import { cloudBillingURL } from '@/app/cloud/integration'
 import { getActiveEditorStore } from '@/app/editor/active-store'
+import { useDateFormat } from '@/app/i18n/date'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { openExternalLink, toast } from '@/app/shell/ui'
 import { activeTab } from '@/app/tabs'
@@ -32,6 +31,7 @@ import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 
 const { isConfigured, ensureChat, history, chatFailure, clearChatFailure } = useAIChat()
 const { ai } = useI18n()
+const dates = useDateFormat()
 const runLocation = useChatRunLocation()
 
 const chat = shallowRef<Chat<UIMessage> | null>(null)
@@ -128,6 +128,15 @@ async function saveTrace(id: string) {
   }
 }
 
+/**
+ * A Cloud that bills sells more credits; a self-hosted one has only the allowance its
+ * administrator set, which renews or is raised.
+ */
+function cloudCreditsMessage(resetsAt: string | undefined): string {
+  if (cloudBillingURL.value) return ai.value.chatCloudCreditsExhausted
+  if (!resetsAt) return ai.value.chatCloudAllowanceUsed
+  return ai.value.chatCloudAllowanceUsedUntil({ date: dates.format(resetsAt, 'dayTime') })
+}
 const failureMessage = computed(() => {
   switch (chatFailure.value?.reason) {
     case 'authentication':
@@ -135,9 +144,9 @@ const failureMessage = computed(() => {
     case 'forbidden':
       return ai.value.chatForbidden
     case 'insufficient-credit':
-      return providerID.value === OPENPENCIL_AI_PROVIDER
-        ? ai.value.chatCloudCreditsExhausted
-        : ai.value.chatInsufficientCredit
+      return ai.value.chatInsufficientCredit
+    case 'cloud-credits-exhausted':
+      return cloudCreditsMessage(chatFailure.value.resetsAt)
     case 'model-not-found':
       return ai.value.chatModelNotFound
     case 'network':
@@ -191,11 +200,7 @@ watch(
 )
 function failureAction(failedId: string | undefined): { label: string; run: () => void } {
   const billingURL = cloudBillingURL.value
-  if (
-    chatFailure.value?.reason === 'insufficient-credit' &&
-    providerID.value === OPENPENCIL_AI_PROVIDER &&
-    billingURL
-  ) {
+  if (chatFailure.value?.reason === 'cloud-credits-exhausted' && billingURL) {
     return { label: ai.value.manageCloudPlanAction, run: () => void openExternalLink(billingURL) }
   }
   return failureHasSettingsAction.value

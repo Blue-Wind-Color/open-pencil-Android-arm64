@@ -562,3 +562,9 @@ ja:ai.cloudAICatalogFailed
 zh-cn:ai.cloudAICatalogFailed
 ja:ai.cloudAIWorkspacesFailed
 zh-cn:ai.cloudAIWorkspacesFailed
+ja:ai.chatCloudAllowanceUsed
+ja:ai.chatCloudAllowanceUsedUntil
+ja:ai.connectionTestCloudCreditsExhausted
+zh-cn:ai.chatCloudAllowanceUsed
+zh-cn:ai.chatCloudAllowanceUsedUntil
+zh-cn:ai.connectionTestCloudCreditsExhausted

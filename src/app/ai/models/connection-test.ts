@@ -8,6 +8,8 @@ import {
   resolveLanguageModelID,
   type ModelConfig
 } from '@/app/ai/models/language-model'
+import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import type { ModelProviderRuntime } from '@/app/ai/providers/types'
 import { isTauri } from '@/app/tauri/env'
 
@@ -30,6 +32,7 @@ export type ProviderConnectionTestFailureReason =
   | 'browser-network'
   | 'network'
   | 'cloud-unavailable'
+  | 'cloud-credits-exhausted'
   | 'unknown'
 
 function isCompatibleProvider(providerID: ModelConfig['providerID']): boolean {
@@ -100,7 +103,14 @@ function classifyMessage(text: string): ProviderConnectionTestFailureReason | nu
   return null
 }
 
-function classifyError(error: unknown): ProviderConnectionTestFailureReason {
+function classifyError(
+  error: unknown,
+  providerID: ModelConfig['providerID']
+): ProviderConnectionTestFailureReason {
+  // The workspace's plan holds Cloud's credits, not a provider account to top up.
+  if (providerID === OPENPENCIL_AI_PROVIDER && cloudCreditRefusal(error)) {
+    return 'cloud-credits-exhausted'
+  }
   if (isInsufficientCreditError(error)) return 'insufficient-credit'
   const text = errorText(error).toLowerCase()
   return classifyStatus(providerErrorStatus(error), text) ?? classifyMessage(text) ?? 'unknown'
@@ -127,7 +137,7 @@ export async function testProviderConnection(
     })
     return { ok: true }
   } catch (error) {
-    const reason = classifyError(error)
+    const reason = classifyError(error, config.providerID)
     if (reason !== 'auth' || !isSignInOnly(config.providerID)) return { ok: false, reason }
     // A provider signed in to has no key: a 403 is the plan, anything else the sign-in.
     const planForbidden = providerErrorStatus(error) === 403

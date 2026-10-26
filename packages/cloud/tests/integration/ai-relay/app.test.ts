@@ -18,6 +18,7 @@ import {
 } from '#cloud/contract'
 import { PGlite } from '@electric-sql/pglite'
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose'
+import { InsertQueryNode, type KyselyPlugin, type QueryId } from 'kysely'
 import { PGliteDialect } from 'kysely-pglite-dialect'
 import * as v from 'valibot'
 
@@ -60,9 +61,24 @@ function streamOf(...events: unknown[]): string {
   return events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join('') + 'data: [DONE]\n\n'
 }
 
+/** Holds every insert's result until `gate` resolves, so a test decides when a charge is recorded. */
+function holdInserts(gate: Promise<void>): KyselyPlugin {
+  const inserts = new Set<QueryId>()
+  return {
+    transformQuery({ node, queryId }) {
+      if (InsertQueryNode.is(node)) inserts.add(queryId)
+      return node
+    },
+    async transformResult({ result, queryId }) {
+      if (inserts.delete(queryId)) await gate
+      return result
+    }
+  }
+}
+
 async function relay(
   upstream: (call: UpstreamCall) => Response = () => Response.json({}),
-  options: { upstreamTimeoutMs?: number; maxRequestBytes?: number } = {}
+  options: { upstreamTimeoutMs?: number; maxRequestBytes?: number; chargeGate?: Promise<void> } = {}
 ) {
   const pglite = await PGlite.create({ dataDir: 'memory://' })
   const database = createAIRelayDatabase(new PGliteDialect(pglite))
@@ -85,7 +101,7 @@ async function relay(
         OPENPENCIL_AI_RELAY_UPSTREAM_KEY: 'upstream-key'
       }
     ),
-    database,
+    database: options.chargeGate ? database.withPlugin(holdInserts(options.chargeGate)) : database,
     keys,
     now: () => NOW,
     upstreamTimeoutMs: options.upstreamTimeoutMs,
@@ -219,7 +235,11 @@ describe('AI relay', () => {
     expect(usage.entries).toEqual([])
   })
 
-  test('asks a streamed completion for usage and charges it after the stream ends', async () => {
+  test('asks a streamed completion for usage and charges it before the answer ends', async () => {
+    let recordCharge: (() => void) | undefined
+    const charge = new Promise<void>((resolve) => {
+      recordCharge = resolve
+    })
     const context = await relay(
       () =>
         new Response(
@@ -228,7 +248,8 @@ describe('AI relay', () => {
             { choices: [], usage: { prompt_tokens: 1000, completion_tokens: 1000 } }
           ),
           { headers: { 'Content-Type': 'text/event-stream' } }
-        )
+        ),
+      { chargeGate: charge }
     )
     const bearer = await context.token()
     const response = await context.complete(bearer, {
@@ -239,8 +260,16 @@ describe('AI relay', () => {
     })
     expect(response.headers.get('Content-Type')).toBe('text/event-stream')
     expect(context.calls[0]?.body.stream_options).toEqual({ include_usage: true })
-    expect(await response.text()).toContain('"content":"Hi"')
-    await Promise.all(context.settled)
+    // The answer ends only once its charge is recorded, so a wallet read after it includes it.
+    let answered = false
+    const text = response.text().then((body) => {
+      answered = true
+      return body
+    })
+    await Bun.sleep(50)
+    expect(answered).toBe(false)
+    recordCharge?.()
+    expect(await text).toContain('"content":"Hi"')
     const wallet = await responseJSON(
       await context.request(CLOUD_AI_API_PATHS.wallet, bearer),
       aiWalletSchema
@@ -262,7 +291,11 @@ describe('AI relay', () => {
     await Promise.all(context.settled)
     const exhausted = await context.complete(bearer, { model: MODEL })
     expect(exhausted.status).toBe(402)
-    expect((await responseJSON(exhausted, aiErrorSchema)).error.code).toBe('insufficient_credits')
+    // It says when the allowance renews, so the editor need not guess the relay's period.
+    expect((await responseJSON(exhausted, aiErrorSchema)).error).toEqual({
+      code: 'insufficient_credits',
+      resetsAt: '2026-11-01T00:00:00.000Z'
+    })
     expect(context.calls).toHaveLength(1)
 
     // Another workspace, and one without an allowance, are unaffected.
