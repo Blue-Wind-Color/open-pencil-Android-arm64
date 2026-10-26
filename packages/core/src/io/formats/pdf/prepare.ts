@@ -49,7 +49,9 @@ export async function preparePagesForPDF(
   specs: readonly PDFPageSpec[]
 ): Promise<DocumentFontStatus> {
   const status = await preparePDFFonts(graph, specs)
-  for (const spec of specs) computeAllLayouts(graph, spec.pageId)
+  graph.applyDerivedLayoutDuring(() => {
+    for (const spec of specs) computeAllLayouts(graph, spec.pageId)
+  })
   return status
 }
 
