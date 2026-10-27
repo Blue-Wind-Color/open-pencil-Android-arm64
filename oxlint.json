@@ -202,6 +202,7 @@
       }
     ],
     "open-pencil/no-core-parent-relative-imports": "error",
+    "open-pencil/no-document-change-capture": "error",
     "open-pencil/no-mcp-parent-relative-imports": "error",
     "open-pencil/no-vue-parent-relative-imports": "error",
     "open-pencil/no-cli-parent-relative-imports": "error",
