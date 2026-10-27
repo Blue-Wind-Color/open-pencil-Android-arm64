@@ -75,6 +75,31 @@ export type BundledFontLocator = (file: string) => string
 
 const defaultBundledFontLocator: BundledFontLocator = (file) => `/${file}`
 
+/**
+ * Shares the in-flight and successful reads of a key, and forgets a null answer so it can be
+ * retried. A host or browser read copies the whole face again each time, tens of megabytes for a
+ * system CJK face, only for registration to find the same bytes and drop it.
+ */
+class SharedReads {
+  private readonly reads = new Map<string, Promise<ArrayBuffer | null>>()
+
+  read(key: string, load: () => Promise<ArrayBuffer | null>): Promise<ArrayBuffer | null> {
+    const existing = this.reads.get(key)
+    if (existing) return existing
+    const pending = load()
+    this.reads.set(key, pending)
+    void pending.then((data) => {
+      if (!data && this.reads.get(key) === pending) this.reads.delete(key)
+      return undefined
+    })
+    return pending
+  }
+
+  clear(): void {
+    this.reads.clear()
+  }
+}
+
 /** Whether two font files hold the same bytes, as one downloaded or read again does. */
 function sameFontFile(a: ArrayBuffer, b: ArrayBuffer): boolean {
   if (a === b) return true
@@ -119,6 +144,7 @@ export class FontManager {
   private registrationGeneration = 0
   private providerRegistrations = new WeakMap<TypefaceFontProvider, Map<string, Set<ArrayBuffer>>>()
   private localFonts: FontInfo[] | null = null
+  private readonly localFontRequests = new SharedReads()
   private hostStyles = new Map<string, readonly string[]>()
   private familyFaceLoads = new Map<string, Promise<FamilyFace[] | null>>()
   private knownFamilyFaces = new Map<string, FamilyFace[] | null>()
@@ -127,6 +153,7 @@ export class FontManager {
   private downloadedFontCache: DownloadedFontCache | null = null
   private fallbackUserAgent: string | undefined
   private hostFontLoader: HostFontLoader | null = null
+  private readonly hostFontRequests = new SharedReads()
   private webFonts = new WebFontResolver()
   private cjkFallbackFamilies: string[] = []
   private cjkFallbackPromise: Promise<string[]> | null = null
@@ -206,6 +233,7 @@ export class FontManager {
 
   setHostFontLoader(loader: HostFontLoader | null): void {
     this.hostFontLoader = loader
+    this.hostFontRequests.clear()
   }
 
   /** Lets a host that bundles `@open-pencil/core/assets` itself say where each file ended up. */
@@ -776,6 +804,7 @@ export class FontManager {
       signal?.throwIfAborted()
       const buffer =
         (await this.loadHostFont(family, 'Regular')) ?? (await this.findLocalFont(family))
+      signal?.throwIfAborted()
       if (
         buffer &&
         this.registerAndCache(family, 'Regular', buffer, 'fallback') &&
@@ -808,14 +837,29 @@ export class FontManager {
     return targetFamilies
   }
 
-  private async loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
-    if (!this.hostFontLoader) return null
+  private loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
+    const loader = this.hostFontLoader
+    if (!loader) return Promise.resolve(null)
+    return this.hostFontRequests.read(`${family}|${style}`, () =>
+      this.readHostFont(loader, family, style)
+    )
+  }
+
+  private async readHostFont(
+    loader: HostFontLoader,
+    family: string,
+    style: string
+  ): Promise<ArrayBuffer | null> {
     const key = `${family}|${style}`
     try {
-      const data = await this.hostFontLoader(family, style)
+      const data = await loader(family, style)
+      // A read that started under a loader the host has replaced must not register its bytes.
+      if (this.hostFontLoader !== loader) return null
       if (data) this.unavailableFaces.delete(key)
       return data
     } catch (e) {
+      // A failure from a replaced loader says nothing about the face the new loader serves.
+      if (this.hostFontLoader !== loader) return null
       if (e instanceof UnsupportedFontFormatError) {
         this.unavailableFaces.set(key, e.reason)
         return null
@@ -853,11 +897,19 @@ export class FontManager {
     }
   }
 
-  private async findLocalFont(family: string, style?: string): Promise<ArrayBuffer | null> {
-    if (!IS_BROWSER || !window.queryLocalFonts) return null
-    if (this.localFontAccessState !== 'granted') return null
+  private findLocalFont(family: string, style?: string): Promise<ArrayBuffer | null> {
+    if (!IS_BROWSER || !window.queryLocalFonts) return Promise.resolve(null)
+    if (this.localFontAccessState !== 'granted') return Promise.resolve(null)
+    // A query answers with a new blob, and so new bytes, every time; the face decides the match.
+    return this.localFontRequests.read(`${family}|${style ?? ''}`, () =>
+      this.readLocalFont(family, style)
+    )
+  }
+
+  private async readLocalFont(family: string, style?: string): Promise<ArrayBuffer | null> {
     try {
-      const fonts = await window.queryLocalFonts()
+      const fonts = await window.queryLocalFonts?.()
+      if (!fonts) return null
       const match = chooseLocalFontMatch(fonts, family, style)
       if (!match) return null
       const blob: Blob = await match.blob()
