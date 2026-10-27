@@ -19,6 +19,7 @@ import {
 import { collectEffectProps, collectFillProps, collectStrokeProps } from './paint'
 import { collectStateProps } from './state'
 import type { JSXProp } from './value'
+import { variableReferences, type VariableExport } from './variables'
 
 export type { JSXProp } from './value'
 
@@ -318,8 +319,15 @@ function collectShapeNodeProps(node: SceneNode, props: JSXProp[]): void {
   }
 }
 
-/** The props of `node`, in the order they are printed. */
-export function collectProps(node: SceneNode, graph: SceneGraph): JSXProp[] {
+/**
+ * The props of `node`, in the order they are printed, with the variables it binds written as
+ * `variables` writes them: by default, by reference to the document's.
+ */
+export function collectProps(
+  node: SceneNode,
+  graph: SceneGraph,
+  variables: VariableExport = variableReferences(graph)
+): JSXProp[] {
   const props: JSXProp[] = []
   const ctx = getNodeContext(node, graph)
 
@@ -336,7 +344,7 @@ export function collectProps(node: SceneNode, graph: SceneGraph): JSXProp[] {
     collectTextAutoResizeProp(node, ctx, props)
   }
   collectShapeNodeProps(node, props)
-  collectStateProps(node, ctx, graph, props)
+  collectStateProps(node, ctx, props, variables)
 
   return props
 }

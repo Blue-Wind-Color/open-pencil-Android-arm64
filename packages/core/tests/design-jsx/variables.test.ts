@@ -1,9 +1,18 @@
 import { describe, expect, test } from 'bun:test'
 
+import { pick } from 'es-toolkit'
+
 import { expectDefined } from '#core-tests/helpers/assert'
 
 import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
-import { defineMode, defineVars, Frame, Rectangle, sceneNodeToJSX } from '@open-pencil/design-jsx'
+import {
+  defineMode,
+  defineVars,
+  Frame,
+  Rectangle,
+  sceneNodeToJSX,
+  selectionToJSXWithLayers
+} from '@open-pencil/design-jsx'
 import { SceneGraph, type VariableCollection } from '@open-pencil/scene-graph'
 
 const THEME = `
@@ -112,13 +121,148 @@ describe('Design JSX variable definitions', () => {
   })
 })
 
-test('export writes the modes a layer pins, and renders back into the same ones', async () => {
-  const graph = new SceneGraph()
-  const [card] = await renderJSX(graph, THEME)
-  const exported = sceneNodeToJSX(card.id, graph)
-  expect(exported).toContain('mode={designMode("Theme", "Dark")}')
-  const [copy] = await renderJSX(graph, exported)
-  expect(graph.getNode(copy.id)?.variableModes).toEqual(graph.getNode(card.id)?.variableModes)
+describe('Design JSX export of variables', () => {
+  test('writes the definitions its layers use, which render the same tokens in another file', async () => {
+    const graph = new SceneGraph()
+    await renderJSX(graph, `const unused = defineVars('Unused', { Other: 1 }); return <Frame w={unused.Other} />`)
+    const [card] = await renderJSX(graph, THEME)
+    const exported = sceneNodeToJSX(card.id, graph)
+    expect(exported).toBe(`const palette = defineVars("Palette", { "Gray/900": "#111111", "Gray/50": "#FAFAFA" })
+const theme = defineVars("Theme", { Page: palette["Gray/50"], Radius: 12 }, { mode: "Light" })
+const dark = defineMode(theme, "Dark", { Page: palette["Gray/900"] })
+
+return <Frame name="Card" w={100} h={100} bg={theme.Page} rounded={theme.Radius} mode={dark} />`)
+
+    const copy = new SceneGraph()
+    const [rendered] = await renderJSX(copy, exported)
+    // Only what the card uses: Theme's Text is left out.
+    expect(table(copy, 'Theme')).toEqual(pick(table(graph, 'Theme'), ['Page', 'Radius']))
+    expect(table(copy, 'Palette')).toEqual(table(graph, 'Palette'))
+    expect([...copy.variableCollections.values()].map((item) => item.name)).toEqual([
+      'Palette',
+      'Theme'
+    ])
+    const node = copy.getNode(rendered.id)
+    const theme = collectionNamed(copy, 'Theme')
+    expect(node?.variableModes).toEqual({ [theme.id]: theme.modes[1].modeId })
+    expect(Object.keys(node?.boundVariables ?? {})).toEqual(['fills/0/color', 'cornerRadius'])
+  })
+
+  test('writes references instead when it declares nothing, or JSX cannot define a variable', async () => {
+    const graph = new SceneGraph()
+    const [card] = await renderJSX(graph, THEME)
+    const references = selectionToJSXWithLayers([card.id], graph, { declarations: false }).code
+    expect(references).toBe(
+      '<Frame name="Card" w={100} h={100} bg={designVar("Page")} rounded={designVar("Radius")} mode={designMode("Theme", "Dark")} />'
+    )
+
+    const strings = graph.createCollection('Copy')
+    const label = graph.createVariable('Label', 'STRING', strings.id, 'Hi')
+    const [text] = await renderJSX(graph, '<Text>Hi</Text>')
+    graph.bindVariable(text.id, 'text', label.id)
+    expect(sceneNodeToJSX(text.id, graph)).toContain('bind={{ text: designVar("Label") }}')
+  })
+
+  test('writes an alias to its own collection by reference, and names no handle a reserved word', async () => {
+    const graph = new SceneGraph()
+    const [card] = await renderJSX(
+      graph,
+      `const space = defineVars('Space', { Base: 4 }, { mode: 'Default' })
+const roomy = defineMode(space, 'Roomy', { Base: 8 })
+return <Frame name="Card" flex="col" mode={roomy} p={space.Base} />`
+    )
+    const collection = collectionNamed(graph, 'Space')
+    const base = expectDefined(graph.variables.get(collection.variableIds[0]))
+    const gap = graph.createVariable('Gap', 'FLOAT', collection.id, { aliasId: base.id })
+    graph.bindVariable(card.id, 'itemSpacing', gap.id)
+    graph.updateNode(card.id, {
+      variableModes: { [collection.id]: collection.modes[0].modeId }
+    })
+    graph.renameMode(collection.id, collection.modes[1].modeId, 'Default')
+    graph.renameMode(collection.id, collection.modes[0].modeId, 'Roomy')
+    const exported = sceneNodeToJSX(card.id, graph)
+    expect(exported).toContain('gap={designVar("Gap")}')
+    expect(exported).not.toMatch(/const default\b/)
+    // The code runs: no handle is read before it is declared.
+    const [copy] = await renderJSX(graph, exported)
+    expect(graph.getNode(copy.id)?.boundVariables.itemSpacing).toBe(gap.id)
+  })
+
+  test('declares no variable whose name its collection shares, nor one that aliases it', async () => {
+    const graph = new SceneGraph()
+    const space = graph.createCollection('Space')
+    const first = graph.createVariable('Pad', 'FLOAT', space.id, 4)
+    const second = graph.createVariable('Pad', 'FLOAT', space.id, 8)
+    const palette = graph.createCollection('Palette')
+    const base = graph.createVariable('Base', 'FLOAT', palette.id, 2)
+    const derived = graph.createVariable('Derived', 'FLOAT', palette.id, { aliasId: base.id })
+    const theme = graph.createCollection('Theme')
+    const spacing = graph.createVariable('Spacing', 'FLOAT', theme.id, { aliasId: derived.id })
+    const [card] = await renderJSX(graph, '<Frame name="Card" flex="col" w={10} h={10} />')
+    graph.bindVariable(card.id, 'itemSpacing', second.id)
+    graph.bindVariable(card.id, 'cornerRadius', spacing.id)
+
+    const exported = sceneNodeToJSX(card.id, graph)
+    // Derived aliases its own collection, so it and Spacing, which aliases it, stay references.
+    expect(exported).not.toContain('defineVars(')
+    expect(exported).toContain('rounded={designVar("Spacing")}')
+    const [copy] = await renderJSX(graph, exported)
+    expect(graph.getNode(copy.id)?.boundVariables).toEqual({
+      itemSpacing: second.id,
+      cornerRadius: spacing.id
+    })
+    expect(first.valuesByMode[space.defaultModeId]).toBe(4)
+  })
+
+  test('writes a padding bound on every side as p, and a partly bound one in bind', async () => {
+    const graph = new SceneGraph()
+    const space = 'const s = defineVars("Space", { M: 8, L: 16 })'
+    const [even] = await renderJSX(graph, `${space}; return <Frame flex="col" p={s.M} />`)
+    expect(sceneNodeToJSX(even.id, graph)).toContain('p={space.M}')
+    const [uneven] = await renderJSX(graph, `${space}; return <Frame flex="col" px={s.M} py={s.L} pt={4} />`)
+    const exported = sceneNodeToJSX(uneven.id, graph)
+    expect(exported).toContain('pt={4} pr={space.M} pb={space.L} pl={space.M}')
+    expect(exported).not.toContain('bind=')
+  })
+
+  test('writes a binding in bind where its prop would change the layer it renders', async () => {
+    const graph = new SceneGraph()
+    const [row] = await renderJSX(
+      graph,
+      `const s = defineVars("Space", { M: 8 })
+return <Frame name="Row" flex="row" w={200} h={50} p={s.M}>
+  <Frame name="Bar" w={20} h="fill" />
+  <Frame name="Card" rounded={8} w={40} h={40} />
+</Frame>`
+    )
+    const m = expectDefined(collectionNamed(graph, 'Space').variableIds[0])
+    const child = (name: string) =>
+      expectDefined(graph.getChildren(row.id).find((node) => node.name === name))
+    graph.bindVariable(child('Bar').id, 'height', m)
+    graph.bindVariable(child('Card').id, 'topLeftRadius', m)
+    const [loose] = await renderJSX(graph, '<Frame name="Loose" w={40} h={40} />')
+    graph.updateNode(loose.id, { paddingLeft: 8 })
+    graph.bindVariable(loose.id, 'paddingLeft', m)
+
+    const exported = sceneNodeToJSX(row.id, graph)
+    // The bar keeps filling the row, and the card's other corners keep their radius.
+    expect(exported).toContain('w={20} h="fill" bind={{ height: space.M }}')
+    expect(exported).toContain('roundedTL={space.M} roundedTR={8} roundedBR={8} roundedBL={8}')
+    // A padding prop would give the frame auto layout.
+    expect(sceneNodeToJSX(loose.id, graph)).toContain('bind={{ paddingLeft: space.M }}')
+
+    const [copy] = await renderJSX(graph, exported)
+    const bar = expectDefined(graph.getChildren(copy.id).find((node) => node.name === 'Bar'))
+    expect(bar.height).toBe(child('Bar').height)
+    const card = expectDefined(graph.getChildren(copy.id).find((node) => node.name === 'Card'))
+    expect(pick(card, ['topLeftRadius', 'topRightRadius', 'bottomRightRadius'])).toEqual({
+      topLeftRadius: 8,
+      topRightRadius: 8,
+      bottomRightRadius: 8
+    })
+    const [looseCopy] = await renderJSX(graph, sceneNodeToJSX(loose.id, graph))
+    expect(graph.getNode(looseCopy.id)?.layoutMode).toBe('NONE')
+  })
 })
 
 test('artwork drawn in a variable binds its paths and resolves in its own mode', async () => {
@@ -180,8 +324,10 @@ test('designVar names a variable by collection when several collections share it
   expect(node?.boundVariables['fills/0/color']).toBe(id('Theme'))
   expect(node?.boundVariables.paddingTop).toBe(id('Density'))
   const exported = sceneNodeToJSX(frame.id, graph)
-  expect(exported).toContain('designVar("Theme", "Page")')
-  expect(exported).toContain('designVar("Density", "Page")')
+  const references = selectionToJSXWithLayers([frame.id], graph, { declarations: false }).code
+  expect(references).toContain('designVar("Theme", "Page")')
+  expect(references).toContain('designVar("Density", "Page")')
+  expect(exported).toContain('bg={theme.Page} p={density.Page}')
   const [copy] = await renderJSX(graph, exported)
   expect(graph.getNode(copy.id)?.boundVariables).toEqual(node?.boundVariables)
 })
@@ -219,4 +365,26 @@ return <Frame name="Board" w={400} h={400}><Sticky mode={dark} opacity={fade.Not
   const fade = collectionNamed(graph, 'Fade')
   expect(sticky.variableModes).toEqual({ [fade.id]: fade.modes[1].modeId })
   expect(sticky.opacity).toBe(0.5)
+})
+
+test('a reference export writes is one rendering resolves back to the same variable', async () => {
+  const graph = new SceneGraph()
+  const collection = graph.createCollection('Ink')
+  graph.addVariable({
+    id: 'x',
+    name: 'Other',
+    type: 'COLOR',
+    collectionId: collection.id,
+    valuesByMode: { [collection.defaultModeId]: { r: 0, g: 0, b: 0, a: 1 } },
+    description: '',
+    hiddenFromPublishing: false
+  })
+  // Named as the other variable's ID, which `designVar('x')` finds first.
+  const named = graph.createVariable('x', 'COLOR', collection.id, { r: 1, g: 0, b: 0, a: 1 })
+  const [frame] = await renderJSX(graph, '<Frame bg="#FFFFFF" />')
+  graph.bindVariable(frame.id, 'fills/0/color', named.id)
+  const references = selectionToJSXWithLayers([frame.id], graph, { declarations: false }).code
+  expect(references).toContain('bg={designVar("Ink", "x")}')
+  const [copy] = await renderJSX(graph, references)
+  expect(graph.getNode(copy.id)?.boundVariables['fills/0/color']).toBe(named.id)
 })

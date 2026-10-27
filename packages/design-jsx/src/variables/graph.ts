@@ -53,7 +53,7 @@ function collectDefinitions(
 }
 
 /** The one collection with this name; a name several collections share is an error. */
-function collectionNamed(graph: SceneGraph, name: string): VariableCollection | undefined {
+export function collectionNamed(graph: SceneGraph, name: string): VariableCollection | undefined {
   const matches = [...graph.variableCollections.values()].filter((item) => item.name === name)
   if (matches.length > 1)
     throw new Error(`More than one variable collection is named ${name}; rename one to use it`)

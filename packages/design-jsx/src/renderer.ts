@@ -34,6 +34,7 @@ import {
   variableModes,
   type LayerContext
 } from './variables/graph'
+import { paintProps } from './variables/props'
 
 export interface RenderResult {
   id: string
@@ -125,12 +126,8 @@ function preparePropsForRender(
     })
   }
 
-  for (const key of ['bg', 'fill', 'background', 'backgroundColor']) {
-    bindVariableProp(graph, props, bindings, key, 'fills/0/color', layer)
-  }
-  if (isText) bindVariableProp(graph, props, bindings, 'color', 'fills/0/color', layer)
-  for (const key of ['stroke', 'border', 'borderColor']) {
-    bindVariableProp(graph, props, bindings, key, 'strokes/0/color', layer)
+  for (const { prop, fields } of paintProps({ text: isText })) {
+    bindVariableProp(graph, props, bindings, prop, fields[0], layer)
   }
 
   if (isObjectRecord(props.style)) {
