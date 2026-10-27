@@ -63,7 +63,7 @@ function fontAt(node: SceneNode, index: number) {
     italic,
     fontSize: run?.style.fontSize ?? node.fontSize,
     variations: run?.style.fontVariations ?? node.fontVariations,
-    opticalSizeFromFontSize: node.opticalSizeFromFontSize
+    opticalSizeFromFontSize: run?.style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
   })
   const drawn = loadedFace(family, weight, italic) ?? { weight, italic }
   return { family, weight, italic, style, variations, drawn }

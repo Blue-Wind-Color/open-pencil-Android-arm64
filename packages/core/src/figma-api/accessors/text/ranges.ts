@@ -160,7 +160,7 @@ function currentFont(node: SceneNode, index: number): CurrentFont {
       style.fontFamily,
       name,
       style.fontVariations,
-      node.opticalSizeFromFontSize
+      style.opticalSizeFromFontSize
     )
   }
 }

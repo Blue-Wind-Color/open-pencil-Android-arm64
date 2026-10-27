@@ -181,6 +181,7 @@ function markerNode(node: ParagraphNode, item: TextListItem, style: ListStyle): 
     letterSpacing: override?.letterSpacing ?? node.letterSpacing,
     lineHeight: override?.lineHeight !== undefined ? override.lineHeight : node.lineHeight,
     fontVariations: override?.fontVariations ?? node.fontVariations,
+    opticalSizeFromFontSize: override?.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize,
     fontFeatures:
       item.listType === 'ORDERED' ? [...features, { tag: 'TNUM', enabled: true }] : features,
     textLanguage: override?.textLanguage ?? node.textLanguage,

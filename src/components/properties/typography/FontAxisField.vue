@@ -15,11 +15,9 @@ import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
  * One axis of a variable font. Optical size reads Auto while it follows the font size, as line
  * height reads Auto, and its menu switches between that and a size set by hand.
  */
-const { axis, opticalSizeAuto, opticalSizeEditable } = defineProps<{
+const { axis, opticalSizeAuto } = defineProps<{
   axis: TypographyAxis
   opticalSizeAuto: MixedValue<boolean>
-  /** False while text is edited: whether optical size follows the font size is the layer's. */
-  opticalSizeEditable: boolean
 }>()
 const emit = defineEmits<{
   preview: [value: number]
@@ -44,7 +42,6 @@ const tagIcon = computed(() =>
     :min="axis.min"
     :max="axis.max"
     :icon="tagIcon"
-    :disabled="opticalSize && !opticalSizeEditable"
     :data-property="`font-axis-${axis.tag}`"
     @update:model-value="emit('preview', $event)"
     @commit="(value: number) => emit('commit', value)"
@@ -67,7 +64,6 @@ const tagIcon = computed(() =>
       >
         <SelectTrigger
           :aria-label="panels.opticalSizeMode"
-          :disabled="!opticalSizeEditable"
           class="flex shrink-0 items-center self-stretch px-1 text-muted"
           data-property="optical-size-mode"
           @pointerdown.stop

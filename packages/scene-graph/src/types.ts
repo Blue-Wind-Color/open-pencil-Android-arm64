@@ -379,6 +379,8 @@ export interface CharacterStyleOverride {
   lineHeight?: TextLength | null
   fills?: Fill[]
   fontVariations?: FontVariation[]
+  /** Whether the characters' optical size follows their font size, in place of the text's own. */
+  opticalSizeFromFontSize?: boolean
   fontFeatures?: FontFeature[]
   textLanguage?: string | null
   textCase?: TextCase

@@ -139,6 +139,13 @@ describe('text faces', () => {
     expect(
       face({ opticalSizeFromFontSize: false, fontVariations: [{ axis: 'opsz', value: 32 }] })
     ).toEqual(automatic)
+    // A range detaches its own optical size, as Figma saves one, over text that follows it.
+    const range = (style: Partial<SceneNode['styleRuns'][number]['style']>) =>
+      face({ styleRuns: [{ start: 0, length: 5, style }] })
+    expect(range({ fontVariations: [{ axis: 'opsz', value: 14 }] })).toEqual(automatic)
+    expect(
+      range({ opticalSizeFromFontSize: false, fontVariations: [{ axis: 'opsz', value: 14 }] })
+    ).toEqual(face({ opticalSizeFromFontSize: false, fontVariations: [{ axis: 'opsz', value: 14 }] }))
   })
 
   test('draws each style of a family loaded from several files from its own file', async () => {

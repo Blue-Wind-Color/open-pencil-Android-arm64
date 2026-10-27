@@ -155,7 +155,6 @@ function picked<T>(value: MixedValue<T>): T | '' {
           <FontAxisField
             :axis="axis"
             :optical-size-auto="ctx.opticalSizeAuto.value"
-            :optical-size-editable="ctx.opticalSizeEditable.value"
             @preview="ctx.actions.previewAxis(axis.tag, $event)"
             @commit="ctx.actions.setAxis(axis.tag, $event)"
             @cancel="ctx.actions.cancelAxis()"

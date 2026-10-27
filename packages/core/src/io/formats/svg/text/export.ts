@@ -110,7 +110,7 @@ function fontRequest(
     ...textFontFace(node, style),
     fontSize: style.fontSize ?? node.fontSize,
     variations: style.fontVariations ?? node.fontVariations,
-    opticalSizeFromFontSize: node.opticalSizeFromFontSize
+    opticalSizeFromFontSize: style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
   }
   if (!fallback) return own
   return {

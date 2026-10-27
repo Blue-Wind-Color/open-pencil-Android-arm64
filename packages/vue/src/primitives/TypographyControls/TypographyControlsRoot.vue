@@ -58,7 +58,6 @@ const actions = {
     :list-type="ctx.listType"
     :axes="ctx.axes"
     :optical-size-auto="ctx.opticalSizeAuto"
-    :optical-size-editable="ctx.opticalSizeEditable"
     :actions="actions"
   />
 </template>

@@ -53,6 +53,8 @@ function textStyleOverrideToKiwi(
   if (style.fontVariations && style.fontVariations.length > 0) {
     override.fontVariations = style.fontVariations.map(fontVariationToKiwi)
   }
+  if (style.opticalSizeFromFontSize !== undefined)
+    override.detachOpticalSizeFromFontSize = !style.opticalSizeFromFontSize
   if (style.fontFeatures && style.fontFeatures.length > 0) {
     applyFontFeaturesToKiwi(override as NodeChange, style.fontFeatures)
   }

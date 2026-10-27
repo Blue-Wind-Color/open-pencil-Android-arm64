@@ -188,7 +188,7 @@ function pushStyleRun(
         italic: runItalic,
         fontSize: runFontSize,
         variations: style.fontVariations ?? node.fontVariations,
-        opticalSizeFromFontSize: node.opticalSizeFromFontSize
+        opticalSizeFromFontSize: style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
       })
     ),
     fontFeatures: textFontFeatures(style.fontFeatures ?? node.fontFeatures),
