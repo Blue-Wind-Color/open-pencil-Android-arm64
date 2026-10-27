@@ -59,6 +59,7 @@
   "openTypeFeatures": "字体功能",
   "standardLigatures": "标准连字",
   "contextualAlternates": "上下文替代字形",
+  "opticalSizeMode": "光学尺寸模式",
   "kerning": "字距调整",
   "textFormatting": "文本格式",
   "pageBackground": "页面背景",

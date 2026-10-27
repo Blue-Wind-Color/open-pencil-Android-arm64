@@ -1,0 +1,1 @@
+- Set the axes of a variable font, such as its weight, width, or optical size, in the Typography section, or let the optical size follow the font size, as in Figma.

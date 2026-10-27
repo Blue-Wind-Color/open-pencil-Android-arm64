@@ -59,6 +59,7 @@
   "openTypeFeatures": "Свойства шрифта",
   "standardLigatures": "Стандартные лигатуры",
   "contextualAlternates": "Контекстные варианты",
+  "opticalSizeMode": "Режим оптического размера",
   "kerning": "Кернинг",
   "textFormatting": "Форматирование текста",
   "pageBackground": "Фон страницы",

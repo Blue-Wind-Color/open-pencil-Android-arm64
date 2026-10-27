@@ -59,6 +59,7 @@
   "openTypeFeatures": "Propriétés de police",
   "standardLigatures": "Ligatures standard",
   "contextualAlternates": "Variantes contextuelles",
+  "opticalSizeMode": "Mode de taille optique",
   "kerning": "Crénage",
   "textFormatting": "Mise en forme du texte",
   "pageBackground": "Arrière-plan de la page",

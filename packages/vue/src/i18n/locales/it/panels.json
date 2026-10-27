@@ -59,6 +59,7 @@
   "openTypeFeatures": "Funzioni del font",
   "standardLigatures": "Legature standard",
   "contextualAlternates": "Alternative contestuali",
+  "opticalSizeMode": "Modalità della dimensione ottica",
   "kerning": "Crenatura",
   "textFormatting": "Formattazione testo",
   "pageBackground": "Sfondo pagina",

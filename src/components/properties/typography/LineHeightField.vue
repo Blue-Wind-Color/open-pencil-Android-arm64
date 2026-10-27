@@ -77,6 +77,7 @@ function setMode(mode: string) {
           :aria-label="panels.lineHeightMode"
           class="flex shrink-0 items-center self-stretch px-1 text-muted"
           @pointerdown.stop
+          @keydown.stop
           ><icon-lucide-chevron-down class="size-3"
         /></SelectTrigger>
         <AppSelectContent v-if="portalActive" align="end">

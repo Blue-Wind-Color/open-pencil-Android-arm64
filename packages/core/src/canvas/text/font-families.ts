@@ -7,6 +7,7 @@ import { ResourceCache } from '#core/cache/resource'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import type { FamilyFace } from '#core/text/font/faces'
+import type { FontAxis } from '#core/text/font/variation'
 import { fontManager, fontWeightMatchOrder } from '#core/text/fonts'
 
 const familiesCache = new ResourceCache<string, string[]>({ maxEntries: 256 })
@@ -38,6 +39,25 @@ export function drawnFontVariations(font: DrawnFontAxes): FontVariation[] {
     : font.variations
   const axes = new Map([...named, ...set].map(({ axis, value }) => [axis, value]))
   return [...axes].map(([axis, value]) => ({ axis, value }))
+}
+
+/** An axis of the variable font text is drawn in, with the value it is drawn at. */
+export interface DrawnFontAxis extends FontAxis {
+  value: number
+}
+
+/**
+ * The axes of the variable font text is drawn in, in the font's order, each at the value it is
+ * drawn at, within its range. `null` when the family's loaded faces are static or it has none.
+ */
+export function drawnFontAxes(font: DrawnFontAxes): DrawnFontAxis[] | null {
+  const variation = fontManager.familyVariation(font.family, font.italic)
+  if (!variation) return null
+  const drawn = new Map(drawnFontVariations(font).map(({ axis, value }) => [axis, value]))
+  return variation.axes.map((axis) => ({
+    ...axis,
+    value: Math.min(axis.max, Math.max(axis.min, drawn.get(axis.tag) ?? axis.default))
+  }))
 }
 
 /**

@@ -213,6 +213,7 @@ export const panelMessageDefaults = {
   standardLigatures: 'Standard ligatures',
   contextualAlternates: 'Contextual alternates',
   kerning: 'Kerning',
+  opticalSizeMode: 'Optical size mode',
   textFormatting: 'Text formatting',
   pageBackground: 'Page background',
   variables: 'Variables',

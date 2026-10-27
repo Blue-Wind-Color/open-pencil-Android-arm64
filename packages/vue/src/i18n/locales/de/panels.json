@@ -59,6 +59,7 @@
   "openTypeFeatures": "Schrifteigenschaften",
   "standardLigatures": "Standardligaturen",
   "contextualAlternates": "Kontextvarianten",
+  "opticalSizeMode": "Modus der optischen Größe",
   "kerning": "Kerning",
   "textFormatting": "Textformatierung",
   "pageBackground": "Seitenhintergrund",

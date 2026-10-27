@@ -699,6 +699,11 @@ export class FontManager {
     )
   }
 
+  /** The files of `style` of `family` after its own, such as the shards of a split web font. */
+  shardData(family: string, style: string): readonly ArrayBuffer[] {
+    return this.supplementalFamilyData.get(`${family}|${style}`) ?? []
+  }
+
   /** The name one file of `family` is registered under on its own. */
   private fileFamily(family: string, data: ArrayBuffer): string {
     let name = this.fileFamilies.get(data)
