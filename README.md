@@ -248,10 +248,14 @@ bun run tauri dev     # Desktop app (requires Rust)
 
 ## Acknowledgments
 
-Thanks to [@sld0Ant](https://github.com/sld0Ant) (Anton Soldatov) for creating and maintaining the [documentation site](https://openpencil.dev).
+Thanks to [@sld0Ant](https://github.com/sld0Ant) (Anton Soldatov), who pushed for OpenPencil to be published, has backed and promoted it since, and built the first version of the [documentation site](https://openpencil.dev).
+
+Thanks to everyone who has [contributed](https://github.com/open-pencil/open-pencil/graphs/contributors) code, translations, bug reports, and feedback.
+
+Thanks to [Anthropic](https://www.anthropic.com) for supporting the project through its open source program, and to [CodeRabbit](https://www.coderabbit.ai) for reviewing every pull request for free.
 
 ## License
 
-OpenPencil is licensed under the [MIT License](./LICENSE). OpenPencil Cloud's server, relay, and administration in [`packages/cloud`](./packages/cloud), and the pages it serves for signing in and administration, are licensed under the [Apache License 2.0](./LICENSES/Apache-2.0.txt); the protocol editors use to talk to it, `packages/cloud/src/contract` and `packages/cloud/src/client`, stays MIT. [`REUSE.toml`](./REUSE.toml) lists which paths each license covers.
+OpenPencil is licensed under the [MIT License](./LICENSE), except OpenPencil Cloud, which is licensed under the [Apache License 2.0](./LICENSES/Apache-2.0.txt). [`REUSE.toml`](./REUSE.toml) lists the exact paths.
 
 Copyright (c) 2026 Danila Poyarkov and OpenPencil contributors.
