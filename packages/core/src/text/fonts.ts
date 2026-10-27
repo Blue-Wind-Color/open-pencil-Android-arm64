@@ -176,13 +176,7 @@ export class FontManager {
     }
   }
 
-  detachProvider(provider?: TypefaceFontProvider | null): void {
-    if (!provider) {
-      this.fontProviders.clear()
-      this.fontProvider = null
-      this.providerRegistrations = new WeakMap()
-      return
-    }
+  detachProvider(provider: TypefaceFontProvider): void {
     this.fontProviders.delete(provider)
     this.providerRegistrations.delete(provider)
     if (this.fontProvider === provider) {
