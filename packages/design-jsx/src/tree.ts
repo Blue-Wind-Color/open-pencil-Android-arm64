@@ -175,6 +175,17 @@ export type StyleProps = {
   lineHeight?: number | `${number}%` | 'auto' | DesignVariable
   /** Pixels, or a percent of the font size such as `'5%'`. */
   letterSpacing?: number | `${number}%` | DesignVariable
+  /** OpenType features on or off by tag, as CSS's `font-feature-settings`: `{ tnum: true }`. */
+  fontFeatures?: Record<string, boolean>
+  /** Variable-font axis values by tag, as CSS's `font-variation-settings`: `{ wght: 650 }`. */
+  fontVariations?: Record<string, number>
+  /** The language the text is in, as a BCP 47 tag such as `de` or `sr-Latn`. */
+  lang?: string | null
+  /**
+   * Whether a variable font's optical size follows the font size (`auto`, the default) or takes
+   * the `opsz` in `fontVariations` (`none`), as CSS's `font-optical-sizing`.
+   */
+  fontOpticalSizing?: 'auto' | 'none'
   font?: string
   fontFamily?: string
   weight?: number | 'bold' | 'medium' | 'normal'
@@ -226,6 +237,9 @@ export type SpanProps = Pick<
   | 'fills'
   | 'lineHeight'
   | 'letterSpacing'
+  | 'fontFeatures'
+  | 'fontVariations'
+  | 'lang'
 > & {
   key?: string | number
   style?: Record<string, unknown>

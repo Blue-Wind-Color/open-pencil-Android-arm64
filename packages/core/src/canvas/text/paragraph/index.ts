@@ -149,7 +149,7 @@ function styleRunLanguage(
   style: SceneNode['styleRuns'][number]['style'],
   node: Pick<ParagraphNode, 'textLanguage'>
 ): string | undefined {
-  return style.textLanguage ?? node.textLanguage ?? undefined
+  return (style.textLanguage !== undefined ? style.textLanguage : node.textLanguage) ?? undefined
 }
 
 function pushStyleRun(
