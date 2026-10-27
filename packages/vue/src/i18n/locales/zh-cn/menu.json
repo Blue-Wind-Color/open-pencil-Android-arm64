@@ -51,6 +51,8 @@
   "booleanOperations": "布尔运算",
   "strikethrough": "删除线",
   "closeTab": "关闭标签页",
+  "selectPreviousTab": "选择上一个标签页",
+  "selectNextTab": "选择下一个标签页",
   "arrangeAlignLeft": "左对齐",
   "arrangeAlignCenter": "水平居中",
   "arrangeAlignRight": "右对齐",

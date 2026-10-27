@@ -165,6 +165,17 @@ export function switchTab(tabId: string): boolean {
   return true
 }
 
+/**
+ * Activates the tab `step` places from the one in front, wrapping around the ends, as Figma's
+ * ⌃Tab and ⌃⇧Tab do; Home counts, so the tab after the last is Home.
+ */
+export function switchAdjacentTab(step: 1 | -1): void {
+  const tabs = tabsRef.value
+  if (tabs.length < 2) return
+  const index = tabs.findIndex((tab) => tab.id === activeTabId.value)
+  activateTab(tabs[(index + step + tabs.length) % tabs.length])
+}
+
 function disposeTabStore(store: EditorStore): void {
   coverThumbnailListeners.get(store)?.()
   coverThumbnailListeners.delete(store)

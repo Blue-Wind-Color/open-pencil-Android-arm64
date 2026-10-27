@@ -51,6 +51,8 @@
   "booleanOperations": "Operazioni booleane",
   "strikethrough": "Barrato",
   "closeTab": "Chiudi scheda",
+  "selectPreviousTab": "Scheda precedente",
+  "selectNextTab": "Scheda successiva",
   "arrangeAlignLeft": "Allinea a sinistra",
   "arrangeAlignCenter": "Centra",
   "arrangeAlignRight": "Allinea a destra",

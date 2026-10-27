@@ -51,6 +51,8 @@
   "booleanOperations": "Opérations booléennes",
   "strikethrough": "Barré",
   "closeTab": "Fermer l’onglet",
+  "selectPreviousTab": "Onglet précédent",
+  "selectNextTab": "Onglet suivant",
   "arrangeAlignLeft": "Aligner à gauche",
   "arrangeAlignCenter": "Centrer",
   "arrangeAlignRight": "Aligner à droite",

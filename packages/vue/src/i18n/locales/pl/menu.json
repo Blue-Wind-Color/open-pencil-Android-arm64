@@ -51,6 +51,8 @@
   "booleanOperations": "Operacje logiczne",
   "strikethrough": "Przekreślenie",
   "closeTab": "Zamknij kartę",
+  "selectPreviousTab": "Poprzednia karta",
+  "selectNextTab": "Następna karta",
   "arrangeAlignLeft": "Wyrównaj do lewej",
   "arrangeAlignCenter": "Wyśrodkuj",
   "arrangeAlignRight": "Wyrównaj do prawej",

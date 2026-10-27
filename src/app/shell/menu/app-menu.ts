@@ -51,7 +51,7 @@ import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
-import { closeTab, activeTab } from '@/app/tabs'
+import { closeTab, activeTab, switchAdjacentTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -120,6 +120,8 @@ export function useAppMenu() {
     'export-selection': 'exportSelection',
     autosave: 'autosave',
     close: 'closeTab',
+    'previous-tab': 'selectPreviousTab',
+    'next-tab': 'selectNextTab',
     copy: 'copy',
     cut: 'cut',
     paste: 'paste',
@@ -190,6 +192,8 @@ export function useAppMenu() {
     close: () => {
       if (activeTab.value) void closeTab(activeTab.value.id)
     },
+    'previous-tab': () => switchAdjacentTab(-1),
+    'next-tab': () => switchAdjacentTab(1),
     settings: openSettingsDialog,
     variables: () => openVariablesDialog(store),
     'insert-icon': () => {

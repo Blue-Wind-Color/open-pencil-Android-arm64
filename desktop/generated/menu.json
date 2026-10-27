@@ -97,6 +97,16 @@
         "accelerator": "CmdOrCtrl+W"
       },
       {
+        "id": "previous-tab",
+        "label": "Select Previous Tab",
+        "accelerator": "Ctrl+Shift+Tab"
+      },
+      {
+        "id": "next-tab",
+        "label": "Select Next Tab",
+        "accelerator": "Ctrl+Tab"
+      },
+      {
         "type": "separator"
       },
       {

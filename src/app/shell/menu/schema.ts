@@ -133,6 +133,9 @@ export const APP_MENU_SCHEMA = [
       { type: 'separator' },
       { id: 'autosave', label: 'Autosave', checkbox: true, feature: 'local-file' },
       { id: 'close', label: 'Close Tab', shortcut: 'MOD+W' },
+      // ⌃Tab on every platform, as in Figma's desktop app, so it is not a MOD shortcut.
+      { id: 'previous-tab', label: 'Select Previous Tab', accelerator: 'Ctrl+Shift+Tab' },
+      { id: 'next-tab', label: 'Select Next Tab', accelerator: 'Ctrl+Tab' },
       // Windows, Linux, and the browser menu; macOS shows it in the application menu instead.
       { type: 'separator' },
       { ...SETTINGS_MENU_ITEM, handler: 'shell' }

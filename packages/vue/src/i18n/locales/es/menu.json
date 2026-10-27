@@ -49,6 +49,8 @@
   "checkUpdates": "Buscar actualizaciones…",
   "booleanOperations": "Operaciones booleanas",
   "closeTab": "Cerrar pestaña",
+  "selectPreviousTab": "Pestaña anterior",
+  "selectNextTab": "Pestaña siguiente",
   "zoomIn": "Ampliar",
   "zoomOut": "Reducir",
   "arrangeAlignLeft": "Alinear a la izquierda",

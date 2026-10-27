@@ -51,6 +51,8 @@
   "booleanOperations": "Логические операции",
   "strikethrough": "Зачёркивание",
   "closeTab": "Закрыть вкладку",
+  "selectPreviousTab": "Предыдущая вкладка",
+  "selectNextTab": "Следующая вкладка",
   "arrangeAlignLeft": "Выровнять по левому краю",
   "arrangeAlignCenter": "Выровнять по центру по горизонтали",
   "arrangeAlignRight": "Выровнять по правому краю",

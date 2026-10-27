@@ -51,6 +51,8 @@
   "booleanOperations": "Boolesche Operationen",
   "strikethrough": "Durchstreichen",
   "closeTab": "Tab schließen",
+  "selectPreviousTab": "Vorheriger Tab",
+  "selectNextTab": "Nächster Tab",
   "arrangeAlignLeft": "Links ausrichten",
   "arrangeAlignCenter": "Zentrieren",
   "arrangeAlignRight": "Rechts ausrichten",
