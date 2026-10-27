@@ -454,6 +454,41 @@ describe('touch-target-size', () => {
     expect(messages[0]?.data).toEqual({ width: 60, height: 24, minSize: 44 })
   })
 
+  test('checks the controls in a row named in the plural, not the row', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const group = graph.createNode('FRAME', pageId, {
+      name: 'Footer links',
+      width: 280,
+      height: 20
+    })
+    const first = graph.createNode('FRAME', group.id, { name: 'Link', width: 80, height: 20 })
+    graph.createNode('RECTANGLE', group.id, { name: 'Divider', width: 1, height: 16 })
+    const second = graph.createNode('FRAME', group.id, { name: 'Link', width: 80, height: 20 })
+
+    const messages = lint(graph, 'touch-target-size')
+
+    expect(messages.map((message) => message.nodeId)).toEqual([first.id, second.id])
+  })
+
+  test('keeps singularly named controls as targets even when they contain children', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const button = graph.createNode('FRAME', pageId, { name: 'Button', width: 40, height: 20 })
+    graph.createNode('FRAME', button.id, { name: 'Icon', width: 16, height: 16 })
+
+    expect(lint(graph, 'touch-target-size').map((message) => message.nodeId)).toEqual([button.id])
+  })
+
+  test('keeps a plural-named layer as a target when it has fewer than two children', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const group = graph.createNode('FRAME', pageId, { name: 'Links', width: 40, height: 20 })
+    graph.createNode('FRAME', group.id, { name: 'Link', width: 80, height: 20 })
+
+    expect(lint(graph, 'touch-target-size').map((message) => message.nodeId)).toEqual([group.id])
+  })
+
   test('matches control names as whole words', () => {
     const graph = new SceneGraph()
     const pageId = graph.getPages()[0].id
