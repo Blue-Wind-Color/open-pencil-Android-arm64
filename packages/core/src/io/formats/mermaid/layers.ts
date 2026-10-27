@@ -18,9 +18,9 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { newLayerDefaults } from '#core/editor/shapes/defaults'
 import { layoutAuthoredNodes } from '#core/layout'
-import { layoutDiagram, type DiagramInput } from '#core/layout/diagram'
-import { applyDiagramLayout, type DiagramPlacement } from '#core/layout/diagram/apply'
-import { connectorLabelSize } from '#core/layout/diagram/routes'
+import { applyArrangement, type ArrangePlacement } from '#core/layout/arrange/apply'
+import { arrangeBoxes, type ArrangeInput } from '#core/layout/arrange/boxes'
+import { connectorLabelSize } from '#core/layout/arrange/routes'
 import { shapeWithTextWidthFor } from '#core/layout/shape-with-text'
 import { prepareGraphFonts } from '#core/text/prepare'
 
@@ -236,7 +236,7 @@ export async function addFlowchart(
   graph: SceneGraph,
   parentId: string,
   chart: Flowchart,
-  placement: DiagramPlacement = { topLeft: { x: 0, y: 0 } }
+  placement: ArrangePlacement = { topLeft: { x: 0, y: 0 } }
 ): Promise<FlowchartLayers> {
   const before = new Set(graph.getNode(parentId)?.childIds)
   const builder = new FlowchartBuilder(graph, parentId, chart)
@@ -264,9 +264,10 @@ export async function addFlowchart(
       const connectorId = builder.connectors.get(edgeId)
       return (connectorId && connectorLabelSize(graph, connectorId)) || undefined
     }
-    const input: DiagramInput = {
+    const input: ArrangeInput = {
+      layout: 'flow',
       direction: chart.direction,
-      nodes: chart.nodes.map((node) => ({
+      boxes: chart.nodes.map((node) => ({
         id: node.id,
         ...size(node.id),
         group: enclosing.get(node.id)
@@ -282,11 +283,11 @@ export async function addFlowchart(
         label: labelSize(edge.id)
       }))
     }
-    const layout = await layoutDiagram(input)
-    applyDiagramLayout(
+    const arrangement = await arrangeBoxes(input)
+    applyArrangement(
       graph,
       input,
-      layout,
+      arrangement,
       { boxes: builder.layers, connectors: builder.connectors },
       placement
     )

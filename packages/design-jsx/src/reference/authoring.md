@@ -13,7 +13,7 @@ This reference describes scene creation, not React DOM output. Use the `render` 
 - `wrap` and `rowGap` enable wrapped flex rows. `grid`, `columns`, and `rows` enable grid (for example `columns="1fr 200px 1fr"` or `columns="repeat(7, 1fr)"`); tracks are `fr`, pixel lengths, `auto`, `repeat()`, and `minmax()`, which grows like its maximum. Grid children use `colStart`, `rowStart`, `colSpan`, and `rowSpan`. The current grid `gap` shorthand takes precedence over `columnGap` and `rowGap`.
 - `flow="auto"|"ltr"|"rtl"` controls container flow; text `dir` controls writing direction. Preserve these separately.
 - Outside auto-layout, and for `position="absolute"` children, `constraints={{ horizontal, vertical }}` sets how a layer follows its parent's resizing, with Figma's values in lowercase: `"min"`, `"center"`, `"max"`, `"stretch"`, or `"scale"`. `minW`, `maxW`, `minH`, and `maxH` bound a layer's size. `visible={false}` hides a layer and `locked` locks it.
-- Use measured node bounds and the existing `arrange` tool for independent artboards. Prefer layout constraints to calculating child coordinates; ordinary JavaScript arithmetic is appropriate when real geometry calculations are needed.
+- Use measured node bounds and the existing `arrange` tool for independent artboards: `pack` for a page of screens, `spread` when generated layers overlap. Prefer layout constraints to calculating child coordinates; ordinary JavaScript arithmetic is appropriate when real geometry calculations are needed.
 
 ## Paint, text, and artwork
 

@@ -5,10 +5,10 @@ import { expectDefined } from '#core-tests/helpers/assert'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { connectorRoute, createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
 
-import { layoutDiagram, type DiagramInput } from '#core/layout/diagram'
-import { applyDiagramLayout } from '#core/layout/diagram/apply'
+import { applyArrangement } from '#core/layout/arrange/apply'
+import { arrangeBoxes, type ArrangeInput } from '#core/layout/arrange/boxes'
 
-describe('applyDiagramLayout', () => {
+describe('applyArrangement', () => {
   test('arranges existing layers and joins their connector by the sides the layout chose', async () => {
     const graph = new SceneGraph()
     const pageId = expectDefined(graph.getPages()[0]).id
@@ -19,18 +19,19 @@ describe('applyDiagramLayout', () => {
       start: freeEndpoint(0, 0),
       end: freeEndpoint(0, 0)
     })
-    const input: DiagramInput = {
+    const input: ArrangeInput = {
+      layout: 'flow',
       direction: 'LR',
-      nodes: [
+      boxes: [
         { id: 'a', width: 100, height: 40 },
         { id: 'b', width: 100, height: 40, group: 'g' }
       ],
       groups: [{ id: 'g' }],
       edges: [{ id: 'ab', from: 'a', to: 'b' }]
     }
-    const layout = await layoutDiagram(input)
+    const layout = await arrangeBoxes(input)
 
-    applyDiagramLayout(
+    applyArrangement(
       graph,
       input,
       layout,
@@ -62,7 +63,7 @@ describe('applyDiagramLayout', () => {
   })
 })
 
-describe('applyDiagramLayout routes', () => {
+describe('applyArrangement routes', () => {
   test('runs each connector through the corners of the route the layout gave it', async () => {
     const graph = new SceneGraph()
     const pageId = expectDefined(graph.getPages()[0]).id
@@ -78,21 +79,22 @@ describe('applyDiagramLayout routes', () => {
       ['ab', connector()],
       ['ac', connector()]
     ])
-    const input: DiagramInput = {
+    const input: ArrangeInput = {
+      layout: 'flow',
       direction: 'TB',
-      nodes: ['a', 'b', 'c'].map((id) => ({ id, width: 100, height: 40 })),
+      boxes: ['a', 'b', 'c'].map((id) => ({ id, width: 100, height: 40 })),
       groups: [],
       edges: [
         { id: 'ab', from: 'a', to: 'b' },
         { id: 'ac', from: 'a', to: 'c' }
       ]
     }
-    const layout = await layoutDiagram(input)
+    const layout = await arrangeBoxes(input)
     const origin = { x: 1000, y: 2000 }
 
-    applyDiagramLayout(graph, input, layout, { boxes, connectors }, { topLeft: origin })
+    applyArrangement(graph, input, layout, { boxes, connectors }, { topLeft: origin })
 
-    const all = [...layout.nodes.values()]
+    const all = [...layout.boxes.values()]
     const shift = {
       x: origin.x - Math.min(...all.map((rect) => rect.x)),
       y: origin.y - Math.min(...all.map((rect) => rect.y))

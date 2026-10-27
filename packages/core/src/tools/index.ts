@@ -45,6 +45,7 @@ export {
 } from './analyze/overlaps/params'
 export { setPexelsAPIKey, setUnsplashAccessKey } from './stock-photo'
 export { importMermaid, importSVG } from './create'
+export { arrangeNodes } from './structure'
 export {
   getStockPhotoProviders,
   registerStockPhotoProvider,
