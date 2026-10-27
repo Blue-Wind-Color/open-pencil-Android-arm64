@@ -477,6 +477,62 @@ export const APP_MENU_SCHEMA = [
         id: 'selection.distributeVertical',
         label: 'Distribute Vertical Spacing',
         command: 'selection.distributeVertical'
+      },
+      { type: 'separator' },
+      { id: 'selection.tidyUp', label: 'Tidy Up', command: 'selection.tidyUp' },
+      {
+        id: 'selection.packHorizontal',
+        label: 'Pack Horizontal',
+        command: 'selection.packHorizontal'
+      },
+      { id: 'selection.packVertical', label: 'Pack Vertical', command: 'selection.packVertical' },
+      {
+        id: 'arrange-layout',
+        label: 'Auto Arrange',
+        sub: [
+          {
+            id: 'selection.arrangeSpread',
+            label: 'Spread Apart',
+            command: 'selection.arrangeSpread'
+          },
+          {
+            id: 'selection.arrangeCompact',
+            label: 'Spread and Compact',
+            command: 'selection.arrangeCompact'
+          },
+          {
+            id: 'selection.arrangePack',
+            label: 'Pack into Rows',
+            command: 'selection.arrangePack'
+          },
+          { type: 'separator' },
+          {
+            id: 'selection.arrangeFlowDown',
+            label: 'Flow, Top to Bottom',
+            command: 'selection.arrangeFlowDown'
+          },
+          {
+            id: 'selection.arrangeFlowRight',
+            label: 'Flow, Left to Right',
+            command: 'selection.arrangeFlowRight'
+          },
+          {
+            id: 'selection.arrangeTreeDown',
+            label: 'Tree, Top to Bottom',
+            command: 'selection.arrangeTreeDown'
+          },
+          {
+            id: 'selection.arrangeTreeRight',
+            label: 'Tree, Left to Right',
+            command: 'selection.arrangeTreeRight'
+          },
+          {
+            id: 'selection.arrangeRadial',
+            label: 'Radial Map',
+            command: 'selection.arrangeRadial'
+          },
+          { id: 'selection.arrangeNetwork', label: 'Network', command: 'selection.arrangeNetwork' }
+        ]
       }
     ]
   }

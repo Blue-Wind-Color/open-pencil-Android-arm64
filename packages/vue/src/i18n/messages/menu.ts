@@ -52,6 +52,7 @@ export const menuMessageDefaults = {
   checkUpdates: 'Check for updates…',
 
   moveToPage: 'Move to page',
+  autoArrange: 'Auto arrange',
   createInstance: 'Create instance',
   hide: 'Hide',
   show: 'Show',

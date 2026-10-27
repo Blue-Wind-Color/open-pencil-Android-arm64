@@ -432,6 +432,7 @@ export const panelMessageDefaults = {
   alignTop: 'Align top',
   alignCenterVertically: 'Align center vertically',
   alignBottom: 'Align bottom',
+  moreAlignmentActions: 'More actions',
   flipHorizontal: 'Flip horizontal',
   ignoreAutoLayout: 'Ignore auto layout',
   flipVertical: 'Flip vertical',

@@ -222,6 +222,37 @@ test('an edit made after undoing past the save leaves the saved state out of rea
   })
 })
 
+test('undoing every arrange command returns a document to saved', async () => {
+  const editor = createEditor()
+  const changes = createDocumentChanges(editor)
+  try {
+    const ids = [0, 20, 40].map(
+      (x) =>
+        editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+          x,
+          y: x / 2,
+          width: 100,
+          height: 70
+        }).id
+    )
+    changes.markSaved()
+    await editor.arrangeNodes(ids, { layout: 'spread' })
+    editor.tidyNodes(ids)
+    editor.packNodes(ids, 'horizontal')
+    await Promise.resolve()
+    expect(changes.hasUnsavedChanges()).toBe(true)
+
+    editor.undo.undo()
+    editor.undo.undo()
+    editor.undo.undo()
+    await Promise.resolve()
+    expect(changes.hasUnsavedChanges()).toBe(false)
+  } finally {
+    changes.dispose()
+    editor.dispose()
+  }
+})
+
 test('a dragged typography field undone back leaves the document saved', async () => {
   await fontManager.loadFont('Inter', 'Regular')
   const editor = createEditor()

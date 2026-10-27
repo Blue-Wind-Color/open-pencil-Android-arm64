@@ -180,7 +180,10 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       'selection.toggleVisibility',
       'selection.toggleLock',
       'selection.flipHorizontal',
-      'selection.flipVertical'
+      'selection.flipVertical',
+      'selection.tidyUp',
+      'selection.distributeHorizontal',
+      'selection.distributeVertical'
     ),
     {
       id: 'copy-properties',
