@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 
 import { build, type Plugin } from 'vite'
 
-import { viteBuildTarget } from '../src/app/shell/support/baseline'
+import { viteBuildTarget } from '../src/app/shell/support/baseline.ts'
 import { createOpenPencilAliases } from './aliases.ts'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
