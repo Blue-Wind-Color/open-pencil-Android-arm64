@@ -1,6 +1,7 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, VariableLiteral } from '@open-pencil/scene-graph'
 
-import { isVariable, resolveVariableId } from './vars'
+import { isVariable } from './variables'
+import { requireVariableId } from './variables/graph'
 
 // Shorthands precede their longhands, matching propsToOverrides precedence.
 const PADDING_FIELDS = ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft']
@@ -29,7 +30,7 @@ export function prepareScalarBindings(
   props: Record<string, unknown>,
   bindings: Record<string, string>,
   isText: boolean,
-  parentId: string
+  resolve: (variableId: string) => VariableLiteral | undefined
 ): void {
   const entries = [...SCALAR_PROPS]
   const scalarBindings = new Map<string, string>()
@@ -59,16 +60,13 @@ export function prepareScalarBindings(
     for (const field of fields) scalarBindings.delete(field)
     if (!isVariable(value)) continue
 
-    const variableId = resolveVariableId(graph, value)
-    const variable = variableId ? graph.variables.get(variableId) : undefined
+    const variable = graph.variables.get(requireVariableId(graph, value))
     if (variable?.type !== 'FLOAT') {
       throw new Error(`Expected a FLOAT variable for ${key}: ${value.name}`)
     }
-    const resolved =
-      graph.resolveNumberVariableForNode(parentId, variable.id) ??
-      (typeof value.value === 'number' ? value.value : undefined)
-    if (resolved === undefined || !Number.isFinite(resolved)) {
-      throw new Error(`Cannot resolve numeric variable for ${key}: ${value.name}`)
+    const resolved = resolve(variable.id)
+    if (typeof resolved !== 'number' || !Number.isFinite(resolved)) {
+      throw new TypeError(`Cannot resolve numeric variable for ${key}: ${value.name}`)
     }
     props[key] = resolved
     for (const field of fields) scalarBindings.set(field, variable.id)

@@ -619,10 +619,21 @@
       "files": [
         "packages/core/src/io/formats/fig/export/index.ts",
         "packages/core/src/io/formats/fig/export/worker.ts",
-        "packages/core/src/kiwi/fig/parse/worker.ts"
+        "packages/core/src/kiwi/fig/parse/worker.ts",
+        "src/app/code/sandbox/frame.ts",
+        "src/app/code/sandbox/worker/index.ts"
       ],
       "rules": {
         "unicorn/require-post-message-target-origin": "off"
+      }
+    },
+    {
+      "files": [
+        "src/app/code/sandbox/evaluate.ts",
+        "src/app/code/sandbox/frame.ts"
+      ],
+      "rules": {
+        "import/default": "off"
       }
     }
   ],

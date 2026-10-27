@@ -354,8 +354,6 @@ tests/engine/render/canvas/tiles/scheduler.test.ts
 tests/engine/render/canvas/variable-modes.test.ts
 tests/engine/render/canvas/visual/boolean-matrix.test.ts
 tests/engine/render/jsx/component/properties.test.ts
-tests/engine/render/jsx/component/property-references.test.ts
-tests/engine/render/jsx/component/set-properties.test.ts
 tests/engine/render/jsx/gaps.test.ts
 tests/engine/render/jsx/grid-layout.test.ts
 tests/engine/render/jsx/instance-sizing.test.ts

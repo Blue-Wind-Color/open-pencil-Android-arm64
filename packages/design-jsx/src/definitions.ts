@@ -183,8 +183,9 @@ export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
   'component',
   'componentId',
   'properties',
-  'propertyRefs',
   'of',
+  'exposed',
+  'mode',
   // A Reka UI root's behaviour, by its own property names
   'modelValue',
   'open',
@@ -264,21 +265,3 @@ export const DESIGN_JSX_PROPERTIES: DesignJSXPropertyDefinition[] =
     name,
     description: `OpenPencil ${name} property.`
   }))
-
-export const DESIGN_JSX_HELPERS: DesignJSXHelperDefinition[] = [
-  'solid',
-  'gradient',
-  'linearGradient',
-  'radialGradient',
-  'angularGradient',
-  'diamondGradient',
-  'shader',
-  'dropShadow',
-  'innerShadow',
-  'layerBlur',
-  'backgroundBlur',
-  'foregroundBlur',
-  'designVar',
-  'defineVars',
-  'ref'
-].map((name) => ({ name, description: `OpenPencil ${name} helper.` }))

@@ -35,14 +35,22 @@ function collectSizeLimitProps(node: SceneNode, props: JSXProp[]): void {
 }
 
 /**
- * Variables are named when the name is unique in the document, which is how `designVar`
- * resolves them, and referenced by ID otherwise.
+ * Variables are named as `designVar` resolves them: by name when it is unique in the document, by
+ * collection and name when that pair is, and by ID otherwise.
  */
 function variableRef(graph: SceneGraph, variableId: string): JSXValue {
   const variable = graph.variables.get(variableId)
   if (!variable) return variableId
   const sameName = [...graph.variables.values()].filter((v) => v.name === variable.name)
-  return sameName.length === 1 ? helperCall('designVar', variable.name) : variableId
+  if (sameName.length === 1) return helperCall('designVar', variable.name)
+  const collection = graph.variableCollections.get(variable.collectionId)
+  const sameCollectionName = [...graph.variableCollections.values()].filter(
+    (item) => item.name === collection?.name
+  )
+  const inCollection = sameName.filter((v) => v.collectionId === variable.collectionId)
+  return collection && sameCollectionName.length === 1 && inCollection.length === 1
+    ? helperCall('designVar', collection.name, variable.name)
+    : variableId
 }
 
 function collectBindingProps(node: SceneNode, graph: SceneGraph, props: JSXProp[]): void {
@@ -52,6 +60,22 @@ function collectBindingProps(node: SceneNode, graph: SceneGraph, props: JSXProp[
     'bind',
     Object.fromEntries(bindings.map(([field, id]) => [field, variableRef(graph, id)]))
   ])
+}
+
+/**
+ * The modes a layer pins, as `designMode` names them: by the collection's name when it is unique
+ * in the document and by its ID otherwise. One is written without a list.
+ */
+function collectModeProps(node: SceneNode, graph: SceneGraph, props: JSXProp[]): void {
+  const collections = [...graph.variableCollections.values()]
+  const modes = Object.entries(node.variableModes).flatMap(([collectionId, modeId]) => {
+    const collection = graph.variableCollections.get(collectionId)
+    const mode = collection?.modes.find((item) => item.modeId === modeId)
+    if (!collection || !mode) return []
+    const unique = collections.filter((item) => item.name === collection.name).length === 1
+    return [helperCall('designMode', unique ? collection.name : collection.id, mode.name)]
+  })
+  if (modes.length > 0) props.push(['mode', modes.length === 1 ? modes[0] : modes])
 }
 
 export function collectStateProps(
@@ -65,5 +89,6 @@ export function collectStateProps(
   if (node.isMask) props.push(['mask', MASK_TYPE.print(node.maskType)])
   if (!node.visible) props.push(['visible', false])
   if (node.locked) props.push(['locked', true])
+  collectModeProps(node, graph, props)
   collectBindingProps(node, graph, props)
 }

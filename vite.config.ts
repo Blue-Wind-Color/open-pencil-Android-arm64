@@ -22,6 +22,7 @@ import {
 import { bootSplashPlugin } from './vite/boot-splash'
 import { cloudSitePlugin } from './vite/cloud-site'
 import { aiIconCollection } from './vite/icons'
+import { inlineScriptPlugin } from './vite/inline-script'
 import { metricsBrandPlugin } from './vite/metrics'
 import { openPencilPwaPlugin } from './vite/pwa'
 import { rawMarkdownPlugin } from './vite/raw-markdown'
@@ -65,6 +66,7 @@ export default defineConfig(async ({ command, mode }) => {
     optimizeDeps: { include: ['ai/test'] },
     plugins: [
       rawMarkdownPlugin(),
+      inlineScriptPlugin(),
       bootSplashPlugin({
         entry: resolve(__dirname, 'src/splash/theme.ts'),
         pages: ['index.html', 'cloud.html', 'metrics.html']
