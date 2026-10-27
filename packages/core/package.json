@@ -163,6 +163,12 @@
       "types": "./dist/layout.d.ts",
       "import": "./dist/layout.js",
       "default": "./dist/layout.js"
+    },
+    "./node/fs": {
+      "bun": "./src/node/fs.ts",
+      "types": "./dist/node/fs.d.ts",
+      "import": "./dist/node/fs.js",
+      "default": "./dist/node/fs.js"
     }
   },
   "publishConfig": {
