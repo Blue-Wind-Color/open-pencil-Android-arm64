@@ -44,7 +44,7 @@ export {
   parseOverlapSeverity
 } from './analyze/overlaps/params'
 export { setPexelsAPIKey, setUnsplashAccessKey } from './stock-photo'
-export { importSVG } from './create'
+export { importMermaid, importSVG } from './create'
 export {
   getStockPhotoProviders,
   registerStockPhotoProvider,

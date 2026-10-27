@@ -169,6 +169,7 @@ ja:files.clipboardImagesFetchFailed
 ja:files.importFailed
 ja:files.importHTMLCSS
 ja:files.importHTMLCSSDescription
+ja:files.mermaidPasteFailed
 ja:fonts.downloadFallbackPacksDescription
 ja:fonts.unsupportedFormat
 ja:media.getPexelsAPIKey
@@ -393,6 +394,7 @@ zh-cn:files.clipboardImagesFetchFailed
 zh-cn:files.importFailed
 zh-cn:files.importHTMLCSS
 zh-cn:files.importHTMLCSSDescription
+zh-cn:files.mermaidPasteFailed
 zh-cn:fonts.downloadFallbackPacksDescription
 zh-cn:fonts.unsupportedFormat
 zh-cn:media.getPexelsAPIKey

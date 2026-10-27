@@ -630,6 +630,7 @@
     "node_modules",
     "dist",
     "desktop",
+    "packages/mermaid/src/upstream",
     "*.config.*"
   ],
   "categories": {

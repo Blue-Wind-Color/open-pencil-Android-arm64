@@ -39,6 +39,9 @@ function documentAssetReader(filePath: string) {
 
 export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const bytes = new Uint8Array(await readFile(filePath))
+  // A format laid out as it is read places its layers by their text's size, which is measured
+  // as an export draws it rather than estimated.
+  if (io.findReader(filePath)?.laysOutOnRead) await measureTextHeadlessly()
   const { graph } = await io.readDocument({
     name: filePath,
     data: bytes,
