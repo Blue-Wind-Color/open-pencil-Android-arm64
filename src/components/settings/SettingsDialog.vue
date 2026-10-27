@@ -37,10 +37,7 @@ import {
   AppDialogRoot
 } from '@/components/ui/dialog'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
-import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
-import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
-import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
+import { AppTabsContent, AppTabsList, AppTabsRoot, AppTabsTrigger } from '@/components/ui/tabs'
 
 const { isMobile } = useViewportKind()
 const { settings, common } = useI18n()

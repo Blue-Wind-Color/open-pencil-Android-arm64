@@ -390,6 +390,17 @@ const noEditorImportsInCloudPortal = createImportRule(
   }
 )
 
+// A theme is data: the component side wraps it with tv() once and derives its UI type from it.
+const noTailwindVariantsInThemes = createImportRule(
+  'open-pencil/no-tailwind-variants-in-themes',
+  (sourceRel, specifier) => {
+    if (!sourceRel.startsWith('src/theme/')) return null
+    if (specifier !== 'tailwind-variants' && !specifier.startsWith('tailwind-variants/'))
+      return null
+    return 'A theme file exports a plain slots object. Call tv() where the component uses it (src/components/ui/table/ui.ts).'
+  }
+)
+
 const noAppImportsInSharedUI = createImportRule(
   'open-pencil/no-app-imports-in-shared-ui',
   (sourceRel, _specifier, resolved) => {
@@ -529,6 +540,7 @@ export const openPencilArchitecturePlugin = {
     noComponentsImportViews,
     noViewsImportedOutsideEntry,
     noEditorImportsInCloudPortal,
+    noTailwindVariantsInThemes,
     noNonUIImportsInSharedUI,
     noAppImportsInSharedUI,
     noPropertyPanelInternalsOutsidePanel,
