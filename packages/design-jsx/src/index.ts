@@ -42,6 +42,7 @@ export {
   type TreeNode,
   type BaseProps,
   type EllipseProps,
+  type VectorProps,
   type ComponentProps,
   type InstanceProps,
   type TextProps,

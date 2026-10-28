@@ -221,6 +221,14 @@ export type EllipseProps = {
   /** The hole as a share of the ellipse, from 0 (none) to 1. */
   innerRadius?: number
 }
+/** A `<Vector>`'s path, in SVG's syntax as `d` or as Figma's `vectorPaths`. */
+export type VectorProps = {
+  /** Path data as SVG writes it, filled under `fillRule`; an open subpath fills only without a stroke. */
+  d?: string
+  fillRule?: 'nonzero' | 'evenodd'
+  /** Paths with their own winding rules, as export writes them; `NONE` draws an open path. */
+  paths?: Array<{ windingRule: 'NONZERO' | 'EVENODD' | 'NONE'; data: string }>
+}
 export type TextProps = BaseProps
 
 /** A `<Span>`'s props: the character styles of `<Text>`, under the same names. */
