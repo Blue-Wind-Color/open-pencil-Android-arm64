@@ -14,7 +14,8 @@ export {
   nodeSummary,
   requireNode,
   NodeNotFoundError,
-  toolChangesDocument
+  toolChangesDocument,
+  toolFailure
 } from './schema'
 export type { ToolDef, ToolExecution, ToolCapability } from './schema'
 export {
