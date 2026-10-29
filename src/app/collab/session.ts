@@ -150,6 +150,7 @@ export function openRoomSession({
   const documentData = roomDocumentData(ydoc)
   const persistence = openSavedCopy(roomId, ydoc)
   const saves = trackRoomSaves(ydoc, [
+    meta,
     ynodes,
     yimages,
     yvariables,
@@ -224,7 +225,7 @@ export function openRoomSession({
       awareness.setLocalStateField('hasFile', hasDocument.value)
     }
     const name = readRoomName(meta)
-    if (hasDocument.value && name && origin === 'joined') store.state.documentName = name
+    if (hasDocument.value && name) store.state.documentName = name
   }
 
   function updatePeers() {
@@ -256,6 +257,21 @@ export function openRoomSession({
     }
   })
   meta.observe(refreshDocument)
+  const stopName = watch(
+    () => store.state.documentName,
+    (name) => {
+      if (
+        disposed ||
+        store.state.readOnly ||
+        !hasDocument.value ||
+        readRoot(meta) !== store.graph.rootId ||
+        name === readRoomName(meta)
+      )
+        return
+      writeRoomName(meta, name)
+    },
+    { flush: 'sync' }
+  )
   awareness.on('change', updatePeers)
 
   const connection = connectCollabRoom({
@@ -335,6 +351,7 @@ export function openRoomSession({
     upload: connection.upload,
     dispose() {
       if (disposed) return
+      stopName()
       // Unbinding writes an edit still waiting to be sent, so it runs while the room is open.
       unbindGraphEvents()
       variableSync.dispose()
