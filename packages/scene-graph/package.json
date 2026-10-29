@@ -242,6 +242,12 @@
       "import": "./dist/plugin-data/index.js",
       "default": "./dist/plugin-data/index.js"
     },
+    "./clipping": {
+      "types": "./dist/clipping.d.ts",
+      "bun": "./src/clipping.ts",
+      "import": "./dist/clipping.js",
+      "default": "./dist/clipping.js"
+    },
     "./polygon": {
       "types": "./dist/polygon.d.ts",
       "bun": "./src/polygon.ts",
