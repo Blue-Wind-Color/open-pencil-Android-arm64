@@ -18,7 +18,7 @@ The first time you open OpenPencil, guided setup asks what AI should help with a
 
 You can configure multiple reusable models and separately assign models for design work, reviews, fast tasks, and image input. Models using the same provider connection reuse its stored credential.
 
-The chat composer grows with multiline prompts and can pin the current canvas selection as explicit node context. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
+The chat composer grows with multiline prompts. Type `@` to mention a layer, page, or skill, or use the selection button to mention the selected layers, and `/` at the start of a message to run a skill, or one of an ACP agent's commands. Mentions show as chips, in replies too, where the assistant names the layers it touched; click one to show the layer on the canvas. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
 
 ## Step limit
 
@@ -48,7 +48,7 @@ Open **Settings → Skills** to see where skills come from:
 
 Uploads are on as soon as you add them, and any folder or skill can be switched on or off. Open a skill to switch it, read its instructions, see its files, or check warnings about how it departs from the specification. When two skills share a name, the first in that order is used.
 
-To run a skill yourself, start a message with `/skill:name`. Pi gets the enabled skills as its own. ACP agents such as Claude Code and Codex load their own skills.
+To run a skill yourself, type `/` at the start of a message and pick it, which starts the message with `/skill:name`. Pi gets the enabled skills as its own. ACP agents such as Claude Code and Codex load their own skills.
 
 ## Saved Conversations
 
@@ -101,6 +101,10 @@ The configurable tool catalog covers these categories; the tools offered to a mo
 ## Visual Verification
 
 The assistant can verify its work visually. With `export_image`, on by default, it can capture a screenshot after creating or modifying designs and checks the result against the original request. This catches layout issues, missing elements, and color mismatches that text-only responses would miss. `diff_visual`, enabled by default, compares an edited node with a reference copy and returns the changed pixels and region, so the assistant can confirm an edit stayed within its target.
+
+## Messages while the assistant works
+
+You can keep typing while a reply runs. **Enter** sends the message as soon as the current step's tool calls finish, so the built-in AI can change course without being stopped; **Alt+Enter** waits until it has finished all work. Waiting messages show dimmed below the reply, with a button to remove each. **Escape** stops the reply and sends what is waiting at once, and **Up** on the first line takes waiting messages back to edit. ACP agents and Pi take a waiting message once their turn ends.
 
 ## Stopping a reply
 

@@ -1,4 +1,4 @@
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
 
@@ -20,6 +20,7 @@ import {
 import { HOME_SKILL_SOURCES } from '../sources/home'
 import type { SkillUploadFailure } from '../sources/uploaded'
 import type { Skill, SkillProblem, SkillSourceID } from '../types'
+import { requestedSkill } from './request'
 
 export interface SkillListEntry {
   skill: Skill
@@ -184,6 +185,19 @@ export function useSkillsSettings() {
     await removeUploadedSkill(skill.name)
     if (selectedKey.value === skillPreferenceKey(skill)) close()
   }
+
+  /** Opens a requested skill once a read has found it: the one in use, else the first so named. */
+  function openRequested() {
+    const name = requestedSkill.value
+    if (name === null || loading.value) return
+    requestedSkill.value = null
+    const entries = groups.value.flatMap((group) => group.skills)
+    const entry =
+      entries.find(({ skill }) => skill.name === name && enabledSkills.value.includes(skill)) ??
+      entries.find(({ skill }) => skill.name === name)
+    if (entry) open(entry.skill)
+  }
+  watch([requestedSkill, loading], openRequested)
 
   void reload()
 

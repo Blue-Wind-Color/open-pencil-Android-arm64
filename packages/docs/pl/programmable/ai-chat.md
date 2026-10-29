@@ -50,7 +50,7 @@ Asystent korzysta z ponad 90 narzędzi do tworzenia, stylizowania, układu, komp
 
 Umiejętności to foldery z plikiem `SKILL.md` w formacie [Agent Skills](https://agentskills.io/specification): instrukcje do określonego rodzaju pracy z opcjonalnymi plikami pomocniczymi. Wbudowane AI widzi nazwę i opis każdej włączonej umiejętności i wczytuje jej instrukcje, gdy prośba pasuje; skrypty z umiejętności nie są uruchamiane.
 
-W **Ustawienia → Umiejętności** prześlij umiejętność jako ZIP jej folderu lub jako `SKILL.md`. W aplikacji desktopowej odczytywane są też `~/.agents/skills` i `~/.claude/skills` oraz foldery `.agents/skills` i `.claude/skills` obok otwartego dokumentu, używane dopiero po **Zaufaj folderowi**. Zacznij wiadomość od `/skill:nazwa`, aby uruchomić umiejętność.
+W **Ustawienia → Umiejętności** prześlij umiejętność jako ZIP jej folderu lub jako `SKILL.md`. W aplikacji desktopowej odczytywane są też `~/.agents/skills` i `~/.claude/skills` oraz foldery `.agents/skills` i `.claude/skills` obok otwartego dokumentu, używane dopiero po **Zaufaj folderowi**. Wpisz `/` na początku wiadomości, aby wybrać umiejętność, i `@`, aby wspomnieć warstwę, stronę lub umiejętność. Wzmianki pojawiają się jako chipy, także w odpowiedziach; kliknięcie pokazuje warstwę na płótnie.
 
 ## Kontrola wizualna
 

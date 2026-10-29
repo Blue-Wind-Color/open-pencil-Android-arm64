@@ -8,6 +8,7 @@ import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
 import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
+import { hasSteeringMessage } from '@/app/ai/chat/queue'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
@@ -225,7 +226,8 @@ export function createChatSessionManager({
       thinkingLevel: () => chatThinkingLevel.value,
       onError: captureProviderError,
       diagnosticContext,
-      recorder: runRecorder
+      recorder: runRecorder,
+      yieldWhen: hasSteeringMessage
     })
   }
 

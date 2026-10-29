@@ -37,7 +37,7 @@ Las herramientas cubren lectura, creación, modificación, estructura, variables
 
 Las habilidades son carpetas con un `SKILL.md` en el formato [Agent Skills](https://agentskills.io/specification): instrucciones para un tipo de trabajo, con archivos de referencia opcionales. La IA integrada ve el nombre y la descripción de cada habilidad activa y carga sus instrucciones cuando una solicitud coincide; los scripts de una habilidad no se ejecutan.
 
-En **Ajustes → Habilidades** sube una habilidad como ZIP de su carpeta o como `SKILL.md`. En la app de escritorio también se leen `~/.agents/skills` y `~/.claude/skills`, y las carpetas `.agents/skills` y `.claude/skills` junto al documento abierto, que solo se usan tras **Confiar en la carpeta**. Empieza un mensaje con `/skill:nombre` para ejecutar una habilidad.
+En **Ajustes → Habilidades** sube una habilidad como ZIP de su carpeta o como `SKILL.md`. En la app de escritorio también se leen `~/.agents/skills` y `~/.claude/skills`, y las carpetas `.agents/skills` y `.claude/skills` junto al documento abierto, que solo se usan tras **Confiar en la carpeta**. Escribe `/` al principio de un mensaje para elegir una habilidad, y `@` para mencionar una capa, una página o una habilidad. Las menciones aparecen como chips, también en las respuestas; al hacer clic se muestra la capa en el lienzo.
 
 ## Verificación visual
 

@@ -37,7 +37,7 @@ Les outils couvrent lecture, création, modification, structure, variables, vect
 
 Les compétences sont des dossiers contenant un `SKILL.md` au format [Agent Skills](https://agentskills.io/specification) : des instructions pour un type de travail, avec des fichiers de référence facultatifs. L’IA intégrée voit le nom et la description de chaque compétence active et charge ses instructions quand une demande correspond ; les scripts d’une compétence ne s’exécutent pas.
 
-Dans **Réglages → Compétences**, importez une compétence sous forme de ZIP de son dossier ou de `SKILL.md`. Dans l’application de bureau, `~/.agents/skills` et `~/.claude/skills` sont aussi lus, ainsi que les dossiers `.agents/skills` et `.claude/skills` à côté du document ouvert, utilisés seulement après **Faire confiance au dossier**. Commencez un message par `/skill:nom` pour lancer une compétence.
+Dans **Réglages → Compétences**, importez une compétence sous forme de ZIP de son dossier ou de `SKILL.md`. Dans l’application de bureau, `~/.agents/skills` et `~/.claude/skills` sont aussi lus, ainsi que les dossiers `.agents/skills` et `.claude/skills` à côté du document ouvert, utilisés seulement après **Faire confiance au dossier**. Tapez `/` au début d’un message pour choisir une compétence, et `@` pour mentionner un calque, une page ou une compétence. Les mentions s’affichent sous forme de puces, y compris dans les réponses ; un clic montre le calque sur le canevas.
 
 ## Vérification visuelle
 

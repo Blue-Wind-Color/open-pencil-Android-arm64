@@ -6,12 +6,15 @@ import { MockLanguageModelV4 } from 'ai/test'
 import * as v from 'valibot'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 
 import { createRunRecorder } from '@/app/ai/chat/trace/recorder'
 import type { ThinkingLevel } from '@/app/ai/models/types'
 import { modelProviderAdapter } from '@/app/ai/providers/registry'
 import type { Skill } from '@/app/ai/skills/types'
+import { aiToolOverrides } from '@/app/ai/tools/preferences'
 import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
+import * as figmaFactory from '@/app/automation/bridge/figma-factory'
 import { createEditorStore } from '@/app/editor/session/create'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -253,6 +256,78 @@ test('skills the user runs only by name are neither listed nor loadable', async 
     expect((call?.tools ?? []).map((tool) => tool.name)).not.toContain('load_skill')
     expect(JSON.stringify(call?.prompt)).not.toContain('release')
   } finally {
+    store.dispose()
+  }
+})
+
+test('a waiting message ends the run once the current tool calls finish', async () => {
+  const previousTools = aiToolOverrides.value
+  const store = createEditorStore()
+  const factory = spyOn(figmaFactory, 'makeFigmaFromStore').mockImplementation(
+    (editor) => new FigmaAPI(editor.graph)
+  )
+  let calls = 0
+  const model = new MockLanguageModelV4({
+    doStream: async () => {
+      calls++
+      return {
+        stream: simulateReadableStream({
+          initialDelayInMs: null,
+          chunkDelayInMs: null,
+          chunks: [
+            {
+              type: 'tool-call',
+              toolCallId: `call-${calls}`,
+              toolName: 'get_selection',
+              input: '{}'
+            },
+            {
+              type: 'finish',
+              finishReason: { unified: 'tool-calls', raw: undefined },
+              usage: MOCK_USAGE
+            }
+          ]
+        })
+      }
+    }
+  })
+  let waiting = false
+  try {
+    aiToolOverrides.value = {}
+    const transport = createToolLoopTransport({
+      store,
+      providerID: 'openai',
+      model,
+      effectiveModelID: 'test',
+      maxOutputTokens: 100,
+      thinkingLevel: () => 'default',
+      yieldWhen: () => waiting
+    })
+    waiting = true
+    const stream = await transport.sendMessages({
+      trigger: 'submit-message',
+      chatId: 'steer',
+      messageId: undefined,
+      messages: [{ id: 'user', role: 'user', parts: [{ type: 'text', text: 'Inspect' }] }],
+      abortSignal: undefined
+    })
+    const reader = stream.getReader()
+    const types: string[] = []
+    try {
+      while (true) {
+        const next = await reader.read()
+        if (next.done) break
+        types.push(next.value.type)
+      }
+    } finally {
+      reader.releaseLock()
+    }
+    // One model step: its tool call ran and has its result, then the run gave way.
+    expect(calls).toBe(1)
+    expect(types).toContain('tool-output-available')
+  } finally {
+    aiToolOverrides.value = previousTools
+    factory.mockRestore()
     store.dispose()
   }
 })

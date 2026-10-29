@@ -48,7 +48,7 @@ Der Assistent verfügt über mehr als 90 Werkzeuge für Erstellung, Gestaltung, 
 
 Skills sind Ordner mit einer `SKILL.md` im Format [Agent Skills](https://agentskills.io/specification): Anweisungen für eine Art von Arbeit, mit optionalen Referenzdateien. Die eingebaute KI sieht Name und Beschreibung jedes aktiven Skills und lädt seine Anweisungen, wenn eine Anfrage passt; Skripte in einem Skill laufen nicht.
 
-Unter **Einstellungen → Skills** lädst du einen Skill als ZIP seines Ordners oder als `SKILL.md` hoch. In der Desktop-App kommen `~/.agents/skills` und `~/.claude/skills` dazu sowie die Ordner `.agents/skills` und `.claude/skills` neben dem geöffneten Dokument, die erst nach **Ordner vertrauen** gelten. Starte eine Nachricht mit `/skill:name`, um einen Skill auszuführen.
+Unter **Einstellungen → Skills** lädst du einen Skill als ZIP seines Ordners oder als `SKILL.md` hoch. In der Desktop-App kommen `~/.agents/skills` und `~/.claude/skills` dazu sowie die Ordner `.agents/skills` und `.claude/skills` neben dem geöffneten Dokument, die erst nach **Ordner vertrauen** gelten. Tippe `/` am Anfang einer Nachricht, um einen Skill auszuwählen, und `@`, um eine Ebene, eine Seite oder einen Skill zu erwähnen. Erwähnungen erscheinen als Chips, auch in den Antworten; ein Klick zeigt die Ebene auf der Arbeitsfläche.
 
 ## Visuelle Prüfung
 

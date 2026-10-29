@@ -6,13 +6,14 @@ import {
   imageDraftPresentations,
   preparedImagePresentations
 } from '@/app/ai/attachment/image/presentation'
-import { snapshotNode } from '@/app/ai/attachment/node/snapshot'
+import { snapshotNodes } from '@/app/ai/attachment/node/snapshot'
 import {
   deleteMessageAttachments,
   setMessageAttachments
 } from '@/app/ai/attachment/presentation/store'
 import { appendSkillContext } from '@/app/ai/chat/context'
 import { setVisibleMessageText } from '@/app/ai/chat/presentation'
+import { mentionedNodes } from '@/app/ai/chat/references/nodes'
 import { reportSubmissionError, type SubmissionErrorOptions } from '@/app/ai/chat/submission/errors'
 import { prepareSubmittedImages } from '@/app/ai/chat/submission/images'
 import { chatToResend } from '@/app/ai/chat/submission/resend'
@@ -77,9 +78,7 @@ export function useChatSubmission(options: SubmissionOptions) {
   ): Promise<void> {
     const messageId = crypto.randomUUID()
     const editor = options.getEditor()
-    const nodeAttachments = submission.nodes
-      .map((node) => snapshotNode(editor, messageId, node))
-      .filter((attachment) => attachment !== null)
+    const nodeAttachments = snapshotNodes(editor, messageId, submission.nodes)
     currentChat.messages = [
       ...currentChat.messages,
       { id: messageId, role: 'user', parts: [{ type: 'text', text: submission.modelText }] }
@@ -218,10 +217,19 @@ export function useChatSubmission(options: SubmissionOptions) {
     for (const message of later) if (message.role === 'assistant') revertTurn(message.id)
     // Replies after the edited message are replaced; what it reported needs a new report.
     const note = undone.note(trimmed, currentChat.messages.slice(0, index))
+    const skill = await invokedSkill(trimmed)
     setVisibleMessageText(messageId, trimmed)
+    // The layers the edited text mentions replace the previews the message showed.
+    const editor = options.getEditor()
+    setMessageAttachments(
+      messageId,
+      snapshotNodes(editor, messageId, mentionedNodes(editor.graph, trimmed))
+    )
     try {
       await withTurn(currentChat, () =>
-        currentChat.sendMessage({ messageId, text: note.text }).catch(() => undefined)
+        currentChat
+          .sendMessage({ messageId, text: appendSkillContext(note.text, skill) })
+          .catch(() => undefined)
       )
       undone.reported(currentChat, note.reports, messageId)
     } finally {

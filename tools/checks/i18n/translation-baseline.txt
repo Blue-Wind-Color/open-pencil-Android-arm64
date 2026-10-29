@@ -528,3 +528,5 @@ ru:cloud.productName
 ru:cloud.homeCloudOnHost
 ru:cloud.inviteEmailPlaceholder
 de:settings.skills
+de:ai.chatReferenceSkills
+fr:ai.chatReferencePages

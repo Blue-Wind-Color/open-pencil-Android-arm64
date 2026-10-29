@@ -39,7 +39,7 @@ Per l’ispezione, `get_jsx` offre la vista JSX di andata e ritorno, `diff_creat
 
 Le skill sono cartelle con un `SKILL.md` nel formato [Agent Skills](https://agentskills.io/specification): istruzioni per un tipo di lavoro, con file di riferimento facoltativi. L’IA integrata vede nome e descrizione di ogni skill attiva e ne carica le istruzioni quando una richiesta corrisponde; gli script di una skill non vengono eseguiti.
 
-In **Impostazioni → Skill** carica una skill come ZIP della sua cartella o come `SKILL.md`. Nell’app desktop vengono lette anche `~/.agents/skills` e `~/.claude/skills`, e le cartelle `.agents/skills` e `.claude/skills` accanto al documento aperto, usate solo dopo **Fidati della cartella**. Inizia un messaggio con `/skill:nome` per eseguire una skill.
+In **Impostazioni → Skill** carica una skill come ZIP della sua cartella o come `SKILL.md`. Nell’app desktop vengono lette anche `~/.agents/skills` e `~/.claude/skills`, e le cartelle `.agents/skills` e `.claude/skills` accanto al documento aperto, usate solo dopo **Fidati della cartella**. Digita `/` all’inizio di un messaggio per scegliere una skill e `@` per menzionare un livello, una pagina o una skill. Le menzioni appaiono come chip, anche nelle risposte; un clic mostra il livello sulla tela.
 
 ## Verifica visiva
 
