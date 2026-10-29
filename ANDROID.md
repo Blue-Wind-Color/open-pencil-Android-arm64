@@ -81,11 +81,12 @@ release build is unsigned (`app-arm64-release-unsigned.apk`) and must be aligned
 signed before it will install:
 
 ```sh
+OUT=app/build/outputs/apk/release
 BT=$ANDROID_HOME/build-tools/36.0.0
-$BT/zipalign -p -f 4 app-arm64-release-unsigned.apk app-arm64-release.apk
+$BT/zipalign -p -f 4 "$OUT/app-arm64-release-unsigned.apk" "$OUT/app-arm64-release.apk"
 $BT/apksigner sign --ks my-release.keystore \
-  --ks-pass pass:<store-password> --ks-key-alias openpencil \
-  --key-pass pass:<key-password> app-arm64-release.apk
+  --ks-pass 'pass:<store-password>' --ks-key-alias openpencil \
+  --key-pass 'pass:<key-password>' "$OUT/app-arm64-release.apk"
 ```
 
 To create a keystore:
