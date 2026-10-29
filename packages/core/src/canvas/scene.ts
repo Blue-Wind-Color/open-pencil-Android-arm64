@@ -10,6 +10,7 @@ import {
 } from '@open-pencil/scene-graph/arrow-caps'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { createSceneGeometry, nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { shownText } from '#core/text/case'
@@ -97,9 +98,12 @@ function isCulled(
     ((node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') &&
       node.clipsContent)
   if (!canCull || hasOverflowPathTextPaint(node)) return false
+  // Text lines past a fixed-size box still draw, as in Figma.
+  const linesOverflow = textLinesOverflow(node)
 
   const vp = r.worldViewport
   if (hasTransformedAncestor) {
+    if (linesOverflow > 0) return false
     const bounds = createSceneGeometry(graph, preview).bounds(node)
     return (
       bounds.x > vp.x + vp.w ||
@@ -109,7 +113,7 @@ function isCulled(
     )
   }
   const bw = node.width
-  const bh = node.height
+  const bh = node.height + linesOverflow
   if (projectedNode(node, preview).rotation !== 0) {
     const diag = Math.hypot(bw, bh)
     const { x: cx, y: cy } = createSceneGeometry(graph, preview).toWorld(node, {
@@ -957,13 +961,6 @@ function drawPaintedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): bool
   )
 }
 
-function shouldClipTextToLayoutBox(node: SceneNode): boolean {
-  return (
-    !hasOverflowPathTextPaint(node) &&
-    (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
-  )
-}
-
 function drawResolvedPathText(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -987,16 +984,13 @@ function drawsLaidOutText(r: SkiaRenderer, node: SceneNode): boolean {
 }
 
 /**
- * The emoji of a text, once whatever fills it has, clipped as its glyphs are: over its saved
- * glyphs' placeholder squares, or over the blank squares the editor's layout gives them.
+ * The emoji of a text, once whatever fills it has: over its saved glyphs' placeholder squares, or
+ * over the blank squares the editor's layout gives them.
  */
 function drawTextEmoji(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
   const saved = drawsSavedText(node)
   if (!saved && !drawsLaidOutText(r, node)) return
   canvas.save()
-  if (shouldClipTextToLayoutBox(node)) {
-    canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
-  }
   if (saved) drawSavedEmoji(r, canvas, node)
   else {
     withTextParagraph(r, node, r.ck.BLACK, { halfLeading: true }, (paragraph) =>
@@ -1015,9 +1009,6 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
   if (!text) return
 
   canvas.save()
-  if (shouldClipTextToLayoutBox(node)) {
-    canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
-  }
 
   if (drawSavedText(r, canvas, node, fill)) {
     canvas.restore()

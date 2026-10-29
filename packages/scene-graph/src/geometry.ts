@@ -1,5 +1,6 @@
 import { arrowCapOverflow } from './arrow-caps'
 import type { Rect, Vector } from './primitives'
+import { textLinesOverflow } from './text/overflow'
 import type { Effect, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './types'
 
 export function degToRad(degrees: number): number {
@@ -296,6 +297,7 @@ export interface VisualBoundsNode {
   textDecoration?: string
   textUnderlineOffset?: number | null
   textDecorationThickness?: number | null
+  derivedTextHeight?: number | null
 }
 
 export function unionVisualBounds(
@@ -407,6 +409,12 @@ export function nodeVisualBounds(
   ])
   if (localGeometry) {
     bounds = unionVisualBounds(bounds, transformedLocalBounds(node, localGeometry, abs)) ?? bounds
+  }
+
+  const linesOverflow = textLinesOverflow(node)
+  if (linesOverflow > 0) {
+    const lines = { x: 0, y: 0, width: node.width, height: node.height + linesOverflow }
+    bounds = unionVisualBounds(bounds, transformedLocalBounds(node, lines, abs)) ?? bounds
   }
 
   bounds.maxY += textDecorationOverflow(node)

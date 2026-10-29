@@ -486,16 +486,28 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
 function convertDerivedText(
   nc: NodeChange,
   blobs: Uint8Array[]
-): Pick<SceneNode, 'derivedLayout' | 'derivedTextGlyphs'> {
+): Pick<SceneNode, 'derivedLayout' | 'derivedTextGlyphs' | 'derivedTextHeight'> {
   const layoutSize = nc.derivedTextData?.layoutSize
   return {
     derivedLayout: layoutSize ? { width: layoutSize.x, height: layoutSize.y } : null,
+    derivedTextHeight: savedLinesHeight(nc),
     derivedTextGlyphs: convertFigmaDerivedTextGlyphs(
       nc.derivedTextData,
       blobs,
       nc.textData?.characters ?? ''
     )
   }
+}
+
+/**
+ * How far the lines Figma saved reach: the bottom of the last one. Figma's layout size is the box
+ * of a fixed-size text even when its lines draw past it, so the lines themselves tell.
+ */
+function savedLinesHeight(nc: NodeChange): number | null {
+  const bottoms = (nc.derivedTextData?.baselines ?? []).map(
+    (line) => (line.lineY ?? line.position.y - line.lineAscent) + line.lineHeight
+  )
+  return bottoms.length > 0 ? Math.max(...bottoms) : null
 }
 
 function convertLayoutPadding(
