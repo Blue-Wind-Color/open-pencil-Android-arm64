@@ -527,3 +527,4 @@ pl:shapes.engFolder
 ru:cloud.productName
 ru:cloud.homeCloudOnHost
 ru:cloud.inviteEmailPlaceholder
+de:settings.skills

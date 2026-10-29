@@ -10,10 +10,12 @@ import type { AIProviderID } from '@open-pencil/core/constants'
 import { createRunRecorder } from '@/app/ai/chat/trace/recorder'
 import type { ThinkingLevel } from '@/app/ai/models/types'
 import { modelProviderAdapter } from '@/app/ai/providers/registry'
+import type { Skill } from '@/app/ai/skills/types'
 import { createToolLoopTransport } from '@/app/ai/transports/tool-loop'
 import { createEditorStore } from '@/app/editor/session/create'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { skillFixture } from '#tests/helpers/chat/skills'
 import { memoryTraceStore } from '#tests/helpers/chat/trace-store'
 import { MOCK_USAGE } from '#tests/helpers/chat/usage'
 import { fetchStub } from '#tests/helpers/fetch'
@@ -192,4 +194,65 @@ test.each(['anthropic', 'anthropic-compatible'] as const)(
 test('Z.AI caches automatically and gets no cache marker', async () => {
   const body = await serializedRequest('zai', 'glm-4.6', 'default')
   expect(body.cache_control).toBeUndefined()
+})
+
+test('enabled skills reach the model as a listing and the tools that load them', async () => {
+  const store = createEditorStore()
+  const model = replyModel()
+  // Each message reads the skills again; the second finds none left.
+  const reads: Skill[][] = [[skillFixture()], []]
+  let enabled: Skill[] = []
+  try {
+    const transport = createToolLoopTransport({
+      store,
+      providerID: 'anthropic',
+      model,
+      effectiveModelID: 'claude-test',
+      maxOutputTokens: 100,
+      thinkingLevel: () => 'default',
+      skills: {
+        refresh: async () => {
+          enabled = reads.shift() ?? []
+        },
+        enabled: () => enabled
+      }
+    })
+    await send(transport)
+    await send(transport)
+    const [withSkills, without] = model.doStreamCalls.map((call) => ({
+      system: call.prompt.flatMap((message) =>
+        message.role === 'system' ? [message.content] : []
+      ),
+      tools: (call.tools ?? []).map((tool) => tool.name)
+    }))
+    expect(withSkills?.system.join('\n')).toContain('<name>grid</name>')
+    expect(withSkills?.tools).toEqual(expect.arrayContaining(['load_skill', 'read_skill_file']))
+    expect(without?.system.join('\n')).not.toContain('<name>grid</name>')
+    expect(without?.tools).not.toContain('load_skill')
+  } finally {
+    store.dispose()
+  }
+})
+
+test('skills the user runs only by name are neither listed nor loadable', async () => {
+  const store = createEditorStore()
+  const model = replyModel()
+  const manual = skillFixture({ name: 'release', modelInvocable: false })
+  try {
+    const transport = createToolLoopTransport({
+      store,
+      providerID: 'anthropic',
+      model,
+      effectiveModelID: 'claude-test',
+      maxOutputTokens: 100,
+      thinkingLevel: () => 'default',
+      skills: { refresh: async () => undefined, enabled: () => [manual] }
+    })
+    await send(transport)
+    const [call] = model.doStreamCalls
+    expect((call?.tools ?? []).map((tool) => tool.name)).not.toContain('load_skill')
+    expect(JSON.stringify(call?.prompt)).not.toContain('release')
+  } finally {
+    store.dispose()
+  }
 })

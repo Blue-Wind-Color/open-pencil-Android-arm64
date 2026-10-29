@@ -1,3 +1,5 @@
+import { escape } from 'es-toolkit/string'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 export const MAX_REFERENCED_NODES = 20
@@ -88,8 +90,26 @@ export function appendUndoneCallsContext(text: string, calls: UndoneCalls): stri
   return description ? `${text}${UNDONE_CALLS_CONTEXT_MARKER}${description}` : text
 }
 
+export const SKILL_CONTEXT_MARKER = '\n\n[Skill the user ran — follow its instructions]\n'
+
+/** A skill the user ran by name, as `/skill:name`. */
+export interface InvokedSkill {
+  name: string
+  instructions: string
+}
+
+/** Gives the model the instructions of the skill the user ran, so no agent has to look it up. */
+export function appendSkillContext(text: string, skill: InvokedSkill | null): string {
+  if (!skill) return text
+  return `${text}${SKILL_CONTEXT_MARKER}<skill name="${escape(skill.name)}">\n${skill.instructions}\n</skill>`
+}
+
 /** Each note the chat adds to a request for the model only starts with one of these. */
-const MODEL_NOTE_MARKERS = [REFERENCED_NODE_CONTEXT_MARKER, UNDONE_CALLS_CONTEXT_MARKER]
+const MODEL_NOTE_MARKERS = [
+  REFERENCED_NODE_CONTEXT_MARKER,
+  UNDONE_CALLS_CONTEXT_MARKER,
+  SKILL_CONTEXT_MARKER
+]
 
 /** What the person wrote, without the notes the chat added for the model after it. */
 export function stripModelNotes(text: string): string {

@@ -354,6 +354,9 @@ export const aiMessageDefaults = {
   aiSetupGetDesktop: 'Get the desktop app',
   aiSetupMeteredNote:
     'OpenRouter gives you models from several vendors with one account and one key.',
+  aiSetupSkillsTitle: 'Skills from your coding agents',
+  aiSetupSkillsDescription:
+    'The design chat can use skills your coding agents installed. Most are coding workflows, so pick only the ones that help with design; Settings › Skills changes them later.',
   aiSetupReviewTitle: 'Review your setup',
   aiSetupAgentModel: 'Model chosen by the agent',
   aiSetupFinish: 'Finish setup',
@@ -404,7 +407,61 @@ export const aiMessageDefaults = {
   aiSetupSavedSignInHint: 'Your saved sign-in will be used.',
   aiSetupUseRecommended: 'Use recommended setup',
   aiSetupRolesDescription:
-    'Choose a model for each kind of work. We picked recommended ones from what you connected; anything else you configured stays as it is.'
+    'Choose a model for each kind of work. We picked recommended ones from what you connected; anything else you configured stays as it is.',
+  skillsUpload: 'Upload skill',
+  skillsUploadedSource: 'Uploaded',
+  skillsUploadedSourceDescription:
+    'Skills the AI chat loads when a request matches their description. Upload a ZIP of a skill’s folder or a SKILL.md.',
+  skillsProjectSource: 'Next to this document',
+  skillsProjectSourceDescription: params(
+    'Read from {folder}. Skills here are off until you trust the folder.'
+  ),
+  skillsProjectSourceTrusted: params('Read from {folder}, which you trust.'),
+  skillsTrustFolder: 'Trust folder',
+  skillsStopTrusting: 'Stop trusting',
+  skillsTrustTitle: 'Trust this folder?',
+  skillsTrustDescription: params(
+    'Skills in {folder} give the AI chat instructions it follows. Trust a folder only if you know where its skills come from.'
+  ),
+  skillsFolderUntrusted: 'Trust its folder to use this skill.',
+  skillsAgentsSource: 'Shared agent skills',
+  skillsAgentsSourceDescription: params(
+    'Read from {folder}, where pi, Codex, Gemini CLI, Cursor, and other agents install skills.'
+  ),
+  skillsClaudeSource: 'Claude Code skills',
+  skillsClaudeSourceDescription: params('Read from {folder}.'),
+  skillsNoUploads: 'No uploaded skills yet.',
+  skillsNoneInFolder: 'No skills in this folder.',
+  skillsProblems: 'Some folders could not be read as skills',
+  skillsUploadFailed: 'Could not upload the skill',
+  skillsUploadTooLarge: 'The file is larger than 10 MB.',
+  skillsUploadNoSkill: 'The archive has no SKILL.md.',
+  skillsUploadSeveral: 'The archive holds more than one skill. Upload them one at a time.',
+  skillsUploadUnreadable: 'Choose a ZIP archive or a SKILL.md text file.',
+  skillsDelete: 'Delete skill',
+  skillsDeleteDescription: params('“{name}” will be removed from OpenPencil.'),
+  skillsLocation: 'Location',
+  skillsFiles: 'Files',
+  skillsInstructions: 'Instructions',
+  skillsWarnings: 'This skill departs from the Agent Skills specification',
+  skillsUseSource: 'Use skills from this folder',
+  skillsUse: 'Use this skill',
+  skillsUseDescription: 'The AI chat lists it and loads its instructions when a request matches.',
+  skillsSourceOff: 'Skills from this folder are turned off.',
+  skillsNotUsed: 'Not used',
+  skillsNotTrusted: 'Not trusted',
+  skillsShadowed: 'A skill with the same name from a source above is used instead.',
+  skillWarningPlainFrontmatter:
+    'The frontmatter is not valid YAML, so it was read line by line. Quote values that contain “: ”.',
+  skillWarningNameFromFolder: 'The frontmatter has no name, so the folder name is used.',
+  skillWarningLongName: params('The name is longer than {max} characters.'),
+  skillWarningNameFormat: 'The name should use only lowercase letters, digits, and single hyphens.',
+  skillWarningNameMismatch: 'The name does not match the folder name.',
+  skillWarningLongDescription: params('The description is longer than {max} characters.'),
+  skillErrorNoFrontmatter: 'SKILL.md does not start with YAML frontmatter between --- lines.',
+  skillErrorInvalidFrontmatter: params('The SKILL.md frontmatter is invalid: {detail}'),
+  skillErrorNoDescription: 'The SKILL.md frontmatter has no description.',
+  skillErrorNoName: 'The SKILL.md frontmatter has no name.'
 } as const
 
 export const aiMessages = i18n('ai', aiMessageDefaults)

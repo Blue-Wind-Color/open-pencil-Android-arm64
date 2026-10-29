@@ -25,6 +25,7 @@ import MCPWorkspacePanel from '@/components/settings/mcp/MCPWorkspacePanel.vue'
 import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.vue'
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import PrivacySettingsPanel from '@/components/settings/privacy/PrivacySettingsPanel.vue'
+import SkillsSettingsPanel from '@/components/settings/skills/SkillsSettingsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
 import ToolAccessSettingsPanel from '@/components/settings/tool-access/ToolAccessSettingsPanel.vue'
 import ToolbarSettingsPanel from '@/components/settings/toolbar/ToolbarSettingsPanel.vue'
@@ -55,6 +56,7 @@ const sections = computed(
       { value: 'privacy', label: settings.value.privacy },
       { value: 'mcp', label: settings.value.mcp },
       { value: 'tools', label: settings.value.toolAccess },
+      { value: 'skills', label: settings.value.skills },
       { value: 'fonts', label: settings.value.fonts },
       { value: 'media', label: settings.value.media },
       { value: 'storage', label: settings.value.storage },
@@ -153,6 +155,10 @@ function onOpenChange(open: boolean): void {
           <template #leading><icon-lucide-sliders-horizontal class="size-3.5" /></template>
           {{ settings.toolAccess }}
         </AppTabsTrigger>
+        <AppTabsTrigger value="skills" data-test-id="settings-section-skills">
+          <template #leading><icon-lucide-book-open class="size-3.5" /></template>
+          {{ settings.skills }}
+        </AppTabsTrigger>
         <AppTabsTrigger value="fonts" data-test-id="settings-section-fonts">
           <template #leading><icon-lucide-type class="size-3.5" /></template>
           {{ settings.fonts }}
@@ -198,6 +204,9 @@ function onOpenChange(open: boolean): void {
       </AppTabsContent>
       <AppTabsContent value="tools" as-child>
         <ToolAccessSettingsPanel />
+      </AppTabsContent>
+      <AppTabsContent value="skills" as-child>
+        <SkillsSettingsPanel />
       </AppTabsContent>
       <AppTabsContent value="fonts" as-child>
         <FontSettingsPanel />

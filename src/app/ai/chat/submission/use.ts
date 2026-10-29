@@ -11,6 +11,7 @@ import {
   deleteMessageAttachments,
   setMessageAttachments
 } from '@/app/ai/attachment/presentation/store'
+import { appendSkillContext } from '@/app/ai/chat/context'
 import { setVisibleMessageText } from '@/app/ai/chat/presentation'
 import { reportSubmissionError, type SubmissionErrorOptions } from '@/app/ai/chat/submission/errors'
 import { prepareSubmittedImages } from '@/app/ai/chat/submission/images'
@@ -18,6 +19,7 @@ import { chatToResend } from '@/app/ai/chat/submission/resend'
 import type { ChatInstance, ChatSubmission } from '@/app/ai/chat/submission/types'
 import { restoreTurn, revertTurn } from '@/app/ai/reply/turns'
 import { useUndoRecords } from '@/app/ai/reply/undo'
+import { invokedSkill } from '@/app/ai/skills/invoke'
 import type { EditorStore } from '@/app/editor/active-store'
 
 interface SubmissionOptions extends SubmissionErrorOptions {
@@ -152,6 +154,8 @@ export function useChatSubmission(options: SubmissionOptions) {
     isPreparingAttachments.value = submission.images.length > 0
     options.clearFailure()
     try {
+      // Read before the version check below, so a cancel or newer message meanwhile wins.
+      const skill = await invokedSkill(submission.displayText)
       const currentChat = await options.ensureChat()
       if (currentChat && version === operationVersion) options.chat.value = markRaw(currentChat)
       if (!currentChat || version !== operationVersion) {
@@ -159,7 +163,7 @@ export function useChatSubmission(options: SubmissionOptions) {
         return false
       }
       const note = undone.note(submission.modelText, currentChat.messages)
-      const noted = { ...submission, modelText: note.text }
+      const noted = { ...submission, modelText: appendSkillContext(note.text, skill) }
       const previousIds = new Set(currentChat.messages.map((message) => message.id))
       if (submission.images.length === 0 && submission.nodes.length === 0) {
         await sendText(currentChat, noted, dispatch)
