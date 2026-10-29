@@ -140,9 +140,22 @@ struct AndroidFileBackend;
 #[cfg(target_os = "android")]
 impl AndroidFileBackend {
     fn store_path(account: &str) -> Result<std::path::PathBuf, BackendError> {
+        // Keep `.` distinct and map the `:` reference separator to `+`: two different
+        // valid references ("a.b", "a_b" / "a:b", "a+b") must not collapse onto the
+        // same filename, or a write/remove for one would hit the other's secret.
+        // Validated segments are ASCII [a-z0-9._-] plus the `:` separator, so the
+        // mapping stays one-to-one.
         let safe: String = account
             .chars()
-            .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_alphanumeric() || c == '-' || c == '_' || c == '.' {
+                    c
+                } else if c == ':' {
+                    '+'
+                } else {
+                    '_'
+                }
+            })
             .collect();
         // Derive the app-private dir from the running process instead of hardcoding
         // /data/data/<pkg>: the path differs on multi-user / work profiles
@@ -158,7 +171,10 @@ impl AndroidFileBackend {
     }
 
     /// App-private files dir. Prefers `/proc/self/cmdline` (the package name) so the
-    /// directory follows the actual installed package.
+    /// directory follows the actual installed package, and resolves the current
+    /// Android user from the process uid — on secondary or work profiles (uid >=
+    /// 100000) the package data is mounted at `/data/user/N/<pkg>`, not
+    /// `/data/data/<pkg>`, so a fixed user-0 path silently misses.
     #[cfg(target_os = "android")]
     fn data_dir() -> Result<std::path::PathBuf, BackendError> {
         if let Ok(cmdline) = std::fs::read("/proc/self/cmdline") {
@@ -169,8 +185,14 @@ impl AndroidFileBackend {
                 .trim()
                 .to_string();
             if !package.is_empty() && package.contains('.') {
-                for base in ["/data/user/0", "/data/data"] {
-                    let candidate = std::path::Path::new(base).join(&package).join("files");
+                // uid = user_id * 100000 + app_id; /data/user/N is keyed by user_id.
+                let uid = Self::current_uid();
+                for base in [
+                    format!("/data/user/{uid}"),
+                    "/data/user/0".to_string(),
+                    "/data/data".to_string(),
+                ] {
+                    let candidate = std::path::Path::new(&base).join(&package).join("files");
                     if candidate.is_dir() {
                         return Ok(candidate);
                     }
@@ -179,6 +201,23 @@ impl AndroidFileBackend {
         }
         // Fallback: the historical hardcoded location.
         Ok(std::path::Path::new("/data/data/net.dannote.open_pencil/files").to_path_buf())
+    }
+
+    /// Real uid from /proc/self/status; 0 (user 0) when unreadable.
+    #[cfg(target_os = "android")]
+    fn current_uid() -> u32 {
+        if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
+            for line in status.lines() {
+                if let Some(rest) = line.strip_prefix("Uid:") {
+                    if let Some(field) = rest.split_whitespace().next() {
+                        if let Ok(uid) = field.parse::<u32>() {
+                            return uid;
+                        }
+                    }
+                }
+            }
+        }
+        0
     }
 }
 
@@ -224,9 +263,13 @@ impl CredentialBackend for AndroidFileBackend {
     }
 
     fn exists(&self, account: &str) -> Result<bool, BackendError> {
+        // Decode like `read` does: a nonempty but damaged file must not report
+        // Configured while every read of it fails.
         let path = Self::store_path(account)?;
-        match std::fs::metadata(path) {
-            Ok(meta) => Ok(meta.is_file() && meta.len() > 0),
+        match std::fs::read_to_string(path) {
+            Ok(json) => serde_json::from_str::<String>(&json)
+                .map(|_| true)
+                .map_err(|_| BackendError::Failed),
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
             Err(_) => Err(BackendError::Failed),
         }

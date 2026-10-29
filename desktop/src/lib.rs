@@ -68,6 +68,24 @@ pub fn run() {
         builder = builder.plugin(tauri_plugin_deep_link::init());
     }
 
+    // Self-update only exists on desktop; the frontend calls the updater plugin
+    // unconditionally, so the Rust side must be there to answer.
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    }
+
+    // The native-menu commands read this state; without it they error on desktop.
+    #[cfg(desktop)]
+    let builder = builder.manage(NativeMenuState(Mutex::new(NativeMenuInputs::default())));
+
+    // Route native menu selections to the frontend. Without this, Settings / Quit /
+    // Check for Updates clicks do nothing on desktop.
+    #[cfg(desktop)]
+    let builder = builder.on_menu_event(|app, event| {
+        handle_menu_event(app, event.id().0.as_str());
+    });
+
     builder
         .manage(launch::PendingOpen::default())
         .manage(ProxyHttpRequests::default())

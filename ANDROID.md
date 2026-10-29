@@ -27,13 +27,21 @@ Gradle task only copies the result into `jniLibs` anyway:
 
 ```sh
 NDK=$ANDROID_NDK_HOME
-TC=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin
+# The prebuilt toolchain dir is host-specific: linux-x86_64, darwin-x86_64 or
+# windows-x86_64 depending on where the NDK was installed.
+HOST_OS=$(uname -s | tr '[:upper:]' '[:lower:]')   # linux / darwin
+[ "$HOST_OS" = darwin ] && HOST_OS=darwin || HOST_OS=linux
+TC=$NDK/toolchains/llvm/prebuilt/${HOST_OS}-x86_64/bin
 
 export CC_aarch64_linux_android=$TC/aarch64-linux-android26-clang
 export AR_aarch64_linux_android=$TC/llvm-ar
 export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$TC/aarch64-linux-android26-clang
 
+# generate_context!() reads desktop/icons/32x32.png at compile time; the icons are
+# not committed, so generate them first (normally done by beforeBuildCommand).
 cd desktop
+bun run generate:icons --target desktop
+
 cargo build --release --target aarch64-linux-android --lib \
   --features tauri/custom-protocol
 ```
@@ -67,8 +75,20 @@ concluding a fix did not apply.
 Release signing material is not in the repository. Either copy
 `gen/android/keystore.properties.example` to `gen/android/keystore.properties` and fill it
 in, or export `OPENPENCIL_KEYSTORE`, `OPENPENCIL_KEYSTORE_PASSWORD`,
-`OPENPENCIL_KEY_ALIAS`, `OPENPENCIL_KEY_PASSWORD`. Without either, the release build is
-unsigned and only installs after `apksigner` signs it with a debug key.
+`OPENPENCIL_KEY_ALIAS`, `OPENPENCIL_KEY_PASSWORD`. When either is present, Gradle signs
+the APK during `assembleArm64Release` and no extra step is needed. Without either, the
+release build is unsigned (`app-arm64-release-unsigned.apk`) and must be aligned and
+signed before it will install:
+
+```sh
+BT=$ANDROID_HOME/build-tools/36.0.0
+$BT/zipalign -p -f 4 app-arm64-release-unsigned.apk app-arm64-release.apk
+$BT/apksigner sign --ks my-release.keystore \
+  --ks-pass pass:<store-password> --ks-key-alias openpencil \
+  --key-pass pass:<key-password> app-arm64-release.apk
+```
+
+To create a keystore:
 
 ```sh
 keytool -genkeypair -v -keystore my-release.keystore -alias openpencil \
@@ -80,6 +100,9 @@ keytool -genkeypair -v -keystore my-release.keystore -alias openpencil \
 ```sh
 adb install -r app/build/outputs/apk/release/app-arm64-release.apk
 ```
+
+If the APK above does not exist, you are looking at `app-arm64-release-unsigned.apk` —
+sign it first (see [Signing](#signing)).
 
 The package id is `net.dannote.open_pencil`, minimum SDK 24, arm64-v8a only.
 
