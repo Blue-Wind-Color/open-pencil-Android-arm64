@@ -91,7 +91,7 @@ async function failCredentialWrites(page: Page) {
 
 test('media explains optional keys and preserves input after a failed save', async ({ page }) => {
   await openSettings(page)
-  await page.getByTestId('settings-section-media').click()
+  await page.getByTestId('settings-section-services').click()
   await page.getByRole('button', { name: /Pexels/ }).click()
   const key = page.getByRole('textbox', { name: 'API key', exact: true })
   await expect(page.getByRole('link', { name: 'Get API key' })).toHaveAttribute(
