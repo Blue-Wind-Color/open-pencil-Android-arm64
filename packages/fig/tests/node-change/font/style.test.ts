@@ -91,3 +91,66 @@ test('names a range that sets another face without a name by that face, not the 
   expect(written.fontName?.style).toBe('Book')
   expect(written.textData?.styleOverrideTable?.[0]?.fontName?.style).toBe('Bold')
 })
+
+test('reads a face’s weight and slant from the font data Figma saves beside its glyphs', () => {
+  // As Figma desktop saved them (2026-10-30): the weight its font gives each face.
+  const text = (family: string, style: string, fontWeight: number, italic = false) =>
+    nodeChangeToProps(
+      {
+        type: 'TEXT',
+        fontName: { family, style, postscript: '' },
+        derivedTextData: {
+          fontMetaData: [
+            {
+              key: { family, style, postscript: '' },
+              fontWeight,
+              fontStyle: italic ? 'ITALIC' : 'NORMAL'
+            }
+          ]
+        }
+      } as NodeChange,
+      []
+    )
+  expect(text('Avenir', 'Book', 350)).toMatchObject({ fontWeight: 350, fontStyle: 'Book' })
+  expect(text('Avenir', 'Heavy', 800)).toMatchObject({ fontWeight: 800, italic: false })
+  expect(text('Avenir', 'Oblique', 400, true)).toMatchObject({ fontWeight: 400, italic: true })
+  expect(text('Roboto', 'Condensed Bold', 700)).toMatchObject({ fontWeight: 700 })
+  expect(text('Fira Code', 'Retina', 450)).toMatchObject({ fontWeight: 450 })
+})
+
+test('reads a range’s weight and slant from the saved font data, not its name', () => {
+  const props = nodeChangeToProps(
+    {
+      type: 'TEXT',
+      fontName: { family: 'Avenir', style: 'Roman', postscript: '' },
+      textData: {
+        characters: 'Roman Book',
+        characterStyleIDs: [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        styleOverrideTable: [
+          { styleID: 1, fontName: { family: 'Avenir', style: 'Book', postscript: '' } }
+        ]
+      },
+      derivedTextData: {
+        fontMetaData: [
+          {
+            key: { family: 'Avenir', style: 'Roman', postscript: '' },
+            fontWeight: 400,
+            fontStyle: 'NORMAL',
+            fontLineHeight: 1.2
+          },
+          // A slant its name does not say, so only the saved data can give it.
+          {
+            key: { family: 'Avenir', style: 'Book', postscript: '' },
+            fontWeight: 350,
+            fontStyle: 'ITALIC',
+            fontLineHeight: 1.2
+          }
+        ]
+      }
+    } as NodeChange,
+    []
+  )
+  expect(props.styleRuns).toMatchObject([
+    { start: 6, length: 4, style: { fontWeight: 350, italic: true, fontStyle: 'Book' } }
+  ])
+})
