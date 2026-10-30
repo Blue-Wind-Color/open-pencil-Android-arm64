@@ -40,7 +40,24 @@ export const SHARED_TEXT_STYLE_FIELDS = [
   'fontFeatures'
 ] as const satisfies readonly (keyof SceneNode)[]
 
-const TEXT_STYLE_KEYS = new Set<keyof SceneNode>(SHARED_TEXT_STYLE_FIELDS)
+/**
+ * The paragraph fields a text style also gives the whole text; a range takes only the character
+ * ones. Changing one leaves the style, and a cleared style resets them (live-verified).
+ */
+const TEXT_STYLE_PARAGRAPH_FIELDS = [
+  'paragraphSpacing',
+  'paragraphIndent',
+  'listSpacing'
+] as const satisfies readonly (keyof SceneNode)[]
+
+/** The fields each kind of shared style gives what uses it; changing one leaves the style. */
+export const SHARED_STYLE_FIELDS = {
+  fill: ['fills'],
+  stroke: ['strokes'],
+  text: [...SHARED_TEXT_STYLE_FIELDS, ...TEXT_STYLE_PARAGRAPH_FIELDS],
+  effect: ['effects'],
+  grid: ['layoutGrids']
+} as const satisfies Record<SharedStyleKind, readonly (keyof SceneNode)[]>
 
 /** The fields that pick a text's face, which its style name names. */
 export const FACE_KEYS = [
@@ -84,28 +101,15 @@ export function styleDetachmentChanges(
   changes: Partial<SceneNode>
 ): Partial<SceneNode> {
   const next = { ...changes }
-  if ('fills' in changes && !('fillStyleId' in changes) && node.fillStyleId) {
-    next.fillStyleId = null
-  }
-  if ('strokes' in changes && !('strokeStyleId' in changes) && node.strokeStyleId) {
-    next.strokeStyleId = null
-  }
-  if ('effects' in changes && !('effectStyleId' in changes) && node.effectStyleId) {
-    next.effectStyleId = null
-  }
-  if ('layoutGrids' in changes && !('gridStyleId' in changes) && node.gridStyleId) {
-    next.gridStyleId = null
+  for (const [kind, fields] of Object.entries(SHARED_STYLE_FIELDS)) {
+    const reference = STYLE_REF_KEYS[kind as SharedStyleKind]
+    if (reference in changes || !node[reference]) continue
+    if (fields.some((field) => field in changes)) next[reference] = null
   }
   // A face named for another family, weight, or slant names none; the new one takes its own name.
   const changesFace = FACE_KEYS.some((key) => key in changes && changes[key] !== node[key])
   if (changesFace && !('fontStyle' in changes) && node.fontStyle) {
     next.fontStyle = null
-  }
-  const changesTextStyle = (Object.keys(changes) as (keyof SceneNode)[]).some((key) =>
-    TEXT_STYLE_KEYS.has(key)
-  )
-  if (changesTextStyle && !('textStyleId' in changes) && node.textStyleId) {
-    next.textStyleId = null
   }
   return next
 }
