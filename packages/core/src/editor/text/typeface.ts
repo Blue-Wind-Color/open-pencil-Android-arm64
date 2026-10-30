@@ -7,10 +7,11 @@ import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import { generatedFrameText } from '@open-pencil/scene-graph/generated'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
+import type { NodeActions } from '#core/editor/nodes'
 import type { EditorContext } from '#core/editor/types'
 
 /** Typefaces for the text generated frames are named by, such as a sticky note's body or a shape's label. */
-export function createGeneratedTextActions(ctx: EditorContext) {
+export function createGeneratedTextActions(ctx: EditorContext, nodes: NodeActions) {
   /**
    * Sets the text that sticky notes and shapes among `ids` are named by in one of FigJam's
    * typefaces, once its face is loaded.
@@ -30,7 +31,7 @@ export function createGeneratedTextActions(ctx: EditorContext) {
       () => {
         for (const frame of frames) {
           const text = generatedFrameText(ctx.graph, frame)
-          if (text) ctx.graph.updateNode(text.id, figJamTypefaceFields(typeface, text))
+          if (text) nodes.updateNode(text.id, figJamTypefaceFields(typeface, text))
         }
       }
     )

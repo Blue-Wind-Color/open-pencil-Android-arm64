@@ -1,10 +1,13 @@
+import { isEqual, omit } from 'es-toolkit'
+
 import type { SceneGraph } from './graph'
 import type {
   CharacterStyleOverride,
   SceneNode,
   SharedStyle,
   SharedStyleKind,
-  SharedStyleType
+  SharedStyleType,
+  Stroke
 } from './types'
 
 const STYLE_REF_KEYS = {
@@ -96,6 +99,22 @@ export function getSharedStyles(graph: SceneGraph, kind: SharedStyleKind): Share
   return styles.sort((left, right) => left.name.localeCompare(right.name))
 }
 
+/** What a stroke draws along beside its paint: the layer's, not its stroke style's. */
+const STROKE_LINE_KEYS = ['weight', 'align', 'cap', 'join', 'dashPattern'] as const
+
+/**
+ * Whether new strokes only change how their lines run, keeping every paint. A stroke style gives
+ * paints only, so such a write keeps it; any other strokes write leaves it, as setting even the
+ * same paints does in Figma (live-verified).
+ */
+function restylesStrokeLines(current: readonly Stroke[], next: readonly Stroke[]): boolean {
+  const paints = (strokes: readonly Stroke[]) =>
+    strokes.map((stroke) => omit(stroke, STROKE_LINE_KEYS))
+  const lines = (strokes: readonly Stroke[]) =>
+    strokes.map((stroke) => STROKE_LINE_KEYS.map((key) => stroke[key]))
+  return isEqual(paints(current), paints(next)) && !isEqual(lines(current), lines(next))
+}
+
 export function styleDetachmentChanges(
   node: SceneNode,
   changes: Partial<SceneNode>
@@ -104,7 +123,10 @@ export function styleDetachmentChanges(
   for (const [kind, fields] of Object.entries(SHARED_STYLE_FIELDS)) {
     const reference = STYLE_REF_KEYS[kind as SharedStyleKind]
     if (reference in changes || !node[reference]) continue
-    if (fields.some((field) => field in changes)) next[reference] = null
+    if (!fields.some((field) => field in changes)) continue
+    if (kind === 'stroke' && changes.strokes && restylesStrokeLines(node.strokes, changes.strokes))
+      continue
+    next[reference] = null
   }
   // A face named for another family, weight, or slant names none; the new one takes its own name.
   const changesFace = FACE_KEYS.some((key) => key in changes && changes[key] !== node[key])
