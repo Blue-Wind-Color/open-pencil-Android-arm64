@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { propertyBinding } from '#fig-tests/helpers/component-props'
+
 import { materializeDocument } from '@open-pencil/fig'
 import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
@@ -32,7 +34,7 @@ function baseTextChange(): NodeChange {
     fontSize: 14,
     fontName: { family: 'Inter', style: 'Regular', postscript: '' },
     textData: { characters: 'Menu Item', lines: [{ lineType: 'PLAIN' }] },
-    componentPropRefs: [{ defID: textPropGuid, componentPropNodeField: 'TEXT_DATA' }]
+    ...propertyBinding(textPropGuid, 'TEXT_DATA')
   }
 }
 
@@ -138,7 +140,7 @@ describe('Figma component property import', () => {
         type: 'FRAME',
         name: 'Icon',
         visible: true,
-        componentPropRefs: [{ defID: visibilityPropGuid, componentPropNodeField: 'VISIBLE' }]
+        ...propertyBinding(visibilityPropGuid, 'VISIBLE')
       },
       {
         guid: plainIconGuid,
@@ -296,7 +298,7 @@ describe('Figma component property import', () => {
         symbolData: { symbolID: mailIconGuid },
         size: { x: 16, y: 16 },
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-        componentPropRefs: [{ defID: iconPropGuid, componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }]
+        ...propertyBinding(iconPropGuid, 'OVERRIDDEN_SYMBOL_ID')
       },
       {
         guid: sourceInstanceGuid,
