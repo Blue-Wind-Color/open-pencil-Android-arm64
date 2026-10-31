@@ -85,7 +85,10 @@ export function useShaderPlayback(options: {
   editor: Editor
   getRenderer: () => SkiaRenderer | null
   /** The view this canvas draws: its pan, zoom, page, and whether it previews. */
-  getView: () => Pick<EditorState, 'panX' | 'panY' | 'zoom' | 'currentPageId' | 'canvasView'>
+  getView: () => Pick<
+    EditorState,
+    'panX' | 'panY' | 'zoom' | 'currentPageId' | 'canvasView' | 'hostRestrictions'
+  >
   getViewport: () => { width: number; height: number }
   markDirty: () => void
 }) {
