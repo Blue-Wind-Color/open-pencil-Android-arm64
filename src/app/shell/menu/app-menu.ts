@@ -1,6 +1,5 @@
 import type { Component } from 'vue'
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import IconDownload from '~icons/lucide/download'
 import IconEye from '~icons/lucide/eye'
 import IconFile from '~icons/lucide/file'
@@ -38,7 +37,6 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
-import { browseFiles } from '@/app/shell/menu/navigation'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
   AppMenuActionItem,
@@ -97,7 +95,6 @@ function isSeparator(entry: AppMenuEntry): entry is Extract<AppMenuEntry, { type
 
 export function useAppMenu() {
   const store = useEditorStore()
-  const router = useRouter()
   const {
     commands,
     menuItem: commandMenuItem,
@@ -109,8 +106,8 @@ export function useAppMenu() {
 
   const translatedMenuItemLabels: Partial<Record<string, keyof typeof menu.value>> = {
     new: 'new',
+    'new-tab': 'newTab',
     open: 'open',
-    'browse-files': 'browseFiles',
     'open-tour': 'openTour',
     diagnostics: 'diagnostics',
     save: 'save',
@@ -183,8 +180,10 @@ export function useAppMenu() {
     new: () => {
       void import('@/app/tabs').then((m) => m.createTab())
     },
+    'new-tab': () => {
+      void import('@/app/tabs').then((m) => m.openNewFileTab())
+    },
     open: () => void openFileDialog(),
-    'browse-files': () => browseFiles(router),
     'open-tour': () => {
       openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
     },

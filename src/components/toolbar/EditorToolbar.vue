@@ -30,13 +30,14 @@ const { menu } = useI18n()
 
 const toolLabels = useToolLabels()
 
-const toolShortcuts = toolShortcutLabels()
+const profile = computed(() => resolveEditorProfile(store.state))
+const toolShortcuts = computed(() => toolShortcutLabels(profile.value.toolKeys))
 const items = computed(() => {
   const layout = appPreferences.value.toolbar
   return toolbarItems(
-    toolbarLayoutFor(layout, resolveEditorProfile(store.state).tools),
+    toolbarLayoutFor(layout, profile.value.tools),
     toolLabels.value,
-    toolShortcuts
+    toolShortcuts.value
   )
 })
 const tools = computed(() =>
@@ -50,7 +51,7 @@ const actionItems = computed(() =>
  * a read-only document leaves them out, as it does the buttons.
  */
 const hiddenActions = computed(() =>
-  !resolveEditorProfile(store.state).edits
+  !profile.value.edits
     ? []
     : TOOLBAR_ACTIONS.filter((action) => !actionItems.value.includes(action))
 )
