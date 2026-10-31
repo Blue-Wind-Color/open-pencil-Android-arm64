@@ -1,4 +1,5 @@
 mod agents;
+mod android_save;
 mod credentials;
 mod files;
 mod fonts;
@@ -86,6 +87,22 @@ pub fn run() {
         handle_menu_event(app, event.id().0.as_str());
     });
 
+    // Saving goes through the platform's document picker, which hands back a `content://`
+    // URI that `std::fs` cannot open. The Kotlin side owns that write.
+    #[cfg(target_os = "android")]
+    {
+        builder = builder.plugin(
+            tauri::plugin::Builder::<_, ()>::new("android-save")
+                .setup(|app, api| {
+                    let bridge = android_save::init(&api)
+                        .map_err(|error| std::io::Error::other(error))?;
+                    app.manage(bridge);
+                    Ok(())
+                })
+                .build(),
+        );
+    }
+
     builder
         .manage(launch::PendingOpen::default())
         .manage(ProxyHttpRequests::default())
@@ -95,6 +112,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             agents::lookup::agent_lookup,
             agents::lookup::agent_workspace,
+            android_save::write_content_uri,
             files::fig::build_fig_file,
             network::oauth::chatgpt_oauth_listen,
             network::oauth::chatgpt_oauth_wait,

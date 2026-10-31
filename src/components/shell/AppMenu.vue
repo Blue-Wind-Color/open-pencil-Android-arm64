@@ -22,6 +22,7 @@ import { vTestId } from '@open-pencil/vue/testing'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
+import { isAndroid } from '@/app/tauri/env'
 import { useAppMenu } from '@/app/shell/menu/app-menu'
 import { useDocumentNameRename } from '@/app/shell/menu/document-name'
 import {
@@ -58,6 +59,13 @@ watch(nameInput, (input) => {
 })
 
 const { menu: t, settings } = useI18n()
+
+/**
+ * Android has neither the desktop native menu nor the browser menubar below, and the HUD that
+ * carries Save on phone widths is not rendered in the wide layout tablets use. Without this
+ * button the only way to save is a hardware keyboard's Ctrl+S.
+ */
+const showSaveButton = isAndroid()
 
 const { topMenus } = useAppMenu()
 const menuCls = useMenuUI()
@@ -97,6 +105,14 @@ const { overflowStart, overflowEnd, scrollTowardHidden } = useScrollOverflow(men
         >{{ store.state.documentName }}</span
       >
       <CloudDocumentStatusHost />
+      <IconButton
+        v-if="showSaveButton"
+        :label="t.save"
+        data-test-id="app-save-button"
+        @click="store.saveFigFile()"
+      >
+        <icon-lucide-save class="size-3.5" />
+      </IconButton>
       <IconButton
         :label="settings.title"
         data-test-id="app-settings-trigger"

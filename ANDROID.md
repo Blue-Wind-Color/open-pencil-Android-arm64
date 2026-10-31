@@ -118,6 +118,20 @@ The package id is `net.dannote.open_pencil`, minimum SDK 24, arm64-v8a only.
 | `desktop/gen/android/` | Gradle project tracked: icons, `MainActivity`, SDK levels, signing wiring |
 | `src/app/tauri/env.ts` | `isAndroid()` |
 | `src/app/settings/mcp/` | `MCP_SETTINGS_ENABLED`, hides the MCP tab on Android |
+| `src/components/shell/AppMenu.vue` | Save button in the panel header on Android — the native menu is desktop-only and the phone HUD is not rendered at tablet widths, so there was no way to save without a keyboard |
+| `desktop/src/android_save.rs` + `gen/android/.../SavePlugin.kt` | writes to the `content://` document the system picker returns; `std::fs` cannot open one, so the copy goes through the ContentResolver |
+| `src/app/document/io/write.ts` | stages the file in the cache directory and hands the path to the platform, instead of sending megabytes over IPC |
+
+## Saving on Android
+
+`Save` opens the system "save as" sheet and writes through
+`ACTION_CREATE_DOCUMENT`'s `content://` URI. The app stages the document in its cache
+directory first and the Kotlin side copies it through the ContentResolver — the
+`fs` plugin resolves paths with `std::fs`, which cannot open a document URI.
+
+The chosen URI is remembered for the session, so a second `Save` writes to the same
+document without asking again. Android's grant for that URI does not survive a process
+restart: after reopening the app, saving asks for a location once more.
 
 ## Known limitations
 

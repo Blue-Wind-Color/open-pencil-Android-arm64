@@ -83,12 +83,15 @@ export function createSaveActions({
       const path = await chooseTauriFigSavePath()
       if (!path) return false
       setStorageBinding(null)
+      // Android's picker returns a document URI rather than a path. It has no filename to
+      // read and nothing to watch, so the current name is kept and the watcher is skipped.
+      const isDocumentUri = path.startsWith('content://')
       setFilePath(path)
       setFileHandle(null)
-      state.documentName = documentNameFromFigPath(path)
+      if (!isDocumentUri) state.documentName = documentNameFromFigPath(path)
       const wrote = await writeFile(data, version)
       if (wrote) setSourceIdentity({ handle: null, path })
-      startWatchingFile()
+      if (wrote && !isDocumentUri) startWatchingFile()
       return wrote
     }
 
