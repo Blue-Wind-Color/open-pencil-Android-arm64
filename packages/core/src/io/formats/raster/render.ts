@@ -25,16 +25,6 @@ function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: s
   return nodeIds.every((nodeId) => findPageId(graph, nodeId) === pageId)
 }
 
-function nodeNeedsSceneBackdrop(graph: SceneGraph, nodeId: string): boolean {
-  const node = graph.getNode(nodeId)
-  if (!node) return false
-  if (node.blendMode !== 'NORMAL' && node.blendMode !== 'PASS_THROUGH') return true
-  if (node.effects.some((effect) => effect.visible && effect.type === 'BACKGROUND_BLUR')) {
-    return true
-  }
-  return node.childIds.some((childId) => nodeNeedsSceneBackdrop(graph, childId))
-}
-
 export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
   return computeDescendantVisualBounds(
     nodeIds,
@@ -226,6 +216,24 @@ function renderToSurface(
   }
 }
 
+/**
+ * `nodeIds` in the order the source page paints them, bottom to top, whatever order they came in,
+ * without those a selected ancestor already paints.
+ */
+function inPaintOrder(source: SceneGraph, pageId: string, nodeIds: readonly string[]): string[] {
+  const selected = new Set(nodeIds)
+  const ordered: string[] = []
+  const visit = (id: string): void => {
+    if (selected.has(id)) {
+      ordered.push(id)
+      return
+    }
+    for (const childId of source.getNode(id)?.childIds ?? []) visit(childId)
+  }
+  visit(pageId)
+  return ordered
+}
+
 export function prepareSelectionRenderGraph(
   source: SceneGraph,
   renderGraph: SceneGraph,
@@ -235,7 +243,9 @@ export function prepareSelectionRenderGraph(
   const page = renderGraph.getNode(pageId)
   if (!page) return
 
-  page.childIds = nodeIds.filter((nodeId) => renderGraph.getNode(nodeId) !== undefined)
+  page.childIds = inPaintOrder(source, pageId, nodeIds).filter(
+    (nodeId) => renderGraph.getNode(nodeId) !== undefined
+  )
   for (const nodeId of page.childIds) {
     const node = renderGraph.getNode(nodeId)
     const sourceNode = source.getNode(nodeId)
@@ -291,23 +301,17 @@ export function renderNodesToImage(
   const pixelH = Math.ceil(contentH * options.scale)
   if (pixelW <= 0 || pixelH <= 0) return null
 
+  // Figma exports a layer by itself, without the page behind it, even when it blends.
   const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds })
   if (!extracted.pageId) return null
-
-  const renderGraph = nodeIds.some((nodeId) => nodeNeedsSceneBackdrop(graph, nodeId))
-    ? graph
-    : extracted.graph
-  const renderPageId = renderGraph === graph ? pageId : extracted.pageId
-  if (renderGraph !== graph) {
-    prepareSelectionRenderGraph(graph, renderGraph, renderPageId, nodeIds)
-  }
+  prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, nodeIds)
 
   const quality = options.quality ?? (options.format === 'PNG' ? 100 : 90)
   return renderToSurface(
     ck,
     renderer,
-    renderGraph,
-    renderPageId,
+    extracted.graph,
+    extracted.pageId,
     pixelW,
     pixelH,
     options.format,
