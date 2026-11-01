@@ -7,18 +7,51 @@ alike. The desktop build is unchanged: the platform-specific work sits behind
 
 ## Requirements
 
-| Tool | Version used | Notes |
-| --- | --- | --- |
-| Rust | stable with `aarch64-linux-android` target | `rustup target add aarch64-linux-android` |
-| NDK | r27 (`27.0.12077973`) | `export ANDROID_NDK_HOME=/path/to/ndk/27.0.12077973` |
-| Java | 17+ | Gradle 9 needs it |
-| Bun | 1.x | frontend deps and bundle |
-| Android SDK | platform 37, build-tools 36+ | `compileSdk = 37` |
+| Tool        | Version used                               | Notes                                                |
+| ----------- | ------------------------------------------ | ---------------------------------------------------- |
+| Rust        | stable with `aarch64-linux-android` target | `rustup target add aarch64-linux-android`            |
+| NDK         | r27 (`27.0.12077973`)                      | `export ANDROID_NDK_HOME=/path/to/ndk/27.0.12077973` |
+| Java        | 17+                                        | Gradle 9 needs it                                    |
+| Bun         | 1.x                                        | frontend deps and bundle                             |
+| Android SDK | platform 37, build-tools 36+               | `compileSdk = 37`                                    |
 
 ```sh
 bun install
 bun run build          # produces dist/ — the Tauri asset bundle point this at
 ```
+
+### A fresh clone does not build yet
+
+`desktop/gen/android/` is checked in, but four files the Gradle build applies are generated
+by the Tauri CLI and ignored by git (`gen/android/.gitignore`, `gen/android/app/.gitignore`):
+
+| File                                     | What it carries                                            |
+| ---------------------------------------- | ---------------------------------------------------------- |
+| `gen/android/tauri.settings.gradle`      | the module list and the Rust plugin projects Tauri injects |
+| `gen/android/app/tauri.build.gradle.kts` | the `rust` task, the `jniLibs` link, `abiFilters`          |
+| `gen/android/app/tauri.properties`       | the Tauri version the app module builds against            |
+| `gen/android/app/proguard-tauri.pro`     | the keep rules for the JNI entry points                    |
+
+`settings.gradle` applies the first one unconditionally, so the clone fails before Gradle
+even reads the project — and `./gradlew :app:rust` cannot repair itself, because the same
+missing file is what stops Gradle from starting:
+
+> Could not read script '.../gen/android/tauri.settings.gradle' as it does not exist.
+
+Only the Tauri CLI writes these. `tauri android init` regenerates the scaffolding but not
+this file, so run a build once — it may fail later on, in Rust or Gradle, and the four
+files are already in place by then:
+
+```sh
+cd desktop
+bun tauri android build --apk --target aarch64
+```
+
+Everything here is generated from `tauri.conf.json` and the plugin list, so regenerating it
+is safe: re-running the CLI leaves the tracked Kotlin, `app/build.gradle.kts` and
+`settings.gradle` untouched, and rewrites these four byte for byte. Re-run it after
+changing `tauri.conf.json` or adding a Rust plugin, since the plugin list lives in
+`tauri.settings.gradle`.
 
 ## Build the Rust library
 
@@ -48,15 +81,30 @@ cargo build --release --target aarch64-linux-android --lib \
 ```
 
 `--features tauri/custom-protocol` is **not optional**. Without it Tauri compiles in dev
-mode and the WebView requests `devUrl` (`http://localhost:1420`) instead of the embedded
-assets, which looks exactly like "the app cannot reach the network" at launch. You can
-check which one you got:
+mode and the WebView asks `devUrl` for the page instead of reading the assets embedded in
+the `.so`, which looks exactly like "the app cannot reach the network" at launch, or like a
+white screen on a device with no dev server behind it.
+
+The string `localhost:1420` is _not_ a usable test for this: it comes from `devUrl` in
+`tauri.conf.json`, which every build compiles in. The difference is the asset table, so
+check for the bundled scripts instead:
 
 ```sh
-strings target/aarch64-linux-android/release/libopen_pencil_lib.so | grep -c localhost:1420
-# 0 → production build, assets embedded
-# 1 → dev build, will fail without a dev server
+strings target/aarch64-linux-android/release/libopen_pencil_lib.so \
+  | grep -cE '/assets/[A-Za-z0-9_.-]+-[A-Za-z0-9_-]{8}\.js'
+# hundreds → production build, assets embedded
+# 0        → dev build, will fail without a dev server
 ```
+
+For reference, the two builds side by side on `aarch64-linux-android`:
+
+| Build                              | `/assets/*.js` | `localhost:1420` |
+| ---------------------------------- | -------------- | ---------------- |
+| debug, no feature                  | 0              | 1                |
+| `--features tauri/custom-protocol` | 709            | 1                |
+
+The library's size moves the same way — a dev-mode one stays near its unstripped Rust
+size, while a production one carries the whole of `dist/` inside the `.so`.
 
 ## Assemble the APK
 
@@ -110,19 +158,19 @@ The package id is `net.dannote.open_pencil`, minimum SDK 24, arm64-v8a only.
 
 ## What changed
 
-| Area | Change |
-| --- | --- |
-| `desktop/src/lib.rs` | `fix-path-env`, the native menu, deep links, the updater and the close-to-quit handshake are `#[cfg(desktop)]` |
-| `desktop/src/credentials.rs` | file-backed credential store for Android (`keyring` has no Android backend) |
-| `desktop/src/files/recent.rs` | no-op on mobile; the menu it feeds is desktop-only |
-| `desktop/capabilities/` | `default.json` and `updater.json` scoped to desktop, new `mobile.json` for Android |
-| `desktop/gen/android/` | Gradle project tracked: window insets in `MainActivity`, launcher icons, SDK levels, signing wiring |
-| `desktop/gen/android/.../MainActivity.kt` | applies the top window inset to the WebView so the status bar stops covering the toolbar |
-| `src/app/tauri/env.ts` | `isAndroid()` |
-| `src/app/settings/mcp/` | `MCP_SETTINGS_ENABLED`, hides the MCP tab on Android |
-| `src/components/shell/AppMenu.vue` | Save button in the panel header on Android — the native menu is desktop-only and the floating HUD is not rendered in the wide layout, so there was no way to save without a keyboard |
-| `desktop/src/android_save.rs` + `gen/android/.../SavePlugin.kt` | writes to the `content://` document the system picker returns; `std::fs` cannot open one, so the copy goes through the ContentResolver |
-| `src/app/document/io/write.ts` | stages the file in the cache directory and hands the path to the platform, instead of sending megabytes over IPC |
+| Area                                                            | Change                                                                                                                                                                               |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `desktop/src/lib.rs`                                            | `fix-path-env`, the native menu, deep links, the updater and the close-to-quit handshake are `#[cfg(desktop)]`                                                                       |
+| `desktop/src/credentials.rs`                                    | file-backed credential store for Android (`keyring` has no Android backend)                                                                                                          |
+| `desktop/src/files/recent.rs`                                   | no-op on mobile; the menu it feeds is desktop-only                                                                                                                                   |
+| `desktop/capabilities/`                                         | `default.json` and `updater.json` scoped to desktop, new `mobile.json` for Android                                                                                                   |
+| `desktop/gen/android/`                                          | Gradle project tracked: window insets in `MainActivity`, launcher icons, SDK levels, signing wiring                                                                                  |
+| `desktop/gen/android/.../MainActivity.kt`                       | applies the top window inset to the WebView so the status bar stops covering the toolbar                                                                                             |
+| `src/app/tauri/env.ts`                                          | `isAndroid()`                                                                                                                                                                        |
+| `src/app/settings/mcp/`                                         | `MCP_SETTINGS_ENABLED`, hides the MCP tab on Android                                                                                                                                 |
+| `src/components/shell/AppMenu.vue`                              | Save button in the panel header on Android — the native menu is desktop-only and the floating HUD is not rendered in the wide layout, so there was no way to save without a keyboard |
+| `desktop/src/android_save.rs` + `gen/android/.../SavePlugin.kt` | writes to the `content://` document the system picker returns; `std::fs` cannot open one, so the copy goes through the ContentResolver                                               |
+| `src/app/document/io/write.ts`                                  | stages the file in the cache directory and hands the path to the platform, instead of sending megabytes over IPC                                                                     |
 
 ## Saving on Android
 
